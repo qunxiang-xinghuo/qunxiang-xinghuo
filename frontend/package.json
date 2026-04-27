@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "cd ../backend && node server.js",
+    "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview"
   },
