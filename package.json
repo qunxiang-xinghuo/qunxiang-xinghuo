@@ -1,0 +1,9 @@
+{
+  "name": "qx-xinghuo",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install",
+    "start": "cd backend && node server.js"
+  }
+}
