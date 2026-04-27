@@ -15,3 +15,10 @@ primary_region = 'sin'
   memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
+
+# 鎸佷箙鍖?SQLite 鏁版嵁搴擄紙闇€瑕佸厛鍒涘缓 volume: fly volumes create data -a qunxiang-xinghuo --region sin --size 1锛?[[mounts]]
+  source = 'data'
+  destination = '/app/backend/data'
+  auto_extend_size_threshold = 80
+  auto_extend_size_increment = '1GB'
+  auto_extend_size_limit = '10GB'
