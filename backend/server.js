@@ -7,57 +7,55 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('./models/db');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-// 初始化数据库（失败不阻塞服务启动）
-try {
+// 鍒濆鍖栨暟鎹簱锛堝け璐ヤ笉闃诲鏈嶅姟鍚姩锛?try {
   db.init();
 } catch (err) {
-  console.error('⚠️ 数据库初始化失败，将以内存模式运行:', err.message);
+  console.error('鈿狅笍 鏁版嵁搴撳垵濮嬪寲澶辫触锛屽皢浠ュ唴瀛樻ā寮忚繍琛?', err.message);
 }
 
-// ========== REST API 路由 ==========
+// ========== REST API 璺敱 ==========
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/brainholes', require('./routes/brainholes'));
 app.use('/api/reactions', require('./routes/reactions'));
 app.use('/api/match', require('./routes/match'));
 
-// 房间相关API
+// 鎴块棿鐩稿叧API
 app.use('/api/rooms', require('./routes/rooms'));
 
-// 静态文件服务（生产环境）
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
+// 闈欐€佹枃浠舵湇鍔★紙鐢熶骇鐜锛?app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
-// ========== WebSocket 服务器 ==========
+// ========== WebSocket 鏈嶅姟鍣?==========
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-// 房间管理：roomId -> Set of WebSocket clients
+// 鎴块棿绠＄悊锛歳oomId -> Set of WebSocket clients
 const rooms = new Map();
 
-// 用户身份映射：ws -> { roomId, identity }
+// 鐢ㄦ埛韬唤鏄犲皠锛歸s -> { roomId, identity }
 const clientInfo = new WeakMap();
 
-// AI催化定时器：roomId -> timeoutId
+// AI鍌寲瀹氭椂鍣細roomId -> timeoutId
 const catalystTimers = new Map();
 
 wss.on('connection', (ws, req) => {
-  console.log('🟢 WebSocket 连接建立');
+  console.log('馃煝 WebSocket 杩炴帴寤虹珛');
 
   ws.on('message', (data) => {
     try {
       const msg = JSON.parse(data);
       handleMessage(ws, msg);
     } catch (err) {
-      console.error('消息解析错误:', err);
-      ws.send(JSON.stringify({ type: 'error', message: '无效的消息格式' }));
+      console.error('娑堟伅瑙ｆ瀽閿欒:', err);
+      ws.send(JSON.stringify({ type: 'error', message: '鏃犳晥鐨勬秷鎭牸寮? }));
     }
   });
 
@@ -68,28 +66,28 @@ wss.on('connection', (ws, req) => {
       const roomClients = rooms.get(roomId);
       if (roomClients) {
         roomClients.delete(ws);
-        // 通知其他人有人离开
+        // 閫氱煡鍏朵粬浜烘湁浜虹寮€
         broadcast(roomId, {
           type: 'user_left',
           identity,
-          message: `${identity} 离开了房间`
+          message: `${identity} 绂诲紑浜嗘埧闂碻
         }, ws);
-        // 如果房间空了，清理定时器
+        // 濡傛灉鎴块棿绌轰簡锛屾竻鐞嗗畾鏃跺櫒
         if (roomClients.size === 0) {
           rooms.delete(roomId);
           clearCatalystTimer(roomId);
         }
       }
     }
-    console.log('🔴 WebSocket 连接关闭');
+    console.log('馃敶 WebSocket 杩炴帴鍏抽棴');
   });
 
   ws.on('error', (err) => {
-    console.error('WebSocket 错误:', err);
+    console.error('WebSocket 閿欒:', err);
   });
 });
 
-// 处理WebSocket消息
+// 澶勭悊WebSocket娑堟伅
 function handleMessage(ws, msg) {
   switch (msg.type) {
     case 'join':
@@ -105,31 +103,29 @@ function handleMessage(ws, msg) {
       handleRequestSparks(ws, msg);
       break;
     default:
-      ws.send(JSON.stringify({ type: 'error', message: '未知消息类型: ' + msg.type }));
+      ws.send(JSON.stringify({ type: 'error', message: '鏈煡娑堟伅绫诲瀷: ' + msg.type }));
   }
 }
 
-// 加入房间
+// 鍔犲叆鎴块棿
 function handleJoin(ws, msg) {
   const { roomId, identity } = msg;
   if (!roomId || !identity) {
-    ws.send(JSON.stringify({ type: 'error', message: '缺少 roomId 或 identity' }));
+    ws.send(JSON.stringify({ type: 'error', message: '缂哄皯 roomId 鎴?identity' }));
     return;
   }
 
-  // 记录客户端信息
-  clientInfo.set(ws, { roomId, identity });
+  // 璁板綍瀹㈡埛绔俊鎭?  clientInfo.set(ws, { roomId, identity });
 
-  // 加入房间集合
+  // 鍔犲叆鎴块棿闆嗗悎
   if (!rooms.has(roomId)) {
     rooms.set(roomId, new Set());
   }
   rooms.get(roomId).add(ws);
 
-  console.log(`👤 ${identity} 加入房间 ${roomId}`);
+  console.log(`馃懁 ${identity} 鍔犲叆鎴块棿 ${roomId}`);
 
-  // 发送房间历史消息
-  const sqlite = db.getDB();
+  // 鍙戦€佹埧闂村巻鍙叉秷鎭?  const sqlite = db.getDB();
   sqlite.all(
     `SELECT * FROM room_messages WHERE room_id = ? ORDER BY created_at ASC`,
     [roomId],
@@ -150,15 +146,14 @@ function handleJoin(ws, msg) {
     }
   );
 
-  // 广播用户加入通知
+  // 骞挎挱鐢ㄦ埛鍔犲叆閫氱煡
   broadcast(roomId, {
     type: 'user_joined',
     identity,
-    message: `${identity} 加入了房间`
+    message: `${identity} 鍔犲叆浜嗘埧闂碻
   }, ws);
 
-  // 检查房间人数，如果满2人，更新房间状态
-  const roomClients = rooms.get(roomId);
+  // 妫€鏌ユ埧闂翠汉鏁帮紝濡傛灉婊?浜猴紝鏇存柊鎴块棿鐘舵€?  const roomClients = rooms.get(roomId);
   if (roomClients.size >= 2) {
     const sqlite2 = db.getDB();
     sqlite2.run(`UPDATE rooms SET status = 'active' WHERE id = ?`, [roomId]);
@@ -166,15 +161,14 @@ function handleJoin(ws, msg) {
     
     broadcast(roomId, {
       type: 'room_ready',
-      message: '房间已满员，可以开始对话了！'
+      message: '鎴块棿宸叉弧鍛橈紝鍙互寮€濮嬪璇濅簡锛?
     });
   }
 
-  // 重置AI催化定时器
-  resetCatalystTimer(roomId);
+  // 閲嶇疆AI鍌寲瀹氭椂鍣?  resetCatalystTimer(roomId);
 }
 
-// 处理聊天消息
+// 澶勭悊鑱婂ぉ娑堟伅
 function handleChatMessage(ws, msg) {
   const info = clientInfo.get(ws);
   if (!info) return;
@@ -183,19 +177,19 @@ function handleChatMessage(ws, msg) {
   const { content } = msg;
   if (!content || !content.trim()) return;
 
-  // 保存到数据库
+  // 淇濆瓨鍒版暟鎹簱
   const sqlite = db.getDB();
   sqlite.run(
     `INSERT INTO room_messages (room_id, user_identity, content) VALUES (?, ?, ?)`,
     [roomId, identity, content.trim()],
     function(err) {
       if (err) {
-        console.error('保存消息失败:', err);
+        console.error('淇濆瓨娑堟伅澶辫触:', err);
         return;
       }
       const messageId = this.lastID;
       
-      // 广播给房间内所有人
+      // 骞挎挱缁欐埧闂村唴鎵€鏈変汉
       broadcast(roomId, {
         type: 'message',
         id: messageId,
@@ -209,12 +203,10 @@ function handleChatMessage(ws, msg) {
     }
   );
 
-  // 重置催化定时器
-  resetCatalystTimer(roomId);
+  // 閲嶇疆鍌寲瀹氭椂鍣?  resetCatalystTimer(roomId);
 }
 
-// 处理输入中状态
-function handleTyping(ws, msg) {
+// 澶勭悊杈撳叆涓姸鎬?function handleTyping(ws, msg) {
   const info = clientInfo.get(ws);
   if (!info) return;
   const { roomId, identity } = info;
@@ -225,8 +217,7 @@ function handleTyping(ws, msg) {
   }, ws);
 }
 
-// 请求火花墙
-function handleRequestSparks(ws, msg) {
+// 璇锋眰鐏姳澧?function handleRequestSparks(ws, msg) {
   const info = clientInfo.get(ws);
   if (!info) return;
   const { roomId } = info;
@@ -252,7 +243,7 @@ function handleRequestSparks(ws, msg) {
   );
 }
 
-// 广播消息给房间内所有人（可选排除发送者）
+// 骞挎挱娑堟伅缁欐埧闂村唴鎵€鏈変汉锛堝彲閫夋帓闄ゅ彂閫佽€咃級
 function broadcast(roomId, data, excludeWs = null) {
   const roomClients = rooms.get(roomId);
   if (!roomClients) return;
@@ -265,15 +256,14 @@ function broadcast(roomId, data, excludeWs = null) {
   });
 }
 
-// ========== AI催化定时器 ==========
-const CATALYST_INTERVAL = 30000; // 30秒
-const catalysts = [
-  '如果这不是一个假设，而是你们各自的警报，会怎样？',
-  '你们两个人的职业，在这个情境下会产生什么冲突或互补？',
-  '如果十年后的你们回看这段对话，会觉得遗憾还是庆幸？',
-  '试着用对方职业的视角，重新描述这个情境。',
-  '如果这个故事要有一个转折，它会发生在什么时候？',
-  '你们各自提到的细节中，有没有可以串联起来的线索？',
+// ========== AI鍌寲瀹氭椂鍣?==========
+const CATALYST_INTERVAL = 30000; // 30绉?const catalysts = [
+  '濡傛灉杩欎笉鏄竴涓亣璁撅紝鑰屾槸浣犱滑鍚勮嚜鐨勮鎶ワ紝浼氭€庢牱锛?,
+  '浣犱滑涓や釜浜虹殑鑱屼笟锛屽湪杩欎釜鎯呭涓嬩細浜х敓浠€涔堝啿绐佹垨浜掕ˉ锛?,
+  '濡傛灉鍗佸勾鍚庣殑浣犱滑鍥炵湅杩欐瀵硅瘽锛屼細瑙夊緱閬楁喚杩樻槸搴嗗垢锛?,
+  '璇曠潃鐢ㄥ鏂硅亴涓氱殑瑙嗚锛岄噸鏂版弿杩拌繖涓儏澧冦€?,
+  '濡傛灉杩欎釜鏁呬簨瑕佹湁涓€涓浆鎶橈紝瀹冧細鍙戠敓鍦ㄤ粈涔堟椂鍊欙紵',
+  '浣犱滑鍚勮嚜鎻愬埌鐨勭粏鑺備腑锛屾湁娌℃湁鍙互涓茶仈璧锋潵鐨勭嚎绱紵',
 ];
 
 function resetCatalystTimer(roomId) {
@@ -299,12 +289,12 @@ function sendCatalyst(roomId) {
     content: catalyst,
     timestamp: new Date().toISOString()
   });
-  // 再次设置定时器（如果仍然没人说话，会继续推送）
+  // 鍐嶆璁剧疆瀹氭椂鍣紙濡傛灉浠嶇劧娌′汉璇磋瘽锛屼細缁х画鎺ㄩ€侊級
   resetCatalystTimer(roomId);
 }
 
-// ========== 启动服务器 ==========
-server.listen(PORT, () => {
-  console.log(`🚀 群像·星火服务器运行在 http://localhost:${PORT}`);
-  console.log(`🌐 WebSocket 端点: ws://localhost:${PORT}`);
+// ========== 鍚姩鏈嶅姟鍣?==========
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`馃殌 缇ゅ儚路鏄熺伀鏈嶅姟鍣ㄨ繍琛屽湪 http://0.0.0.0:${PORT}`);
+  console.log(`馃寪 WebSocket 绔偣: ws://0.0.0.0:${PORT}`);
 });
