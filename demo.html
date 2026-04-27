@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>群像·星火 - V2.0 演示版</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'xh-primary': '#1a1a2e',
+            'xh-accent': '#e94560',
+            'xh-gold': '#f9a825',
+            'xh-dark': '#16213e',
+            'xh-card': '#0f3460',
+            'xh-light': '#e8e8e8',
+          },
+          fontFamily: {
+            sans: ['Noto Sans SC', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Noto Sans SC', system-ui, sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .page { display: none; animation: fadeIn 0.3s ease; }
+    .page.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(233, 69, 96, 0.3); } 50% { box-shadow: 0 0 40px rgba(233, 69, 96, 0.6); } }
+    .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    .swipe-card { transition: transform 0.3s ease, opacity 0.3s ease; touch-action: pan-y; }
+    .swipe-card.swiping-left { transform: translateX(-120%) rotate(-15deg); opacity: 0; }
+    .swipe-card.swiping-right { transform: translateX(120%) rotate(15deg); opacity: 0; }
+    .sparkle { position: absolute; pointer-events: none; animation: sparkle-rise 3s linear infinite; }
+    @keyframes sparkle-rise { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(-10vh) scale(1); opacity: 0; } }
+    @keyframes ping-slow { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.5); opacity: 0; } }
+    .animate-ping-slow { animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+    @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .animate-slide-up { animation: slide-up 0.3s ease; }
+  </style>
+</head>
+<body class="bg-xh-primary text-xh-light h-screen w-screen overflow-hidden">
+
+  <div class="h-full w-full max-w-md mx-auto bg-xh-primary relative overflow-hidden">
+
+    <!-- ===================================================== -->
+    <!-- ===================== 首页 ========================== -->
+    <!-- ===================================================== -->
+    <div id="page-home" class="page active h-full flex-col relative">
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-xh-accent/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-40 right-0 w-48 h-48 bg-xh-gold/10 rounded-full blur-3xl"></div>
+      </div>
+      <div class="pt-16 pb-8 px-6 text-center relative z-10">
+        <div class="flex items-center justify-center gap-2 mb-3">
+          <svg class="w-6 h-6 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+          <h1 class="text-3xl font-bold tracking-wider text-white">群像·星火</h1>
+          <svg class="w-6 h-6 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+        </div>
+        <p class="text-sm text-gray-400 leading-relaxed">每一个认真生活的人，都能成为故事的一部分</p>
+      </div>
+      <div class="flex-1 flex items-center justify-center relative z-10">
+        <button onclick="startSolo()" class="group relative animate-float">
+          <div class="absolute inset-0 bg-gradient-to-r from-xh-accent to-rose-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+          <div class="relative bg-gradient-to-r from-xh-accent to-rose-600 text-white px-10 py-5 rounded-full text-lg font-medium shadow-lg flex items-center gap-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            开始创作
+          </div>
+        </button>
+      </div>
+      <div class="pb-10 relative z-10">
+        <div class="flex items-center justify-between px-6 mb-4">
+          <span class="text-xs text-gray-500">选择创作模式</span>
+          <div class="flex gap-1" id="mode-dots">
+            <div class="w-2 h-2 rounded-full bg-xh-gold"></div>
+            <div class="w-2 h-2 rounded-full bg-gray-700"></div>
+            <div class="w-2 h-2 rounded-full bg-gray-700"></div>
+          </div>
+        </div>
+        <div id="mode-scroll" class="flex gap-4 overflow-x-auto no-scrollbar px-6 snap-x snap-mandatory" onscroll="updateModeDots()">
+          <div class="flex-shrink-0 w-[75%] snap-center rounded-2xl p-5 bg-gradient-to-br from-rose-500 to-orange-500 scale-100 opacity-100" onclick="startSolo()">
+            <div class="flex items-start justify-between mb-3">
+              <svg class="w-8 h-8 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-1">单人模式</h3>
+            <p class="text-xs text-white/80 leading-relaxed">一个人，一个脑洞，一段真实反应</p>
+          </div>
+          <div class="flex-shrink-0 w-[75%] snap-center rounded-2xl p-5 bg-gradient-to-br from-violet-500 to-purple-500 scale-95 opacity-60" onclick="startDuo()">
+            <div class="flex items-start justify-between mb-3">
+              <svg class="w-8 h-8 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-1">双人模式</h3>
+            <p class="text-xs text-white/80 leading-relaxed">匹配陌生人，碰撞思想火花</p>
+          </div>
+          <div class="flex-shrink-0 w-[75%] snap-center rounded-2xl p-5 bg-gradient-to-br from-emerald-500 to-teal-500 scale-95 opacity-60">
+            <div class="flex items-start justify-between mb-3">
+              <svg class="w-8 h-8 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span class="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full">即将上线</span>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-1">多人组队</h3>
+            <p class="text-xs text-white/80 leading-relaxed">三五好友，共创群像故事</p>
+          </div>
+        </div>
+        <div class="flex justify-center gap-4 mt-4">
+          <button onclick="scrollMode(-1)" class="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <button onclick="scrollMode(1)" class="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- =================== 单人模式 ======================== -->
+    <!-- ===================================================== -->
+    <!-- 身份选择 -->
+    <div id="page-identity" class="page h-full flex-col">
+      <div class="flex items-center px-4 py-4">
+        <button onclick="goPage('home')" class="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 class="flex-1 text-center text-lg font-medium text-white pr-10">选择你的身份</h2>
+      </div>
+      <div class="px-6 mb-6">
+        <p class="text-sm text-gray-400 leading-relaxed">你的身份标签会伴随每一次反应记录，<br>让读者知道"这是一个_____的真实想法"。</p>
+      </div>
+      <div class="flex-1 px-4 space-y-3 overflow-y-auto no-scrollbar" id="identity-list"></div>
+      <div class="p-4">
+        <button id="identity-btn" onclick="confirmIdentity()" disabled class="w-full py-4 rounded-xl font-medium text-center transition-all bg-gray-800 text-gray-500 cursor-not-allowed">确认身份，进入脑洞广场</button>
+      </div>
+    </div>
+
+    <!-- 脑洞匹配 -->
+    <div id="page-match" class="page h-full flex-col">
+      <div class="flex items-center px-4 py-4">
+        <button onclick="goPage('identity')" class="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 class="flex-1 text-center text-lg font-medium text-white pr-10">脑洞广场</h2>
+      </div>
+      <div class="px-6 mb-4">
+        <div class="flex gap-1" id="match-progress"></div>
+        <p class="text-xs text-gray-500 mt-2 text-center" id="match-counter">1 / 5</p>
+      </div>
+      <div class="flex-1 relative px-4 flex items-center justify-center" id="card-container"></div>
+      <div class="flex items-center justify-center gap-6 pb-8">
+        <button onclick="swipeCard('left')" class="w-14 h-14 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <button onclick="swipeCard('right')" class="w-16 h-16 rounded-full bg-gradient-to-r from-xh-accent to-rose-600 flex items-center justify-center text-white shadow-lg">
+          <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+      </div>
+      <p class="text-xs text-gray-500 text-center pb-4">左滑跳过 · 右滑收藏并记录反应</p>
+    </div>
+
+    <!-- 反应记录 -->
+    <div id="page-record" class="page h-full flex-col">
+      <div class="flex items-center px-4 py-4">
+        <button onclick="goPage('match')" class="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 class="flex-1 text-center text-lg font-medium text-white pr-10">记录反应</h2>
+      </div>
+      <div class="px-4 mb-4">
+        <div class="bg-gradient-to-r from-xh-card to-gray-800 rounded-2xl p-4 border border-gray-700/50">
+          <div class="flex items-center gap-2 mb-2">
+            <svg class="w-4 h-4 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            <span class="text-xs text-xh-gold">当前脑洞</span>
+          </div>
+          <p class="text-sm text-white leading-relaxed" id="record-brainhole"></p>
+        </div>
+      </div>
+      <div class="px-4 mb-4 flex items-center gap-2">
+        <div class="flex items-center gap-1.5 bg-xh-accent/20 text-xh-accent px-3 py-1.5 rounded-full">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          <span class="text-xs font-medium" id="record-identity"></span>
+        </div>
+        <span class="text-xs text-gray-500">正在发言</span>
+      </div>
+      <div class="px-4 mb-4">
+        <div class="bg-gray-800/50 rounded-xl p-3 border border-gray-700/30">
+          <div class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-violet-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <div>
+              <p class="text-xs text-violet-300 mb-1">AI 引导提问</p>
+              <p class="text-sm text-gray-300" id="ai-prompt"></p>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2 mt-2 overflow-x-auto no-scrollbar" id="prompt-tags"></div>
+      </div>
+      <div class="flex-1 px-4 flex flex-col">
+        <div class="relative flex-1 bg-gray-900 rounded-2xl border border-gray-700/50 overflow-hidden">
+          <textarea id="reaction-input" placeholder="在这里写下你的第一反应..." class="w-full h-full bg-transparent p-4 text-sm text-white placeholder-gray-500 resize-none focus:outline-none"></textarea>
+          <div class="absolute bottom-3 right-3 text-[10px] text-gray-600" id="char-count">0 字</div>
+        </div>
+        <div class="flex items-center justify-between py-3">
+          <button onclick="toggleVoice()" id="voice-btn" class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-gray-800 text-gray-400 border border-gray-700 hover:text-white">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+            <span>语音输入</span>
+          </button>
+          <button onclick="submitReaction()" id="submit-btn" disabled class="flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-all bg-gray-800 text-gray-500 cursor-not-allowed">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            记录这个反应
+          </button>
+        </div>
+      </div>
+      <div class="px-4 pb-4 flex items-center justify-center gap-1 text-[10px] text-gray-600">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span id="current-time"></span>
+      </div>
+    </div>
+
+    <!-- 记录反馈 -->
+    <div id="page-feedback" class="page h-full flex-col items-center justify-center px-6 relative overflow-hidden">
+      <div class="absolute inset-0 pointer-events-none overflow-hidden" id="sparkles-container"></div>
+      <div class="relative z-10 text-center">
+        <div class="mb-8">
+          <div class="relative inline-block">
+            <div class="w-32 h-32 rounded-full border-2 border-dashed border-xh-gold/30 absolute inset-0 animate-spin" style="animation-duration:20s"></div>
+            <div class="w-32 h-32 rounded-full bg-gradient-to-br from-xh-gold/20 to-orange-500/20 flex items-center justify-center border border-xh-gold/30 animate-pulse-glow">
+              <svg class="w-12 h-12 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></svg>
+            </div>
+          </div>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-3">你的真实反应已被收录</h2>
+        <p class="text-gray-400 mb-2">成为故事燃料</p>
+        <div class="inline-flex items-center gap-2 bg-gray-800/50 border border-gray-700/50 rounded-full px-4 py-2 mb-8">
+          <svg class="w-4 h-4 text-xh-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          <span class="text-sm text-gray-300">你已累计记录 <span class="text-xh-gold font-bold" id="reaction-count">0</span> 个真实反应</span>
+        </div>
+        <div class="space-y-3">
+          <button onclick="goPage('match')" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-xh-accent to-rose-600 text-white py-4 rounded-xl font-medium shadow-lg">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            继续探索下一个脑洞
+          </button>
+          <button onclick="goPage('home')" class="w-full flex items-center justify-center gap-2 bg-gray-800 text-gray-400 py-4 rounded-xl font-medium hover:text-white hover:bg-gray-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            返回首页
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- =================== 双人模式 ======================== -->
+    <!-- ===================================================== -->
+    <!-- 双人-脑洞选择 -->
+    <div id="page-duo-match" class="page h-full flex-col">
+      <div class="flex items-center px-4 py-4">
+        <button onclick="goPage('home')" class="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 class="flex-1 text-center text-lg font-medium text-white pr-10">双人接戏</h2>
+      </div>
+      <div class="px-6 mb-4">
+        <p class="text-sm text-gray-400">选一个让你"有感觉"的脑洞，系统会为你匹配一个同样选中它的陌生人。</p>
+      </div>
+      <div class="flex-1 px-4 space-y-3 overflow-y-auto no-scrollbar" id="duo-brainhole-list"></div>
+    </div>
+
+    <!-- 匹配等待 -->
+    <div id="page-duo-waiting" class="page h-full flex-col relative">
+      <div class="flex items-center px-4 py-4">
+        <button onclick="goPage('duo-match')" class="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 class="flex-1 text-center text-lg font-medium text-white pr-10">寻找搭档</h2>
+      </div>
+      <div class="px-4 mb-8">
+        <div class="bg-gray-800/50 rounded-xl p-3 border border-gray-700/30">
+          <p class="text-[10px] text-gray-500 mb-1">你选择的脑洞</p>
+          <p class="text-sm text-white leading-relaxed" id="waiting-brainhole"></p>
+        </div>
+      </div>
+      <div class="flex-1 flex flex-col items-center justify-center px-6" id="waiting-content"></div>
+    </div>
+
+    <!-- 双人对白室 -->
+    <div id="page-duo-chat" class="page h-full flex-col relative">
+      <div class="bg-xh-dark/80 backdrop-blur-md border-b border-gray-800">
+        <div class="flex items-center px-4 py-3">
+          <button onclick="goPage('home')" class="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors mr-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <div class="flex-1 min-w-0">
+            <h2 class="text-sm font-medium text-white truncate">双人对白室</h2>
+            <p class="text-[10px] text-gray-500 truncate" id="chat-brainhole-title"></p>
+          </div>
+          <button onclick="toggleSparkWall()" class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-xh-gold/20 text-xh-gold text-xs border border-xh-gold/30">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+            火花墙
+            <span class="bg-xh-gold text-xh-primary text-[10px] px-1.5 rounded-full font-bold" id="spark-count">2</span>
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-4" id="chat-messages"></div>
+      <div class="mx-4 mb-2" id="catalyst-box"></div>
+      <div class="p-4 border-t border-gray-800 bg-xh-primary">
+        <div class="flex items-end gap-2">
+          <div class="flex-1 bg-gray-900 rounded-2xl border border-gray-700/50 px-4 py-2">
+            <textarea id="chat-input" placeholder="写下你的反应..." rows="1" class="w-full bg-transparent text-sm text-white placeholder-gray-500 resize-none focus:outline-none max-h-24"></textarea>
+          </div>
+          <button onclick="sendChatMsg()" id="chat-send-btn" disabled class="p-3 rounded-full bg-gray-800 text-gray-500 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          </button>
+        </div>
+        <button onclick="goPage('duo-result')" id="story-btn" class="hidden w-full mt-3 bg-gradient-to-r from-xh-gold/20 to-orange-500/20 border border-xh-gold/30 text-xh-gold py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+          串联故事
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+      <!-- 火花墙面板 -->
+      <div id="sparkwall-panel" class="hidden absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end" onclick="toggleSparkWall()">
+        <div class="w-[85%] h-full bg-xh-dark border-l border-gray-800 flex flex-col animate-slide-up" onclick="event.stopPropagation()">
+          <div class="flex items-center justify-between px-4 py-4 border-b border-gray-800">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+              <h3 class="text-white font-medium">火花墙</h3>
+            </div>
+            <button onclick="toggleSparkWall()" class="p-2 text-gray-400 hover:text-white">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3" id="sparkwall-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI串联结果 -->
+    <div id="page-duo-result" class="page h-full flex-col">
+      <div class="flex items-center px-4 py-4 border-b border-gray-800">
+        <button onclick="goPage('duo-chat')" class="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 class="flex-1 text-center text-lg font-medium text-white pr-10">故事草案</h2>
+      </div>
+      <div class="flex-1 overflow-y-auto no-scrollbar" id="result-content"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==================== 数据 ====================
+    const soloBrainholes = [
+      { id: 'bh_1', title: '如果你突然拥有了读心术，但只能读取陌生人的想法，你会怎么利用它？', content: '每天早上挤地铁的时候，耳边会响起几百个陌生人的心声...', source: '知乎' },
+      { id: 'bh_2', title: '作为一个外卖员，你见过最让你难忘的一单是什么？', content: '深夜十一点，订单备注写着：不用敲门，放在门口就好，谢谢你还这么晚送餐。', source: '知乎' },
+      { id: 'bh_3', title: '如果你能和五年前的自己通话一分钟，你会说什么？', content: '只有一分钟，时间一到自动挂断...', source: '知乎' },
+      { id: 'bh_4', title: '作为医生，有没有哪个瞬间让你觉得"这个职业值了"？', content: '抢救了三个小时，心电图终于出现规律的波形...', source: '知乎' },
+      { id: 'bh_5', title: '如果你的宠物突然开口说话了，你觉得它第一句话会是什么？', content: '养了十年的老猫，在一个雷雨夜突然看着你说...', source: '知乎' }
+    ];
+
+    const duoBrainholes = [
+      { id: 'bh_d1', title: '如果某天醒来，全世界只剩下你一个人，你会先去哪个地方？为什么？', content: '没有网络，没有外卖，没有声音...', source: '知乎' },
+      { id: 'bh_d2', title: '你在工作中做过最"出格"的一次决定是什么？结果如何？', content: '那天下班后，我回了老板一封很长的邮件...', source: '知乎' },
+      { id: 'bh_d3', title: '如果你能和任何职业的人互换一天身份，你会选谁？', content: '飞行员、急诊医生、还是幼儿园老师？', source: '知乎' },
+    ];
+
+    const aiPrompts = [
+      '第一反应是什么？不要思考，直接说出来。',
+      '如果你是故事里的主角，下一步会怎么做？',
+      '这个情境让你联想到自己生活中的哪件事？',
+      '从你这个身份的角度，最在意的是什么？',
+      '如果要用一句话总结你的感受，会是什么？',
+      '你觉得这个情境里最不合理的部分是什么？',
+    ];
+
+    const identityOptions = [
+      { id: 'real', title: '真实身份', desc: '绑定知乎认证，用真实职业标签参与', detail: '医生 / 律师 / 教师 / 工程师...', badge: '最具可信度', color: 'from-blue-500 to-cyan-500' },
+      { id: 'recommended', title: '推荐身份', desc: '系统根据你的回答风格智能推荐', detail: '故事讲述者 / 生活观察家 / 逻辑分析师...', badge: 'AI推荐', color: 'from-violet-500 to-purple-500' },
+      { id: 'custom', title: '自创标签', desc: '自定义简短标签，自由表达身份', detail: '输入你的专属身份标签', badge: '最自由', color: 'from-orange-500 to-rose-500' },
+    ];
+
+    // 双人预置对话
+    const initialChatMessages = [
+      { id: 1, userId: 'partner', text: '我先说吧。如果是我在急诊室值班，突然全世界只剩我一个人，我第一反应会是——所有监护仪同时静默的那一秒。', time: '14:32', spark: true },
+      { id: 2, userId: 'me', text: '哇，那个画面太有冲击力了。我是做程序的，我会下意识去检查服务器还在不在跑，就好像确认世界是不是只是网络断了。', time: '14:33', spark: false },
+      { id: 3, userId: 'partner', text: '哈哈，你比我理性多了。但我猜，最多十分钟后，你也会走出房间，去确认还有没有活物。', time: '14:34', spark: false },
+      { id: 4, userId: 'me', text: '会的。而且我可能会先去便利店，不是找吃的，是找个能发出声音的东西，证明"热闹"还存在。', time: '14:35', spark: true },
+    ];
+
+    const duoCatalysts = [
+      '如果这不是一个假设，而是你们各自的警报，会怎样？',
+      '你们两个人的职业，在这个情境下会产生什么冲突或互补？',
+      '如果十年后的你们回看这段对话，会觉得遗憾还是庆幸？',
+      '试着用对方职业的视角，重新描述这个情境。',
+    ];
+
+    const storyDraft = `凌晨三点，急诊室的监护仪突然全部静默。\n\n林悦——那个当了八年急诊科护士的姑娘——站在护士站前，看着所有屏幕变成直线。她没有尖叫，只是下意识地按了按呼叫铃，好像确认这是不是一个系统故障。\n\n同一时间，二十八楼的某个出租屋里，陈默从床上弹起来。他的第一反应不是恐惧，而是打开笔记本电脑，输入那串熟悉的IP地址。服务器还在跑。代码还在编译。可微信里没有新消息，微博热搜停在三个小时前，连平时最吵的小区群都安静得可怕。\n\n林悦走出急诊室，走廊的声控灯随着她的脚步一盏盏亮起。她突然很想找个人说话，随便什么人。而陈默走出房间，在便利店的自动门前站了很久——那扇门居然还在"叮咚"地响，这让他差点哭出来。\n\n后来他们相遇了。在一条没有人的街上，林悦穿着沾了碘伏的护士服，陈默抱着一台还在发热的笔记本。他们说的第一句话出奇地一致：\n\n"你也在确认吗？"\n\n确认世界是不是真的只剩下自己了。\n\n林悦说，她在急诊室见过太多"最后一刻"，反而对"空无一人的开始"毫无准备。陈默说，他写了无数行异常处理代码，却从未想过要处理"人类全部消失"这个bug。\n\n他们在便利店门口坐到天亮。林悦教陈默怎么测心率和血压，陈默给林悦看他写的那个能自动播放白噪音的程序——「至少让便利店一直有声音」。\n\n故事还没完。但那个晚上，一个护士和一个程序员，用各自职业的惯性，笨拙地对抗着同一种孤独。\n\n而这，可能就是人类最本质的共鸣。`;
+
+    // ==================== 状态 ====================
+    let currentPage = 'home';
+    let selectedIdentity = null;
+    let customTag = '';
+    let currentCardIndex = 0;
+    let currentPromptIndex = 0;
+    let isRecording = false;
+    let recognition = null;
+    let mode = 'solo'; // solo | duo
+    let chatMessages = [...initialChatMessages];
+    let currentCatalyst = 0;
+    let duoSelectedBrainhole = null;
+
+    // ==================== 页面切换 ====================
+    function goPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      currentPage = page;
+      if (page === 'identity') renderIdentityPage();
+      if (page === 'match') renderMatchPage();
+      if (page === 'record') renderRecordPage();
+      if (page === 'feedback') renderFeedbackPage();
+      if (page === 'duo-match') renderDuoMatchPage();
+      if (page === 'duo-waiting') renderDuoWaitingPage();
+      if (page === 'duo-chat') renderChatPage();
+      if (page === 'duo-result') renderResultPage();
+    }
+
+    function startSolo() { mode = 'solo'; goPage('identity'); }
+    function startDuo() { mode = 'duo'; goPage('identity'); }
+
+    // ==================== 首页 ====================
+    function scrollMode(dir) {
+      const scroll = document.getElementById('mode-scroll');
+      const cardWidth = scroll.offsetWidth * 0.75;
+      scroll.scrollBy({ left: dir * cardWidth, behavior: 'smooth' });
+    }
+    function updateModeDots() {
+      const scroll = document.getElementById('mode-scroll');
+      const cardWidth = scroll.offsetWidth * 0.75;
+      const index = Math.round(scroll.scrollLeft / cardWidth);
+      const dots = document.getElementById('mode-dots').children;
+      for (let i = 0; i < dots.length; i++) dots[i].className = 'w-2 h-2 rounded-full ' + (i === index ? 'bg-xh-gold' : 'bg-gray-700');
+      const cards = scroll.children;
+      for (let i = 0; i < cards.length; i++) {
+        cards[i].className = cards[i].className.replace(/scale-\d+ opacity-\d+/, i === index ? 'scale-100 opacity-100' : 'scale-95 opacity-60');
+      }
+    }
+
+    // ==================== 身份选择 ====================
+    function renderIdentityPage() {
+      const container = document.getElementById('identity-list');
+      container.innerHTML = identityOptions.map((opt, i) => `
+        <div onclick="selectIdentity('${opt.id}')" class="relative rounded-2xl p-4 cursor-pointer transition-all duration-300 border-2 ${selectedIdentity === opt.id ? 'border-xh-gold bg-xh-gold/10' : 'border-gray-800 bg-gray-800/50 hover:border-gray-700'}">
+          <div class="flex items-start gap-4">
+            <div class="p-3 rounded-xl bg-gradient-to-br ${opt.color}">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="text-white font-medium">${opt.title}</h3>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-300">${opt.badge}</span>
+              </div>
+              <p class="text-xs text-gray-400 mb-1">${opt.desc}</p>
+              <p class="text-xs text-gray-500">${opt.detail}</p>
+            </div>
+            <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${selectedIdentity === opt.id ? 'border-xh-gold bg-xh-gold' : 'border-gray-600'}">
+              ${selectedIdentity === opt.id ? '<svg class="w-3 h-3 text-xh-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+            </div>
+          </div>
+          ${opt.id === 'custom' && selectedIdentity === 'custom' ? `
+            <div class="mt-3">
+              <input type="text" value="${customTag}" oninput="customTag=this.value; updateIdentityBtn(); event.stopPropagation();" placeholder="例如：北漂程序员、三胎妈妈、退休教师..." class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-xh-gold transition-colors" maxlength="20">
+              <p class="text-[10px] text-gray-500 mt-1 text-right">${customTag.length}/20</p>
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+      updateIdentityBtn();
+    }
+    function selectIdentity(id) { selectedIdentity = id; renderIdentityPage(); }
+    function updateIdentityBtn() {
+      const btn = document.getElementById('identity-btn');
+      const valid = selectedIdentity && (selectedIdentity !== 'custom' || customTag.trim().length > 0);
+      btn.disabled = !valid;
+      btn.className = 'w-full py-4 rounded-xl font-medium text-center transition-all ' + (valid ? 'bg-gradient-to-r from-xh-accent to-rose-600 text-white shadow-lg' : 'bg-gray-800 text-gray-500 cursor-not-allowed');
+    }
+    function confirmIdentity() {
+      let identity = {};
+      if (selectedIdentity === 'real') identity = { type: 'real', label: '知乎认证用户' };
+      else if (selectedIdentity === 'recommended') identity = { type: 'recommended', label: '故事讲述者' };
+      else if (selectedIdentity === 'custom') identity = { type: 'custom', label: customTag.trim() };
+      localStorage.setItem('xh_identity', JSON.stringify(identity));
+      if (mode === 'duo') goPage('duo-match');
+      else goPage('match');
+    }
+
+    // ==================== 单人-脑洞匹配 ====================
+    function renderMatchPage() {
+      const progress = document.getElementById('match-progress');
+      progress.innerHTML = soloBrainholes.map((_, i) => `<div class="flex-1 h-1 rounded-full transition-colors ${i < currentCardIndex ? 'bg-xh-accent' : i === currentCardIndex ? 'bg-xh-gold' : 'bg-gray-800'}"></div>`).join('');
+      document.getElementById('match-counter').textContent = (currentCardIndex + 1) + ' / ' + soloBrainholes.length;
+      const container = document.getElementById('card-container');
+      if (currentCardIndex >= soloBrainholes.length) {
+        container.innerHTML = `<div class="text-center"><div class="text-6xl mb-4">🎉</div><h3 class="text-xl font-bold text-white mb-2">今天的脑洞已看完</h3><button onclick="currentCardIndex=0; renderMatchPage();" class="bg-xh-accent text-white px-6 py-3 rounded-xl font-medium">重新浏览</button></div>`;
+        return;
+      }
+      const card = soloBrainholes[currentCardIndex];
+      container.innerHTML = `
+        <div class="swipe-card absolute inset-x-4 top-1/2 -translate-y-1/2" id="active-card">
+          <div class="bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl p-6 h-[420px] border border-gray-700 shadow-2xl flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs text-gray-500 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                ${card.source}
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-xh-gold/20 text-xh-gold">精选脑洞</span>
+            </div>
+            <div class="flex-1 flex flex-col justify-center">
+              <h3 class="text-xl font-bold text-white leading-relaxed mb-4">${card.title}</h3>
+              <p class="text-sm text-gray-400 leading-relaxed">${card.content}</p>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-700/50">
+              <p class="text-xs text-gray-500 text-center">右滑收藏，记录你的第一反应</p>
+            </div>
+          </div>
+        </div>
+      `;
+      const el = document.getElementById('active-card');
+      let startX = 0;
+      el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
+      el.addEventListener('touchend', e => {
+        const diff = e.changedTouches[0].clientX - startX;
+        if (diff > 80) swipeCard('right');
+        else if (diff < -80) swipeCard('left');
+      });
+    }
+    function swipeCard(dir) {
+      const card = document.getElementById('active-card');
+      if (!card) return;
+      card.classList.add(dir === 'right' ? 'swiping-right' : 'swiping-left');
+      setTimeout(() => {
+        if (dir === 'right') {
+          localStorage.setItem('xh_current_brainhole', JSON.stringify(soloBrainholes[currentCardIndex]));
+          goPage('record');
+        } else {
+          currentCardIndex++;
+          renderMatchPage();
+        }
+      }, 300);
+    }
+
+    // ==================== 单人-反应记录 ====================
+    function renderRecordPage() {
+      const bh = JSON.parse(localStorage.getItem('xh_current_brainhole') || '{}');
+      const id = JSON.parse(localStorage.getItem('xh_identity') || '{}');
+      document.getElementById('record-brainhole').textContent = bh.title || '';
+      document.getElementById('record-identity').textContent = id.label || '匿名用户';
+      document.getElementById('ai-prompt').textContent = aiPrompts[currentPromptIndex];
+      document.getElementById('current-time').textContent = new Date().toLocaleString('zh-CN');
+      const tags = document.getElementById('prompt-tags');
+      tags.innerHTML = aiPrompts.map((_, i) => `<button onclick="setPrompt(${i})" class="flex-shrink-0 px-3 py-1 rounded-full text-[10px] transition-colors ${i === currentPromptIndex ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : 'bg-gray-800 text-gray-500 border border-gray-700'}">引导 ${i + 1}</button>`).join('');
+      const input = document.getElementById('reaction-input');
+      input.value = '';
+      input.oninput = () => {
+        document.getElementById('char-count').textContent = input.value.length + ' 字';
+        const btn = document.getElementById('submit-btn');
+        const valid = input.value.trim().length > 0;
+        btn.disabled = !valid;
+        btn.className = 'flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-all ' + (valid ? 'bg-gradient-to-r from-xh-accent to-rose-600 text-white shadow-lg' : 'bg-gray-800 text-gray-500 cursor-not-allowed');
+      };
+    }
+    function setPrompt(i) { currentPromptIndex = i; renderRecordPage(); }
+    function toggleVoice() {
+      const btn = document.getElementById('voice-btn');
+      if (!isRecording) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) { alert('您的浏览器不支持语音输入'); return; }
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-CN'; recognition.continuous = true; recognition.interimResults = true;
+        recognition.onresult = (e) => {
+          let final = '';
+          for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) final += e.results[i][0].transcript;
+          if (final) { const input = document.getElementById('reaction-input'); input.value += final; input.oninput(); }
+        };
+        recognition.onend = () => { isRecording = false; updateVoiceBtn(); };
+        recognition.start(); isRecording = true;
+      } else { if (recognition) recognition.stop(); isRecording = false; }
+      updateVoiceBtn();
+    }
+    function updateVoiceBtn() {
+      const btn = document.getElementById('voice-btn');
+      btn.className = 'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ' + (isRecording ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:text-white');
+      btn.innerHTML = isRecording
+        ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg><span>停止录音</span>'
+        : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg><span>语音输入</span>';
+    }
+    function submitReaction() {
+      const content = document.getElementById('reaction-input').value.trim();
+      if (!content) return;
+      const identity = JSON.parse(localStorage.getItem('xh_identity') || '{}');
+      const brainhole = JSON.parse(localStorage.getItem('xh_current_brainhole') || '{}');
+      const reactions = JSON.parse(localStorage.getItem('xh_reactions') || '[]');
+      reactions.push({ id: 'local_' + Date.now(), identity_label: identity.label || '匿名用户', brainhole_title: brainhole.title, content, ai_prompts: aiPrompts[currentPromptIndex], created_at: new Date().toISOString() });
+      localStorage.setItem('xh_reactions', JSON.stringify(reactions));
+      goPage('feedback');
+    }
+
+    // ==================== 单人-反馈 ====================
+    function renderFeedbackPage() {
+      const reactions = JSON.parse(localStorage.getItem('xh_reactions') || '[]');
+      document.getElementById('reaction-count').textContent = reactions.length;
+      const container = document.getElementById('sparkles-container');
+      container.innerHTML = '';
+      for (let i = 0; i < 20; i++) {
+        const el = document.createElement('div');
+        el.className = 'sparkle';
+        el.style.left = Math.random() * 100 + '%';
+        el.style.animationDelay = Math.random() * 3 + 's';
+        el.style.animationDuration = (3 + Math.random() * 2) + 's';
+        el.innerHTML = '<svg class="text-xh-gold" style="width:' + (8 + Math.random() * 12) + 'px;height:' + (8 + Math.random() * 12) + 'px;opacity:' + (0.3 + Math.random() * 0.5) + '" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>';
+        container.appendChild(el);
+      }
+    }
+
+    // ==================== 双人-脑洞选择 ====================
+    function renderDuoMatchPage() {
+      const container = document.getElementById('duo-brainhole-list');
+      container.innerHTML = duoBrainholes.map((bh, i) => `
+        <div onclick="selectDuoBrainhole('${bh.id}')" class="relative rounded-2xl p-5 cursor-pointer transition-all border-2 ${duoSelectedBrainhole === bh.id ? 'border-xh-gold bg-xh-gold/10' : 'border-gray-800 bg-gray-800/50 hover:border-gray-700'}">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-gray-500 flex items-center gap-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+              ${bh.source}
+            </span>
+            ${duoSelectedBrainhole === bh.id ? '<span class="text-xs text-xh-gold flex items-center gap-1"><svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>已选中</span>' : ''}
+          </div>
+          <h3 class="text-base font-bold text-white leading-relaxed mb-2">${bh.title}</h3>
+          <p class="text-xs text-gray-400">${bh.content}</p>
+          ${duoSelectedBrainhole === bh.id ? '<div class="mt-3 text-center"><span class="text-xs text-xh-gold">正在进入匹配...</span></div>' : ''}
+        </div>
+      `).join('');
+    }
+    function selectDuoBrainhole(id) {
+      duoSelectedBrainhole = id;
+      const bh = duoBrainholes.find(b => b.id === id);
+      localStorage.setItem('xh_duo_brainhole', JSON.stringify(bh));
+      renderDuoMatchPage();
+      setTimeout(() => goPage('duo-waiting'), 500);
+    }
+
+    // ==================== 双人-匹配等待 ====================
+    function renderDuoWaitingPage() {
+      const bh = JSON.parse(localStorage.getItem('xh_duo_brainhole') || '{}');
+      document.getElementById('waiting-brainhole').textContent = bh.title || '';
+      document.getElementById('waiting-content').innerHTML = `
+        <div class="text-center">
+          <div class="relative mb-6">
+            <div class="w-24 h-24 rounded-full bg-gradient-to-br from-xh-accent/20 to-purple-500/20 flex items-center justify-center border border-xh-accent/30 animate-pulse">
+              <svg class="w-10 h-10 text-xh-accent animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            </div>
+            <div class="absolute inset-0 rounded-full border border-xh-accent/20 animate-ping-slow"></div>
+            <div class="absolute inset-0 rounded-full border border-xh-accent/10 animate-ping-slow" style="animation-delay:0.5s"></div>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2">正在寻找另一个接戏的人…</h3>
+          <p class="text-sm text-gray-400">有人在世界的某个角落，<br>和你看着同一个脑洞</p>
+        </div>
+      `;
+      setTimeout(() => showMatchSuccess(), 2500);
+    }
+    function showMatchSuccess() {
+      document.getElementById('waiting-content').innerHTML = `
+        <div class="text-center w-full animate-fadeIn">
+          <div class="mb-6 flex justify-center">
+            <div class="relative">
+              <div class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-2xl font-bold border-4 border-xh-primary">我</div>
+              <div class="absolute -bottom-1 -right-1 w-20 h-20 rounded-full bg-gradient-to-br from-xh-accent to-rose-500 flex items-center justify-center text-white text-xs font-bold border-4 border-xh-primary">
+                <div class="text-center">
+                  <svg class="w-5 h-5 mx-auto mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span class="text-[10px]">搭档</span>
+                </div>
+              </div>
+              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <svg class="w-6 h-6 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gradient-to-r from-xh-gold/20 to-orange-500/20 rounded-2xl p-5 border border-xh-gold/30 mb-4">
+            <div class="flex items-center justify-center gap-2 mb-2">
+              <svg class="w-5 h-5 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+              <h3 class="text-lg font-bold text-white">匹配成功！</h3>
+              <svg class="w-5 h-5 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+            </div>
+            <p class="text-sm text-gray-300">对方是 <span class="text-xh-gold font-bold">「已认证·急诊科护士」</span></p>
+            <p class="text-xs text-gray-500 mt-1">ta 也对这个脑洞"有感觉"</p>
+          </div>
+          <p class="text-xs text-gray-500 mb-3">3 秒后自动进入对白室…</p>
+          <button onclick="goPage('duo-chat')" class="w-full bg-gradient-to-r from-xh-accent to-rose-600 text-white py-3 rounded-xl font-medium">立即进入对白室</button>
+        </div>
+      `;
+      setTimeout(() => { if (currentPage === 'duo-waiting') goPage('duo-chat'); }, 3000);
+    }
+
+    // ==================== 双人对白室 ====================
+    function renderChatPage() {
+      const bh = JSON.parse(localStorage.getItem('xh_duo_brainhole') || '{}');
+      document.getElementById('chat-brainhole-title').textContent = bh.title || '';
+      renderChatMessages();
+      renderCatalyst();
+      renderSparkWall();
+      const input = document.getElementById('chat-input');
+      input.oninput = () => {
+        const btn = document.getElementById('chat-send-btn');
+        const valid = input.value.trim().length > 0;
+        btn.disabled = !valid;
+        btn.className = 'p-3 rounded-full transition-all ' + (valid ? 'bg-gradient-to-r from-xh-accent to-rose-600 text-white shadow-lg' : 'bg-gray-800 text-gray-500');
+      };
+      input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMsg(); } };
+      // 显示串联按钮条件
+      const storyBtn = document.getElementById('story-btn');
+      if (chatMessages.length >= 6) storyBtn.classList.remove('hidden');
+      else storyBtn.classList.add('hidden');
+    }
+
+    function renderChatMessages() {
+      const container = document.getElementById('chat-messages');
+      container.innerHTML = '<div class="text-center mb-4"><div class="inline-block bg-gray-800/50 rounded-full px-4 py-1.5 text-xs text-gray-500">脑洞：' + (JSON.parse(localStorage.getItem('xh_duo_brainhole') || '{}').title || '') + '</div></div>';
+      chatMessages.forEach(msg => {
+        const isMe = msg.userId === 'me';
+        const identity = isMe ? (JSON.parse(localStorage.getItem('xh_identity') || '{}').label || '我') : '急诊科护士';
+        container.innerHTML += `
+          <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+            <div class="max-w-[80%] ${isMe ? 'items-end' : 'items-start'} flex flex-col">
+              <div class="flex items-center gap-1 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
+                <div class="w-5 h-5 rounded-full ${isMe ? 'bg-blue-500' : 'bg-xh-accent'} flex items-center justify-center text-[10px] text-white font-bold">${isMe ? '我' : '对'}</div>
+                <span class="text-[10px] text-gray-500">${identity}</span>
+                ${msg.spark ? '<svg class="w-3 h-3 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>' : ''}
+              </div>
+              <div class="relative px-4 py-3 rounded-2xl text-sm leading-relaxed ${isMe ? 'bg-gradient-to-r from-xh-accent to-rose-600 text-white rounded-br-md' : 'bg-gray-800 text-gray-200 rounded-bl-md'}">
+                ${msg.text}
+                ${msg.spark ? '<div class="absolute -top-1 -right-1 w-5 h-5 bg-xh-gold rounded-full flex items-center justify-center"><svg class="w-3 h-3 text-xh-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg></div>' : ''}
+              </div>
+              <span class="text-[10px] text-gray-600 mt-1">${msg.time}</span>
+            </div>
+          </div>
+        `;
+      });
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function renderCatalyst() {
+      const box = document.getElementById('catalyst-box');
+      box.innerHTML = `
+        <div class="bg-gradient-to-r from-violet-500/20 to-purple-500/20 rounded-xl p-3 border border-violet-500/30 relative">
+          <button onclick="this.parentElement.style.display='none'" class="absolute top-1 right-1 p-1 text-gray-500 hover:text-white">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+          <div class="flex items-start gap-2">
+            <svg class="w-4 h-4 text-violet-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <div>
+              <p class="text-[10px] text-violet-300 mb-0.5">AI 催化引导</p>
+              <p class="text-xs text-gray-300">${duoCatalysts[currentCatalyst]}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function sendChatMsg() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      chatMessages.push({
+        id: Date.now(), userId: 'me', text,
+        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        spark: false
+      });
+      input.value = '';
+      input.oninput();
+      renderChatMessages();
+      // 模拟对方回复
+      setTimeout(() => {
+        const replies = [
+          '这个角度我没想过，挺有意思的。',
+          '对对对！我就是这个意思，你帮我表达出来了。',
+          '那如果是反过来呢？',
+          '哈哈，程序员都这么理性的吗？',
+          '我在急诊室真的遇到过类似的事，那种感觉很奇妙。',
+          '继续说，我想听你的完整想法。',
+          '这让我想到一句话：孤独是所有人的默认状态。',
+        ];
+        const reply = replies[Math.floor(Math.random() * replies.length)];
+        chatMessages.push({
+          id: Date.now() + 1, userId: 'partner', text: reply,
+          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          spark: Math.random() > 0.6
+        });
+        renderChatMessages();
+        renderSparkWall();
+        if (chatMessages.length >= 6) document.getElementById('story-btn').classList.remove('hidden');
+      }, 1500);
+    }
+
+    function toggleSparkWall() {
+      const panel = document.getElementById('sparkwall-panel');
+      panel.classList.toggle('hidden');
+    }
+
+    function renderSparkWall() {
+      const sparks = chatMessages.filter(m => m.spark);
+      document.getElementById('spark-count').textContent = sparks.length;
+      const container = document.getElementById('sparkwall-content');
+      if (sparks.length === 0) {
+        container.innerHTML = `<div class="text-center py-10"><svg class="w-10 h-10 text-gray-700 mx-auto mb-3" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg><p class="text-sm text-gray-500">还没有碰撞出火花</p><p class="text-xs text-gray-600 mt-1">精彩对白会自动标记在这里</p></div>`;
+        return;
+      }
+      container.innerHTML = sparks.map((msg, i) => `
+        <div class="bg-gradient-to-r from-xh-gold/10 to-orange-500/10 rounded-xl p-3 border border-xh-gold/20">
+          <div class="flex items-center gap-2 mb-1.5">
+            <svg class="w-3 h-3 text-xh-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+            <span class="text-[10px] text-xh-gold font-medium">火花 ${i + 1}</span>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">${msg.text}</p>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-[10px] text-gray-500">${msg.userId === 'me' ? (JSON.parse(localStorage.getItem('xh_identity') || '{}').label || '我') : '急诊科护士'}</span>
+            <span class="text-[10px] text-gray-600">${msg.time}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ==================== AI串联结果 ====================
+    function renderResultPage() {
+      const bh = JSON.parse(localStorage.getItem('xh_duo_brainhole') || '{}');
+      const sparks = chatMessages.filter(m => m.spark);
+      document.getElementById('result-content').innerHTML = `
+        <div class="px-6 pt-6 pb-4 text-center">
+          <div class="inline-flex items-center gap-2 bg-xh-gold/20 text-xh-gold px-4 py-1.5 rounded-full text-xs mb-4">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+            AI 串联生成
+          </div>
+          <h1 class="text-xl font-bold text-white mb-2">静默之后</h1>
+          <p class="text-xs text-gray-500">基于脑洞「${bh.title || ''}」</p>
+        </div>
+        <div class="mx-4 mb-6 bg-gray-800/50 rounded-2xl p-4 border border-gray-700/30">
+          <h3 class="text-sm text-gray-400 mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            双方贡献占比
+          </h3>
+          <div class="space-y-3">
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2"><svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg><span class="text-xs text-white">${JSON.parse(localStorage.getItem('xh_identity') || '{}').label || '我'}</span></div>
+                <span class="text-xs font-bold text-white">48%</span>
+              </div>
+              <div class="h-2 bg-gray-700 rounded-full overflow-hidden"><div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500" style="width:48%"></div></div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2"><svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg><span class="text-xs text-white">急诊科护士</span></div>
+                <span class="text-xs font-bold text-white">52%</span>
+              </div>
+              <div class="h-2 bg-gray-700 rounded-full overflow-hidden"><div class="h-full rounded-full bg-gradient-to-r from-xh-accent to-rose-500" style="width:52%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="mx-4 mb-6">
+          <h3 class="text-sm text-gray-400 mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4 text-xh-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            对话中的火花
+          </h3>
+          <div class="space-y-2">
+            ${sparks.slice(0, 3).map((s, i) => `
+              <div class="bg-gradient-to-r from-xh-accent/10 to-rose-500/10 rounded-xl p-3 border border-xh-accent/20">
+                <p class="text-xs text-gray-300 italic leading-relaxed">"${s.text}"</p>
+                <p class="text-[10px] text-gray-500 mt-1">—— ${s.userId === 'me' ? (JSON.parse(localStorage.getItem('xh_identity') || '{}').label || '我') : '急诊科护士'}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="mx-4 mb-6 bg-gradient-to-b from-gray-800/80 to-gray-900/80 rounded-2xl p-5 border border-gray-700/30">
+          ${storyDraft.split('\n\n').map(para => `<p class="text-sm text-gray-300 leading-[1.8] mb-4 last:mb-0">${para.replace(/\n/g, '<br>')}</p>`).join('')}
+        </div>
+        <div class="px-4 pb-8 space-y-3">
+          <button class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-xh-gold/20 to-orange-500/20 border border-xh-gold/30 text-xh-gold py-3 rounded-xl text-sm font-medium">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+            保存故事草案
+          </button>
+          <button onclick="goPage('duo-chat')" class="w-full flex items-center justify-center gap-2 bg-gray-800 text-gray-400 py-3 rounded-xl text-sm font-medium hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            返回继续对话
+          </button>
+          <button onclick="goPage('home')" class="w-full flex items-center justify-center gap-2 bg-gray-800/50 text-gray-500 py-3 rounded-xl text-sm font-medium hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            返回首页
+          </button>
+        </div>
+      `;
+    }
+
+    // ==================== 初始化 ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      goPage('home');
+    });
+  </script>
+</body>
+</html>
