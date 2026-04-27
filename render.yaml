@@ -3,5 +3,8 @@ services:
     name: qx-xinghuo
     runtime: node
     plan: free
-    buildCommand: cd frontend && npm install
-    startCommand: cd frontend && npx vite --host 0.0.0.0 --port     envVars: []
+    buildCommand: cd frontend && npm install && npm run build && cd ../backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
