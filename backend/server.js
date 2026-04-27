@@ -4,10 +4,10 @@ const path = require('path');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const { v4: uuidv4 } = require('uuid');
-const db = require('./models/db');
+const db = require('/opt/render/project/src/backend/models/db');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -19,13 +19,13 @@ app.use(express.json());
 }
 
 // ========== REST API 璺敱 ==========
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/brainholes', require('./routes/brainholes'));
-app.use('/api/reactions', require('./routes/reactions'));
-app.use('/api/match', require('./routes/match'));
+app.use('/api/auth', require('/opt/render/project/src/backend/routes/auth'));
+app.use('/api/brainholes', require('/opt/render/project/src/backend/routes/brainholes'));
+app.use('/api/reactions', require('/opt/render/project/src/backend/routes/reactions'));
+app.use('/api/match', require('/opt/render/project/src/backend/routes/match'));
 
 // 鎴块棿鐩稿叧API
-app.use('/api/rooms', require('./routes/rooms'));
+app.use('/api/rooms', require('/opt/render/project/src/backend/routes/rooms'));
 
 // 闈欐€佹枃浠舵湇鍔★紙鐢熶骇鐜锛?app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
