@@ -12,8 +12,12 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// 初始化数据库
-db.init();
+// 初始化数据库（失败不阻塞服务启动）
+try {
+  db.init();
+} catch (err) {
+  console.error('⚠️ 数据库初始化失败，将以内存模式运行:', err.message);
+}
 
 // ========== REST API 路由 ==========
 app.use('/api/auth', require('./routes/auth'));
