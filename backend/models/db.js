@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'data/xinghuo.db');
+const DB_PATH = path.join(__dirname, '../data/xinghuo.db');
 
 function getDB() {
   return new sqlite3.Database(DB_PATH);
