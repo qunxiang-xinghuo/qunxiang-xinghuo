@@ -4,7 +4,4 @@ services:
     runtime: node
     plan: free
     buildCommand: cd frontend && npm install
-    startCommand: cd frontend && npm install && npx vite --host 0.0.0.0 --port 
-    envVars:
-      - key: NODE_ENV
-        value: production
+    startCommand: cd frontend && npx vite --host 0.0.0.0 --port     envVars: []
