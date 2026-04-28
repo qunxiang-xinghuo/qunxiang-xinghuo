@@ -3,9 +3,15 @@ node_modules/
 
 # Build output
 frontend/dist/
+.next/
 
 # Database
 backend/data/*.db
+dev.db
+prisma/dev.db
+
+# Generated
+src/generated/prisma
 
 # Environment
 .env
@@ -13,3 +19,12 @@ backend/data/*.db
 # OS files
 .DS_Store
 Thumbs.db
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# Test coverage
+coverage/
+
+# Legacy files (kept for reference, not tracked)
+*.legacy
