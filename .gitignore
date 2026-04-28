@@ -28,3 +28,5 @@ coverage/
 
 # Legacy files (kept for reference, not tracked)
 *.legacy
+
+.next/
