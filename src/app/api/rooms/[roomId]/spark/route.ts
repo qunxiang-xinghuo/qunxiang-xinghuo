@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
 import { markSpark } from "@/server/room-manager";
+import { broadcastToRoom } from "@/server/io";
 
 const markSparkSchema = z.object({
   messageId: z.string().cuid("无效的消息ID"),
@@ -31,6 +32,17 @@ export async function POST(
 
     // 标记火花
     const updatedMessage = await markSpark(roomId, messageId, session.user.id);
+
+    // 通过 Socket.io 实时广播
+    try {
+      broadcastToRoom(roomId, "spark-marked", {
+        messageId,
+        markedBy: session.user.id,
+        timestamp: Date.now(),
+      })
+    } catch {
+      // 静默失败
+    }
 
     return NextResponse.json(apiResponse(updatedMessage));
   } catch (error: any) {

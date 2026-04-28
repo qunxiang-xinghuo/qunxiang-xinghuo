@@ -5,6 +5,7 @@ import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sendMessage } from "@/server/room-manager";
+import { broadcastToRoom } from "@/server/io";
 
 const sendMessageSchema = z.object({
   content: z.string().min(1, "消息内容不能为空").max(2000, "消息内容不能超过2000字"),
@@ -62,6 +63,13 @@ export async function POST(
     const message = await sendMessage(roomId, session.user.id, content, identity, {
       roleCharacter,
     });
+
+    // 通过 Socket.io 实时广播（即使广播失败也不影响 HTTP 响应）
+    try {
+      broadcastToRoom(roomId, "new-message", message)
+    } catch {
+      // 静默失败，降级为纯 HTTP 轮询
+    }
 
     return NextResponse.json(apiResponse(message));
   } catch (error: any) {
