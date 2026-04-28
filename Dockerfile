@@ -1,31 +1,62 @@
-# Build stage for frontend
-FROM node:20-alpine AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend/ ./
-RUN npm run build
-
-# Production stage
-FROM node:20-alpine
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Copy backend
-COPY backend/package*.json ./backend/
-RUN cd backend && npm install
-COPY backend/ ./backend/
+# Copy package files
+COPY package.json package-lock.json ./
 
-# Copy built frontend to where server.js expects it
-COPY --from=frontend-build /app/frontend/dist /app/frontend/dist
+# Install dependencies
+RUN npm ci --only=production
 
-# Create data directory for SQLite
-RUN mkdir -p /app/backend/data
+# Stage 2: Builder
+FROM node:20-alpine AS builder
+WORKDIR /app
 
-WORKDIR /app/backend
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install all dependencies including dev dependencies
+RUN npm ci
+
+# Copy prisma schema
+COPY prisma ./prisma/
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Stage 3: Runner
+FROM node:20-alpine AS runner
+WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3001
 
-EXPOSE 3001
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
+# Copy necessary files from builder
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy Prisma schema and generated client
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/src/generated ./src/generated
+
+# Switch to non-root user
+USER nextjs
+
+# Expose port
+EXPOSE 3000
+
+# Set environment variables
+ENV PORT=3000
+
+# Start the application
 CMD ["node", "server.js"]
