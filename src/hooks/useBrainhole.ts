@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Brainhole } from '@/components/brainhole/BrainholeCard';
 
-// Mock data matching demo.html
+// Fallback mock data for demo
 const mockBrainholes: Brainhole[] = [
   { id: 'bh_1', title: '如果你突然拥有了读心术，但只能读取陌生人的想法，你会怎么利用它？', content: '每天早上挤地铁的时候，耳边会响起几百个陌生人的心声...', source: '知乎' },
   { id: 'bh_2', title: '作为一个外卖员，你见过最让你难忘的一单是什么？', content: '深夜十一点，订单备注写着：不用敲门，放在门口就好，谢谢你还这么晚送餐。', source: '知乎' },
@@ -24,17 +24,43 @@ export const aiPrompts = [
 export function useBrainhole() {
   const [brainholes, setBrainholes] = useState<Brainhole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setBrainholes(mockBrainholes);
-      setLoading(false);
-    }, 500);
+    fetch('/api/brainholes')
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.success && result.data?.brainholes) {
+          const mapped: Brainhole[] = result.data.brainholes.map((b: any) => ({
+            id: String(b.id),
+            title: String(b.title),
+            content: String(b.scenario || b.content || ''),
+            source: String(b.source || '群像星火'),
+            tags: Array.isArray(b.tags)
+              ? b.tags.map((t: any) =>
+                  typeof t === 'string' ? t : String(t.name || t.tag?.name || '')
+                ).filter(Boolean)
+              : undefined,
+          }));
+          setBrainholes(mapped);
+        } else {
+          // Fallback to mock data if API fails
+          setBrainholes(mockBrainholes);
+          setError(result.error || 'API 返回异常，已使用演示数据');
+        }
+      })
+      .catch((err) => {
+        console.error('[useBrainhole] Fetch error:', err);
+        setBrainholes(mockBrainholes);
+        setError('网络错误，已使用演示数据');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const getBrainholeById = (id: string) => {
-    return brainholes.find(b => b.id === id);
+    return brainholes.find((b) => b.id === id);
   };
 
   const getRandomPrompt = () => {
@@ -44,6 +70,7 @@ export function useBrainhole() {
   return {
     brainholes,
     loading,
+    error,
     getBrainholeById,
     getRandomPrompt,
   };
