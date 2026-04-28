@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-xh-accent: #e8424e;
+  --color-xh-gold: #f5a623;
+  --color-xh-primary: #0d0d0d;
+  --color-xh-dark: #1a1a1a;
+  --color-xh-light: #f0f0f0;
+  --font-sans: 'Noto Sans SC', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+@layer base {
+  html, body, :root {
+    @apply h-full w-full overflow-hidden bg-xh-primary text-xh-light;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .swipe-card {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    touch-action: pan-y;
+  }
+  .swipe-card.swiping-left {
+    transform: translateX(-120%) rotate(-15deg);
+    opacity: 0;
+  }
+  .swipe-card.swiping-right {
+    transform: translateX(120%) rotate(15deg);
+    opacity: 0;
+  }
+
+  .sparkle {
+    position: absolute;
+    pointer-events: none;
+    animation: sparkle-rise 3s linear infinite;
+  }
+  @keyframes sparkle-rise {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes slide-up {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(232, 66, 78, 0.4); }
+    50% { box-shadow: 0 0 20px 10px rgba(232, 66, 78, 0.2); }
+  }
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  @keyframes ping-slow {
+    0% { transform: scale(1); opacity: 0.5; }
+    75%, 100% { transform: scale(2); opacity: 0; }
+  }
+  .animate-ping-slow {
+    animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}

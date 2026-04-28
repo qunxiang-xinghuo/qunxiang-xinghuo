@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { apiResponse, apiError } from "@/lib/utils";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const brainhole = await db.brainhole.findUnique({
+      where: { id },
+      include: {
+        tags: {
+          include: { tag: true },
+        },
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            level: true,
+          },
+        },
+        _count: {
+          select: {
+            reactions: true,
+            collections: true,
+          },
+        },
+      },
+    });
+
+    if (!brainhole) {
+      return NextResponse.json(apiError("BRAINHOLE_NOT_FOUND", "脑洞不存在"), { status: 404 });
+    }
+
+    const formattedBrainhole = {
+      ...brainhole,
+      tags: (brainhole as any).tags.map((bt: any) => bt.tag),
+      reactionCount: (brainhole as any)._count.reactions,
+      collectionCount: (brainhole as any)._count.collections,
+    };
+
+    return NextResponse.json(apiResponse(formattedBrainhole));
+  } catch (error) {
+    console.error("获取脑洞详情失败:", error);
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取脑洞详情失败"), { status: 500 });
+  }
+}
