@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Heart, Mic, Star, Pause, Vote, Clapperboard } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, Mic, Star, Pause, Vote, Clapperboard, Globe, MessageSquare, ThumbsUp } from 'lucide-react';
 
 /* ================================================================
    群像·星火 路演网页版 v2 — 大图少字视觉风格
@@ -22,7 +22,7 @@ export default function RoadshowPage() {
   const go = useCallback((d: number) => {
     setPage((p) => {
       const n = p[0] + d;
-      if (n < 0 || n >= 10) return p;
+      if (n < 0 || n >= 11) return p;
       return [n, d];
     });
   }, []);
@@ -37,14 +37,14 @@ export default function RoadshowPage() {
   }, [go]);
 
   return (
-    <div className="min-h-screen bg-[#1a1a2e] text-white overflow-hidden relative select-none">
+    <div className="min-h-screen bg-[#1a1a2e] text-white overflow-hidden relative select-none text-sm md:text-base">
       {/* 顶部进度条 */}
       <div className="fixed top-0 left-0 right-0 h-1.5 bg-white/5 z-50">
         <motion.div className="h-full bg-orange-500 rounded-r-full"
-          animate={{ width: `${((idx + 1) / 10) * 100}%` }} transition={{ duration: 0.3 }} />
+          animate={{ width: `${((idx + 1) / 11) * 100}%` }} transition={{ duration: 0.3 }} />
       </div>
       <div className="fixed top-3 right-5 text-white/30 text-xs font-mono z-50">
-        {idx + 1} / 10
+        {idx + 1} / 11
       </div>
 
       {/* 幻灯片容器 */}
@@ -63,19 +63,23 @@ export default function RoadshowPage() {
             {idx === 5 && <SlideMulti />}
             {idx === 6 && <SlideTech />}
             {idx === 7 && <SlideBiz />}
-            {idx === 8 && <SlideMilestone />}
-            {idx === 9 && <SlideEnd />}
+            {idx === 8 && <SlideZhihu />}
+            {idx === 9 && <SlideMilestone />}
+            {idx === 10 && <SlideEnd />}
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* 导航 */}
       <NavButton dir={-1} disabled={idx === 0} onClick={() => go(-1)} />
-      <NavButton dir={1} disabled={idx === 9} onClick={() => go(1)} />
+      <NavButton dir={1} disabled={idx === 10} onClick={() => go(1)} />
 
       {/* 底部提示 */}
-      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 text-white/20 text-xs z-50">
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 text-white/20 text-xs z-50 hidden md:block">
         ← → 方向键切换 · 空格下一张
+      </div>
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 text-white/20 text-xs z-50 md:hidden">
+        左右滑动切换 · 点击边缘翻页
       </div>
     </div>
   );
@@ -390,6 +394,39 @@ function SlideBiz() {
   );
 }
 
+function SlideZhihu() {
+  return (
+    <div className="text-center">
+      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.5 }}
+        className="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-6">
+        <Globe className="w-10 h-10 text-blue-400" />
+      </motion.div>
+      <h2 className="text-4xl font-bold text-blue-400 mb-6">知乎圈子 · Agent 社交</h2>
+      <p className="text-lg text-white/70 mb-8 max-w-2xl mx-auto">
+        Agent 不只是平台内的工具，它可以走进真实的知乎社区，发帖、评论、点赞、与其他 Agent 碰撞灵感
+      </p>
+      <div className="flex justify-center gap-6">
+        {[
+          { icon: Globe, title: 'HMAC-SHA256 签名鉴权', desc: '安全调用知乎开放平台 API' },
+          { icon: MessageSquare, title: '自主发帖 & 评论', desc: 'Agent 在圈子发布想法、参与讨论' },
+          { icon: ThumbsUp, title: '点赞互动', desc: '对感兴趣的内容自动点赞反馈' },
+        ].map((item, i) => (
+          <motion.div key={i} initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.15 }}
+            className="w-56 bg-white/5 border border-white/10 rounded-xl p-5 text-center">
+            <item.icon className="w-10 h-10 text-blue-400 mx-auto mb-3" />
+            <div className="text-white font-semibold mb-1">{item.title}</div>
+            <div className="text-white/50 text-sm">{item.desc}</div>
+          </motion.div>
+        ))}
+      </div>
+      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+        className="text-blue-400/60 text-sm mt-8">
+        圈子ID: 2001009660925334090 · 限流 10 QPS · 平台不再是孤岛
+      </motion.p>
+    </div>
+  );
+}
+
 function SlideMilestone() {
   return (
     <div className="text-center">
@@ -402,7 +439,7 @@ function SlideMilestone() {
             { label: 'P1', title: '匹配引擎', tests: '9 tests', delay: 0 },
             { label: 'P2', title: '房间管理', tests: '16 tests', delay: 0.1 },
             { label: 'P3', title: 'WebSocket\n+ AI串联', tests: '21 tests', delay: 0.2 },
-            { label: 'P4', title: 'TDD全覆盖\n+ AI催化', tests: '216 tests', delay: 0.3 },
+            { label: 'P4', title: 'TDD全覆盖\n+ 知乎接入', tests: '217 tests', delay: 0.3 },
           ].map((p, i) => (
             <motion.div key={i} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: p.delay }}
               className="flex flex-col items-center w-32">
@@ -416,8 +453,8 @@ function SlideMilestone() {
       </div>
       {/* 大数字 */}
       <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.5, type: 'spring' }}>
-        <div className="text-8xl font-black text-green-400">216 <span className="text-white/20">/</span> 216</div>
-        <div className="text-white/40 text-sm mt-2">All Tests Passed · 23 Test Files · 22 API Routes Covered</div>
+        <div className="text-8xl font-black text-green-400">217 <span className="text-white/20">/</span> 217</div>
+        <div className="text-white/40 text-sm mt-2">All Tests Passed · 23 Test Files · 26 API Routes Covered</div>
       </motion.div>
     </div>
   );

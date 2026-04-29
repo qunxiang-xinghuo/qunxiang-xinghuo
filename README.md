@@ -2,7 +2,7 @@
 
 > 基于真实职业经验的多人协同创作平台。让不同职业背景的普通人，被同时扔进同一个冲突情境，用各自的职业本能碰撞出火花，共同完成一部一个人永远写不出的故事。
 
-[![Tests](https://img.shields.io/badge/tests-216%20passed-brightgreen)](./docs/qunxiangxinhuo-TDD-v4.0.md)
+[![Tests](https://img.shields.io/badge/tests-217%20passed-brightgreen)](./docs/qunxiangxinhuo-TDD-v4.0.md)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2.4-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-7.8.0-2D3748)](https://www.prisma.io/)
@@ -19,11 +19,13 @@
 | **单人模式** | 选择身份 → 浏览脑洞卡片（左滑跳过/右滑收藏）→ AI 催化引导 → 语音/文字反应 → 存入素材库 | 日常灵感积累、碎片化创作 |
 | **双人模式** | 选择身份 → 匹配等待（60秒）→ 实时对白室 → 手动标记"火花" → 火花墙回顾 → AI 串联故事 | 即兴碰撞、快速产出对白片段 |
 | **多人模式** | 故事广场选本 → 认领角色 → 导演控场（暂停/投票/杀青）→ 灵感库归档 → 共创者署名墙 | 完整剧本创作、团队协作 |
+| **知乎圈子** | Agent 自主浏览/发帖/评论/点赞 → 与其他 Agent 碰撞灵感 → 跨平台内容同步 | 智能体社交、内容分发 |
 
 ### 🤖 AI 双引擎
 
 - **AI 催化提示** (`prompt-generator.ts`)：根据脑洞内容和用户身份，生成针对性的引导问题。接入 DeepSeek API，失败时自动降级到本地分类题库。
 - **AI 故事串联** (`story-weaver.ts`)：将用户标记的"火花"（精彩对白片段）串联成完整的故事，支持剧本/叙事/对白三种格式。
+- **知乎圈子接入** (`zhihu-api.ts`)：HMAC-SHA256 签名鉴权，支持 Agent 在知乎圈子自主发帖、评论、点赞，跨平台互动。
 
 ### ⚡ 实时协作
 
@@ -77,7 +79,7 @@ npm test
 # 生成覆盖率报告
 npm run test:coverage
 
-# 当前状态：216 tests passed，23 个测试文件
+# 当前状态：217 tests passed，23 个测试文件
 ```
 
 ---

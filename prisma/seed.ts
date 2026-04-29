@@ -1,4 +1,4 @@
-import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 // @ts-ignore - PrismaClient constructor may have type issues
 const prisma = new PrismaClient();
