@@ -2,9 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
+
+interface BrainholeBubble {
+  id: string;
+  title: string;
+  difficulty: string;
+}
 
 const modes = [
   {
@@ -44,7 +50,7 @@ const modes = [
   },
 ];
 
-/* 浮动气泡组件 */
+/* 浮动气泡背景 */
 function FloatingBubbles() {
   const bubbles = Array.from({ length: 12 }, (_, i) => ({
     id: i,
@@ -87,27 +93,103 @@ function FloatingBubbles() {
   );
 }
 
+/* 脑洞泡泡池 */
+function BrainholeBubblePool() {
+  const router = useRouter();
+  const [bubbles, setBubbles] = useState<BrainholeBubble[]>([]);
+
+  useEffect(() => {
+    fetch('/api/brainholes?page=1&limit=8')
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.success && result.data?.brainholes) {
+          const list = result.data.brainholes.map((b: any) => ({
+            id: String(b.id),
+            title: String(b.title),
+            difficulty: String(b.difficulty || 'medium'),
+          }));
+          setBubbles(list);
+        } else {
+          // fallback
+          setBubbles([
+            { id: '1', title: '急诊室的抉择', difficulty: 'hard' },
+            { id: '2', title: '法庭上的意外证据', difficulty: 'hard' },
+            { id: '3', title: '课堂上的突发状况', difficulty: 'medium' },
+            { id: '4', title: '餐厅的投诉处理', difficulty: 'medium' },
+            { id: '5', title: '系统上线前的致命bug', difficulty: 'hard' },
+            { id: '6', title: '家庭财产分配纠纷', difficulty: 'medium' },
+            { id: '7', title: '医疗事故的隐瞒与坦白', difficulty: 'hard' },
+            { id: '8', title: '客户信息的泄露危机', difficulty: 'hard' },
+          ]);
+        }
+      })
+      .catch(() => {
+        setBubbles([
+          { id: '1', title: '急诊室的抉择', difficulty: 'hard' },
+          { id: '2', title: '法庭上的意外证据', difficulty: 'hard' },
+          { id: '3', title: '课堂上的突发状况', difficulty: 'medium' },
+          { id: '4', title: '餐厅的投诉处理', difficulty: 'medium' },
+          { id: '5', title: '系统上线前的致命bug', difficulty: 'hard' },
+        ]);
+      });
+  }, []);
+
+  const diffColor = (d: string) => {
+    if (d === 'hard') return 'from-red-500/30 to-orange-500/30 border-red-500/40';
+    if (d === 'medium') return 'from-yellow-500/30 to-orange-500/30 border-yellow-500/40';
+    return 'from-green-500/30 to-emerald-500/30 border-green-500/40';
+  };
+
+  const diffLabel = (d: string) => {
+    if (d === 'hard') return '困难';
+    if (d === 'medium') return '中等';
+    return '简单';
+  };
+
+  return (
+    <div className="px-4 py-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Flame className="w-4 h-4 text-xh-gold" />
+        <h2 className="text-sm font-medium text-white">热门脑洞泡泡</h2>
+        <span className="text-[10px] text-gray-500">点击任意泡泡进入</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {bubbles.map((b, i) => (
+          <motion.button
+            key={b.id}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: i * 0.08, type: 'spring', stiffness: 300 }}
+            whileHover={{ scale: 1.08, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => router.push(`/brainhole/${b.id}`)}
+            className={`px-3 py-2 rounded-full text-xs text-white border bg-gradient-to-r ${diffColor(b.difficulty)} backdrop-blur-sm transition-all shadow-lg`}
+            title={`难度: ${diffLabel(b.difficulty)}`}
+          >
+            {b.title}
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const [activeModeIndex, setActiveModeIndex] = useState(0);
 
   const startMode = (mode: string) => {
-    if (mode === 'solo') {
-      router.push('/identity?mode=solo');
-    } else if (mode === 'duo') {
-      router.push('/identity?mode=duo');
-    }
+    if (mode === 'solo') router.push('/identity?mode=solo');
+    else if (mode === 'duo') router.push('/identity?mode=duo');
   };
 
   const scrollMode = (direction: number) => {
     const newIndex = activeModeIndex + direction;
-    if (newIndex >= 0 && newIndex < modes.length) {
-      setActiveModeIndex(newIndex);
-    }
+    if (newIndex >= 0 && newIndex < modes.length) setActiveModeIndex(newIndex);
   };
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-full relative overflow-y-auto no-scrollbar">
       <TopBar />
 
       {/* 浮动气泡背景 */}
@@ -140,7 +222,7 @@ export default function Home() {
         </motion.p>
       </div>
 
-      <div className="flex-1 flex items-center justify-center relative z-10">
+      <div className="flex-1 flex items-center justify-center relative z-10 min-h-[120px]">
         <motion.button
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -157,6 +239,11 @@ export default function Home() {
             开始创作
           </div>
         </motion.button>
+      </div>
+
+      {/* 脑洞泡泡池 */}
+      <div className="relative z-10">
+        <BrainholeBubblePool />
       </div>
 
       <div className="pb-10 relative z-10">
