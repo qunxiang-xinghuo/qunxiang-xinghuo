@@ -1,29 +1,21 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import Bubble from './Bubble';
-import BubblePreview from './BubblePreview';
-import type { BubbleData, BubblePosition } from '@/lib/bubble-engine';
-import { calculateBubblePositions } from '@/lib/bubble-engine';
+import BubbleDetailModal from './BubbleDetailModal';
+import type { BubbleData } from '@/lib/bubble-engine';
 
 interface BubbleCloudProps {
-  initialBubbles?: BubbleData[];
   category?: string;
 }
 
-export default function BubbleCloud({ initialBubbles, category }: BubbleCloudProps) {
-  const router = useRouter();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [bubbles, setBubbles] = useState<BubbleData[]>(initialBubbles || []);
-  const [positions, setPositions] = useState<BubblePosition[]>([]);
-  const [containerSize, setContainerSize] = useState({ width: 375, height: 500 });
-  const [previewBubble, setPreviewBubble] = useState<BubbleData | null>(null);
-  const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
-  const [isLoading, setIsLoading] = useState(!initialBubbles);
+export default function BubbleCloud({ category }: BubbleCloudProps) {
+  const [bubbles, setBubbles] = useState<BubbleData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(null);
 
   // 获取泡泡数据
   const fetchBubbles = useCallback(async () => {
@@ -34,10 +26,10 @@ export default function BubbleCloud({ initialBubbles, category }: BubbleCloudPro
       params.set('mode', 'bubble');
       params.set('limit', '50');
       if (category) params.set('category', category);
-      
+
       const res = await fetch(`/api/brainholes?${params.toString()}`);
       const result = await res.json();
-      
+
       if (result.success && result.data?.brainholes) {
         const list: BubbleData[] = result.data.brainholes.map((b: any) => ({
           id: String(b.id),
@@ -46,7 +38,7 @@ export default function BubbleCloud({ initialBubbles, category }: BubbleCloudPro
           difficulty: String(b.difficulty || 'medium'),
           hotScore: Number(b.hotScore || 0),
           category: String(b.category || 'general'),
-          bubbleColor: b.bubbleColor || null,
+          bubbleColor: b.bubbleColor || getCategoryColor(b.category),
           reactionCount: Number(b.reactionCount || 0),
           sparkCount: Number(b.sparkCount || 0),
           collectionCount: Number(b.collectionCount || 0),
@@ -58,103 +50,52 @@ export default function BubbleCloud({ initialBubbles, category }: BubbleCloudPro
       } else {
         setError('加载泡泡失败');
       }
-    } catch (err) {
+    } catch {
       setError('网络错误');
     } finally {
       setIsLoading(false);
     }
   }, [category]);
 
-  // 初始加载
   useEffect(() => {
-    if (!initialBubbles) {
-      fetchBubbles();
-    }
-  }, [initialBubbles, fetchBubbles]);
+    fetchBubbles();
+  }, [fetchBubbles]);
 
-  // 监听容器尺寸变化
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerSize({
-          width: rect.width,
-          height: rect.height,
-        });
-      }
-    };
+  // 计算泡泡位置 - 使用随机漂浮布局
+  const positionedBubbles = useCallback(() => {
+    const containerW = typeof window !== 'undefined' ? window.innerWidth - 32 : 375;
+    const containerH = 400;
+    const minSize = 56;
+    const maxSize = 80;
 
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
+    return bubbles.map((bubble, index) => {
+      // 使用伪随机但稳定的位置（基于index）
+      const seed = index * 137.5;
+      const col = index % 4;
+      const row = Math.floor(index / 4);
+      const jitterX = (Math.sin(seed) * 0.5 + 0.5) * 30;
+      const jitterY = (Math.cos(seed) * 0.5 + 0.5) * 20;
 
-  // 计算泡泡位置
-  useEffect(() => {
-    if (bubbles.length > 0 && containerSize.width > 0) {
-      const newPositions = calculateBubblePositions(
-        bubbles,
-        containerSize.width,
-        containerSize.height
-      );
-      setPositions(newPositions);
-    }
-  }, [bubbles, containerSize]);
+      const x = (containerW / 4) * col + (containerW / 8) + jitterX;
+      const y = (containerH / 5) * row + (containerH / 10) + jitterY + 20;
+      const size = minSize + (bubble.hotScore / 100) * (maxSize - minSize);
 
-  // 泡泡数据映射
-  const bubbleMap = useMemo(() => {
-    const map = new Map<string, BubbleData>();
-    bubbles.forEach((b) => map.set(b.id, b));
-    return map;
+      return {
+        bubble,
+        x: Math.max(0, Math.min(containerW - size, x)),
+        y: Math.max(0, Math.min(containerH - size, y)),
+        size,
+        color: bubble.bubbleColor || '#a0d2eb',
+        glowColor: bubble.bubbleColor || '#a0d2eb',
+        opacity: 1,
+        zIndex: Math.round(bubble.hotScore),
+        floatDelay: Math.random() * 3,
+        floatAmplitude: 5 + Math.random() * 5,
+      };
+    });
   }, [bubbles]);
 
-  const positionMap = useMemo(() => {
-    const map = new Map<string, BubblePosition>();
-    positions.forEach((p) => map.set(p.id, p));
-    return map;
-  }, [positions]);
-
-  // 点击泡泡
-  const handleBubbleClick = useCallback(
-    (id: string) => {
-      router.push(`/brainhole/${id}`);
-    },
-    [router]
-  );
-
-  // 双击收藏
-  const handleBubbleDoubleClick = useCallback((id: string) => {
-    // 触发收藏API
-    fetch(`/api/brainholes/${id}/collect`, { method: 'POST' })
-      .then(() => {
-        setBubbles((prev) =>
-          prev.map((b) => (b.id === id ? { ...b, isParticipated: true } : b))
-        );
-      })
-      .catch(console.error);
-  }, []);
-
-  // 长按预览
-  const handleLongPress = useCallback(
-    (id: string, x: number, y: number) => {
-      const bubble = bubbleMap.get(id);
-      if (bubble) {
-        setPreviewBubble(bubble);
-        setPreviewPosition({ x, y });
-      }
-    },
-    [bubbleMap]
-  );
-
-  // 关闭预览
-  const handleClosePreview = useCallback(() => {
-    setPreviewBubble(null);
-  }, []);
-
-  // 收藏
-  const handleCollect = useCallback((id: string) => {
-    fetch(`/api/brainholes/${id}/collect`, { method: 'POST' }).catch(console.error);
-  }, []);
+  const positions = positionedBubbles();
 
   if (isLoading) {
     return (
@@ -163,9 +104,9 @@ export default function BubbleCloud({ initialBubbles, category }: BubbleCloudPro
           animate={{ rotate: 360 }}
           transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
         >
-          <RefreshCw className="w-8 h-8 text-orange-400" />
+          <RefreshCw className="w-6 h-6 text-white/30" />
         </motion.div>
-        <span className="ml-3 text-gray-400">加载泡泡中...</span>
+        <span className="ml-3 text-sm text-white/40">加载脑洞泡泡...</span>
       </div>
     );
   }
@@ -173,11 +114,10 @@ export default function BubbleCloud({ initialBubbles, category }: BubbleCloudPro
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[300px] gap-3">
-        <Sparkles className="w-8 h-8 text-gray-500" />
-        <p className="text-gray-400">{error}</p>
+        <p className="text-sm text-white/40">{error}</p>
         <button
           onClick={fetchBubbles}
-          className="px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg text-sm hover:bg-orange-500/30 transition-colors"
+          className="px-4 py-2 bg-white/10 text-white/60 rounded-lg text-sm hover:bg-white/20 transition-colors"
         >
           重试
         </button>
@@ -187,39 +127,40 @@ export default function BubbleCloud({ initialBubbles, category }: BubbleCloudPro
 
   return (
     <>
-      <div
-        ref={containerRef}
-        className="relative w-full overflow-hidden"
-        style={{ height: containerSize.height || 500 }}
-      >
-        {bubbles.map((bubble) => {
-          const position = positionMap.get(bubble.id);
-          if (!position) return null;
-
-          return (
-            <Bubble
-              key={bubble.id}
-              data={bubble}
-              position={position}
-              containerWidth={containerSize.width}
-              containerHeight={containerSize.height}
-              onClick={handleBubbleClick}
-              onDoubleClick={handleBubbleDoubleClick}
-              onLongPress={handleLongPress}
-            />
-          );
-        })}
+      <div className="relative w-full h-[420px] overflow-hidden">
+        {positions.map(({ bubble, x, y, size }) => (
+          <Bubble
+            key={bubble.id}
+            data={bubble}
+            position={{ id: bubble.id, x, y, size, color: bubble.bubbleColor || '#a0d2eb', glowColor: bubble.bubbleColor || '#a0d2eb', opacity: 1, zIndex: Math.round(bubble.hotScore), floatDelay: Math.random() * 3, floatAmplitude: 5 + Math.random() * 5 }}
+            containerWidth={typeof window !== 'undefined' ? window.innerWidth : 375}
+            containerHeight={420}
+            onClick={(id) => setSelectedBubbleId(id)}
+          />
+        ))}
       </div>
 
-      {/* 长按预览浮层 */}
-      {previewBubble && (
-        <BubblePreview
-          bubble={previewBubble}
-          position={previewPosition}
-          onClose={handleClosePreview}
-          onCollect={handleCollect}
+      {/* 脑洞详情弹层 */}
+      {selectedBubbleId && (
+        <BubbleDetailModal
+          brainholeId={selectedBubbleId}
+          onClose={() => setSelectedBubbleId(null)}
         />
       )}
     </>
   );
+}
+
+function getCategoryColor(category: string): string {
+  const colors: Record<string, string> = {
+    medical: '#ff6b6b',
+    legal: '#4ecdc4',
+    workplace: '#ffe66d',
+    life: '#95e1d3',
+    education: '#a8e6cf',
+    tech: '#74b9ff',
+    emergency: '#ff7675',
+    general: '#a0d2eb',
+  };
+  return colors[category] || '#a0d2eb';
 }
