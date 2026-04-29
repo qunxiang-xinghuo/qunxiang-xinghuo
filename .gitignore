@@ -30,3 +30,8 @@ coverage/
 *.legacy
 
 .next/
+
+DEPLOYMENT_SECRETS.md
+.env.local
+.env.production
+

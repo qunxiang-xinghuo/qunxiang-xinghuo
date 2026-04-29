@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 import BubbleCloud from '@/components/bubble-cloud/BubbleCloud';
 import LiuKanshanFloat from '@/components/layout/LiuKanshanFloat';
+import ZhihuHotBubbles from '@/components/zhihu/ZhihuHotBubbles';
 
 const modes = [
   {
@@ -183,6 +184,11 @@ export default function Home() {
         <BubbleCloud
           category={activeCategory === 'all' ? undefined : activeCategory}
         />
+      </div>
+
+      {/* 知乎热榜 */}
+      <div className="relative z-10">
+        <ZhihuHotBubbles />
       </div>
 
       {/* 底部模式选择 */}
