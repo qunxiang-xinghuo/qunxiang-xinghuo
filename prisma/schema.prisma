@@ -99,6 +99,16 @@ model Brainhole {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  // ====== 泡泡云相关字段 ======
+  hotScore       Float     @default(0)    // 热度分 0-100
+  recencyBoost   Boolean   @default(true) // 24小时新上架加成
+  archivedAt     DateTime?                // 归档时间
+  category       String    @default("general") // 分类: medical|legal|workplace|life|education|tech|emergency|zhihu_hot
+  zhihuHotTopic  String?                  // 关联知乎热榜话题ID
+  bubbleColor    String?                  // 泡泡颜色hex值
+  recommendedIdentities String?           // JSON数组: 推荐身份标签
+  // ============================
+
   authorId String?
   author   User?   @relation("BrainholeAuthor", fields: [authorId], references: [id])
 
@@ -111,6 +121,9 @@ model Brainhole {
   @@index([status, createdAt])
   @@index([difficulty])
   @@index([source])
+  @@index([hotScore])
+  @@index([recencyBoost])
+  @@index([category])
 }
 
 model BrainholeTag {

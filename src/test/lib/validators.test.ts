@@ -127,6 +127,7 @@ describe('Validator Tests', () => {
           search: 'test',
           sortBy: 'createdAt',
           sortOrder: 'desc',
+          mode: 'list',
         });
       });
 
@@ -140,6 +141,7 @@ describe('Validator Tests', () => {
           limit: 20,
           sortBy: 'createdAt',
           sortOrder: 'desc',
+          mode: 'list',
         });
       });
 

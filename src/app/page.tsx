@@ -2,15 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Flame } from 'lucide-react';
+import { Sparkles, Flame, Zap, Users, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
-
-interface BrainholeBubble {
-  id: string;
-  title: string;
-  difficulty: string;
-}
+import BubbleCloud from '@/components/bubble-cloud/BubbleCloud';
+import LiuKanshanFloat from '@/components/layout/LiuKanshanFloat';
 
 const modes = [
   {
@@ -18,36 +14,35 @@ const modes = [
     title: '单人模式',
     description: '一个人，一个脑洞，一段真实反应',
     gradient: 'from-rose-500 to-orange-500',
-    icon: (
-      <svg className="w-8 h-8 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
+    icon: <Zap className="w-5 h-5" />,
   },
   {
     id: 'duo',
     title: '双人模式',
     description: '匹配陌生人，碰撞思想火花',
     gradient: 'from-violet-500 to-purple-500',
-    icon: (
-      <svg className="w-8 h-8 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
-    ),
+    icon: <Users className="w-5 h-5" />,
   },
   {
     id: 'multi',
     title: '多人组队',
     description: '三五好友，共创群像故事',
     gradient: 'from-emerald-500 to-teal-500',
-    icon: (
-      <svg className="w-8 h-8 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
+    icon: <Sparkles className="w-5 h-5" />,
     badge: '即将上线',
     disabled: true,
   },
+];
+
+const categories = [
+  { id: 'all', label: '全部', color: '#95a5a6' },
+  { id: 'medical', label: '医疗', color: '#e74c3c' },
+  { id: 'legal', label: '法律', color: '#3498db' },
+  { id: 'workplace', label: '职场', color: '#f39c12' },
+  { id: 'life', label: '生活', color: '#2ecc71' },
+  { id: 'education', label: '教育', color: '#9b59b6' },
+  { id: 'tech', label: '技术', color: '#1abc9c' },
+  { id: 'emergency', label: '紧急', color: '#e67e22' },
 ];
 
 /* 浮动气泡背景 */
@@ -93,103 +88,32 @@ function FloatingBubbles() {
   );
 }
 
-/* 脑洞泡泡池 */
-function BrainholeBubblePool() {
-  const router = useRouter();
-  const [bubbles, setBubbles] = useState<BrainholeBubble[]>([]);
-
-  useEffect(() => {
-    fetch('/api/brainholes?page=1&limit=8')
-      .then((res) => res.json())
-      .then((result) => {
-        if (result.success && result.data?.brainholes) {
-          const list = result.data.brainholes.map((b: any) => ({
-            id: String(b.id),
-            title: String(b.title),
-            difficulty: String(b.difficulty || 'medium'),
-          }));
-          setBubbles(list);
-        } else {
-          // fallback
-          setBubbles([
-            { id: '1', title: '急诊室的抉择', difficulty: 'hard' },
-            { id: '2', title: '法庭上的意外证据', difficulty: 'hard' },
-            { id: '3', title: '课堂上的突发状况', difficulty: 'medium' },
-            { id: '4', title: '餐厅的投诉处理', difficulty: 'medium' },
-            { id: '5', title: '系统上线前的致命bug', difficulty: 'hard' },
-            { id: '6', title: '家庭财产分配纠纷', difficulty: 'medium' },
-            { id: '7', title: '医疗事故的隐瞒与坦白', difficulty: 'hard' },
-            { id: '8', title: '客户信息的泄露危机', difficulty: 'hard' },
-          ]);
-        }
-      })
-      .catch(() => {
-        setBubbles([
-          { id: '1', title: '急诊室的抉择', difficulty: 'hard' },
-          { id: '2', title: '法庭上的意外证据', difficulty: 'hard' },
-          { id: '3', title: '课堂上的突发状况', difficulty: 'medium' },
-          { id: '4', title: '餐厅的投诉处理', difficulty: 'medium' },
-          { id: '5', title: '系统上线前的致命bug', difficulty: 'hard' },
-        ]);
-      });
-  }, []);
-
-  const diffColor = (d: string) => {
-    if (d === 'hard') return 'from-red-500/30 to-orange-500/30 border-red-500/40';
-    if (d === 'medium') return 'from-yellow-500/30 to-orange-500/30 border-yellow-500/40';
-    return 'from-green-500/30 to-emerald-500/30 border-green-500/40';
-  };
-
-  const diffLabel = (d: string) => {
-    if (d === 'hard') return '困难';
-    if (d === 'medium') return '中等';
-    return '简单';
-  };
-
-  return (
-    <div className="px-4 py-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Flame className="w-4 h-4 text-xh-gold" />
-        <h2 className="text-sm font-medium text-white">热门脑洞泡泡</h2>
-        <span className="text-[10px] text-gray-500">点击任意泡泡进入</span>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {bubbles.map((b, i) => (
-          <motion.button
-            key={b.id}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: i * 0.08, type: 'spring', stiffness: 300 }}
-            whileHover={{ scale: 1.08, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => router.push(`/brainhole/${b.id}`)}
-            className={`px-3 py-2 rounded-full text-xs text-white border bg-gradient-to-r ${diffColor(b.difficulty)} backdrop-blur-sm transition-all shadow-lg`}
-            title={`难度: ${diffLabel(b.difficulty)}`}
-          >
-            {b.title}
-          </motion.button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function Home() {
   const router = useRouter();
+  const [activeCategory, setActiveCategory] = useState('all');
   const [activeModeIndex, setActiveModeIndex] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(450);
+
+  // 动态计算泡泡云容器高度
+  useEffect(() => {
+    const updateHeight = () => {
+      const vh = window.innerHeight;
+      // 减去顶部栏、标题、模式选择器的高度
+      const reservedHeight = 180 + 140;
+      setContainerHeight(Math.max(350, vh - reservedHeight));
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
   const startMode = (mode: string) => {
     if (mode === 'solo') router.push('/identity?mode=solo');
     else if (mode === 'duo') router.push('/identity?mode=duo');
   };
 
-  const scrollMode = (direction: number) => {
-    const newIndex = activeModeIndex + direction;
-    if (newIndex >= 0 && newIndex < modes.length) setActiveModeIndex(newIndex);
-  };
-
   return (
-    <div className="flex flex-col h-full relative overflow-y-auto no-scrollbar">
+    <div className="flex flex-col h-full relative overflow-hidden">
       <TopBar />
 
       {/* 浮动气泡背景 */}
@@ -201,55 +125,74 @@ export default function Home() {
         <div className="absolute bottom-40 right-0 w-48 h-48 bg-xh-gold/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="pt-8 pb-6 px-6 text-center relative z-10">
+      {/* 顶部标题区 */}
+      <div className="pt-4 pb-2 px-4 text-center relative z-10">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="flex items-center justify-center gap-2 mb-3"
+          className="flex items-center justify-center gap-2 mb-1"
         >
-          <Sparkles className="w-6 h-6 text-xh-gold" />
-          <h1 className="text-3xl font-bold tracking-wider text-white">群像·星火</h1>
-          <Sparkles className="w-6 h-6 text-xh-gold" />
+          <Sparkles className="w-5 h-5 text-xh-gold" />
+          <h1 className="text-2xl font-bold tracking-wider text-white">群像·星火</h1>
+          <Sparkles className="w-5 h-5 text-xh-gold" />
         </motion.div>
         <motion.p
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-sm text-gray-400 leading-relaxed"
+          className="text-xs text-gray-400"
         >
           每一个认真生活的人，都能成为故事的一部分
         </motion.p>
       </div>
 
-      <div className="flex-1 flex items-center justify-center relative z-10 min-h-[120px]">
-        <motion.button
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => startMode(modes[activeModeIndex].id)}
-          disabled={modes[activeModeIndex].disabled}
-          className="group relative disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-xh-accent to-rose-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
-          <div className="relative bg-gradient-to-r from-xh-accent to-rose-600 text-white px-10 py-5 rounded-full text-lg font-medium shadow-lg flex items-center gap-3">
-            <Sparkles className="w-5 h-5" />
-            开始创作
+      {/* 分类筛选栏 */}
+      <div className="px-3 py-2 relative z-10">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {categories.map((cat) => (
+            <motion.button
+              key={cat.id}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                activeCategory === cat.id
+                  ? 'text-white shadow-lg'
+                  : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+              }`}
+              style={
+                activeCategory === cat.id
+                  ? {
+                      background: `${cat.color}30`,
+                      border: `1px solid ${cat.color}60`,
+                      color: cat.color,
+                      boxShadow: `0 0 12px ${cat.color}30`,
+                    }
+                  : {}
+              }
+            >
+              {cat.label}
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* 泡泡云区域 */}
+      <div className="flex-1 relative z-10 overflow-hidden" style={{ minHeight: containerHeight }}>
+        <BubbleCloud
+          category={activeCategory === 'all' ? undefined : activeCategory}
+        />
+      </div>
+
+      {/* 底部模式选择 */}
+      <div className="pb-4 pt-2 relative z-10 bg-gradient-to-t from-gray-950 via-gray-950/90 to-transparent">
+        <div className="flex items-center justify-between px-4 mb-2">
+          <div className="flex items-center gap-1.5">
+            <Flame className="w-3.5 h-3.5 text-xh-gold" />
+            <span className="text-xs text-gray-400">选择创作模式</span>
           </div>
-        </motion.button>
-      </div>
-
-      {/* 脑洞泡泡池 */}
-      <div className="relative z-10">
-        <BrainholeBubblePool />
-      </div>
-
-      <div className="pb-10 relative z-10">
-        <div className="flex items-center justify-between px-6 mb-4">
-          <span className="text-xs text-gray-500">选择创作模式</span>
-          <div className="flex gap-1" id="mode-dots">
+          <div className="flex gap-1">
             {modes.map((_, i) => (
               <motion.div
                 key={i}
@@ -257,60 +200,50 @@ export default function Home() {
                   scale: i === activeModeIndex ? 1.2 : 1,
                   backgroundColor: i === activeModeIndex ? '#f59e0b' : '#374151',
                 }}
-                className="w-2 h-2 rounded-full"
+                className="w-1.5 h-1.5 rounded-full"
               />
             ))}
           </div>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto no-scrollbar px-6 snap-x snap-mandatory">
+        <div className="flex gap-2 px-4">
           {modes.map((mode, i) => (
-            <motion.div
+            <motion.button
               key={mode.id}
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.1 * i }}
-              onClick={() => !mode.disabled && setActiveModeIndex(i)}
+              onClick={() => {
+                if (!mode.disabled) {
+                  setActiveModeIndex(i);
+                  startMode(mode.id);
+                }
+              }}
               whileHover={!mode.disabled ? { scale: 1.02, y: -2 } : {}}
-              className={`flex-shrink-0 w-[75%] snap-center rounded-2xl p-5 bg-gradient-to-br ${mode.gradient} transition-shadow cursor-pointer shadow-lg ${
-                i === activeModeIndex ? 'scale-100 opacity-100 ring-2 ring-white/30' : 'scale-95 opacity-60'
-              } ${mode.disabled ? 'cursor-not-allowed' : ''}`}
+              whileTap={!mode.disabled ? { scale: 0.98 } : {}}
+              className={`flex-1 rounded-xl p-3 bg-gradient-to-br ${mode.gradient} transition-all cursor-pointer shadow-lg ${
+                i === activeModeIndex && !mode.disabled
+                  ? 'ring-2 ring-white/30'
+                  : 'opacity-80'
+              } ${mode.disabled ? 'cursor-not-allowed opacity-50' : ''}`}
             >
-              <div className="flex items-start justify-between mb-3">
-                {mode.icon}
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-white/90">{mode.icon}</div>
                 {mode.badge && (
-                  <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full">{mode.badge}</span>
+                  <span className="text-[9px] bg-white/20 text-white px-1.5 py-0.5 rounded-full">
+                    {mode.badge}
+                  </span>
                 )}
               </div>
-              <h3 className="text-lg font-bold text-white mb-1">{mode.title}</h3>
-              <p className="text-xs text-white/80 leading-relaxed">{mode.description}</p>
-            </motion.div>
+              <h3 className="text-sm font-bold text-white">{mode.title}</h3>
+              <p className="text-[10px] text-white/70 leading-tight mt-0.5">{mode.description}</p>
+            </motion.button>
           ))}
         </div>
-
-        <div className="flex justify-center gap-4 mt-4">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => scrollMode(-1)}
-            className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => scrollMode(1)}
-            className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </motion.button>
-        </div>
       </div>
+
+      {/* 刘看山泡泡向导 */}
+      <LiuKanshanFloat mode="default" />
     </div>
   );
 }
