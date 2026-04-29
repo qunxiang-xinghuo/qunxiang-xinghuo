@@ -54,7 +54,22 @@ describe('Brainhole API Tests', () => {
           scenario: 'Test Scenario',
           status: 'approved',
           difficulty: 'medium',
-          tags: [{ tag: { id: 'tag1', name: 'test' } }],
+          category: 'general',
+          hotScore: 50,
+          recencyBoost: false,
+          reactionCount: 0,
+          sparkCount: 0,
+          collectionCount: 0,
+          contextTime: null,
+          contextLocation: null,
+          contextCharacters: null,
+          source: 'system',
+          archivedAt: null,
+          bubbleColor: null,
+          recommendedIdentities: null,
+          zhihuHotTopic: null,
+          authorId: null,
+          tags: [{ tag: { id: 'tag1', name: 'test', category: null, createdAt: new Date() } }],
           author: { id: 'user1', name: 'Test User', image: null },
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -113,20 +128,33 @@ describe('Brainhole API Tests', () => {
         scenario: 'New Scenario',
         status: 'pending',
         difficulty: 'medium',
-        authorId: 'user1',
+        category: 'general',
+        hotScore: 0,
+        recencyBoost: true,
+        reactionCount: 0,
+        sparkCount: 0,
+        collectionCount: 0,
+        contextTime: null,
+        contextLocation: null,
+        contextCharacters: null,
         source: 'user',
+        archivedAt: null,
+        bubbleColor: null,
+        recommendedIdentities: null,
+        zhihuHotTopic: null,
+        authorId: 'user1',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       const mockSession = {
-        user: { id: 'user1', name: 'Test User' },
+        user: { id: 'user1', name: 'Test User', email: 'test@example.com', image: null },
       };
 
       const { db } = await import('@/lib/db');
       vi.mocked(getServerSession).mockResolvedValue(mockSession as any);
       vi.mocked(db.brainhole.create).mockResolvedValue(mockBrainhole);
-      vi.mocked(db.tag.upsert).mockResolvedValue({ id: 'tag1', name: 'test' });
+      vi.mocked(db.tag.upsert).mockResolvedValue({ id: 'tag1', name: 'test', category: null, createdAt: new Date() });
       vi.mocked(db.brainholeTag.create).mockResolvedValue({ id: 'rel1', brainholeId: 'brainhole1', tagId: 'tag1' });
 
       const request = new NextRequest('http://localhost:3000/api/brainholes', {

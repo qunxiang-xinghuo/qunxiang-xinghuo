@@ -27,8 +27,10 @@ export const brainholeQuerySchema = z.object({
   status: z.enum(["pending", "approved", "rejected", "archived"]).optional(),
   tag: z.string().optional(),
   search: z.string().optional(),
-  sortBy: z.enum(["createdAt", "updatedAt", "reactionCount", "sparkCount", "collectionCount"]).default("createdAt"),
+  sortBy: z.enum(["createdAt", "updatedAt", "reactionCount", "sparkCount", "collectionCount", "hotScore"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  category: z.enum(["medical", "legal", "workplace", "life", "education", "tech", "emergency", "general", "zhihu_hot"]).optional(),
+  mode: z.enum(["list", "bubble"]).default("list"),
 });
 
 export const brainholeCollectSchema = z.object({

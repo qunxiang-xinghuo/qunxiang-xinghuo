@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
       search,
       sortBy,
       sortOrder,
+      category,
+      mode,
     } = validatedQuery;
 
     const skip = (page - 1) * limit;
@@ -32,6 +34,10 @@ export async function GET(request: NextRequest) {
 
     if (difficulty) {
       where.difficulty = difficulty;
+    }
+
+    if (category) {
+      where.category = category;
     }
 
     if (search) {
@@ -51,6 +57,11 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    // 泡泡模式：按热度排序，返回更多字段
+    const orderBy = mode === 'bubble' 
+      ? { hotScore: 'desc' as const }
+      : { [sortBy]: sortOrder };
+
     // 获取脑洞列表
     const [brainholes, total] = await Promise.all([
       db.brainhole.findMany({
@@ -69,9 +80,9 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: { [sortBy]: sortOrder },
-        skip,
-        take: limit,
+        orderBy,
+        skip: mode === 'bubble' ? 0 : skip,
+        take: mode === 'bubble' ? 50 : limit,
       }),
       db.brainhole.count({ where }),
     ]);
@@ -81,6 +92,16 @@ export async function GET(request: NextRequest) {
       ...brainhole,
       tags: brainhole.tags.map((bt: any) => bt.tag),
     }));
+
+    // 泡泡模式响应格式
+    if (mode === 'bubble') {
+      return NextResponse.json(
+        apiResponse({
+          brainholes: formattedBrainholes,
+          total,
+        })
+      );
+    }
 
     return NextResponse.json(
       apiResponse({
