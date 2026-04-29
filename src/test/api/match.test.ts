@@ -94,4 +94,93 @@ describe('Match API Tests', () => {
       expect(response.status).toBe(401);
     });
   });
+
+  describe('Happy path', () => {
+    it('should create match request successfully', async () => {
+      const { findMatch } = await import('@/server/match-engine');
+      vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user1', name: 'Test' } } as any);
+      vi.mocked(findMatch).mockResolvedValue({
+        matched: false,
+        matchId: 'match_1',
+        status: 'waiting',
+        message: '已加入匹配队列',
+      } as any);
+
+      const request = new NextRequest('http://localhost:3000/api/match', {
+        method: 'POST',
+        body: JSON.stringify({
+          brainholeId: 'cl123456789012345678901234',
+          identity: '急诊科医生',
+        }),
+      });
+      const response = await POST(request);
+      expect(response.status).toBe(202);
+
+      const json = await response.json();
+      expect(json.success).toBe(true);
+      expect(json.data.status).toBe('waiting');
+    });
+
+    it('should create match and return roomId when instantly matched', async () => {
+      const { findMatch } = await import('@/server/match-engine');
+      vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user1', name: 'Test' } } as any);
+      vi.mocked(findMatch).mockResolvedValue({
+        matched: true,
+        matchId: 'match_1',
+        roomId: 'room_1',
+        matchedUserId: 'user2',
+        matchedUserIdentity: '导演',
+        status: 'matched',
+      } as any);
+
+      const request = new NextRequest('http://localhost:3000/api/match', {
+        method: 'POST',
+        body: JSON.stringify({
+          brainholeId: 'cl123456789012345678901234',
+          identity: '急诊科医生',
+        }),
+      });
+      const response = await POST(request);
+      expect(response.status).toBe(201);
+
+      const json = await response.json();
+      expect(json.success).toBe(true);
+      expect(json.data.status).toBe('matched');
+      expect(json.data.roomId).toBe('room_1');
+    });
+
+    it('should query match status successfully', async () => {
+      const { checkMatchStatus } = await import('@/server/match-engine');
+      vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user1', name: 'Test' } } as any);
+      vi.mocked(checkMatchStatus).mockResolvedValue({
+        id: 'match_1',
+        status: 'matched',
+        brainholeId: 'cl123456789012345678901234',
+        userId: 'user1',
+        matchedUserId: 'user2',
+        roomId: 'room_1',
+      } as any);
+
+      const request = new NextRequest('http://localhost:3000/api/match/match_1');
+      const response = await GETMatch(request, { params: Promise.resolve({ matchId: 'match_1' }) });
+      expect(response.status).toBe(200);
+
+      const json = await response.json();
+      expect(json.success).toBe(true);
+      expect(json.data.status).toBe('matched');
+    });
+
+    it('should cancel match successfully', async () => {
+      const { cancelMatch } = await import('@/server/match-engine');
+      vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user1', name: 'Test' } } as any);
+      vi.mocked(cancelMatch).mockResolvedValue({ id: 'match_1', status: 'cancelled' } as any);
+
+      const request = new NextRequest('http://localhost:3000/api/match/match_1', { method: 'DELETE' });
+      const response = await DELETEMatch(request, { params: Promise.resolve({ matchId: 'match_1' }) });
+      expect(response.status).toBe(200);
+
+      const json = await response.json();
+      expect(json.success).toBe(true);
+    });
+  });
 });
