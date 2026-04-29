@@ -1,5 +1,12 @@
 import { getFallbackPrompt } from "./fallback-prompts";
 import { getCatalystPrompt } from "@/server/ai-catalyst";
+import {
+  generatePromptFromContext,
+  refinePrompt,
+  generateCatalystQuestions,
+} from "./prompt-generator";
+
+export { generatePromptFromContext, refinePrompt, generateCatalystQuestions };
 
 export interface AIPrompt {
   prompt: string;
@@ -13,11 +20,8 @@ export async function getAIPrompt(
   category?: string,
   tags?: string[]
 ): Promise<AIPrompt> {
-  // Phase 4: This will integrate with AI service
-  // For now, return fallback prompts
-  
+  // 1. 优先尝试 catalyst（基于脑洞内容的深度分析）
   if (brainholeId) {
-    // Try to get catalyst prompt for specific brainhole
     try {
       const catalystPrompt = await getCatalystPrompt(brainholeId);
       if (catalystPrompt) {
@@ -33,7 +37,28 @@ export async function getAIPrompt(
     }
   }
 
-  // Fallback to local prompts
+  // 2. 尝试用 DeepSeek 生成个性化提示（如果有上下文线索）
+  if (category || (tags && tags.length > 0)) {
+    try {
+      const generated = await generatePromptFromContext(
+        `生成一个${category || ""}领域的创意引导问题`,
+        category,
+        tags
+      );
+      if (generated && generated.length > 5) {
+        return {
+          prompt: generated,
+          source: "generated",
+          category,
+          tags,
+        };
+      }
+    } catch (error) {
+      console.warn("AI prompt generation failed:", error);
+    }
+  }
+
+  // 3. Fallback 到本地提示库
   const fallback = getFallbackPrompt(category, tags);
   return {
     prompt: fallback,
