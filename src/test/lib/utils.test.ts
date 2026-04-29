@@ -52,8 +52,8 @@ describe('Utility Functions', () => {
         page: 1,
       };
       const result = apiResponse(data);
-      expect(result.data.items).toHaveLength(2);
-      expect(result.data.total).toBe(2);
+      expect(result.data!.items).toHaveLength(2);
+      expect(result.data!.total).toBe(2);
     });
   });
 
