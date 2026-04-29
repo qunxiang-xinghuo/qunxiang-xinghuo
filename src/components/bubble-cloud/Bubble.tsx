@@ -1,10 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Flame, MessageCircle, Sparkles } from 'lucide-react';
-import { useState, useCallback } from 'react';
 import type { BubbleData, BubblePosition } from '@/lib/bubble-engine';
-import { getDifficultyLabel, getDifficultyColor } from '@/lib/bubble-engine';
 
 interface BubbleProps {
   data: BubbleData;
@@ -12,186 +9,135 @@ interface BubbleProps {
   containerWidth: number;
   containerHeight: number;
   onClick: (id: string) => void;
-  onDoubleClick?: (id: string) => void;
-  onLongPress?: (id: string, x: number, y: number) => void;
 }
 
 export default function Bubble({
   data,
   position,
-  containerWidth,
-  containerHeight,
   onClick,
-  onDoubleClick,
-  onLongPress,
 }: BubbleProps) {
-  const [isPressed, setIsPressed] = useState(false);
-  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
-
-  const left = position.x * containerWidth - position.size / 2;
-  const top = position.y * containerHeight - position.size / 2;
-
-  const handlePointerDown = useCallback(() => {
-    setIsPressed(true);
-    const timer = setTimeout(() => {
-      if (onLongPress) {
-        onLongPress(data.id, left + position.size / 2, top);
-      }
-    }, 500);
-    setPressTimer(timer);
-  }, [data.id, left, top, position.size, onLongPress]);
-
-  const handlePointerUp = useCallback(() => {
-    setIsPressed(false);
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  }, [pressTimer]);
-
-  const handlePointerLeave = useCallback(() => {
-    setIsPressed(false);
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  }, [pressTimer]);
-
-  const isHot = data.hotScore >= 80;
-  const isNew = data.isNew;
-  const isTrending = data.isTrending;
+  const size = position.size;
+  const categoryColor = data.bubbleColor || '#a0d2eb';
 
   return (
     <motion.div
-      className="absolute cursor-pointer select-none"
+      className="absolute cursor-pointer group"
       style={{
-        left,
-        top,
-        width: position.size,
-        height: position.size,
-        zIndex: position.zIndex + (isPressed ? 100 : 0),
+        width: size,
+        height: size,
+        left: position.x,
+        top: position.y,
       }}
-      initial={{ scale: 0, opacity: 0 }}
+      initial={{ opacity: 0, scale: 0 }}
       animate={{
-        scale: isPressed ? 0.95 : 1,
-        opacity: position.opacity,
-        y: [0, -position.floatAmplitude, 0],
+        opacity: 1,
+        scale: 1,
+        y: [0, -6, 0, 4, 0],
+        x: [0, 3, -2, 1, 0],
       }}
       transition={{
-        scale: { type: 'spring', stiffness: 400, damping: 25 },
-        opacity: { duration: 0.5 },
+        opacity: { duration: 0.6 },
+        scale: { duration: 0.6, type: 'spring', stiffness: 200 },
         y: {
-          duration: 3 + position.floatDelay * 0.2,
+          duration: 4 + Math.random() * 3,
           repeat: Infinity,
           ease: 'easeInOut',
-          delay: position.floatDelay,
+          delay: Math.random() * 2,
+        },
+        x: {
+          duration: 5 + Math.random() * 2,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          delay: Math.random() * 2,
         },
       }}
+      whileHover={{ scale: 1.15, zIndex: 50 }}
+      whileTap={{ scale: 0.9 }}
       onClick={() => onClick(data.id)}
-      onDoubleClick={() => onDoubleClick?.(data.id)}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerLeave}
-      whileHover={{ scale: 1.08, zIndex: 1000 }}
     >
-      {/* 发光背景 */}
+      {/* 晶莹泡泡本体 */}
       <div
-        className="absolute inset-0 rounded-full blur-xl"
+        className="w-full h-full rounded-full relative overflow-hidden"
         style={{
-          background: position.glowColor,
-          transform: 'scale(1.3)',
-        }}
-      />
-
-      {/* 热榜脉冲效果 */}
-      {isTrending && (
-        <motion.div
-          className="absolute inset-0 rounded-full"
-          style={{
-            border: `2px solid ${position.color}`,
-            boxShadow: `0 0 20px ${position.color}`,
-          }}
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.6, 0, 0.6],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: 'easeOut',
-          }}
-        />
-      )}
-
-      {/* 泡泡主体 */}
-      <div
-        className="relative w-full h-full rounded-full flex flex-col items-center justify-center overflow-hidden"
-        style={{
-          background: `radial-gradient(circle at 30% 30%, ${position.color}40, ${position.color}20)`,
-          border: `${data.isParticipated ? '3px' : '2px'} solid ${data.isParticipated ? '#e2b04a' : position.color}80`,
-          boxShadow: `inset -3px -3px 8px rgba(0,0,0,0.2), inset 3px 3px 8px rgba(255,255,255,0.1), 0 4px 12px ${position.glowColor}`,
+          background: `
+            radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 20%, rgba(255,255,255,0.1) 40%, transparent 60%),
+            radial-gradient(circle at 50% 50%, ${categoryColor}30 0%, ${categoryColor}15 40%, ${categoryColor}05 70%, transparent 100%)
+          `,
+          border: `1px solid ${categoryColor}50`,
+          boxShadow: `
+            inset -4px -4px 10px rgba(255,255,255,0.3),
+            inset 4px 4px 10px rgba(255,255,255,0.15),
+            0 0 15px ${categoryColor}25,
+            0 4px 20px rgba(0,0,0,0.15)
+          `,
+          backdropFilter: 'blur(2px)',
         }}
       >
-        {/* NEW 角标 */}
-        {isNew && (
-          <div className="absolute top-1 right-1 bg-red-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-full">
-            NEW
-          </div>
-        )}
+        {/* 高光反射 - 主高光 */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '35%',
+            height: '28%',
+            top: '12%',
+            left: '18%',
+            background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.3) 60%, transparent 100%)',
+            filter: 'blur(1px)',
+          }}
+        />
 
-        {/* 热榜标记 */}
-        {isTrending && (
-          <div className="absolute top-1 left-1 flex items-center gap-0.5">
-            <Flame className="w-3 h-3 text-red-400" />
-          </div>
-        )}
+        {/* 高光反射 - 次高光 */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '15%',
+            height: '12%',
+            top: '55%',
+            right: '22%',
+            background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.6) 0%, transparent 100%)',
+            filter: 'blur(0.5px)',
+          }}
+        />
+
+        {/* 底部折射光 */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '40%',
+            height: '20%',
+            bottom: '8%',
+            left: '30%',
+            background: `radial-gradient(ellipse at center, ${categoryColor}40 0%, transparent 70%)`,
+            filter: 'blur(2px)',
+          }}
+        />
 
         {/* 泡泡标题 */}
-        <span
-          className="text-white font-medium text-center px-2 leading-tight"
-          style={{
-            fontSize: Math.max(10, position.size / 8),
-            textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-          }}
-        >
-          {data.title}
-        </span>
-
-        {/* 难度标记 */}
-        <div
-          className="absolute bottom-1.5 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full"
-          style={{
-            background: `${getDifficultyColor(data.difficulty)}30`,
-            border: `1px solid ${getDifficultyColor(data.difficulty)}60`,
-          }}
-        >
+        <div className="absolute inset-0 flex items-center justify-center px-1">
           <span
-            className="text-white/90 font-medium"
-            style={{ fontSize: Math.max(7, position.size / 14) }}
+            className="text-[9px] font-medium text-center leading-tight select-none"
+            style={{
+              color: 'rgba(40, 40, 60, 0.85)',
+              textShadow: '0 0 4px rgba(255,255,255,0.8), 0 1px 2px rgba(255,255,255,0.6)',
+              wordBreak: 'break-all',
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
           >
-            {getDifficultyLabel(data.difficulty)}
+            {data.title}
           </span>
         </div>
-
-        {/* 热度高时显示火花图标 */}
-        {isHot && (
-          <motion.div
-            className="absolute top-1/2 right-1 -translate-y-1/2"
-            animate={{ rotate: [0, 15, -15, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Sparkles className="text-yellow-400" style={{ width: position.size / 6, height: position.size / 6 }} />
-          </motion.div>
-        )}
       </div>
 
-      {/* 反应数气泡 */}
-      {data.reactionCount > 0 && (
-        <div className="absolute -bottom-1 -right-1 bg-gray-800/80 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 border border-white/10">
-          <MessageCircle className="w-2.5 h-2.5" />
-          {data.reactionCount}
+      {/* Hover tooltip */}
+      <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+        <div className="bg-gray-900/90 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap backdrop-blur-sm border border-white/10">
+          {data.title}
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900/90" />
         </div>
-      )}
+      </div>
     </motion.div>
   );
 }
