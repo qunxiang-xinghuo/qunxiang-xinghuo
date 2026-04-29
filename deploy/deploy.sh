@@ -32,6 +32,31 @@ fi
 
 echo -e "${GREEN}✓ Node.js 版本: $(node -v)${NC}"
 
+# 确保 .env 文件存在
+if [ ! -f ".env" ]; then
+    echo "📝 创建 .env 文件..."
+    cat > .env << 'EOF'
+# 数据库配置
+DATABASE_URL="file:/www/wwwroot/qunxiang-xinghuo/prisma/dev.db"
+
+# NextAuth 配置（部署后请改为实际域名）
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="xinghuo-secret-$(date +%s)"
+
+# 应用配置
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_SOCKET_URL="http://localhost:3000"
+
+# 环境
+NODE_ENV="production"
+
+# 知乎圈子开放平台配置（重要！比赛要求）
+# ZHIHU_APP_KEY="你的知乎用户token"
+# ZHIHU_APP_SECRET="知乎提供的应用密钥"
+EOF
+    echo -e "${GREEN}✓ .env 已创建，请根据实际需要修改配置${NC}"
+fi
+
 # 安装依赖
 echo "📦 安装依赖..."
 npm install
@@ -42,6 +67,7 @@ npx prisma generate
 
 # 推送数据库结构
 echo "🗄️ 初始化数据库..."
+export DATABASE_URL="file:/www/wwwroot/qunxiang-xinghuo/prisma/dev.db"
 npx prisma db push --accept-data-loss
 
 # 可选：填充种子数据

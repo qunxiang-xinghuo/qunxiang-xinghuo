@@ -1,11 +1,12 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, BookOpen, MessageCircle, User } from 'lucide-react';
+import { Home, BookOpen, MessageCircle, User, Globe } from 'lucide-react';
 
 const navItems = [
   { path: '/', label: '发现', icon: Home },
   { path: '/library', label: '素材库', icon: BookOpen },
+  { path: '/zhihu-ring', label: '知乎', icon: Globe },
   { path: '/messages', label: '消息', icon: MessageCircle },
   { path: '/profile', label: '我的', icon: User },
 ];

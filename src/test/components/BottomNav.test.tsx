@@ -25,11 +25,12 @@ describe('BottomNav Component', () => {
 
     expect(screen.getByText('发现')).toBeInTheDocument();
     expect(screen.getByText('素材库')).toBeInTheDocument();
+    expect(screen.getByText('知乎')).toBeInTheDocument();
     expect(screen.getByText('消息')).toBeInTheDocument();
     expect(screen.getByText('我的')).toBeInTheDocument();
 
     const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(4);
+    expect(buttons).toHaveLength(5);
   });
 
   it('should highlight active item based on pathname', () => {
@@ -54,6 +55,16 @@ describe('BottomNav Component', () => {
     expect(mockPush).toHaveBeenCalledWith('/library');
   });
 
+  it('should navigate to zhihu-ring when clicked', () => {
+    render(<BottomNav />);
+
+    const zhihuButton = screen.getByText('知乎');
+    fireEvent.click(zhihuButton);
+
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('/zhihu-ring');
+  });
+
   it('should apply correct styling for active items', () => {
     mockUsePathname.mockReturnValue('/messages');
     
@@ -71,6 +82,7 @@ describe('BottomNav Component', () => {
 
     const inactiveIcons = [
       screen.getByText('素材库').previousElementSibling,
+      screen.getByText('知乎').previousElementSibling,
       screen.getByText('消息').previousElementSibling,
       screen.getByText('我的').previousElementSibling,
     ];
@@ -79,7 +91,7 @@ describe('BottomNav Component', () => {
       expect(icon).toHaveClass('text-gray-500');
     });
 
-    const inactiveTexts = ['素材库', '消息', '我的'];
+    const inactiveTexts = ['素材库', '知乎', '消息', '我的'];
     inactiveTexts.forEach(text => {
       const element = screen.getByText(text);
       expect(element).toHaveClass('text-gray-500');
@@ -90,9 +102,8 @@ describe('BottomNav Component', () => {
     render(<BottomNav />);
 
     const icons = document.querySelectorAll('svg');
-    expect(icons).toHaveLength(4);
+    expect(icons).toHaveLength(5);
 
-    // Icons are rendered with size prop, not attribute
     icons.forEach(icon => {
       expect(icon).toBeInTheDocument();
     });
@@ -126,7 +137,7 @@ describe('BottomNav Component', () => {
   });
 
   it('should work correctly with all pathnames', () => {
-    const paths = ['/', '/library', '/messages', '/profile'];
+    const paths = ['/', '/library', '/zhihu-ring', '/messages', '/profile'];
     
     paths.forEach(path => {
       mockUsePathname.mockReturnValue(path);
@@ -135,6 +146,7 @@ describe('BottomNav Component', () => {
       const activeItem = screen.getByText(
         path === '/' ? '发现' :
         path === '/library' ? '素材库' :
+        path === '/zhihu-ring' ? '知乎' :
         path === '/messages' ? '消息' : '我的'
       );
       

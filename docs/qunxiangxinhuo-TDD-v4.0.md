@@ -407,6 +407,39 @@ DeepSeek API 可能因余额不足/网络故障/格式错误而失败，系统�
 
 ---
 
+### 4.5 知乎圈子开放平台 API（新增）
+
+**鉴权方式**：HMAC-SHA256 签名
+- `app_key`: 用户 token（知乎个人主页 people/ 后面的字符串）
+- `app_secret`: 应用密钥（知乎提供）
+- 签名格式：`app_key:{app_key}|ts:{timestamp}|logid:{log_id}|extra_info:{extra_info}`
+- 请求头：`X-App-Key`, `X-Timestamp`, `X-Log-Id`, `X-Sign`, `X-Extra-Info`
+
+**限流策略**：
+- 全局限流：10 QPS
+- 发布想法：每小时最多 5 条
+- 创建评论：每小时每个想法最多 20 条
+
+**已实现路由**：
+
+| 方法 | 路径 | 说明 | 后端路由 |
+|------|------|------|----------|
+| GET | `/api/zhihu/ring?ringId=&pageNum=&pageSize=` | 获取圈子详情和内容列表 | `src/app/api/zhihu/ring/route.ts` |
+| POST | `/api/zhihu/publish` | 在圈子发布想法 | `src/app/api/zhihu/publish/route.ts` |
+| GET | `/api/zhihu/comment?contentToken=&contentType=` | 获取评论列表 | `src/app/api/zhihu/comment/route.ts` |
+| POST | `/api/zhihu/comment` | 创建评论 | `src/app/api/zhihu/comment/route.ts` |
+| DELETE | `/api/zhihu/comment` | 删除评论 | `src/app/api/zhihu/comment/route.ts` |
+| POST | `/api/zhihu/reaction` | 点赞/取消点赞 | `src/app/api/zhihu/reaction/route.ts` |
+
+**前端页面**：`/zhihu-ring` — 知乎圈子内容浏览、发布想法、评论互动
+
+**核心实现文件**：
+- `src/lib/zhihu-api.ts` — 知乎 API 客户端（含 HMAC-SHA256 签名生成）
+- `src/app/zhihu-ring/page.tsx` — 圈子内容展示页
+- `src/app/api/zhihu/*/route.ts` — 4 个后端路由封装
+
+---
+
 ## 五、数据模型设计
 
 ### 5.1 Prisma Schema 核心模型
@@ -870,7 +903,7 @@ docker run -p 3000:3000 --env-file .env qunxiang-xinghuo
 | DeepSeek API 余额不足 | 中 | 高 | 三级降级策略：API → fallback-prompts → 通用提示 | ✅ 已实现 |
 | SQLite 并发性能瓶颈 | 低 | 中 | 单文件数据库，MVP 阶段够用；后续迁移 PostgreSQL | 监控中 |
 | WebSocket 生产环境稳定性 | 中 | 高 | 使用 Socket.io 自动重连；后续考虑 Redis Adapter | 监控中 |
-| 知乎 API 未获取 | 高 | 中 | 已准备 Mock 数据 + fallback-prompts 兜底 | 待 5/9-12 |
+| 知乎 API 接入 | 中 | 高 | 知乎圈子开放平台 API 已接入（HMAC-SHA256 签名），支持 Agent 自主发帖/评论/点赞 | ✅ 已实现 |
 | 评审时间紧迫 | 中 | 高 | 核心功能优先，AI 场景图等延后 | 进行中 |
 
 ---
@@ -880,18 +913,20 @@ docker run -p 3000:3000 --env-file .env qunxiang-xinghuo
 ### v4.0 完成总结
 
 《群像·星火》MVP 已完成全部 Phase 1~4 开发：
-- **216 个测试**全部通过，覆盖全部 22 个 API 路由、WebSocket、前端 Hooks、UI 组件
+- **217 个测试**全部通过，覆盖全部 22 个 API 路由 + 4 个知乎 API 路由、WebSocket、前端 Hooks、UI 组件
 - **AI 双引擎**就位：story-weaver（故事串联）+ prompt-generator（催化提示），均接入 DeepSeek API 并配备三级降级
 - **实时通信**：Socket.io 完整实现房间消息广播
 - **三级模式**：单人/双人/多人玩法流程全部打通
+- **知乎圈子接入**：HMAC-SHA256 签名鉴权，支持获取圈子内容、发布想法、评论、点赞
 
 ### 下一步（评审前）
 
-1. **知乎 API 接入**（5月9-12号获取 key 后）：替换脑洞内容的 Mock 标志
+1. **知乎 Agent 自动化**（5月9-12号）：配置 System Prompt，让 Agent 在圈子内自主互动
 2. **路演 PPT 制作**：产品亮点 + 技术架构 + Demo 录屏
 3. **网页版路演展示**：基于 Next.js 的路由动画演示页
 4. **覆盖率补齐**：story-weaver.ts 等低覆盖模块补充测试
+5. **Skills / MCP 协议接入**：将平台能力封装为知乎 Skill 和 MCP Server
 
 ---
 
-*文档版本：v4.0 | 最后更新：2026-04-29 | 分支：dev | 测试状态：216/216 passed*
+*文档版本：v4.0 | 最后更新：2026-04-29 | 分支：dev | 测试状态：217/217 passed*
