@@ -219,7 +219,7 @@ export async function findMatch(
 }
 
 export async function cancelMatch(matchId: string, userId: string): Promise<boolean> {
-  const match = await db.matchRequest.findUnique({
+  const match = await db.matchRequest.findFirst({
     where: { id: matchId, userId },
   });
 
@@ -243,7 +243,7 @@ export async function cancelMatch(matchId: string, userId: string): Promise<bool
 }
 
 export async function checkMatchStatus(matchId: string, userId: string) {
-  const match = await db.matchRequest.findUnique({
+  const match = await db.matchRequest.findFirst({
     where: { id: matchId, userId },
     include: {
       brainhole: true,

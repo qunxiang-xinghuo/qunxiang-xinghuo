@@ -929,4 +929,131 @@ docker run -p 3000:3000 --env-file .env qunxiang-xinghuo
 
 ---
 
-*文档版本：v4.0 | 最后更新：2026-04-29 | 分支：dev | 测试状态：217/217 passed*
+## 十二、生产问题诊断与修复记录（2026-04-29）
+
+### 12.1 问题1：双人接戏匹配失败
+
+#### 现象
+- 用户选择脑洞和身份后，进入等待页面，匹配一直无结果
+- 轮询 `/api/match/[matchId]` 无响应或返回错误
+
+#### 根因诊断（代码审查发现）
+
+**问题A：Prisma `findUnique` 误用 —— 核心bug**
+
+`src/server/match-engine.ts` 中两处使用 `findUnique` 同时传入非唯一字段：
+
+```typescript
+// cancelMatch() 第222行 —— 修复前
+const match = await db.matchRequest.findUnique({
+  where: { id: matchId, userId },  // ❌ 错误：userId 不是唯一字段
+});
+
+// checkMatchStatus() 第246行 —— 修复前
+const match = await db.matchRequest.findUnique({
+  where: { id: matchId, userId },  // ❌ 错误：同上
+  include: { brainhole: true },
+});
+```
+
+**Prisma约束**：`findUnique` 的 `where` 参数**只能包含模型的唯一字段**（`@id` 或 `@@unique`）。`MatchRequest` 模型只有 `id` 是 `@id`，没有定义 `@@unique([id, userId])`。因此：
+- Prisma 可能**忽略 `userId` 条件**，只按 `id` 查找
+- 或在某些 adapter（better-sqlite3）下抛出运行时错误
+- 导致 `checkMatchStatus` 返回不匹配用户身份的记录，或返回500错误
+- `duo-waiting` 页面轮询失败，用户看到"一直匹配中"
+
+**修复**：将两处 `findUnique` 改为 `findFirst`：
+
+```typescript
+// cancelMatch() —— 修复后
+const match = await db.matchRequest.findFirst({
+  where: { id: matchId, userId },  // ✅ findFirst 支持任意字段组合过滤
+});
+
+// checkMatchStatus() —— 修复后
+const match = await db.matchRequest.findFirst({
+  where: { id: matchId, userId },
+  include: { brainhole: true },
+});
+```
+
+**问题B：匹配逻辑本身无bug**
+
+`findMatch()` 引擎逻辑正确：
+1. 创建当前用户的 `MatchRequest`（`status: "waiting"`）
+2. 查找同 `brainholeId` 的其他 `waiting` 请求
+3. 找到则创建 `Room`，更新双方为 `matched`
+4. 未找到则返回 `202` 等待状态
+
+匹配失败在**用户量少**的场景下是正常的（只有一个用户时自然匹配不到）。但 `findUnique` bug 导致轮询API异常，即使用户后来匹配成功，前端也收不到通知。
+
+#### 教训
+- **Prisma `findUnique` vs `findFirst`**：`findUnique` 只接受唯一字段，`findFirst` 接受任意条件组合。混合使用非唯一字段时必须用 `findFirst`。
+- **生产环境诊断方法**：SSH登录服务器 → `sqlite3` 直接查表 → 检查API日志 → 本地代码逐行审查
+
+---
+
+### 12.2 问题2：脑洞泡泡太少
+
+#### 现象
+- 首页泡泡墙只显示6-10个泡泡
+- 用户感觉"空荡荡"，缺乏视觉丰富度
+
+#### 根因诊断
+
+**问题A：显示数量限制过严**
+
+`src/components/bubble-cloud/BubbleCloud.tsx`：
+
+```typescript
+// 修复前
+const MAX_BUBBLES = compact ? 6 : 10;
+params.set('limit', compact ? '8' : '12');
+const containerSize = { w: 375, h: compact ? 180 : 320 };
+const size = 40 + ((bubble.hotScore || 50) / 100) * 20; // 40-60px
+```
+
+**问题B：模板位置数量不足**
+- `COMPACT_TEMPLATES` 只有6个位置
+- `FULL_TEMPLATES` 只有10个位置
+- 泡泡大（40-60px）+ 容器矮（180px）= 空间利用率低
+
+#### 修复方案
+
+| 参数 | 修复前 | 修复后 |
+|------|--------|--------|
+| compact MAX_BUBBLES | 6 | **12** |
+| full MAX_BUBBLES | 10 | **20** |
+| compact limit | 8 | **15** |
+| full limit | 12 | **25** |
+| compact 容器高度 | 180px | **260px** |
+| full 容器高度 | 320px | **420px** |
+| compact 模板数 | 6 | **12** |
+| full 模板数 | 10 | **20** |
+| compact 泡泡大小 | 40-60px | **28-42px** |
+| full 泡泡大小 | 40-60px | **32-48px** |
+
+**布局策略**：模板位置覆盖更大区域，泡泡更小更密集但仍保持不重叠，视觉更丰富。
+
+#### 教训
+- 移动端泡泡墙需要**足够多的视觉元素**（12-20个）才能营造"热闹"的氛围
+- 容器高度必须与显示数量成正比，否则泡泡会挤在一起
+- 泡泡大小应随数量反比例调整，保持整体视觉密度一致
+
+---
+
+### 12.3 自检清单（修复后必做）
+
+- [ ] `npm run build` 本地通过（无TypeScript错误）
+- [ ] `match-engine.ts` 中 `findUnique` 已全部替换为 `findFirst`
+- [ ] `BubbleCloud.tsx` 模板数量与 MAX_BUBBLES 一致
+- [ ] 服务器执行 `npx prisma db push`（如有schema变更）
+- [ ] 服务器执行 `npm run build`
+- [ ] `cp -r .next/static .next/standalone/.next/`
+- [ ] `pm2 restart qunxiang-xinghuo`
+- [ ] 浏览器验证：泡泡墙显示12+个泡泡
+- [ ] 浏览器验证：双人匹配流程正常（创建→等待→状态轮询）
+
+---
+
+*文档版本：v4.0+ | 最后更新：2026-04-29 | 分支：dev | 测试状态：217/217 passed*
