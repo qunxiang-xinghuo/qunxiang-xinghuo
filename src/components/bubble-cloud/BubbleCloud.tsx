@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw } from 'lucide-react';
 import Bubble from './Bubble';
@@ -12,11 +12,38 @@ interface BubbleCloudProps {
   compact?: boolean;
 }
 
+// 稀疏位置模板（相对容器百分比），确保不重叠
+const COMPACT_TEMPLATES = [
+  { x: 0.16, y: 0.22 }, { x: 0.62, y: 0.12 }, { x: 0.38, y: 0.58 },
+  { x: 0.78, y: 0.52 }, { x: 0.10, y: 0.72 }, { x: 0.55, y: 0.38 },
+];
+
+const FULL_TEMPLATES = [
+  { x: 0.12, y: 0.18 }, { x: 0.52, y: 0.08 }, { x: 0.82, y: 0.28 },
+  { x: 0.28, y: 0.48 }, { x: 0.65, y: 0.52 }, { x: 0.10, y: 0.72 },
+  { x: 0.48, y: 0.78 }, { x: 0.85, y: 0.68 }, { x: 0.38, y: 0.32 },
+  { x: 0.72, y: 0.42 },
+];
+
 export default function BubbleCloud({ category, compact = false }: BubbleCloudProps) {
   const [bubbles, setBubbles] = useState<BubbleData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(null);
+  const [containerSize, setContainerSize] = useState({ w: 375, h: compact ? 180 : 320 });
+
+  // 监听窗口大小变化
+  useEffect(() => {
+    const update = () => {
+      setContainerSize({
+        w: window.innerWidth - 32,
+        h: compact ? 180 : 320,
+      });
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [compact]);
 
   const fetchBubbles = useCallback(async () => {
     console.log('[BubbleCloud] Starting fetch...');
@@ -25,7 +52,8 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
     try {
       const params = new URLSearchParams();
       params.set('mode', 'bubble');
-      params.set('limit', compact ? '20' : '50');
+      // 限制数量：6-10个
+      params.set('limit', compact ? '8' : '12');
       if (category) params.set('category', category);
 
       const url = `/api/brainholes?${params.toString()}`;
@@ -52,7 +80,7 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
           difficulty: String(b.difficulty || 'medium'),
           hotScore: Number(b.hotScore || 0),
           category: String(b.category || 'general'),
-          bubbleColor: b.bubbleColor || getCategoryColor(b.category),
+          bubbleColor: b.bubbleColor || null,
           reactionCount: Number(b.reactionCount || 0),
           sparkCount: Number(b.sparkCount || 0),
           collectionCount: Number(b.collectionCount || 0),
@@ -79,43 +107,50 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
     fetchBubbles();
   }, [fetchBubbles]);
 
-  const positionedBubbles = useCallback(() => {
-    const containerW = typeof window !== 'undefined' ? window.innerWidth - 32 : 375;
-    const containerH = compact ? 200 : 400;
-    const minSize = compact ? 44 : 56;
-    const maxSize = compact ? 64 : 80;
+  // 计算泡泡位置：稀疏分布 + 稳定随机参数
+  const positions = useMemo(() => {
+    if (bubbles.length === 0) return [];
 
-    return bubbles.map((bubble, index) => {
-      const seed = index * 137.5;
-      const col = index % (compact ? 4 : 4);
-      const row = Math.floor(index / 4);
-      const jitterX = (Math.sin(seed) * 0.5 + 0.5) * 30;
-      const jitterY = (Math.cos(seed) * 0.5 + 0.5) * 20;
+    const MAX_BUBBLES = compact ? 6 : 10;
+    const displayBubbles = bubbles.slice(0, MAX_BUBBLES);
+    const templates = compact ? COMPACT_TEMPLATES : FULL_TEMPLATES;
+    const { w: containerW, h: containerH } = containerSize;
 
-      const x = (containerW / 4) * col + (containerW / 8) + jitterX;
-      const y = (containerH / 5) * row + (containerH / 10) + jitterY + 10;
-      const size = minSize + (bubble.hotScore / 100) * (maxSize - minSize);
+    return displayBubbles.map((bubble, index) => {
+      // 用 bubble.id 做种子，保证同一次加载中参数稳定
+      const seed = bubble.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+
+      // 大小：40-60px，由热度微调
+      const size = 40 + ((bubble.hotScore || 50) / 100) * 20;
+
+      // 位置：基于模板 + 稳定随机偏移
+      const template = templates[index % templates.length];
+      const jitterX = Math.sin(seed * 1.37) * 24;
+      const jitterY = Math.cos(seed * 2.71) * 16;
+
+      const x = template.x * containerW + jitterX - size / 2;
+      const y = template.y * containerH + jitterY - size / 2;
+
+      // 漂浮参数：8-15秒，稳定随机
+      const floatDuration = 8 + ((Math.sin(seed * 3.13) * 0.5 + 0.5) * 7);
+      const floatDelay = (Math.cos(seed * 1.97) * 0.5 + 0.5) * 4;
+      const swayAmplitude = 3 + ((Math.sin(seed * 5.23) * 0.5 + 0.5) * 10);
 
       return {
         bubble,
-        x: Math.max(0, Math.min(containerW - size, x)),
-        y: Math.max(0, Math.min(containerH - size, y)),
+        x: Math.max(4, Math.min(containerW - size - 4, x)),
+        y: Math.max(4, Math.min(containerH - size - 4, y)),
         size,
-        color: bubble.bubbleColor || '#a0d2eb',
-        glowColor: bubble.bubbleColor || '#a0d2eb',
-        opacity: 1,
-        zIndex: Math.round(bubble.hotScore),
-        floatDelay: Math.random() * 3,
-        floatAmplitude: 5 + Math.random() * 5,
+        floatDuration,
+        floatDelay,
+        swayAmplitude,
       };
     });
-  }, [bubbles, compact]);
-
-  const positions = positionedBubbles();
+  }, [bubbles, compact, containerSize]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[150px]">
+      <div className="flex items-center justify-center h-full min-h-[140px]">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
@@ -129,7 +164,7 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[150px] gap-3">
+      <div className="flex flex-col items-center justify-center h-full min-h-[140px] gap-3">
         <p className="text-xs text-white/40">{error}</p>
         <p className="text-[10px] text-white/20">详细错误已输出到浏览器控制台</p>
         <button
@@ -144,7 +179,7 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
 
   if (bubbles.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[150px] gap-2">
+      <div className="flex flex-col items-center justify-center h-full min-h-[140px] gap-2">
         <p className="text-xs text-white/40">暂无脑洞数据</p>
         <button
           onClick={fetchBubbles}
@@ -158,14 +193,22 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
 
   return (
     <>
-      <div className="relative w-full h-full overflow-hidden">
-        {positions.map(({ bubble, x, y, size }) => (
+      <div
+        className="relative w-full overflow-hidden"
+        style={{ height: containerSize.h }}
+      >
+        {positions.map(({
+          bubble, x, y, size, floatDuration, floatDelay, swayAmplitude,
+        }) => (
           <Bubble
             key={bubble.id}
             data={bubble}
-            position={{ id: bubble.id, x, y, size, color: bubble.bubbleColor || '#a0d2eb', glowColor: bubble.bubbleColor || '#a0d2eb', opacity: 1, zIndex: Math.round(bubble.hotScore), floatDelay: Math.random() * 3, floatAmplitude: 5 + Math.random() * 5 }}
-            containerWidth={typeof window !== 'undefined' ? window.innerWidth : 375}
-            containerHeight={compact ? 200 : 400}
+            x={x}
+            y={y}
+            size={size}
+            floatDuration={floatDuration}
+            floatDelay={floatDelay}
+            swayAmplitude={swayAmplitude}
             onClick={(id) => setSelectedBubbleId(id)}
             compact={compact}
           />
@@ -180,18 +223,4 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
       )}
     </>
   );
-}
-
-function getCategoryColor(category: string): string {
-  const colors: Record<string, string> = {
-    medical: '#ff6b6b',
-    legal: '#4ecdc4',
-    workplace: '#ffe66d',
-    life: '#95e1d3',
-    education: '#a8e6cf',
-    tech: '#74b9ff',
-    emergency: '#ff7675',
-    general: '#a0d2eb',
-  };
-  return colors[category] || '#a0d2eb';
 }
