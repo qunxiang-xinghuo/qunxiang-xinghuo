@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       maxLevel: 10,
       preferDifferentIdentity: validatedData.preferDifferent,
       timeoutMinutes: validatedData.timeoutMinutes,
+      mode: validatedData.mode,
     });
 
     if (matchResult.matched) {
@@ -31,15 +32,18 @@ export async function POST(request: NextRequest) {
         roomId: matchResult.roomId,
         matchedUserId: matchResult.matchedUserId,
         matchedUserIdentity: matchResult.matchedUserIdentity,
+        matchedCount: matchResult.matchedCount,
+        roomType: matchResult.roomType,
         status: "matched",
       }), { status: 201 });
     } else {
       if (matchResult.message === "MATCH_ALREADY_EXISTS") {
         return NextResponse.json(apiError("MATCH_ALREADY_EXISTS", "已有活跃匹配请求"), { status: 400 });
       }
-      
+
       return NextResponse.json(apiResponse({
         matchId: matchResult.matchId,
+        roomType: matchResult.roomType,
         status: "waiting",
         message: matchResult.message,
       }), { status: 202 });
