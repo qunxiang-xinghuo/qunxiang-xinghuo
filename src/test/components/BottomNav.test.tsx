@@ -25,12 +25,11 @@ describe('BottomNav Component', () => {
 
     expect(screen.getByText('发现')).toBeInTheDocument();
     expect(screen.getByText('素材库')).toBeInTheDocument();
-    expect(screen.getByText('知乎')).toBeInTheDocument();
-    expect(screen.getByText('消息')).toBeInTheDocument();
+    expect(screen.getByText('故事')).toBeInTheDocument();
     expect(screen.getByText('我的')).toBeInTheDocument();
 
     const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(5);
+    expect(buttons).toHaveLength(4);
   });
 
   it('should highlight active item based on pathname', () => {
@@ -42,7 +41,7 @@ describe('BottomNav Component', () => {
     const inactiveItem = screen.getByText('发现');
 
     expect(activeItem).toHaveClass('text-xh-gold', 'font-medium');
-    expect(inactiveItem).toHaveClass('text-gray-500');
+    expect(inactiveItem).toHaveClass('text-white/30');
   });
 
   it('should call router.push when item is clicked', () => {
@@ -55,25 +54,25 @@ describe('BottomNav Component', () => {
     expect(mockPush).toHaveBeenCalledWith('/library');
   });
 
-  it('should navigate to zhihu-ring when clicked', () => {
+  it('should navigate to story when clicked', () => {
     render(<BottomNav />);
 
-    const zhihuButton = screen.getByText('知乎');
-    fireEvent.click(zhihuButton);
+    const storyButton = screen.getByText('故事');
+    fireEvent.click(storyButton);
 
     expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith('/zhihu-ring');
+    expect(mockPush).toHaveBeenCalledWith('/story');
   });
 
   it('should apply correct styling for active items', () => {
-    mockUsePathname.mockReturnValue('/messages');
+    mockUsePathname.mockReturnValue('/story');
     
     render(<BottomNav />);
 
-    const activeIcon = screen.getByText('消息').previousElementSibling;
+    const activeIcon = screen.getByText('故事').previousElementSibling;
     expect(activeIcon).toHaveClass('text-xh-gold');
 
-    const activeText = screen.getByText('消息');
+    const activeText = screen.getByText('故事');
     expect(activeText).toHaveClass('text-xh-gold', 'font-medium');
   });
 
@@ -82,19 +81,18 @@ describe('BottomNav Component', () => {
 
     const inactiveIcons = [
       screen.getByText('素材库').previousElementSibling,
-      screen.getByText('知乎').previousElementSibling,
-      screen.getByText('消息').previousElementSibling,
+      screen.getByText('故事').previousElementSibling,
       screen.getByText('我的').previousElementSibling,
     ];
 
     inactiveIcons.forEach(icon => {
-      expect(icon).toHaveClass('text-gray-500');
+      expect(icon).toHaveClass('text-white/30');
     });
 
-    const inactiveTexts = ['素材库', '知乎', '消息', '我的'];
+    const inactiveTexts = ['素材库', '故事', '我的'];
     inactiveTexts.forEach(text => {
       const element = screen.getByText(text);
-      expect(element).toHaveClass('text-gray-500');
+      expect(element).toHaveClass('text-white/30');
     });
   });
 
@@ -102,19 +100,11 @@ describe('BottomNav Component', () => {
     render(<BottomNav />);
 
     const icons = document.querySelectorAll('svg');
-    expect(icons).toHaveLength(5);
+    expect(icons).toHaveLength(4);
 
     icons.forEach(icon => {
       expect(icon).toBeInTheDocument();
     });
-  });
-
-  it('should have proper container styling', () => {
-    const { container } = render(<BottomNav />);
-    const navContainer = container.firstChild;
-
-    expect(navContainer).toHaveClass('border-t', 'border-gray-800', 'bg-xh-primary');
-    expect(navContainer).toHaveClass('px-4', 'py-3', 'z-10');
   });
 
   it('should have proper button styling', () => {
@@ -122,7 +112,7 @@ describe('BottomNav Component', () => {
 
     const buttons = screen.getAllByRole('button');
     buttons.forEach(button => {
-      expect(button).toHaveClass('flex', 'flex-col', 'items-center', 'gap-1', 'transition-colors');
+      expect(button).toHaveClass('flex', 'flex-col', 'items-center', 'gap-0.5', 'transition-colors');
     });
   });
 
@@ -130,14 +120,14 @@ describe('BottomNav Component', () => {
     render(<BottomNav />);
 
     const inactiveIcon = screen.getByText('素材库').previousElementSibling;
-    expect(inactiveIcon).toHaveClass('hover:text-gray-300');
+    expect(inactiveIcon).toHaveClass('hover:text-white/50');
 
     const inactiveText = screen.getByText('素材库');
-    expect(inactiveText).toHaveClass('hover:text-gray-300');
+    expect(inactiveText).toHaveClass('hover:text-white/50');
   });
 
   it('should work correctly with all pathnames', () => {
-    const paths = ['/', '/library', '/zhihu-ring', '/messages', '/profile'];
+    const paths = ['/', '/library', '/story', '/profile'];
     
     paths.forEach(path => {
       mockUsePathname.mockReturnValue(path);
@@ -146,8 +136,7 @@ describe('BottomNav Component', () => {
       const activeItem = screen.getByText(
         path === '/' ? '发现' :
         path === '/library' ? '素材库' :
-        path === '/zhihu-ring' ? '知乎' :
-        path === '/messages' ? '消息' : '我的'
+        path === '/story' ? '故事' : '我的'
       );
       
       expect(activeItem).toHaveClass('text-xh-gold');

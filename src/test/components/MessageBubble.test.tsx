@@ -43,7 +43,7 @@ describe('MessageBubble Component', () => {
     expect(screen.getByText('10:30 AM')).toBeInTheDocument();
 
     const messageBubble = screen.getByText('Hello, this is my message').parentElement;
-    expect(messageBubble).toHaveClass('bg-xh-accent', 'text-white', 'rounded-tr-none');
+    expect(messageBubble).toHaveClass('bg-xh-gold/20', 'text-white', 'rounded-tr-none');
 
     expect(screen.queryByTestId('spark-button')).not.toBeInTheDocument();
   });
@@ -56,7 +56,7 @@ describe('MessageBubble Component', () => {
     expect(screen.getByText('10:31 AM')).toBeInTheDocument();
 
     const messageBubble = screen.getByText('Hello, this is partner message').parentElement;
-    expect(messageBubble).toHaveClass('bg-gray-800', 'text-white', 'rounded-tl-none');
+    expect(messageBubble).toHaveClass('bg-white/5', 'text-white', 'rounded-tl-none');
 
     const sparkButton = screen.getByTestId('spark-button');
     expect(sparkButton).toBeInTheDocument();
@@ -114,7 +114,7 @@ describe('MessageBubble Component', () => {
     render(<MessageBubble message={mockMessage} onSpark={handleSpark} />);
 
     const timestamp = screen.getByText('10:30 AM');
-    expect(timestamp).toHaveClass('text-[10px]', 'text-gray-500');
+    expect(timestamp).toHaveClass('text-[10px]', 'text-white/25');
   });
 
   it('should render message content with correct styling', () => {

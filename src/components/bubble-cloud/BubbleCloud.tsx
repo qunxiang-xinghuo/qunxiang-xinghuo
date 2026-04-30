@@ -9,22 +9,22 @@ import type { BubbleData } from '@/lib/bubble-engine';
 
 interface BubbleCloudProps {
   category?: string;
+  compact?: boolean;
 }
 
-export default function BubbleCloud({ category }: BubbleCloudProps) {
+export default function BubbleCloud({ category, compact = false }: BubbleCloudProps) {
   const [bubbles, setBubbles] = useState<BubbleData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(null);
 
-  // 获取泡泡数据
   const fetchBubbles = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
       params.set('mode', 'bubble');
-      params.set('limit', '50');
+      params.set('limit', compact ? '20' : '50');
       if (category) params.set('category', category);
 
       const res = await fetch(`/api/brainholes?${params.toString()}`);
@@ -55,29 +55,27 @@ export default function BubbleCloud({ category }: BubbleCloudProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [category]);
+  }, [category, compact]);
 
   useEffect(() => {
     fetchBubbles();
   }, [fetchBubbles]);
 
-  // 计算泡泡位置 - 使用随机漂浮布局
   const positionedBubbles = useCallback(() => {
     const containerW = typeof window !== 'undefined' ? window.innerWidth - 32 : 375;
-    const containerH = 400;
-    const minSize = 56;
-    const maxSize = 80;
+    const containerH = compact ? 200 : 400;
+    const minSize = compact ? 44 : 56;
+    const maxSize = compact ? 64 : 80;
 
     return bubbles.map((bubble, index) => {
-      // 使用伪随机但稳定的位置（基于index）
       const seed = index * 137.5;
-      const col = index % 4;
+      const col = index % (compact ? 4 : 4);
       const row = Math.floor(index / 4);
       const jitterX = (Math.sin(seed) * 0.5 + 0.5) * 30;
       const jitterY = (Math.cos(seed) * 0.5 + 0.5) * 20;
 
       const x = (containerW / 4) * col + (containerW / 8) + jitterX;
-      const y = (containerH / 5) * row + (containerH / 10) + jitterY + 20;
+      const y = (containerH / 5) * row + (containerH / 10) + jitterY + 10;
       const size = minSize + (bubble.hotScore / 100) * (maxSize - minSize);
 
       return {
@@ -93,31 +91,31 @@ export default function BubbleCloud({ category }: BubbleCloudProps) {
         floatAmplitude: 5 + Math.random() * 5,
       };
     });
-  }, [bubbles]);
+  }, [bubbles, compact]);
 
   const positions = positionedBubbles();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[300px]">
+      <div className="flex items-center justify-center h-full min-h-[150px]">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
         >
-          <RefreshCw className="w-6 h-6 text-white/30" />
+          <RefreshCw className="w-5 h-5 text-white/30" />
         </motion.div>
-        <span className="ml-3 text-sm text-white/40">加载脑洞泡泡...</span>
+        <span className="ml-2 text-xs text-white/40">加载脑洞...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[300px] gap-3">
-        <p className="text-sm text-white/40">{error}</p>
+      <div className="flex flex-col items-center justify-center h-full min-h-[150px] gap-2">
+        <p className="text-xs text-white/40">{error}</p>
         <button
           onClick={fetchBubbles}
-          className="px-4 py-2 bg-white/10 text-white/60 rounded-lg text-sm hover:bg-white/20 transition-colors"
+          className="px-3 py-1.5 bg-white/10 text-white/60 rounded-lg text-xs hover:bg-white/20 transition-colors"
         >
           重试
         </button>
@@ -127,20 +125,20 @@ export default function BubbleCloud({ category }: BubbleCloudProps) {
 
   return (
     <>
-      <div className="relative w-full h-[420px] overflow-hidden">
+      <div className="relative w-full h-full overflow-hidden">
         {positions.map(({ bubble, x, y, size }) => (
           <Bubble
             key={bubble.id}
             data={bubble}
             position={{ id: bubble.id, x, y, size, color: bubble.bubbleColor || '#a0d2eb', glowColor: bubble.bubbleColor || '#a0d2eb', opacity: 1, zIndex: Math.round(bubble.hotScore), floatDelay: Math.random() * 3, floatAmplitude: 5 + Math.random() * 5 }}
             containerWidth={typeof window !== 'undefined' ? window.innerWidth : 375}
-            containerHeight={420}
+            containerHeight={compact ? 200 : 400}
             onClick={(id) => setSelectedBubbleId(id)}
+            compact={compact}
           />
         ))}
       </div>
 
-      {/* 脑洞详情弹层 */}
       {selectedBubbleId && (
         <BubbleDetailModal
           brainholeId={selectedBubbleId}

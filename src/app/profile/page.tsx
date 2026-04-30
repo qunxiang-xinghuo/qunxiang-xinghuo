@@ -2,14 +2,15 @@
 
 import TopBar from '@/components/layout/TopBar';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Sparkles, Settings, Heart, LogOut } from 'lucide-react';
+import { User, Heart, Lock, ScrollText, Coins, Settings, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const menuItems = [
-  { id: 'couple', label: '情侣共建', icon: Heart, badge: '即将上线' },
-  { id: 'heal', label: '情绪树洞', icon: Heart, badge: '即将上线' },
-  { id: 'serial', label: '连载故事', icon: Heart, badge: '即将上线' },
-  { id: 'income', label: '收益中心', icon: Heart, badge: '即将上线' },
+  { id: 'heal', label: '个人疗愈中心', icon: Heart, badge: '即将开放', desc: '密码保护，永不公开' },
+  { id: 'couple', label: '密友空间', icon: Lock, badge: '即将开放', desc: '双人确认，AI催化' },
+  { id: 'my-stories', label: '我发起的故事', icon: ScrollText, desc: '作为导演创建的项目' },
+  { id: 'joined-stories', label: '我参与的故事', icon: ScrollText, desc: '作为角色参与的项目' },
+  { id: 'income', label: '严选收益', icon: Coins, desc: '盐选收录收益' },
   { id: 'settings', label: '设置', icon: Settings },
 ];
 
@@ -22,53 +23,77 @@ export default function ProfilePage() {
     router.push('/');
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      <TopBar title="个人中心" />
+  const handleMenuClick = (item: typeof menuItems[0]) => {
+    if (item.badge === '即将开放') {
+      alert('该功能即将开放，敬请期待');
+      return;
+    }
+    if (item.id === 'income') {
+      alert('严选收益功能即将上线');
+    } else if (item.id === 'my-stories' || item.id === 'joined-stories') {
+      router.push('/story');
+    }
+  };
 
-      <div className="px-6 py-8 text-center">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-xh-gold to-orange-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">
+  return (
+    <div className="flex flex-col h-full bg-[#1a1a2e]">
+      <TopBar title="我的" />
+
+      {/* 用户信息区 */}
+      <div className="px-6 py-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-xh-gold to-orange-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3 border-2 border-xh-gold/30">
           {user?.name?.charAt(0) || '游'}
         </div>
         <h2 className="text-white font-medium text-lg mb-1">{user?.name || '游客用户'}</h2>
-        <div className="inline-flex items-center gap-1.5 bg-xh-gold/20 text-xh-gold px-3 py-1 rounded-full text-xs">
+        <div className="inline-flex items-center gap-1.5 bg-xh-gold/15 text-xh-gold px-3 py-1 rounded-full text-xs border border-xh-gold/20">
           <User size={12} />
-          <span>{user?.identity.label || '未设置身份'}</span>
+          <span>{user?.identity?.label || '未设置身份'}</span>
         </div>
 
-        <div className="flex items-center justify-center gap-8 mt-6">
+        <div className="flex items-center justify-center gap-8 mt-5">
           <div className="text-center">
             <div className="text-xh-gold font-bold text-xl">{user?.level || 1}</div>
-            <div className="text-gray-500 text-xs mt-1">等级</div>
+            <div className="text-white/30 text-xs mt-1">等级</div>
           </div>
           <div className="text-center">
-            <div className="text-xh-accent font-bold text-xl">{user?.sparkCount || 0}</div>
-            <div className="text-gray-500 text-xs mt-1">火花数</div>
+            <div className="text-xh-gold font-bold text-xl">{user?.sparkCount || 0}</div>
+            <div className="text-white/30 text-xs mt-1">火花数</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xh-gold font-bold text-xl">0</div>
+            <div className="text-white/30 text-xs mt-1">收益</div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-3">
+      {/* 菜单列表 */}
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
             <div
               key={item.id}
-              className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50 hover:border-gray-600 transition-colors flex items-center justify-between cursor-pointer"
+              onClick={() => handleMenuClick(item)}
+              className="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gray-700/50 text-gray-300">
+                <div className="p-2 rounded-lg bg-white/5 text-white/50">
                   <Icon size={18} />
                 </div>
-                <span className="text-white text-sm">{item.label}</span>
+                <div>
+                  <span className="text-white/80 text-sm">{item.label}</span>
+                  {item.desc && (
+                    <p className="text-[10px] text-white/25 mt-0.5">{item.desc}</p>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 {item.badge && (
-                  <span className="text-[10px] bg-xh-gold/20 text-xh-gold px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] bg-xh-gold/15 text-xh-gold px-2 py-0.5 rounded-full border border-xh-gold/20">
                     {item.badge}
                   </span>
                 )}
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                 </svg>
               </div>

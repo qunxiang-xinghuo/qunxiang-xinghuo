@@ -76,15 +76,15 @@ export default function ChatRoom({
         />
       </div>
 
-      <div className="p-4 border-t border-gray-800 bg-xh-primary">
+      <div className="p-4 border-t border-white/5 bg-[#1a1a2e]">
         <div className="flex items-end gap-2">
-          <div className="flex-1 bg-gray-900 rounded-2xl border border-gray-700/50 px-4 py-2">
+          <div className="flex-1 bg-white/5 rounded-2xl border border-white/10 px-4 py-2">
             <textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="写下你的反应..."
               rows={1}
-              className="w-full bg-transparent text-sm text-white placeholder-gray-500 resize-none focus:outline-none max-h-24"
+              className="w-full bg-transparent text-sm text-white placeholder-white/20 resize-none focus:outline-none max-h-24"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -96,7 +96,7 @@ export default function ChatRoom({
           <button
             onClick={handleSend}
             disabled={!inputValue.trim()}
-            className="p-3 rounded-full transition-all disabled:bg-gray-800 disabled:text-gray-500 bg-gradient-to-r from-xh-accent to-rose-600 text-white"
+            className="p-3 rounded-full transition-all disabled:bg-white/5 disabled:text-white/20 bg-xh-gold/20 text-xh-gold border border-xh-gold/30"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -105,11 +105,11 @@ export default function ChatRoom({
         <div className="flex items-center justify-between mt-3">
           <button
             onClick={() => setShowSparkWall(true)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-xh-gold/20 text-xh-gold text-xs border border-xh-gold/30"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-xh-gold/15 text-xh-gold text-xs border border-xh-gold/20"
           >
             <Flame className="w-3 h-3" />
             火花墙
-            <span className="bg-xh-gold text-xh-primary text-[10px] px-1.5 rounded-full font-bold">
+            <span className="bg-xh-gold text-[#1a1a2e] text-[10px] px-1.5 rounded-full font-bold">
               {sparkCount}
             </span>
           </button>
@@ -117,7 +117,7 @@ export default function ChatRoom({
           {showStoryButton && onGoToStory && (
             <button
               onClick={onGoToStory}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-xh-gold/20 to-orange-500/20 border border-xh-gold/30 text-xh-gold text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-xh-gold/15 border border-xh-gold/20 text-xh-gold text-sm font-medium"
             >
               <Flame className="w-4 h-4" />
               串联故事
