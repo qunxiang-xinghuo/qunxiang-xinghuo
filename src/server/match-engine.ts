@@ -7,6 +7,8 @@ export interface MatchResult {
   roomId?: string;
   matchedUserId?: string;
   matchedUserIdentity?: string;
+  matchedCount?: number;
+  roomType?: string;
   message?: string;
 }
 
@@ -17,10 +19,9 @@ export async function findMatch(
   const {
     brainholeId,
     excludeUserId,
-    minLevel,
-    maxLevel,
     preferDifferentIdentity,
     timeoutMinutes,
+    mode,
   } = criteria;
 
   // 检查用户是否已有活跃匹配
@@ -61,19 +62,89 @@ export async function findMatch(
       OR: preferDifferentIdentity
         ? [{ identity: { not: criteria.identity || "default" } }]
         : undefined,
-      // Filter by user level through the user relation
-      // Note: This requires a join query
     },
-
     orderBy: { createdAt: "asc" },
     take: 10,
   });
 
   if (potentialMatches.length > 0) {
-    // 找到匹配，选择最早的一个
+    // ===== 多人模式：尝试找2-4个其他玩家（总共3-5人）=====
+    if (mode === "multi" && potentialMatches.length >= 2) {
+      // 取前4个其他玩家，总共最多5人
+      const matchedRequests = potentialMatches.slice(0, 4);
+
+      // 创建多人房间
+      const room = await db.room.create({
+        data: {
+          brainholeId,
+          type: "multi",
+          status: "created",
+          maxRound: 10,
+          currentRound: 0,
+        },
+      });
+
+      // 更新所有匹配请求（包括当前用户）
+      await Promise.all([
+        db.matchRequest.update({
+          where: { id: matchRequest.id },
+          data: {
+            status: "matched",
+            matchedUserId: matchedRequests[0].userId,
+            roomId: room.id,
+            resolvedAt: new Date(),
+          },
+        }),
+        ...matchedRequests.map((m) =>
+          db.matchRequest.update({
+            where: { id: m.id },
+            data: {
+              status: "matched",
+              matchedUserId: userId,
+              roomId: room.id,
+              resolvedAt: new Date(),
+            },
+          })
+        ),
+      ]);
+
+      // 添加所有参与者
+      await Promise.all([
+        db.roomParticipant.create({
+          data: {
+            roomId: room.id,
+            userId,
+            identity: criteria.identity || "default",
+            role: "actor",
+            isOnline: true,
+          },
+        }),
+        ...matchedRequests.map((m) =>
+          db.roomParticipant.create({
+            data: {
+              roomId: room.id,
+              userId: m.userId,
+              identity: m.identity,
+              role: "actor",
+              isOnline: true,
+            },
+          })
+        ),
+      ]);
+
+      return {
+        matched: true,
+        matchId: matchRequest.id,
+        roomId: room.id,
+        matchedCount: matchedRequests.length + 1,
+        roomType: "multi",
+        message: "群像组队成功",
+      };
+    }
+
+    // ===== 双人模式 / 多人降级为双人 =====
     const matchedRequest = potentialMatches[0];
 
-    // 创建房间
     const room = await db.room.create({
       data: {
         brainholeId,
@@ -84,7 +155,6 @@ export async function findMatch(
       },
     });
 
-    // 更新两个匹配请求
     await Promise.all([
       db.matchRequest.update({
         where: { id: matchRequest.id },
@@ -106,7 +176,6 @@ export async function findMatch(
       }),
     ]);
 
-    // 添加参与者
     await Promise.all([
       db.roomParticipant.create({
         data: {
@@ -134,6 +203,9 @@ export async function findMatch(
       roomId: room.id,
       matchedUserId: matchedRequest.userId,
       matchedUserIdentity: matchedRequest.identity,
+      matchedCount: 2,
+      roomType: "duet",
+      message: mode === "multi" ? "双人匹配成功（多人不足自动降级）" : "匹配成功",
     };
   }
 
@@ -141,7 +213,8 @@ export async function findMatch(
   return {
     matched: false,
     matchId: matchRequest.id,
-    message: "等待匹配中...",
+    roomType: mode,
+    message: mode === "multi" ? "等待组队中..." : "等待匹配中...",
   };
 }
 

@@ -217,6 +217,7 @@ describe('Validator Tests', () => {
           identity: 'director',
           preferDifferent: true,
           timeoutMinutes: 10,
+          mode: 'duo',
         });
       });
 

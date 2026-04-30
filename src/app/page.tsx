@@ -27,7 +27,7 @@ const modes = [
     color: '#4ade80',
     bg: 'bg-[#4ade80]/10',
     border: 'border-[#4ade80]/20',
-    available: false,
+    available: true,
   },
   {
     id: 'serial',
