@@ -2,65 +2,42 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, User, Users, Theater, Heart, Lock, BookOpen } from 'lucide-react';
+import { Sparkles, Users, Theater, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import BubbleCloud from '@/components/bubble-cloud/BubbleCloud';
 import LiuKanshanWelcome from '@/components/layout/LiuKanshanWelcome';
 
 const modes = [
   {
-    id: 'solo',
-    title: '单人模式',
-    icon: User,
-    color: '#e2b04a',
-    bg: 'bg-[#e2b04a]/15',
-    border: 'border-[#e2b04a]/30',
-    available: true,
-  },
-  {
     id: 'duo',
     title: '双人模式',
+    subtitle: '即时对戏碰撞',
     icon: Users,
-    color: '#c084fc',
-    bg: 'bg-[#c084fc]/15',
-    border: 'border-[#c084fc]/30',
+    color: '#e2b04a',
+    bg: 'bg-[#e2b04a]/15',
+    border: 'border-[#e2b04a]/40',
     available: true,
+    core: true,
   },
   {
     id: 'multi',
     title: '多人组队',
+    subtitle: '群像共创',
     icon: Theater,
     color: '#4ade80',
-    bg: 'bg-[#4ade80]/15',
-    border: 'border-[#4ade80]/30',
+    bg: 'bg-[#4ade80]/10',
+    border: 'border-[#4ade80]/20',
     available: false,
   },
   {
-    id: 'healing',
-    title: '疗愈空间',
-    icon: Heart,
-    color: '#60a5fa',
-    bg: 'bg-[#60a5fa]/15',
-    border: 'border-[#60a5fa]/30',
-    available: false,
-  },
-  {
-    id: 'couple',
-    title: '密友空间',
-    icon: Lock,
-    color: '#f472b6',
-    bg: 'bg-[#f472b6]/15',
-    border: 'border-[#f472b6]/30',
-    available: false,
-  },
-  {
-    id: 'story',
-    title: '故事大厅',
+    id: 'serial',
+    title: '长期连载',
+    subtitle: '故事连载',
     icon: BookOpen,
-    color: '#fb923c',
-    bg: 'bg-[#fb923c]/15',
-    border: 'border-[#fb923c]/30',
-    available: true,
+    color: '#60a5fa',
+    bg: 'bg-[#60a5fa]/10',
+    border: 'border-[#60a5fa]/20',
+    available: false,
   },
 ];
 
@@ -85,17 +62,11 @@ export default function Home() {
       alert('该功能即将开放，敬请期待');
       return;
     }
-    if (mode.id === 'solo') {
-      router.push('/identity?mode=solo');
-    } else if (mode.id === 'duo') {
+    if (mode.id === 'duo') {
       router.push('/duo-match');
     } else if (mode.id === 'multi') {
       router.push('/multiplayer');
-    } else if (mode.id === 'healing') {
-      router.push('/healing');
-    } else if (mode.id === 'couple') {
-      router.push('/couple');
-    } else if (mode.id === 'story') {
+    } else if (mode.id === 'serial') {
       router.push('/story');
     }
   };
@@ -128,13 +99,13 @@ export default function Home() {
       </div>
 
       {/* 泡泡墙区域 */}
-      <div className="shrink-0 relative overflow-hidden" style={{ height: '220px' }}>
+      <div className="shrink-0 relative overflow-hidden" style={{ height: '240px' }}>
         <BubbleCloud compact />
       </div>
 
-      {/* 六宫格模式入口 */}
-      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-3">
-        <div className="grid grid-cols-3 gap-3">
+      {/* 模式入口卡片 */}
+      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4">
+        <div className="flex flex-col gap-3">
           {modes.map((mode, index) => {
             const Icon = mode.icon;
             return (
@@ -142,59 +113,59 @@ export default function Home() {
                 key={mode.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.08 }}
-                whileHover={mode.available ? { scale: 1.03 } : {}}
-                whileTap={mode.available ? { scale: 0.97 } : {}}
+                transition={{ delay: index * 0.1 }}
+                whileHover={mode.available ? { scale: 1.02 } : {}}
+                whileTap={mode.available ? { scale: 0.98 } : {}}
                 onClick={() => handleModeClick(mode)}
-                className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all ${
-                  mode.available
+                className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${
+                  mode.core
+                    ? `${mode.bg} ${mode.border} cursor-pointer hover:shadow-lg`
+                    : mode.available
                     ? `${mode.bg} ${mode.border} cursor-pointer hover:shadow-lg`
                     : 'bg-white/5 border-white/5 opacity-50 cursor-not-allowed'
                 }`}
                 style={{
-                  boxShadow: mode.available ? `0 0 20px ${mode.color}10` : 'none',
-                  minHeight: '100px',
+                  boxShadow: mode.core ? `0 0 24px ${mode.color}15` : mode.available ? `0 0 16px ${mode.color}10` : 'none',
                 }}
               >
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
                   style={{
                     background: `linear-gradient(135deg, ${mode.color}30, ${mode.color}10)`,
-                    border: `1px solid ${mode.color}25`,
+                    border: `1px solid ${mode.color}30`,
                   }}
                 >
-                  <Icon className="w-6 h-6" style={{ color: mode.color }} />
+                  <Icon className="w-7 h-7" style={{ color: mode.color }} />
                 </div>
-                <span className="text-xs font-medium text-white/80">{mode.title}</span>
-                {!mode.available && (
-                  <span className="text-[9px] text-white/30">即将开放</span>
-                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white/90">{mode.title}</span>
+                    {mode.core && (
+                      <span className="text-[10px] bg-xh-gold/20 text-xh-gold px-2 py-0.5 rounded-full border border-xh-gold/30">
+                        核心
+                      </span>
+                    )}
+                    {!mode.available && (
+                      <span className="text-[10px] bg-white/10 text-white/30 px-2 py-0.5 rounded-full">
+                        即将开放
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-white/40 mt-0.5">{mode.subtitle}</p>
+                </div>
+                <svg
+                  className="w-5 h-5 shrink-0"
+                  style={{ color: mode.available ? mode.color : 'rgba(255,255,255,0.1)' }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
               </motion.button>
             );
           })}
         </div>
-
-        {/* 故事大厅横幅 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-4 p-4 rounded-2xl border border-xh-gold/20 bg-gradient-to-r from-xh-gold/10 to-transparent cursor-pointer hover:border-xh-gold/40 transition-colors"
-          onClick={() => router.push('/story')}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-xh-gold/20 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-xh-gold" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-medium text-white">故事大厅</h3>
-              <p className="text-[11px] text-white/40">认领角色，共创群像故事</p>
-            </div>
-            <svg className="w-5 h-5 text-xh-gold/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </motion.div>
       </div>
     </div>
   );
