@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 泡泡模式：按热度排序，返回更多字段
-    const orderBy = mode === 'bubble' 
+    const orderBy: any = mode === 'bubble'
       ? { hotScore: 'desc' as const }
       : { [sortBy]: sortOrder };
 
