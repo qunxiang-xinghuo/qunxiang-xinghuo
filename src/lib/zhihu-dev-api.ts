@@ -1,16 +1,18 @@
 /**
  * 知乎开发者平台 API 客户端
  * 文档: API.docx - 知乎搜索/全网搜索/直答/热榜
- * Base URL: https://developer.zhihu.com/api/v1
+ * Base URL: https://developer.zhihu.com/api/v1 (搜索/热榜)
+ * 直答 Base URL: https://developer.zhihu.com/v1 (Chat Completions)
  * 鉴权: Bearer Token + X-Request-Timestamp
  */
 
 const ZHIHU_DEV_BASE_URL = "https://developer.zhihu.com/api/v1";
+const ZHIHU_ZHIDA_BASE_URL = "https://developer.zhihu.com/v1";
 
 function getAccessSecret(): string {
-  const secret = process.env.ZHIHU_APP_KEY;
+  const secret = process.env.ZHIHU_API_KEY;
   if (!secret) {
-    throw new Error("ZHIHU_APP_KEY (Access Secret) 未配置");
+    throw new Error("ZHIHU_API_KEY (Access Secret) 未配置");
   }
   return secret;
 }
@@ -168,11 +170,11 @@ export async function getHotList(
 /**
  * 知乎直答 (非流式)
  * @param messages 对话消息列表
- * @param model 模型: zhida-fast-1p5 | zhida-thinking-1p5
+ * @param model 模型: zhida-fast-1p5 | zhida-thinking-1p5 | zhida-agent
  */
 export async function zhidaChat(
   messages: ZhihuZhidaMessage[],
-  model: "zhida-fast-1p5" | "zhida-thinking-1p5" = "zhida-thinking-1p5"
+  model: "zhida-fast-1p5" | "zhida-thinking-1p5" | "zhida-agent" = "zhida-thinking-1p5"
 ): Promise<ZhihuZhidaResponse> {
   const headers = buildAuthHeaders();
   const body = {
@@ -181,7 +183,7 @@ export async function zhidaChat(
     stream: false,
   };
 
-  const res = await fetch(`${ZHIHU_DEV_BASE_URL}/content/zhida`, {
+  const res = await fetch(`${ZHIHU_ZHIDA_BASE_URL}/chat/completions`, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
