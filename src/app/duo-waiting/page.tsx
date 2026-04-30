@@ -1,23 +1,71 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 
 const MATCH_TIMEOUT = 60; // 1分钟
+const POLL_INTERVAL = 2000; // 每2秒轮询一次
 
-export default function DuoWaitingPage() {
+function DuoWaitingContent() {
   const router = useRouter();
-  const [brainhole, setBrainhole] = React.useState<any>(null);
-  const [elapsedTime, setElapsedTime] = React.useState(0);
-  const [status, setStatus] = React.useState<'matching' | 'timeout' | 'ai'>('matching');
+  const searchParams = useSearchParams();
+  const matchId = searchParams.get('matchId');
 
-  React.useEffect(() => {
+  const [brainhole, setBrainhole] = useState<any>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [status, setStatus] = useState<'matching' | 'timeout' | 'ai' | 'matched'>('matching');
+  const [matchData, setMatchData] = useState<any>(null);
+  const [error, setError] = useState('');
+
+  // 获取脑洞信息
+  useEffect(() => {
     const saved = localStorage.getItem('xh_duo_brainhole');
     if (saved) {
       setBrainhole(JSON.parse(saved));
     } else {
+      router.push('/duo-match');
+    }
+  }, [router]);
+
+  // 轮询匹配状态
+  const pollMatchStatus = useCallback(async () => {
+    if (!matchId || status !== 'matching') return;
+
+    try {
+      const res = await fetch(`/api/match/${matchId}`);
+      const result = await res.json();
+      console.log('[DuoWaiting] Poll result:', result);
+
+      if (result.success && result.data) {
+        const data = result.data;
+        setMatchData(data);
+
+        if (data.status === 'matched' && data.roomId) {
+          setStatus('matched');
+          // 匹配成功，跳转到房间
+          setTimeout(() => {
+            router.push(`/room/${data.roomId}`);
+          }, 1000);
+          return true; // stop polling
+        }
+
+        if (data.status === 'timeout') {
+          setStatus('timeout');
+          return true; // stop polling
+        }
+      }
+      return false; // continue polling
+    } catch (err) {
+      console.error('[DuoWaiting] Poll error:', err);
+      return false;
+    }
+  }, [matchId, status, router]);
+
+  // 计时器 + 轮询
+  useEffect(() => {
+    if (!matchId) {
       router.push('/duo-match');
       return;
     }
@@ -34,30 +82,54 @@ export default function DuoWaitingPage() {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [router]);
+    // 轮询
+    const pollTimer = setInterval(async () => {
+      const shouldStop = await pollMatchStatus();
+      if (shouldStop) {
+        clearInterval(pollTimer);
+      }
+    }, POLL_INTERVAL);
 
-  const handleChooseAI = () => {
+    return () => {
+      clearInterval(timer);
+      clearInterval(pollTimer);
+    };
+  }, [matchId, router, pollMatchStatus]);
+
+  // 选择和刘看山AI对话
+  const handleChooseAI = async () => {
     setStatus('ai');
-    // 延迟后进入对白室
-    setTimeout(() => {
+    try {
+      // 调用API创建AI房间
+      const res = await fetch('/api/rooms/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brainholeId: brainhole?.id,
+          identity: localStorage.getItem('xh_duo_identity') || '我',
+        }),
+      });
+
+      const result = await res.json();
+      console.log('[DuoWaiting] AI room result:', result);
+
+      if (result.success && result.data?.roomId) {
+        setTimeout(() => {
+          router.push(`/room/${result.data.roomId}`);
+        }, 1000);
+      } else {
+        // fallback: 跳转到默认房间
+        router.push('/room/1');
+      }
+    } catch (err) {
+      console.error('[DuoWaiting] AI room error:', err);
       router.push('/room/1');
-    }, 1500);
+    }
   };
 
   const handleContinueWait = () => {
     setElapsedTime(0);
     setStatus('matching');
-    const timer = setInterval(() => {
-      setElapsedTime((prev) => {
-        const next = prev + 1;
-        if (next >= MATCH_TIMEOUT) {
-          clearInterval(timer);
-          setStatus('timeout');
-        }
-        return next;
-      });
-    }, 1000);
   };
 
   const progress = Math.min((elapsedTime / MATCH_TIMEOUT) * 100, 100);
@@ -127,6 +199,24 @@ export default function DuoWaitingPage() {
                 transition={{ duration: 0.3 }}
               />
             </div>
+            {matchId && (
+              <p className="text-[10px] text-white/15 mt-3">匹配ID: {matchId.slice(0, 8)}...</p>
+            )}
+          </motion.div>
+        )}
+
+        {status === 'matched' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center"
+          >
+            <p className="text-base font-medium text-emerald-400 mb-2">
+              匹配成功！
+            </p>
+            <p className="text-xs text-white/40">
+              正在进入对白实验室...
+            </p>
           </motion.div>
         )}
 
@@ -182,5 +272,17 @@ export default function DuoWaitingPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function DuoWaitingPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col h-full bg-[#1a1a2e] items-center justify-center">
+        <p className="text-white/40 text-sm">加载中...</p>
+      </div>
+    }>
+      <DuoWaitingContent />
+    </Suspense>
   );
 }

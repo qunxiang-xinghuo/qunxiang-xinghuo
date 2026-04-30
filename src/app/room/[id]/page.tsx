@@ -23,23 +23,17 @@ export default function RoomPage() {
   const { user } = useAuth();
   const { isConnected, joinRoom, leaveRoom, sendMessage, markSpark, on, off } = useSocket();
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome-1',
-      userId: 'partner',
-      content: '你好！很高兴和你匹配到这个脑洞。我是刘看山，今天陪你一起探索这个故事。',
-      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      isSparked: false,
-      sparkCount: 0,
-      identity: '刘看山',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [selectedPromptIndex, setSelectedPromptIndex] = useState(0);
   const [sparkCount, setSparkCount] = useState(0);
   const [partnerTyping, setPartnerTyping] = useState(false);
   const [viewerCount, setViewerCount] = useState(12);
-  const [brainholeTitle, setBrainholeTitle] = useState('急诊室的冲突');
-  const [brainholeScenario, setBrainholeScenario] = useState('一位急诊科医生在值班时遇到了一位特殊的病人...');
+  const [brainholeTitle, setBrainholeTitle] = useState('');
+  const [brainholeScenario, setBrainholeScenario] = useState('');
+  const [partnerIdentity, setPartnerIdentity] = useState({ type: 'recommended' as const, label: '对方' });
+  const [myIdentity, setMyIdentity] = useState('我');
+  const [isAiRoom, setIsAiRoom] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const isProcessingAI = useRef(false);
 
   // 获取房间信息
@@ -47,13 +41,65 @@ export default function RoomPage() {
     fetch(`/api/rooms/${roomId}`)
       .then((r) => r.json())
       .then((res) => {
-        if (res.success && res.data?.brainhole) {
-          setBrainholeTitle(res.data.brainhole.title);
-          setBrainholeScenario(res.data.brainhole.scenario || '');
+        if (res.success && res.data) {
+          const room = res.data;
+          console.log('[Room] Room data:', room);
+
+          // 设置脑洞信息
+          if (room.brainhole) {
+            setBrainholeTitle(room.brainhole.title);
+            setBrainholeScenario(room.brainhole.scenario || '');
+          }
+
+          // 判断是否是AI房间
+          const aiRoom = room.type === 'ai_duet';
+          setIsAiRoom(aiRoom);
+
+          // 从参与者信息中获取身份
+          let myIdentityLabel = '我';
+          let partnerIdentityLabel = aiRoom ? '刘看山' : '对方';
+
+          if (room.participants && Array.isArray(room.participants)) {
+            const me = room.participants.find((p: any) => p.userId === user?.id);
+            const partner = room.participants.find((p: any) => p.userId !== user?.id);
+
+            if (me) {
+              myIdentityLabel = me.identity || '我';
+              setMyIdentity(myIdentityLabel);
+            }
+
+            if (partner) {
+              partnerIdentityLabel = partner.identity || (aiRoom ? '刘看山' : '对方');
+              setPartnerIdentity({
+                type: 'recommended',
+                label: partnerIdentityLabel,
+              });
+            } else if (aiRoom) {
+              setPartnerIdentity({ type: 'recommended', label: '刘看山' });
+            }
+          }
+
+          // 加载历史消息
+          if (room.messages && Array.isArray(room.messages)) {
+            const myId = user?.id;
+            const historyMessages: Message[] = room.messages.map((m: any) => ({
+              id: m.id,
+              userId: m.senderId === myId ? 'me' : 'partner',
+              content: m.content,
+              timestamp: new Date(m.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+              isSparked: m.isSpark,
+              sparkCount: m.isSpark ? 1 : 0,
+              identity: m.identity || (m.senderId === myId ? myIdentityLabel : partnerIdentityLabel),
+            }));
+            setMessages(historyMessages);
+          }
         }
       })
-      .catch(() => {});
-  }, [roomId]);
+      .catch((err) => {
+        console.error('[Room] Fetch room error:', err);
+      })
+      .finally(() => setIsLoading(false));
+  }, [roomId, user?.id]);
 
   // 围观人数波动
   useEffect(() => {
@@ -74,7 +120,7 @@ export default function RoomPage() {
     setPartnerTyping(true);
 
     try {
-      const systemPrompt = `你是刘看山，一位温暖、治愈、富有同理心的对话伙伴。你正在"群像·星火"创作平台上，与用户进行角色扮演对话。当前讨论主题是："${brainholeTitle}"。
+      const systemPrompt = `你是刘看山，一位温暖、治愈、富有同理心的对话伙伴。你正在"群像·星火"创作平台上，与用户进行角色扮演对话。当前讨论主题是："${brainholeTitle || '一个有趣的话题'}"。
 
 你的语气特点：
 - 温暖亲切，像一位懂你的朋友
@@ -115,7 +161,6 @@ export default function RoomPage() {
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
       console.error('AI 回复失败:', err);
-      // fallback
       const fallbackMsg: Message = {
         id: `ai-${Date.now()}`,
         userId: 'partner',
@@ -135,10 +180,10 @@ export default function RoomPage() {
   useEffect(() => {
     if (!user || !roomId) return;
 
-    const identity = user.identity?.label || '匿名用户';
+    const identity = myIdentity || user.identity?.label || '匿名用户';
     joinRoom(roomId, user.id || 'guest', identity);
 
-    const handleNewMessage = (data: { message: { senderId: string; content: string; createdAt: string } }) => {
+    const handleNewMessage = (data: { message: { senderId: string; content: string; createdAt: string; identity?: string } }) => {
       const msg: Message = {
         id: `msg-${Date.now()}`,
         userId: data.message.senderId === user.id ? 'me' : 'partner',
@@ -146,7 +191,7 @@ export default function RoomPage() {
         timestamp: new Date(data.message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         isSparked: false,
         sparkCount: 0,
-        identity: data.message.senderId === user.id ? (user.identity?.label || '我') : '对方',
+        identity: data.message.identity || (data.message.senderId === user.id ? myIdentity : partnerIdentity.label),
       };
       setMessages((prev) => [...prev, msg]);
     };
@@ -175,7 +220,7 @@ export default function RoomPage() {
       off('user-typing', handleTyping);
       leaveRoom(roomId, user.id || 'guest');
     };
-  }, [user, roomId, joinRoom, leaveRoom, on, off]);
+  }, [user, roomId, myIdentity, partnerIdentity, joinRoom, leaveRoom, on, off]);
 
   const handleSendMessage = useCallback(
     async (content: string) => {
@@ -186,7 +231,7 @@ export default function RoomPage() {
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         isSparked: false,
         sparkCount: 0,
-        identity: user?.identity?.label || '我',
+        identity: myIdentity,
       };
       setMessages((prev) => [...prev, msg]);
 
@@ -197,10 +242,12 @@ export default function RoomPage() {
         createdAt: new Date().toISOString(),
       });
 
-      // 触发 AI 回复
-      generateAIReply(content);
+      // AI房间才触发AI回复
+      if (isAiRoom) {
+        generateAIReply(content);
+      }
     },
-    [roomId, user, sendMessage, generateAIReply]
+    [roomId, user, myIdentity, isAiRoom, sendMessage, generateAIReply]
   );
 
   const handleSparkMessage = useCallback(
@@ -209,11 +256,6 @@ export default function RoomPage() {
     },
     [roomId, user, markSpark]
   );
-
-  const partnerIdentity = {
-    type: 'recommended' as const,
-    label: '刘看山',
-  };
 
   if (!user) {
     return (
@@ -231,6 +273,15 @@ export default function RoomPage() {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center bg-[#1a1a2e]">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-xh-gold rounded-full animate-spin mb-4" />
+        <p className="text-sm text-white/40">正在加载房间...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]">
       <TopBar
@@ -244,7 +295,7 @@ export default function RoomPage() {
         <div className="flex items-start gap-2">
           <Sparkles className="w-4 h-4 text-xh-gold mt-0.5 shrink-0" />
           <div className="min-w-0">
-            <h3 className="text-sm font-medium text-white truncate">{brainholeTitle}</h3>
+            <h3 className="text-sm font-medium text-white truncate">{brainholeTitle || '对白实验室'}</h3>
             {brainholeScenario && (
               <p className="text-[11px] text-white/40 mt-0.5 line-clamp-2">{brainholeScenario}</p>
             )}
@@ -261,7 +312,7 @@ export default function RoomPage() {
           {isConnected && (
             <span className="flex items-center gap-1 text-[10px] text-emerald-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              实时连接
+              {isAiRoom ? 'AI 对话' : '实时连接'}
             </span>
           )}
         </div>
@@ -274,7 +325,9 @@ export default function RoomPage() {
       {/* 对方输入中 */}
       {partnerTyping && (
         <div className="bg-white/5 px-4 py-1.5 text-center shrink-0">
-          <p className="text-[10px] text-white/40 animate-pulse">刘看山正在输入...</p>
+          <p className="text-[10px] text-white/40 animate-pulse">
+            {partnerIdentity.label}正在输入...
+          </p>
         </div>
       )}
 
