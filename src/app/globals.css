@@ -77,4 +77,152 @@
   .animate-ping-slow {
     animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
+
+  /* ===== 泡泡组件专用样式 ===== */
+
+  /* 泡泡漂浮动画：缓慢上升 + 自然左右摆动 */
+  @keyframes bubble-float {
+    0% { transform: translateY(0) translateX(0); }
+    12% { transform: translateY(-9px) translateX(var(--sway-px)); }
+    24% { transform: translateY(-4px) translateX(calc(var(--sway-px) * 0.4)); }
+    36% { transform: translateY(-15px) translateX(calc(var(--sway-px) * -0.5)); }
+    48% { transform: translateY(-7px) translateX(calc(var(--sway-px) * -0.9)); }
+    60% { transform: translateY(-13px) translateX(calc(var(--sway-px) * -0.2)); }
+    72% { transform: translateY(-5px) translateX(calc(var(--sway-px) * 0.5)); }
+    84% { transform: translateY(-11px) translateX(calc(var(--sway-px) * 0.8)); }
+    100% { transform: translateY(0) translateX(0); }
+  }
+
+  /* 虹彩流动：缓慢旋转 */
+  @keyframes iridescence-flow {
+    0% { transform: rotate(0deg) scale(1.4); }
+    100% { transform: rotate(360deg) scale(1.4); }
+  }
+
+  /* 泡泡本体：玻璃/水晶质感 */
+  .bubble-body {
+    background:
+      /* 左上角主高光 */
+      radial-gradient(ellipse 60% 50% at 28% 22%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.35) 25%, transparent 55%),
+      /* 右下角微弱折射 */
+      radial-gradient(ellipse 50% 40% at 72% 78%, rgba(255,255,255,0.1) 0%, transparent 50%),
+      /* 整体微弱底色 */
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06) 0%, transparent 70%);
+    /* 极细半透明白色描边 */
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    box-shadow:
+      /* 内发光 */
+      inset -2px -2px 6px rgba(255,255,255,0.12),
+      inset 1px 1px 4px rgba(255,255,255,0.08),
+      /* 外阴影 */
+      0 2px 10px rgba(0,0,0,0.18),
+      0 0 16px rgba(255,255,255,0.04);
+    backdrop-filter: blur(1px);
+    -webkit-backdrop-filter: blur(1px);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.5s ease;
+    will-change: transform;
+  }
+
+  .bubble-body:hover {
+    transform: scale(1.12);
+    box-shadow:
+      inset -2px -2px 6px rgba(255,255,255,0.2),
+      inset 1px 1px 4px rgba(255,255,255,0.12),
+      0 4px 16px rgba(0,0,0,0.22),
+      0 0 24px rgba(255,255,255,0.08);
+  }
+
+  /* 虹彩层：五彩光泽 */
+  .bubble-iridescence {
+    background: conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(255, 182, 193, 0.16) 0deg,      /* 淡粉 */
+      rgba(200, 180, 255, 0.12) 45deg,     /* 浅紫 */
+      rgba(173, 216, 230, 0.15) 90deg,     /* 浅蓝 */
+      rgba(255, 223, 150, 0.11) 135deg,    /* 浅金 */
+      rgba(221, 190, 230, 0.13) 180deg,    /* 淡紫粉 */
+      rgba(176, 224, 230, 0.14) 225deg,    /* 天蓝 */
+      rgba(255, 218, 185, 0.11) 270deg,    /* 蜜桃 */
+      rgba(230, 200, 210, 0.13) 315deg,    /* 淡玫瑰 */
+      rgba(255, 182, 193, 0.16) 360deg     /* 淡粉 */
+    );
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    animation: iridescence-flow 14s linear infinite;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+
+  .bubble-body:hover .bubble-iridescence {
+    opacity: 0.72;
+    animation-duration: 8s;
+  }
+
+  /* 主高光点：左上角小而亮 */
+  .bubble-highlight {
+    top: 14%;
+    left: 16%;
+    width: 22%;
+    height: 18%;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.5) 30%, transparent 65%);
+    border-radius: 50%;
+    filter: blur(0.2px);
+    pointer-events: none;
+  }
+
+  /* 次高光 */
+  .bubble-highlight-secondary {
+    top: 55%;
+    right: 20%;
+    width: 10%;
+    height: 8%;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.45) 0%, transparent 60%);
+    border-radius: 50%;
+    filter: blur(0.3px);
+    pointer-events: none;
+  }
+
+  /* 底部折射光 */
+  .bubble-caustic {
+    bottom: 10%;
+    left: 30%;
+    width: 40%;
+    height: 14%;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(2px);
+    pointer-events: none;
+  }
+
+  /* 泡泡标题文字 */
+  .bubble-title {
+    color: rgba(35, 35, 55, 0.82);
+    text-shadow: 0 0 4px rgba(255,255,255,0.95), 0 1px 2px rgba(255,255,255,0.7);
+    word-break: break-all;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* 漂浮动画应用 */
+  .bubble-float {
+    animation: bubble-float var(--float-duration, 10s) ease-in-out infinite;
+    animation-delay: var(--float-delay, 0s);
+    will-change: transform;
+  }
+
+  /* 弹跳动画 */
+  @keyframes bubble-bounce {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    45% { transform: scale(0.88); }
+    65% { transform: scale(1.12); }
+    85% { transform: scale(0.96); }
+    100% { transform: scale(1); }
+  }
+
+  .bubble-bouncing {
+    animation: bubble-bounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
 }
