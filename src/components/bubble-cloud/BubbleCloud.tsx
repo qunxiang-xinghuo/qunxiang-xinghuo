@@ -19,6 +19,7 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
   const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(null);
 
   const fetchBubbles = useCallback(async () => {
+    console.log('[BubbleCloud] Starting fetch...');
     setIsLoading(true);
     setError(null);
     try {
@@ -27,8 +28,21 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
       params.set('limit', compact ? '20' : '50');
       if (category) params.set('category', category);
 
-      const res = await fetch(`/api/brainholes?${params.toString()}`);
+      const url = `/api/brainholes?${params.toString()}`;
+      console.log('[BubbleCloud] Fetching:', url);
+
+      const res = await fetch(url);
+      console.log('[BubbleCloud] Response status:', res.status);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('[BubbleCloud] HTTP error:', res.status, errorText);
+        setError(`服务器错误 (${res.status})`);
+        return;
+      }
+
       const result = await res.json();
+      console.log('[BubbleCloud] Response data:', result);
 
       if (result.success && result.data?.brainholes) {
         const list: BubbleData[] = result.data.brainholes.map((b: any) => ({
@@ -46,14 +60,18 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
           isTrending: b.category === 'zhihu_hot',
           isParticipated: false,
         }));
+        console.log('[BubbleCloud] Parsed bubbles:', list.length);
         setBubbles(list);
       } else {
-        setError('加载泡泡失败');
+        console.error('[BubbleCloud] Invalid response format:', result);
+        setError('加载泡泡失败: 数据格式错误');
       }
-    } catch {
-      setError('网络错误');
+    } catch (err: any) {
+      console.error('[BubbleCloud] Fetch error:', err);
+      setError(`网络错误: ${err.message || '请检查网络连接'}`);
     } finally {
       setIsLoading(false);
+      console.log('[BubbleCloud] Fetch complete');
     }
   }, [category, compact]);
 
@@ -104,20 +122,35 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
         >
           <RefreshCw className="w-5 h-5 text-white/30" />
         </motion.div>
-        <span className="ml-2 text-xs text-white/40">加载脑洞...</span>
+        <span className="ml-2 text-xs text-white/40">正在加载脑洞泡泡...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[150px] gap-2">
+      <div className="flex flex-col items-center justify-center h-full min-h-[150px] gap-3">
         <p className="text-xs text-white/40">{error}</p>
+        <p className="text-[10px] text-white/20">详细错误已输出到浏览器控制台</p>
         <button
           onClick={fetchBubbles}
           className="px-3 py-1.5 bg-white/10 text-white/60 rounded-lg text-xs hover:bg-white/20 transition-colors"
         >
-          重试
+          重新加载
+        </button>
+      </div>
+    );
+  }
+
+  if (bubbles.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[150px] gap-2">
+        <p className="text-xs text-white/40">暂无脑洞数据</p>
+        <button
+          onClick={fetchBubbles}
+          className="px-3 py-1.5 bg-white/10 text-white/60 rounded-lg text-xs hover:bg-white/20 transition-colors"
+        >
+          刷新试试
         </button>
       </div>
     );
