@@ -1,13 +1,12 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, BookOpen, MessageCircle, User, Globe } from 'lucide-react';
+import { Compass, BookOpen, ScrollText, User } from 'lucide-react';
 
 const navItems = [
-  { path: '/', label: '发现', icon: Home },
+  { path: '/', label: '发现', icon: Compass },
   { path: '/library', label: '素材库', icon: BookOpen },
-  { path: '/zhihu-ring', label: '知乎', icon: Globe },
-  { path: '/messages', label: '消息', icon: MessageCircle },
+  { path: '/story', label: '故事', icon: ScrollText },
   { path: '/profile', label: '我的', icon: User },
 ];
 
@@ -16,7 +15,7 @@ export default function BottomNav() {
   const router = useRouter();
 
   return (
-    <div className="border-t border-gray-800 bg-xh-primary px-4 py-3 z-10">
+    <div className="border-t border-white/5 bg-[#1a1a2e]/95 backdrop-blur-md px-4 py-2 z-50 shrink-0">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = pathname === item.path;
@@ -25,14 +24,14 @@ export default function BottomNav() {
             <button
               key={item.path}
               onClick={() => router.push(item.path)}
-              className="flex flex-col items-center gap-1 transition-colors"
+              className="flex flex-col items-center gap-0.5 transition-colors py-1 px-3"
             >
               <Icon
                 size={20}
-                className={isActive ? 'text-xh-gold' : 'text-gray-500 hover:text-gray-300'}
+                className={isActive ? 'text-xh-gold' : 'text-white/30 hover:text-white/50'}
               />
               <span
-                className={`text-xs ${isActive ? 'text-xh-gold font-medium' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`text-[10px] ${isActive ? 'text-xh-gold font-medium' : 'text-white/30 hover:text-white/50'}`}
               >
                 {item.label}
               </span>

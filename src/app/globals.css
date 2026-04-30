@@ -2,9 +2,9 @@
 
 @theme inline {
   --color-xh-accent: #e8424e;
-  --color-xh-gold: #f5a623;
-  --color-xh-primary: #0d0d0d;
-  --color-xh-dark: #1a1a1a;
+  --color-xh-gold: #e2b04a;
+  --color-xh-primary: #1a1a2e;
+  --color-xh-dark: #16213e;
   --color-xh-light: #f0f0f0;
   --font-sans: 'Noto Sans SC', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -12,6 +12,7 @@
 @layer base {
   html, body, :root {
     @apply h-full w-full overflow-hidden bg-xh-primary text-xh-light;
+    font-family: 'Noto Sans SC', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   }
 }
 
@@ -63,8 +64,8 @@
     animation: slide-up 0.3s ease-out;
   }
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(232, 66, 78, 0.4); }
-    50% { box-shadow: 0 0 20px 10px rgba(232, 66, 78, 0.2); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(226, 176, 74, 0.4); }
+    50% { box-shadow: 0 0 20px 10px rgba(226, 176, 74, 0.2); }
   }
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;

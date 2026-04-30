@@ -9,12 +9,14 @@ interface BubbleProps {
   containerWidth: number;
   containerHeight: number;
   onClick: (id: string) => void;
+  compact?: boolean;
 }
 
 export default function Bubble({
   data,
   position,
   onClick,
+  compact = false,
 }: BubbleProps) {
   const size = position.size;
   const categoryColor = data.bubbleColor || '#a0d2eb';
@@ -32,8 +34,8 @@ export default function Bubble({
       animate={{
         opacity: 1,
         scale: 1,
-        y: [0, -6, 0, 4, 0],
-        x: [0, 3, -2, 1, 0],
+        y: [0, -4, 0, 3, 0],
+        x: [0, 2, -1, 1, 0],
       }}
       transition={{
         opacity: { duration: 0.6 },
@@ -51,8 +53,8 @@ export default function Bubble({
           delay: Math.random() * 2,
         },
       }}
-      whileHover={{ scale: 1.15, zIndex: 50 }}
-      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.12, zIndex: 50 }}
+      whileTap={{ scale: 0.92 }}
       onClick={() => onClick(data.id)}
     >
       {/* 晶莹泡泡本体 */}
@@ -122,7 +124,7 @@ export default function Bubble({
               wordBreak: 'break-all',
               overflow: 'hidden',
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: compact ? 1 : 2,
               WebkitBoxOrient: 'vertical',
             }}
           >
