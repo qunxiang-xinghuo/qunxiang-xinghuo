@@ -101,9 +101,9 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
         Math.min(containerH - size - 8, template.y * containerH + jitterY - size / 2)
       );
 
-      // 随机漂浮参数
-      const floatDuration = 6 + Math.random() * 8; // 6-14秒一个周期
-      const floatDelay = Math.random() * 4; // 0-4秒延迟启动
+      // v4.7-fix2: 随机漂浮参数，周期2-4秒
+      const floatDuration = 2 + Math.random() * 2; // 2-4秒一个周期
+      const floatDelay = Math.random() * 3; // 0-3秒延迟启动
       return {
         bubble,
         x,
