@@ -265,7 +265,30 @@ model Brainhole {
 
 ---
 
-## 九、测试检查清单
+## 九、Bug修复记录 (v4.5-fix)
+
+### 修复1: 泡泡位置限制
+**问题**: tooltip (`-top-10` 绝对定位) 溢出 `overflow-hidden` 容器，被截断看不见
+**修复**: 将外部 tooltip 改为泡泡**内部信息层**——悬停时在泡泡内部显示半透明遮罩+标题+场景描述，完全不受容器边界限制
+**文件**: `src/components/bubble-cloud/Bubble.tsx`
+
+### 修复2: 匹配失败日志排查
+**问题**: 匹配流程缺少日志，无法定位失败原因
+**修复**: 
+- `src/app/api/match/route.ts`: 添加6处日志（开始匹配、userId、请求体、验证通过、findMatch调用、成功/失败返回、错误详情）
+- `src/server/match-engine.ts`: 添加8处日志（findMatch开始、已有匹配、创建请求、查找匹配、匹配到用户、随机抽取brainholeId、房间创建成功、未找到匹配）
+- `src/hooks/useSocket.ts`: 添加连接地址确认日志（`window.location.origin`）
+
+### 修复3: 返回键与导航栏
+**问题**: TopBar 组件 `showBack=true` 但未传 `onBack` 时，点击返回按钮报错
+**修复**: 
+- `src/components/layout/TopBar.tsx`: 引入 `useRouter`，当 `onBack` 未传入时默认使用 `router.back()`
+- 影响页面: duo-match / duo-waiting / duo-timeout / room（这些页面都用了 `showBack` 但未全部传 `onBack`）
+- BottomNav 已在 `src/app/layout.tsx` 全局挂载，无需修改
+
+---
+
+## 十、测试检查清单
 
 - [x] 泡泡数量达到24-30个
 - [x] 泡泡具有晶莹剔透的水晶质感
@@ -278,3 +301,8 @@ model Brainhole {
 - [x] 数据保存到数据库
 - [x] 1小时缓存机制
 - [x] 所有API失败时使用fallback数据
+- [x] 泡泡 tooltip 在容器内正常显示（不被截断）
+- [x] 匹配API全流程有详细日志输出
+- [x] WebSocket连接地址正确（非localhost）
+- [x] 所有深层页面返回按钮可用（默认router.back()）
+- [x] 底部导航栏全局显示（除登录/注册页）
