@@ -84,8 +84,8 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
     return displayBubbles.map((bubble, index) => {
       const template = templates[index % templates.length];
       const size = Math.min(
-        56 + Math.round(bubble.hotScore / 10),
-        compact ? 52 : 64
+        24 + Math.round(bubble.hotScore / 20),
+        compact ? 28 : 32
       );
 
       // 随机偏移 ±15px，但确保不越界
