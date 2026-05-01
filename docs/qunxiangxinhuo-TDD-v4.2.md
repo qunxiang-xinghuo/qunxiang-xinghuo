@@ -1,26 +1,94 @@
-# 群像·星火 TDD v4.2 — 注册/登录系统 + 首页改造 + 超时独立页面
+# 群像·星火 TDD v4.2 — 注册/登录系统 + 首页登录页 + 发现页
 
 ## 一、版本信息
 - **版本**: v4.2
 - **日期**: 2026-05-01
-- **Git**: `edde7bb` dev分支
+- **Git**: `a56fee2` dev分支
 - **服务器**: http://81.70.59.228/
-- **PM2**: pid 1150997, status online
+- **PM2**: pid 1155675, status online
 
-## 二、本次改动总览
+## 二、路由结构（v4.2-fix重要变更）
 
-| 模块 | 改动内容 | 状态 |
-|------|---------|------|
-| 注册/登录 | 完整用户名/密码系统，bcrypt加密 | ✅ |
-| 首页 | 泡泡区域320px增大，模式卡片扁平化 | ✅ |
-| 身份选择页 | 标题"在这次对撞中，你是谁？"，卡片式布局 | ✅ |
-| 匹配等待页 | 60秒倒计时，超时跳转独立页面 | ✅ |
-| 超时选择页 | 新建/duo-timeout，取消弹窗 | ✅ |
-| 泡泡云 | 模板18/25个，泡泡数量增加 | ✅ |
+| 路由 | 功能 | 说明 |
+|------|------|------|
+| `/` | **登录页（首页）** | 用户打开网站第一屏 |
+| `/home` | **发现页** | 泡泡墙 + 模式卡片 |
+| `/register` | 注册页 | 用户名/密码/确认密码 |
+| `/duo-match` | 身份选择页 | "在这次对撞中，你是谁？" |
+| `/duo-waiting` | 匹配等待页 | 60秒倒计时 |
+| `/duo-timeout` | 超时选择页 | 刘看山AI/继续等待 |
 
-## 三、注册/登录系统
+## 三、页面流程
 
-### 3.1 数据库模型 (Prisma)
+```
+访问网站 / → 登录页
+                ├── 已有账号 → 输入用户名密码 → 点击登录 → /home 发现页
+                └── 没有账号 → 点击"去注册" → /register
+                                        → 填写信息 → 确认注册
+                                        → 自动跳回 /?username=xxx&password=yyy
+                                        → 用户名密码已自动填入
+                                        → 点击登录 → /home 发现页
+```
+
+## 四、登录页 `/`（首页）
+
+### 4.1 视觉
+- 深色背景 `#1a1a2e`
+- 顶部大字标题："群像·星火"（text-3xl font-bold）
+- 装饰泡泡背景（模糊光斑）
+
+### 4.2 表单
+- 用户名输入框
+- 密码输入框（带显示/隐藏切换）
+- 登录按钮（暖金色渐变）
+- 底部"没有账号？去注册"
+
+### 4.3 自动回填
+- 注册成功后跳转 `/?username=xxx&password=yyy`
+- `useEffect` 读取 searchParams 自动填入输入框
+- 用户只需点击登录按钮即可进入
+
+### 4.4 登录成功
+- `signIn('credentials')` → JWT Session
+- 跳转 `/home`（发现页）
+- `router.refresh()` 刷新认证状态
+
+## 五、注册页 `/register`
+
+### 5.1 表单
+- 用户名（2-30字符）
+- 密码（至少6位，显示/隐藏切换）
+- 确认密码
+- 确认注册按钮
+
+### 5.2 前端校验
+- 用户名必填且≥2字符
+- 密码必填且≥6位
+- 两次密码必须一致
+
+### 5.3 后端流程
+- `/api/auth/register` POST
+- 检查用户名是否已存在 → 409 "用户名已被注册"
+- bcrypt.hash(password, 10) 加密
+- 创建 User 记录
+- 成功返回 200
+
+### 5.4 注册成功
+- 跳转 `/?username=xxx&password=yyy`
+- 登录页自动填入，用户一键登录
+
+## 六、发现页 `/home`
+
+### 6.1 内容
+- 顶部标题"群像·星火"
+- 泡泡墙区域：320px高度，18个泡泡
+- 模式卡片：双人/多人/连载（扁平化）
+
+### 6.2 导航
+- 底部导航"发现"指向 `/home`
+- 登录页和注册页**不显示**底部导航
+
+## 七、数据库模型
 
 ```prisma
 model User {
@@ -29,8 +97,8 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  username      String?   @unique    // NEW v4.2
-  password      String?               // NEW v4.2 (bcrypt hashed)
+  username      String?   @unique    // v4.2新增
+  password      String?               // v4.2新增 (bcrypt)
   level         Int       @default(1)
   sparkCount    Int       @default(0)
   createdAt     DateTime  @default(now())
@@ -38,163 +106,82 @@ model User {
 }
 ```
 
-### 3.2 API 路由
+## 八、认证系统
 
-| 路由 | 方法 | 功能 |
+### 8.1 NextAuth CredentialsProvider
+- credentials: `username` + `password`
+- authorize: `findFirst` 查 username 或 email → `bcrypt.compare` → 返回 user
+- JWT strategy，session 包含 id/level/sparkCount/username
+
+### 8.2 安全
+- ✅ bcrypt 加密存储（salt rounds: 10）
+- ✅ 用户名唯一约束
+- ✅ 注册前查重
+- ✅ 登录时密码校验
+
+## 九、页面跳转映射
+
+| 原跳转 | 新跳转 | 文件 |
+|--------|--------|------|
+| `/` (首页) | `/home` (发现页) | page.tsx → home/page.tsx |
+| `/login` | `/` (登录页) | 删除/login目录 |
+| 登录成功 → `/` | 登录成功 → `/home` | LoginForm.tsx |
+| 注册成功 → `/login?registered=1` | 注册成功 → `/?username=xxx&password=yyy` | register/page.tsx |
+| 未登录 → `/login` | 未登录 → `/` | duo-match, room |
+| 退出 → `/` | 退出 → `/` | profile/page.tsx（正确） |
+| 返回首页 → `/` | 返回首页 → `/home` | feedback, room, roadshow |
+| 超时退出 → `/` | 超时退出 → `/home` | duo-timeout/page.tsx |
+
+## 十、已知问题记录
+
+### 10.1 本次修复
+| 问题 | 原因 | 修复 |
 |------|------|------|
-| `/api/auth/register` | POST | 注册：校验用户名唯一 → bcrypt加密 → 创建User |
-| `/api/auth/[...nextauth]` | GET/POST | 登录：CredentialsProvider验证username+password |
+| build类型缓存错误 | 删除/login后.next缓存引用旧文件 | `rm -rf .next` 后重新build |
+| 路由冲突 | (auth)/login 和 /login 并存 | 删除(auth)目录和/login目录 |
+| useSearchParams无Suspense | Next.js 16 CSR bailout | 拆分为page.tsx + LoginForm.tsx |
 
-### 3.3 登录页 `/login`
-- 顶部"群像·星火"标题
-- 用户名、密码输入框
-- 密码显示/隐藏切换
-- 登录按钮 → `signIn('credentials')` → 成功跳转 `/`
-- 底部"没有账号？去注册" → 跳转 `/register`
-- URL参数 `?registered=1` 显示绿色"注册成功，请登录"提示
+### 10.2 历史记录
+- 知乎API 405 Method Not Allowed（未修复）
+- Prisma `findUnique` vs `findFirst` 唯一字段约束（已修复）
+- Google Fonts大陆build失败 → 改用系统字体（已修复）
 
-### 3.4 注册页 `/register`
-- 用户名、密码、确认密码三个输入框
-- 前端校验：用户名≥2字符，密码≥6位，两次密码一致
-- 注册按钮 → `/api/auth/register`
-- 用户名已存在 → 显示"用户名已被注册"
-- 注册成功 → 自动跳转 `/login?registered=1`
+## 十一、部署记录
 
-### 3.5 认证流程
-```
-未登录用户 → /login → 点击"去注册" → /register
-                ↓ 已有账号
-            输入用户名密码
-                ↓ 点击登录
-           signIn('credentials')
-                ↓ 校验成功
-            JWT Session → 跳转 /
-```
+### 11.1 部署步骤
+1. 上传所有文件（含新/home/page.tsx和LoginForm.tsx）
+2. 删除服务器旧 `src/app/login` 目录
+3. 删除 `.next` 缓存（避免类型引用错误）
+4. `npx prisma db push --accept-data-loss`
+5. `npx prisma generate`
+6. `npm run build` — 42页编译成功
+7. `cp -r .next/static .next/standalone/.next/`
+8. `pm2 restart qunxiang-xinghuo`
 
-### 3.6 安全要求
-- ✅ 密码bcrypt加密存储（salt rounds: 10）
-- ✅ 用户名唯一约束（@unique）
-- ✅ 注册前检查用户名是否已存在
-- ✅ 登录时bcrypt.compare验证密码
+### 11.2 自检结果
+- [x] `/` 登录页 — HTTP 200
+- [x] `/home` 发现页 — HTTP 200
+- [x] `/register` 注册页 — HTTP 200
+- [x] `/duo-match` 身份选择 — HTTP 200
+- [x] `/duo-waiting` 匹配等待 — HTTP 200
+- [x] `/duo-timeout` 超时选择 — HTTP 200
+- [x] 本地Build — 42页通过
+- [x] 服务器Build — 42页通过
+- [x] PM2 online — pid 1155675
 
-## 四、首页改造 `/`
-
-### 4.1 泡泡区域
-- 高度从 240px → **320px**，面积增大33%
-- BubbleCloud `compact` 模式
-- 模板位置从12个 → **18个**
-- 请求limit从15 → **22个**
-- 最大显示泡泡从12 → **18个**
-- 泡泡尺寸微调：base 26-40px
-
-### 4.2 模式卡片
-- 间距从 gap-3 → **gap-2**
-- padding从 p-4 → **p-3**
-- 图标容器从 w-14 h-14 → **w-10 h-10**
-- 图标从 w-7 h-7 → **w-5 h-5**
-- 整体更扁平紧凑
-
-## 五、身份选择页 `/duo-match`
-
-### 5.1 页面结构
-- 顶部 TopBar 标题"身份选择"
-- 页面标题："在这次对撞中，你是谁？"
-- 三个选项卡片式布局：知乎身份 / AI随机生成 / 自定义角色
-- 底部"确认身份，开始匹配"按钮
-
-### 5.2 登录检查
-- 进入页面自动检查 `/api/auth/session`
-- 未登录 → alert提示 → 跳转 `/login`
-- 已登录 → 显示身份选择
-
-### 5.3 身份选项
-| 选项 | 说明 |
-|------|------|
-| 知乎身份 | 读取 `/api/users/identities`，展示已认证身份 |
-| AI随机生成 | 从20个预设角色中随机抽取，可"换一个" |
-| 自定义角色 | 输入框，最大20字符，实时计数 |
-
-## 六、匹配等待页 `/duo-waiting`
-
-### 6.1 核心功能
-- 刘看山动画形象（浮动）
-- "刘看山正在为你寻找对撞人…"
-- **60秒精确倒计时**，大字体数字 + 进度条
-- 每2秒轮询 `/api/match/:matchId`
-- 匹配成功 → 自动跳转 `/room/:id`
-
-### 6.2 超时处理（v4.2重要改动）
-- 60秒结束后 **不再显示弹窗**
-- 直接跳转 `/duo-timeout?matchId=xxx&round=1`
-
-## 七、超时选择页 `/duo-timeout`（新建）
-
-### 7.1 页面内容
-- 刘看山形象
-- 提示文案："当前暂无真人，是否与刘看山一起探讨？"
-- 轮次提示："第1次匹配尝试" / "第2次匹配尝试（最后一次）"
-
-### 7.2 按钮
-| 按钮 | 第1轮 | 第2轮 |
-|------|-------|-------|
-| 是 | 进入刘看山AI对话 | 进入刘看山AI对话 |
-| 否 | 继续等待（跳转waiting） | 返回首页 |
-
-### 7.3 流程
-```
-waiting(60s) → timeout(round=1)
-                   ├── 是 → AI房间 /room/:id
-                   └── 否 → waiting(60s) → timeout(round=2)
-                                          ├── 是 → AI房间
-                                          └── 否 → 首页 /
-```
-
-## 八、已知问题与记录
-
-### 8.1 已修复的问题
-| 问题 | 原因 | 修复方式 |
-|------|------|---------|
-| 登录页build失败 | useSearchParams无Suspense | 拆分为page.tsx(Suspense)+LoginForm.tsx |
-| 路由冲突 | 存在(auth)/login和/login | 删除旧的(auth)/login和(auth)/register |
-
-### 8.2 仍需注意
-- 知乎API 405 Method Not Allowed（历史问题，未修复）
-- 服务器git pull经常超时，使用SFTP部署更可靠
-- Next.js 16 useSearchParams必须用Suspense包裹
-
-## 九、部署记录
-
-### 9.1 部署步骤
-1. `npx prisma db push --accept-data-loss` — 同步User表新增字段
-2. `npx prisma generate` — 生成Prisma Client
-3. `npm run build` — 42页编译成功
-4. `cp -r .next/static .next/standalone/.next/` — 复制静态资源
-5. `pm2 restart qunxiang-xinghuo` — 重启服务
-
-### 9.2 自检清单
-- [x] 首页 `/` — 泡泡墙加载正常，模式卡片显示正常
-- [x] 登录页 `/login` — 表单渲染，注册入口可点击
-- [x] 注册页 `/register` — 表单渲染，返回登录可点击
-- [x] 注册API `/api/auth/register` — POST可访问
-- [x] 身份选择 `/duo-match` — 未登录跳转登录，三选项显示
-- [x] 匹配等待 `/duo-waiting` — 倒计时正常
-- [x] 超时选择 `/duo-timeout` — 页面渲染正常
-- [x] PM2 online — pid 1150997
-
-## 十、文件变更记录
+## 十二、文件变更
 
 ```
-M  prisma/schema.prisma          # User添加username+password
-M  src/lib/auth.ts               # CredentialsProvider支持username
-A  src/app/api/auth/register/route.ts  # 注册API
-A  src/app/login/page.tsx        # Suspense包裹
-A  src/app/login/LoginForm.tsx   # 登录表单
-A  src/app/register/page.tsx     # 注册页面
-M  src/app/page.tsx              # 首页泡泡区域增大+卡片扁平
-M  src/app/duo-match/page.tsx    # 身份选择页重写
-M  src/app/duo-waiting/page.tsx  # 超时跳转独立页面
-A  src/app/duo-timeout/page.tsx  # 新建超时选择页
-M  src/components/bubble-cloud/BubbleCloud.tsx  # 18/25模板
-D  src/app/(auth)/login/page.tsx # 删除旧路由
-D  src/app/(auth)/register/page.tsx # 删除旧路由
+A  src/app/home/page.tsx            # 新建发现页
+A  src/app/LoginForm.tsx            # 根登录表单（自动回填）
+M  src/app/page.tsx                 # 改成Suspense包装LoginForm
+M  src/app/register/page.tsx        # 成功后跳转/?username=&password=
+M  src/app/duo-match/page.tsx       # 未登录跳转/
+M  src/app/duo-timeout/page.tsx     # 退出跳转/home
+M  src/app/feedback/page.tsx        # 返回首页跳转/home
+M  src/app/roadshow/page.tsx        # 链接指向/home
+M  src/app/room/[id]/page.tsx       # 未登录跳转/，返回跳转/home
+M  src/components/layout/BottomNav.tsx  # 发现指向/home，登录/注册隐藏
+D  src/app/login/page.tsx           # 删除
+D  src/app/login/LoginForm.tsx      # 重命名为src/app/LoginForm.tsx
 ```
