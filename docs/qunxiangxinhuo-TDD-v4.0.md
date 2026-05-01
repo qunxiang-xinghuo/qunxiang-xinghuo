@@ -987,9 +987,24 @@ const match = await db.matchRequest.findFirst({
 
 匹配失败在**用户量少**的场景下是正常的（只有一个用户时自然匹配不到）。但 `findUnique` bug 导致轮询API异常，即使用户后来匹配成功，前端也收不到通知。
 
+#### 问题C：第三轮自检发现同样模式（room-manager.ts + vote路由）
+
+**自检方法**：全局 `grep "findUnique" src/` 扫描所有使用点，逐条审查 `where` 条件。
+
+发现同样bug的3处：
+
+| 文件 | 行号 | 修复前 | 修复后 |
+|------|------|--------|--------|
+| `server/room-manager.ts` | 9 | `db.roomMessage.findUnique({ where: { id, roomId } })` | `findFirst` |
+| `app/api/rooms/[roomId]/vote/[voteId]/resolve/route.ts` | 34 | `db.vote.findUnique({ where: { id: voteId, roomId } })` | `findFirst` |
+| `app/api/rooms/[roomId]/vote/[voteId]/cast/route.ts` | 33 | `db.vote.findUnique({ where: { id: voteId, roomId } })` | `findFirst` |
+
+**根因**：`roomMessage` 和 `Vote` 模型都只有 `id` 是 `@id`，`roomId` 不是唯一字段，没有定义复合唯一索引。
+
 #### 教训
 - **Prisma `findUnique` vs `findFirst`**：`findUnique` 只接受唯一字段，`findFirst` 接受任意条件组合。混合使用非唯一字段时必须用 `findFirst`。
 - **生产环境诊断方法**：SSH登录服务器 → `sqlite3` 直接查表 → 检查API日志 → 本地代码逐行审查
+- **系统性修复**：发现一个 `findUnique` 误用后，必须**全局扫描所有 `.findUnique(` 调用**，同模式问题往往批量存在。犯一次就要根治一类。
 
 ---
 
