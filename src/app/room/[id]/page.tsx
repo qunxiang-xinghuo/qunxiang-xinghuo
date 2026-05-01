@@ -131,6 +131,7 @@ export default function RoomPage() {
   }, []);
 
   // AI 自动回复 - 刘看山温暖治愈语气
+  // v4.8: 带上最近5-10条历史消息作为上下文，同时调用DeepSeek+知乎直答
   const generateAIReply = useCallback(async (userMessage: string) => {
     if (isProcessingAI.current) return;
     isProcessingAI.current = true;
@@ -138,29 +139,28 @@ export default function RoomPage() {
     setPartnerTyping(true);
 
     try {
-      const systemPrompt = `你是刘看山，一位温暖、治愈、富有同理心的对话伙伴。你正在"群像·星火"创作平台上，与用户进行角色扮演对话。当前讨论主题是："${brainholeTitle || '一个有趣的话题'}"。
+      // v4.8: 收集最近10条历史消息作为上下文
+      const historyMessages = messages.slice(-10).map((msg) => ({
+        role: msg.userId === 'me' ? ('user' as const) : ('assistant' as const),
+        content: msg.content,
+      }));
 
-你的语气特点：
-- 温暖亲切，像一位懂你的朋友
-- 善于倾听，能捕捉到对方话语中的情绪
-- 回应有深度但不说教，会分享感受和思考
-- 语言自然流畅，像真人聊天一样
-- 字数控制在50-80字
-
-请基于对话主题，用温暖治愈的语气回复对方。`;
+      console.log('[Room AI] 发送消息, 历史上下文条数:', historyMessages.length, 'topic:', brainholeTitle);
 
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [
-            { role: 'system', content: systemPrompt },
+            ...historyMessages,
             { role: 'user', content: userMessage },
           ],
+          topic: brainholeTitle || '一个有趣的话题',
         }),
       });
 
       const result = await res.json();
+      console.log('[Room AI] 收到回复, source:', result.data?.source);
 
       // 模拟打字延迟
       const delay = 800 + Math.random() * 1500;
@@ -193,7 +193,7 @@ export default function RoomPage() {
       setPartnerTyping(false);
       isProcessingAI.current = false;
     }
-  }, [brainholeTitle]);
+  }, [brainholeTitle, messages]);
 
   useEffect(() => {
     if (!user || !roomId) return;
