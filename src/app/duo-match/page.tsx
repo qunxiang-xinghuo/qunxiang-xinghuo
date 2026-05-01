@@ -34,7 +34,6 @@ function DuoMatchContent() {
   const [selectedZhihuId, setSelectedZhihuId] = useState('');
   const [customLabel, setCustomLabel] = useState('');
   const [aiGenerated, setAiGenerated] = useState('');
-  const [isMatching, setIsMatching] = useState(false);
 
   // 获取知乎身份（无需登录检查，用户已在首页登录）
   useEffect(() => {
@@ -52,7 +51,7 @@ function DuoMatchContent() {
     setAiGenerated(aiIdentities[Math.floor(Math.random() * aiIdentities.length)]);
   }, []);
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
     let identity = '';
     if (selectedType === 'zhihu') {
       identity = selectedZhihuId || '匿名用户';
@@ -62,46 +61,17 @@ function DuoMatchContent() {
       identity = customLabel.trim() || '自定义角色';
     }
 
-    setIsMatching(true);
-
-    try {
-      const guestId = localStorage.getItem('xh_user_id');
-      const res = await fetch('/api/match', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(guestId ? { 'x-guest-id': guestId } : {}),
-        },
-        body: JSON.stringify({
-          identity,
-          preferDifferent: true,
-          timeoutMinutes: 1,
-          mode: 'quick',
-          brainholeId: preselectedBrainholeId || undefined,
-        }),
-      });
-
-      const result = await res.json();
-
-      if (result.success) {
-        const matchId = result.data?.matchId;
-        if (matchId) {
-          localStorage.setItem('xh_duo_match_id', matchId);
-          localStorage.setItem('xh_duo_identity', identity);
-          localStorage.removeItem('xh_duo_brainhole');
-          router.push(`/duo-waiting?matchId=${matchId}`);
-        } else {
-          alert('匹配请求创建失败');
-          setIsMatching(false);
-        }
-      } else {
-        alert(result.message || '匹配请求失败');
-        setIsMatching(false);
-      }
-    } catch {
-      alert('网络错误，请重试');
-      setIsMatching(false);
+    // v4.6-fix: 不再在这里POST匹配请求，只保存身份，跳转到等待页
+    // 等待页会在后台异步发起匹配请求
+    localStorage.setItem('xh_duo_identity', identity);
+    if (preselectedBrainholeId) {
+      localStorage.setItem('xh_duo_brainhole', preselectedBrainholeId);
     }
+    localStorage.removeItem('xh_duo_match_id');
+
+    const params = new URLSearchParams();
+    if (preselectedBrainholeId) params.set('brainholeId', preselectedBrainholeId);
+    router.push(`/duo-waiting?${params.toString()}`);
   };
 
   return (
@@ -220,14 +190,10 @@ function DuoMatchContent() {
       <div className="shrink-0 px-6 py-4 border-t border-white/5">
         <button
           onClick={handleConfirm}
-          disabled={isMatching}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
         >
-          {isMatching ? (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            '确认身份，开始匹配'
-          )}
+          <Sparkles className="w-4 h-4" />
+          确认身份，进入匹配
         </button>
       </div>
     </div>

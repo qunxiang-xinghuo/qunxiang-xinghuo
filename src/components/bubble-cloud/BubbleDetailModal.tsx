@@ -181,7 +181,7 @@ export default function BubbleDetailModal({ brainholeId, onClose }: BubbleDetail
                   }`}
                 >
                   <Bookmark className={`w-4 h-4 ${collected ? 'fill-current' : ''}`} />
-                  {collected ? '已收藏' : '收藏为素材'}
+                  {collected ? '已收藏' : '收藏脑洞'}
                 </button>
 
                 <button
@@ -189,7 +189,7 @@ export default function BubbleDetailModal({ brainholeId, onClose }: BubbleDetail
                   className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-orange-500 to-rose-500 text-white hover:opacity-90 transition-opacity"
                 >
                   <Sparkles className="w-4 h-4" />
-                  进入脑洞创作
+                  选择此脑洞
                 </button>
               </div>
             </>

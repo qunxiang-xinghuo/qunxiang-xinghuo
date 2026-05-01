@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { RefreshCw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import Bubble from './Bubble';
+import BubbleDetailModal from './BubbleDetailModal';
+import { fetchBubbles } from '@/lib/bubble-client';
 import type { BubbleData } from '@/lib/bubble-engine';
 
 interface BubbleCloudProps {
@@ -12,192 +12,129 @@ interface BubbleCloudProps {
   compact?: boolean;
 }
 
-// 紧凑位置模板（24个）
+// 紧凑模式：24个模板位置（针对首页小区域优化）
 const COMPACT_TEMPLATES = [
-  { x: 0.08, y: 0.10 }, { x: 0.30, y: 0.05 }, { x: 0.55, y: 0.12 }, { x: 0.78, y: 0.08 }, { x: 0.92, y: 0.18 },
-  { x: 0.15, y: 0.30 }, { x: 0.40, y: 0.25 }, { x: 0.65, y: 0.32 }, { x: 0.88, y: 0.28 },
-  { x: 0.08, y: 0.50 }, { x: 0.32, y: 0.45 }, { x: 0.55, y: 0.42 }, { x: 0.78, y: 0.48 }, { x: 0.95, y: 0.44 },
-  { x: 0.20, y: 0.68 }, { x: 0.48, y: 0.65 }, { x: 0.72, y: 0.70 }, { x: 0.90, y: 0.62 },
-  { x: 0.05, y: 0.85 }, { x: 0.35, y: 0.88 }, { x: 0.60, y: 0.82 }, { x: 0.85, y: 0.90 },
-  { x: 0.50, y: 0.15 }, { x: 0.25, y: 0.78 },
+  { x: 0.07, y: 0.18 }, { x: 0.28, y: 0.10 }, { x: 0.52, y: 0.15 }, { x: 0.75, y: 0.09 }, { x: 0.92, y: 0.22 },
+  { x: 0.18, y: 0.42 }, { x: 0.42, y: 0.35 }, { x: 0.65, y: 0.38 }, { x: 0.88, y: 0.45 },
+  { x: 0.10, y: 0.60 }, { x: 0.35, y: 0.55 }, { x: 0.58, y: 0.60 }, { x: 0.82, y: 0.58 },
+  { x: 0.25, y: 0.78 }, { x: 0.50, y: 0.75 }, { x: 0.72, y: 0.78 }, { x: 0.90, y: 0.72 },
+  { x: 0.12, y: 0.90 }, { x: 0.38, y: 0.92 }, { x: 0.62, y: 0.88 }, { x: 0.85, y: 0.90 },
+  { x: 0.50, y: 0.25 }, { x: 0.15, y: 0.28 }, { x: 0.80, y: 0.30 },
 ];
 
-// 完整位置模板（30个）
+// 完整模式：30个模板位置
 const FULL_TEMPLATES = [
-  { x: 0.06, y: 0.08 }, { x: 0.22, y: 0.04 }, { x: 0.42, y: 0.10 }, { x: 0.62, y: 0.06 }, { x: 0.82, y: 0.12 }, { x: 0.95, y: 0.08 },
-  { x: 0.12, y: 0.26 }, { x: 0.32, y: 0.22 }, { x: 0.52, y: 0.28 }, { x: 0.72, y: 0.24 }, { x: 0.90, y: 0.30 },
-  { x: 0.06, y: 0.46 }, { x: 0.26, y: 0.42 }, { x: 0.46, y: 0.48 }, { x: 0.66, y: 0.44 }, { x: 0.86, y: 0.50 }, { x: 0.98, y: 0.40 },
-  { x: 0.14, y: 0.66 }, { x: 0.38, y: 0.62 }, { x: 0.58, y: 0.68 }, { x: 0.78, y: 0.64 }, { x: 0.94, y: 0.58 },
-  { x: 0.28, y: 0.86 }, { x: 0.52, y: 0.82 }, { x: 0.76, y: 0.88 },
-  { x: 0.10, y: 0.75 }, { x: 0.45, y: 0.78 }, { x: 0.70, y: 0.76 }, { x: 0.92, y: 0.72 },
-  { x: 0.18, y: 0.92 }, { x: 0.62, y: 0.94 },
+  { x: 0.06, y: 0.15 }, { x: 0.22, y: 0.08 }, { x: 0.42, y: 0.12 }, { x: 0.62, y: 0.08 }, { x: 0.82, y: 0.15 }, { x: 0.94, y: 0.28 },
+  { x: 0.12, y: 0.32 }, { x: 0.32, y: 0.25 }, { x: 0.52, y: 0.28 }, { x: 0.72, y: 0.25 }, { x: 0.88, y: 0.35 },
+  { x: 0.08, y: 0.50 }, { x: 0.28, y: 0.45 }, { x: 0.48, y: 0.48 }, { x: 0.68, y: 0.45 }, { x: 0.92, y: 0.50 },
+  { x: 0.15, y: 0.68 }, { x: 0.38, y: 0.62 }, { x: 0.58, y: 0.65 }, { x: 0.78, y: 0.62 }, { x: 0.95, y: 0.70 },
+  { x: 0.10, y: 0.85 }, { x: 0.30, y: 0.88 }, { x: 0.50, y: 0.82 }, { x: 0.70, y: 0.88 }, { x: 0.90, y: 0.85 },
+  { x: 0.45, y: 0.20 }, { x: 0.18, y: 0.20 }, { x: 0.75, y: 0.18 }, { x: 0.85, y: 0.55 },
 ];
 
 export default function BubbleCloud({ category, compact = false }: BubbleCloudProps) {
-  const router = useRouter();
   const [bubbles, setBubbles] = useState<BubbleData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [containerSize, setContainerSize] = useState({ w: 375, h: compact ? 260 : 420 });
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(null);
 
-  // 监听窗口大小变化
+  const templates = compact ? COMPACT_TEMPLATES : FULL_TEMPLATES;
+
+  // 监听容器尺寸变化
   useEffect(() => {
-    const update = () => {
-      setContainerSize({
-        w: window.innerWidth - 32,
-        h: compact ? 260 : 420,
-      });
+    const updateSize = () => {
+      const el = document.getElementById('bubble-cloud-container');
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setContainerSize({ w: rect.width, h: rect.height });
+      }
     };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, [compact]);
 
-  const fetchBubbles = useCallback(async (refresh = false) => {
-    console.log('[BubbleCloud] Starting fetch...');
-    setIsLoading(true);
-    setError(null);
+  const loadBubbles = useCallback(async (refresh = false) => {
+    setLoading(true);
+    setError('');
     try {
-      const params = new URLSearchParams();
-      params.set('limit', '30');
-      if (refresh) params.set('refresh', 'true');
-      if (category) params.set('category', category);
-
-      const url = `/api/brainholes/bubble?${params.toString()}`;
-      console.log('[BubbleCloud] Fetching:', url);
-
-      const res = await fetch(url, { cache: 'no-store' });
-      console.log('[BubbleCloud] Response status:', res.status);
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('[BubbleCloud] HTTP error:', res.status, errorText);
-        setError(`服务器错误 (${res.status})`);
-        return;
-      }
-
-      const result = await res.json();
-      console.log('[BubbleCloud] Response data:', result);
-
-      if (result.success && result.data?.brainholes) {
-        const list: BubbleData[] = result.data.brainholes.map((b: any) => ({
-          id: String(b.id),
-          title: String(b.title),
-          scenario: String(b.scenario || ''),
-          difficulty: String(b.difficulty || 'medium'),
-          hotScore: Number(b.hotScore || 0),
-          category: String(b.category || 'general'),
-          bubbleColor: b.bubbleColor || null,
-          reactionCount: Number(b.reactionCount || 0),
-          sparkCount: Number(b.sparkCount || 0),
-          collectionCount: Number(b.collectionCount || 0),
-          isNew: b.recencyBoost === true,
-          isTrending: b.category === 'zhihu_hot',
-          isParticipated: false,
-        }));
-        console.log('[BubbleCloud] Parsed bubbles:', list.length, 'Source:', result.data.source);
-        setBubbles(list);
-      } else {
-        console.error('[BubbleCloud] Invalid response format:', result);
-        setError('加载泡泡失败: 数据格式错误');
-      }
-    } catch (err: any) {
-      console.error('[BubbleCloud] Fetch error:', err);
-      setError(`网络错误: ${err.message || '请检查网络连接'}`);
+      const data = await fetchBubbles({ limit: templates.length + 6, category, refresh });
+      setBubbles(data);
+    } catch {
+      setError('加载泡泡失败');
     } finally {
-      setIsLoading(false);
-      console.log('[BubbleCloud] Fetch complete');
+      setLoading(false);
     }
-  }, [category, compact]);
+  }, [category, compact, templates.length]);
 
   useEffect(() => {
-    fetchBubbles();
-  }, [fetchBubbles]);
+    loadBubbles();
+  }, [loadBubbles]);
 
-  // 计算泡泡位置：稀疏分布 + 稳定随机参数
+  const containerW = containerSize.w;
+  const containerH = containerSize.h;
+
+  // 生成泡泡位置 - 确保不超出容器边界
   const positions = useMemo(() => {
-    if (bubbles.length === 0) return [];
+    if (bubbles.length === 0 || containerW === 0) return [];
 
-    const MAX_BUBBLES = compact ? 24 : 30;
-    const displayBubbles = bubbles.slice(0, MAX_BUBBLES);
-    const templates = compact ? COMPACT_TEMPLATES : FULL_TEMPLATES;
-    const { w: containerW, h: containerH } = containerSize;
+    const displayBubbles = bubbles.slice(0, templates.length);
 
     return displayBubbles.map((bubble, index) => {
-      // 用 bubble.id 做种子，保证同一次加载中参数稳定
-      const seed = bubble.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-
-      // 大小：40-60px，由热度微调（热度高的大一点）
-      const baseSize = 40;
-      const sizeRange = 20;
-      const size = baseSize + ((bubble.hotScore || 50) / 100) * sizeRange;
-
-      // 位置：基于模板 + 稳定随机偏移
       const template = templates[index % templates.length];
-      const jitterX = Math.sin(seed * 1.37) * 10;
-      const jitterY = Math.cos(seed * 2.71) * 8;
+      const size = Math.min(
+        56 + Math.round(bubble.hotScore / 10),
+        compact ? 52 : 64
+      );
 
-      const x = template.x * containerW + jitterX - size / 2;
-      const y = template.y * containerH + jitterY - size / 2;
+      // 随机偏移 ±15px，但确保不越界
+      const jitterX = (Math.random() - 0.5) * 30;
+      const jitterY = (Math.random() - 0.5) * 30;
 
-      // 漂浮参数：8-18秒，稳定随机
-      const floatDuration = 8 + ((Math.sin(seed * 3.13) * 0.5 + 0.5) * 10);
-      const floatDelay = (Math.cos(seed * 1.97) * 0.5 + 0.5) * 5;
-      // 减小摆动幅度，确保不溢出容器（最大8px）
-      const swayAmplitude = 3 + ((Math.sin(seed * 5.23) * 0.5 + 0.5) * 5);
+      const x = Math.max(
+        8,
+        Math.min(containerW - size - 8, template.x * containerW + jitterX - size / 2)
+      );
+      const y = Math.max(
+        8,
+        Math.min(containerH - size - 8, template.y * containerH + jitterY - size / 2)
+      );
 
-      // 严格限制在容器内，留出20px安全边距给漂浮动画
-      const SAFE_MARGIN = 20;
+      // 随机漂浮参数
+      const floatDuration = 6 + Math.random() * 8; // 6-14秒一个周期
+      const floatDelay = Math.random() * 4; // 0-4秒延迟启动
+      const swayAmplitude = 4 + Math.random() * 6; // 左右摆动幅度
+
       return {
         bubble,
-        x: Math.max(SAFE_MARGIN, Math.min(containerW - size - SAFE_MARGIN, x)),
-        y: Math.max(SAFE_MARGIN, Math.min(containerH - size - SAFE_MARGIN, y)),
+        x,
+        y,
         size,
         floatDuration,
         floatDelay,
         swayAmplitude,
       };
     });
-  }, [bubbles, compact, containerSize]);
+  }, [bubbles, compact, containerW, containerH, templates]);
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[140px]">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-        >
-          <RefreshCw className="w-5 h-5 text-white/30" />
-        </motion.div>
-        <span className="ml-2 text-xs text-white/40">正在加载脑洞泡泡...</span>
+      <div className="relative w-full flex items-center justify-center" style={{ height: compact ? 260 : 420 }}>
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[140px] gap-3">
-        <p className="text-xs text-white/40">{error}</p>
-        <p className="text-[10px] text-white/20">详细错误已输出到浏览器控制台</p>
+      <div className="relative w-full flex flex-col items-center justify-center gap-3" style={{ height: compact ? 260 : 420 }}>
+        <p className="text-sm text-gray-400">{error}</p>
         <button
-          onClick={() => fetchBubbles(true)}
-          className="px-3 py-1.5 bg-white/10 text-white/60 rounded-lg text-xs hover:bg-white/20 transition-colors"
+          onClick={() => loadBubbles(true)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/5 text-sm text-gray-300 hover:bg-white/10 transition-colors"
         >
-          重新加载
-        </button>
-      </div>
-    );
-  }
-
-  if (bubbles.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[140px] gap-2">
-        <p className="text-xs text-white/40">暂无脑洞数据</p>
-        <button
-          onClick={() => fetchBubbles(true)}
-          className="px-3 py-1.5 bg-white/10 text-white/60 rounded-lg text-xs hover:bg-white/20 transition-colors"
-        >
+          <RefreshCw className="w-3.5 h-3.5" />
           刷新试试
         </button>
       </div>
@@ -205,33 +142,38 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
   }
 
   return (
-    <div
-      className="relative w-full overflow-hidden"
-      style={{ height: containerSize.h }}
-    >
-      {positions.map(({
-        bubble, x, y, size, floatDuration, floatDelay, swayAmplitude,
-      }) => (
-        <Bubble
-          key={bubble.id}
-          data={bubble}
-          x={x}
-          y={y}
-          size={size}
-          floatDuration={floatDuration}
-          floatDelay={floatDelay}
-          swayAmplitude={swayAmplitude}
-          onClick={(id) => {
-            // v4.4: 点击泡泡直接带脑洞进入身份选择页
-            router.push(`/duo-match?brainholeId=${id}`);
-          }}
-          isHovered={hoveredId === bubble.id}
-          isAnyHovered={hoveredId !== null}
-          compact={compact}
-          onMouseEnter={() => setHoveredId(bubble.id)}
-          onMouseLeave={() => setHoveredId(null)}
+    <>
+      {/* 泡泡容器 - 必须同时设置 position:relative 和 overflow:hidden 才能正确裁剪 */}
+      <div
+        id="bubble-cloud-container"
+        className="relative w-full overflow-hidden"
+        style={{ height: containerSize.h }}
+      >
+        {positions.map(({
+          bubble, x, y, size, floatDuration, floatDelay, swayAmplitude,
+        }) => (
+          <Bubble
+            key={bubble.id}
+            data={bubble}
+            x={x}
+            y={y}
+            size={size}
+            floatDuration={floatDuration}
+            floatDelay={floatDelay}
+            swayAmplitude={swayAmplitude}
+            onClick={(id) => setSelectedBubbleId(id)}
+            compact={compact}
+          />
+        ))}
+      </div>
+
+      {/* 脑洞详情弹窗 */}
+      {selectedBubbleId && (
+        <BubbleDetailModal
+          brainholeId={selectedBubbleId}
+          onClose={() => setSelectedBubbleId(null)}
         />
-      ))}
-    </div>
+      )}
+    </>
   );
 }
