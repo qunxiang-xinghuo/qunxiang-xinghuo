@@ -11,6 +11,7 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      username?: string | null;
       level: number;
       sparkCount: number;
     };
@@ -20,6 +21,16 @@ declare module "next-auth" {
     id: string;
     level: number;
     sparkCount: number;
+    username?: string | null;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    level?: number;
+    sparkCount?: number;
+    username?: string | null;
   }
 }
 
@@ -29,50 +40,51 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: "/login",
+    error: "/login",
   },
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        username: { label: "用户名", type: "text" },
+        password: { label: "密码", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.username || !credentials?.password) {
           return null;
         }
 
-        const user = await db.user.findUnique({
-          where: { email: credentials.email },
+        // 优先通过 username 查找
+        const user = await db.user.findFirst({
+          where: {
+            OR: [
+              { username: credentials.username },
+              { email: credentials.username },
+            ],
+          },
         });
 
         if (!user) {
-          // For demo purposes, create a user if not found
-          const hashedPassword = await bcrypt.hash(credentials.password, 10);
-          const newUser = await db.user.create({
-            data: {
-              email: credentials.email,
-              name: credentials.email.split("@")[0],
-              level: 1,
-              sparkCount: 0,
-            },
-          });
-          return {
-            id: newUser.id,
-            email: newUser.email,
-            name: newUser.name,
-            level: newUser.level,
-            sparkCount: newUser.sparkCount,
-          };
+          return null;
         }
 
-        // In a real app, you would verify the password here
+        // 验证密码
+        if (user.password) {
+          const valid = await bcrypt.compare(credentials.password, user.password);
+          if (!valid) {
+            return null;
+          }
+        } else {
+          // 兼容旧用户：没有密码的不能通过 credentials 登录
+          return null;
+        }
+
         return {
           id: user.id,
+          name: user.name || user.username || user.email?.split("@")[0],
           email: user.email,
-          name: user.name,
+          username: user.username,
           level: user.level,
           sparkCount: user.sparkCount,
         };
@@ -85,14 +97,16 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.level = user.level;
         token.sparkCount = user.sparkCount;
+        token.username = user.username;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.level = token.level as number;
-        session.user.sparkCount = token.sparkCount as number;
+        session.user.level = (token.level as number) ?? 1;
+        session.user.sparkCount = (token.sparkCount as number) ?? 0;
+        session.user.username = token.username as string | null;
       }
       return session;
     },

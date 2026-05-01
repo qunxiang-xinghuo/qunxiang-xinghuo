@@ -98,14 +98,14 @@ export default function Home() {
         </motion.p>
       </div>
 
-      {/* 泡泡墙区域 - 核心交互区 */}
-      <div className="shrink-0 relative overflow-hidden" style={{ height: '240px' }}>
+      {/* 泡泡墙区域 - 增大面积 */}
+      <div className="shrink-0 relative overflow-hidden" style={{ height: '320px' }}>
         <BubbleCloud compact />
       </div>
 
-      {/* 模式入口卡片 */}
-      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4">
-        <div className="flex flex-col gap-3">
+      {/* 模式入口卡片 - 扁平化 */}
+      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-3">
+        <div className="flex flex-col gap-2">
           {modes.map((mode, index) => {
             const Icon = mode.icon;
             return (
@@ -117,7 +117,7 @@ export default function Home() {
                 whileHover={mode.available ? { scale: 1.02 } : {}}
                 whileTap={mode.available ? { scale: 0.98 } : {}}
                 onClick={() => handleModeClick(mode)}
-                className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
                   mode.core
                     ? `${mode.bg} ${mode.border} cursor-pointer hover:shadow-lg`
                     : mode.available
@@ -125,17 +125,17 @@ export default function Home() {
                     : 'bg-white/5 border-white/5 opacity-50 cursor-not-allowed'
                 }`}
                 style={{
-                  boxShadow: mode.core ? `0 0 24px ${mode.color}15` : mode.available ? `0 0 16px ${mode.color}10` : 'none',
+                  boxShadow: mode.core ? `0 0 16px ${mode.color}12` : mode.available ? `0 0 12px ${mode.color}08` : 'none',
                 }}
               >
                 <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                   style={{
-                    background: `linear-gradient(135deg, ${mode.color}30, ${mode.color}10)`,
-                    border: `1px solid ${mode.color}30`,
+                    background: `linear-gradient(135deg, ${mode.color}25, ${mode.color}08)`,
+                    border: `1px solid ${mode.color}25`,
                   }}
                 >
-                  <Icon className="w-7 h-7" style={{ color: mode.color }} />
+                  <Icon className="w-5 h-5" style={{ color: mode.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
