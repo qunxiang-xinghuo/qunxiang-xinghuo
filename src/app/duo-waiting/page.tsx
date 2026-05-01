@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 
-const MATCH_TIMEOUT = 60;
+const MATCH_TIMEOUT = 10;
 const POLL_INTERVAL = 2000;
 
 type MatchStatus = 'matching' | 'matched' | 'ai' | 'exiting';
@@ -44,7 +44,7 @@ function DuoWaitingContent() {
     }
   }, [matchId, status, router]);
 
-  // 60秒倒计时 + 轮询
+  // 10秒倒计时 + 轮询
   useEffect(() => {
     if (!matchId) {
       router.push('/duo-match');
@@ -56,7 +56,7 @@ function DuoWaitingContent() {
         const next = prev + 1;
         if (next >= MATCH_TIMEOUT) {
           clearInterval(timer);
-          // 60秒结束，跳转到超时选择页
+          // 10秒结束，跳转到超时选择页
           router.push(`/duo-timeout?matchId=${matchId}&round=1`);
         }
         return next;

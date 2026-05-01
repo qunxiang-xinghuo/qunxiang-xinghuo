@@ -12,8 +12,8 @@ REMOTE = "/www/wwwroot/qunxiang-xinghuo"
 FILES = [
     # Core pages
     ("src/app/page.tsx", "src/app/page.tsx"),
-    ("src/app/login/page.tsx", "src/app/login/page.tsx"),
-    ("src/app/login/LoginForm.tsx", "src/app/login/LoginForm.tsx"),
+    ("src/app/LoginForm.tsx", "src/app/LoginForm.tsx"),
+    ("src/app/home/page.tsx", "src/app/home/page.tsx"),
     ("src/app/register/page.tsx", "src/app/register/page.tsx"),
     ("src/app/duo-match/page.tsx", "src/app/duo-match/page.tsx"),
     ("src/app/duo-waiting/page.tsx", "src/app/duo-waiting/page.tsx"),
@@ -24,6 +24,7 @@ FILES = [
     ("src/components/bubble-cloud/BubbleCloud.tsx", "src/components/bubble-cloud/BubbleCloud.tsx"),
     ("src/components/bubble-cloud/BubbleDetailModal.tsx", "src/components/bubble-cloud/BubbleDetailModal.tsx"),
     ("src/components/match/DuoIdentityModal.tsx", "src/components/match/DuoIdentityModal.tsx"),
+    ("src/components/layout/BottomNav.tsx", "src/components/layout/BottomNav.tsx"),
     # Server
     ("src/server/match-engine.ts", "src/server/match-engine.ts"),
     ("src/server/room-manager.ts", "src/server/room-manager.ts"),
@@ -69,29 +70,32 @@ def main():
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(HOST, port=PORT, username=USER, password=PASS, timeout=15)
     try:
-        print("[1/6] Uploading all files...")
+        print("[1/7] Uploading all files...")
         sftp = ssh.open_sftp()
         for local, remote in FILES:
             upload(sftp, local, remote)
         sftp.close()
         print("[OK] Uploaded")
 
-        print("\n[2/6] Remove old (auth) pages...")
-        run(ssh, f"cd {REMOTE} && rm -rf src/app/'(auth)'/login src/app/'(auth)'/register", 10)
+        print("\n[2/7] Remove old login pages...")
+        run(ssh, f"cd {REMOTE} && rm -rf src/app/login", 10)
 
-        print("\n[3/6] Prisma db push...")
+        print("\n[3/7] Remove .next cache...")
+        run(ssh, f"cd {REMOTE} && rm -rf .next", 10)
+
+        print("\n[4/7] Prisma db push...")
         run(ssh, f"cd {REMOTE} && npx prisma db push --accept-data-loss", 120)
 
-        print("\n[4/6] Prisma generate...")
+        print("\n[5/7] Prisma generate...")
         run(ssh, f"cd {REMOTE} && npx prisma generate", 60)
 
-        print("\n[5/6] Build...")
+        print("\n[6/7] Build...")
         code = run(ssh, f"cd {REMOTE} && npm run build", 300)
         if code != 0:
             print("[ERROR] Build failed")
             return 1
 
-        print("\n[6/6] Copy static + restart...")
+        print("\n[7/7] Copy static + restart...")
         run(ssh, f"cd {REMOTE} && cp -r .next/static .next/standalone/.next/")
         run(ssh, f"cd {REMOTE} && pm2 restart qunxiang-xinghuo")
         run(ssh, "pm2 list", 10)

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { X, User, Sparkles, Edit3, Check, ArrowLeft } from 'lucide-react';
+import { User, Sparkles, Edit3, Check } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 
 interface IdentityOption {
@@ -27,7 +27,6 @@ const aiIdentities = [
 
 function DuoMatchContent() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [selectedType, setSelectedType] = useState<'zhihu' | 'ai' | 'custom'>('zhihu');
   const [zhihuIdentities, setZhihuIdentities] = useState<string[]>([]);
   const [selectedZhihuId, setSelectedZhihuId] = useState('');
@@ -35,29 +34,8 @@ function DuoMatchContent() {
   const [aiGenerated, setAiGenerated] = useState('');
   const [isMatching, setIsMatching] = useState(false);
 
-  // 登录检查
+  // 获取知乎身份（无需登录检查，用户已在首页登录）
   useEffect(() => {
-    fetch('/api/auth/session')
-      .then((r) => r.json())
-      .then((session) => {
-        if (session?.user?.id) {
-          setIsLoggedIn(true);
-        } else {
-          setIsLoggedIn(false);
-          alert('请先登录后再进行双人匹配');
-          router.push('/');
-        }
-      })
-      .catch(() => {
-        setIsLoggedIn(false);
-        alert('请先登录后再进行双人匹配');
-        router.push('/login');
-      });
-  }, [router]);
-
-  // 获取知乎身份
-  useEffect(() => {
-    if (!isLoggedIn) return;
     fetch('/api/users/identities')
       .then((r) => r.json())
       .then((res) => {
@@ -70,7 +48,7 @@ function DuoMatchContent() {
       .catch(() => {});
     // AI随机
     setAiGenerated(aiIdentities[Math.floor(Math.random() * aiIdentities.length)]);
-  }, [isLoggedIn]);
+  }, []);
 
   const handleConfirm = async () => {
     let identity = '';
@@ -118,20 +96,6 @@ function DuoMatchContent() {
       setIsMatching(false);
     }
   };
-
-  if (isLoggedIn === null) {
-    return (
-      <div className="flex flex-col h-full bg-[#1a1a2e]">
-        <TopBar title="身份选择" showBack />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-sm text-white/40">检查登录状态...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]">
