@@ -484,3 +484,97 @@ motion.div (定位+入场动画)
 - [ ] 悬停时文字**确实**从10px放大到14px
 - [ ] 点击泡泡时有轻微弹跳动画
 - [ ] 点击弹跳期间漂浮动画不中断
+
+
+---
+
+## 十四、v4.8 修复：泡泡晶莹质感 + AI对话真实化
+
+### 修复1: 泡泡样式
+
+**问题**:
+1. 泡泡像实心圆球，缺少透明质感
+2. 默认文字大小不统一
+3. 悬停时单独放大文字，效果不自然
+
+**修复**:
+- `globals.css`:
+  - 背景简化为 `rgba(255,255,255,0.04)` + `backdrop-filter: blur(5px)` 毛玻璃效果
+  - 去掉复杂的 `radial-gradient` 多层背景（保留 `::before` 五彩光泽和 `::after` 高光点，降低不透明度）
+  - 默认文字: `font-size: 0.75rem`（12px）
+  - 悬停: 统一 `transform: scale(1.15)`，不单独改文字大小（文字随整体scale一起变大）
+  - 去掉 `translateY(-8px)`，避免与漂浮动画叠加时视觉混乱
+  - 边缘: 极淡 `box-shadow` 模拟水珠发光，无实色border
+
+### 修复2: AI对话真实化
+
+**问题**:
+1. 刘看山回复全是套话，像机器人
+2. 每次对话都是独立的，没有上下文记忆
+3. 只调用单一API（DeepSeek），没有备用方案
+
+**修复**:
+
+**System Prompt 重写**:
+```
+你是刘看山，一位温暖、治愈、富有生活阅历的对话伙伴...
+
+绝对禁止：
+- 不要说"这是一个很好的问题"
+- 不要像客服那样礼貌而空洞
+- 不要用排比句和宏大叙事
+- 不要总结概括对方的观点
+- 不要说教，不要给人生建议
+- 不要说"我理解你的感受"这种正确的废话
+```
+
+**双API调用**:
+- `/api/ai/chat/route.ts` 同时调用 **DeepSeek API** + **知乎直答 API**
+- 优先使用 DeepSeek 结果
+- DeepSeek 失败时，自动 fallback 到知乎直答
+- 两个都失败时，返回预设 fallback 回复
+
+**历史上下文**:
+- `room/[id]/page.tsx` 的 `generateAIReply` 收集最近 **10条** 历史消息
+- 作为 `messages` 数组传给 `/api/ai/chat`
+- AI回复基于完整对话上下文，更连贯、更像真人
+
+**环境变量检查**:
+- 代码已正确使用 `process.env.DEEPSEEK_API_KEY` 读取环境变量，无硬编码
+- `.env` 中当前有 `ZHIHU_API_KEY`，无 `DEEPSEEK_API_KEY`
+- 知乎直答可正常工作，DeepSeek 需手动配置 key
+
+### 文件变更
+| 文件 | 变更 |
+|------|------|
+| `src/app/globals.css` | 重写泡泡样式：毛玻璃+简化背景+0.75rem文字 |
+| `src/app/api/ai/chat/route.ts` | 重写：System Prompt+双API调用+日志 |
+| `src/app/room/[id]/page.tsx` | generateAIReply带上最近10条历史消息 |
+
+### 测试检查清单
+- [ ] 泡泡是透明的，背景可以透过来
+- [ ] 泡泡有 `backdrop-filter: blur(5px)` 毛玻璃效果
+- [ ] 泡泡没有实色边框，边缘是极淡发光
+- [ ] 默认文字 0.75rem（12px），小巧精致
+- [ ] 悬停时整体 scale(1.15)，文字随整体一起变大
+- [ ] 与刘看山对话不再像机器人
+- [ ] 刘看山能记住之前的对话内容（上下文连贯）
+- [ ] 浏览器控制台有 `[AI Chat]` 日志，显示调用的API来源
+
+---
+
+## 环境变量配置说明
+
+服务器 `.env` 文件路径：`/www/wwwroot/qunxiang-xinghuo/.env`
+
+当前已配置：
+```
+ZHIHU_API_KEY="xrUmjOP1pferLLYrQufOIrvlbT3tFvct"
+```
+
+如需接入 DeepSeek AI，请添加：
+```
+DEEPSEEK_API_KEY="sk-your-deepseek-api-key-here"
+```
+
+配置后执行：`pm2 restart qunxiang-xinghuo`
