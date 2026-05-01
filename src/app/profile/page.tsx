@@ -2,12 +2,13 @@
 
 import TopBar from '@/components/layout/TopBar';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Heart, Lock, ScrollText, Coins, Settings, LogOut } from 'lucide-react';
+import { User, Heart, Lock, ScrollText, Coins, Settings, LogOut, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const menuItems = [
   { id: 'heal', label: '个人疗愈中心', icon: Heart, badge: '即将开放', desc: '密码保护，永不公开' },
   { id: 'couple', label: '密友空间', icon: Lock, badge: '即将开放', desc: '双人确认，AI催化' },
+  { id: 'my-assets', label: '我的素材', icon: BookOpen, desc: '查看保存的对白历史' },
   { id: 'my-stories', label: '我发起的故事', icon: ScrollText, desc: '作为导演创建的项目' },
   { id: 'joined-stories', label: '我参与的故事', icon: ScrollText, desc: '作为角色参与的项目' },
   { id: 'income', label: '严选收益', icon: Coins, desc: '盐选收录收益' },
@@ -30,6 +31,8 @@ export default function ProfilePage() {
     }
     if (item.id === 'income') {
       alert('严选收益功能即将上线');
+    } else if (item.id === 'my-assets') {
+      router.push('/library');
     } else if (item.id === 'my-stories' || item.id === 'joined-stories') {
       router.push('/story');
     }

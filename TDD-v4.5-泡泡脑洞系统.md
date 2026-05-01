@@ -578,3 +578,105 @@ DEEPSEEK_API_KEY="sk-your-deepseek-api-key-here"
 ```
 
 配置后执行：`pm2 restart qunxiang-xinghuo`
+
+
+---
+
+## v4.8-fix 修复记录（2026-04-29）
+
+### 修复一：泡泡样式精简
+
+**问题**：泡泡太大（40-60px），文字也太大（0.75rem），不够灵动精巧。
+
+**修复内容**：
+1. `BubbleCloud.tsx`：泡泡尺寸从 `56 + hotScore/10` 缩小到 `24 + hotScore/20`，上限从 `52/64px` 改为 `28/32px`（约25-30px范围）
+2. `globals.css`：`.bubble-text` 从 `0.75rem` 缩小到 `0.65rem`，行高微调为 `1.15`
+3. `globals.css`：`.bubble-glass` 添加半透明描边 `border: 1px solid rgba(255, 255, 255, 0.2)`，保留原有毛玻璃质感
+4. 随机浮动动画已在 v4.7-fix2 中实现（每个泡泡独立 `floatDuration` 和 `floatDelay`）
+
+**关键教训**：泡泡尺寸直接决定整体视觉密度，小尺寸+半透明描边比大尺寸+无描边更显精致。
+
+### 修复二：AI对话系统强化
+
+**问题**：刘看山对话仍有机器人感；System Prompt 不够具体；欢迎消息太客气。
+
+**修复内容**：
+1. `/api/ai/chat/route.ts`：全面重写 `LIUKANSHAN_SYSTEM_PROMPT`
+   - 人设更具体："一个真实存在过的人——不是AI，不是客服，不是人生导师"
+   - 语气要求：像朋友发微信，允许有错别字，允许"嗯..."停顿
+   - 新增禁止项："作为AI助手..."、"每个人都有自己的选择"、任何形式的总结概括
+   - 明确要求"第一句就要落地，不要铺垫"
+2. `/api/rooms/ai/route.ts`：欢迎消息从客套的"你好！我是刘看山..."改为自然的 `"{topic}"...这个话题我正好有点想法。你先说，我听着。`
+3. 双API并行（DeepSeek+知乎直答）和10条历史上下文已在 v4.8 中实现，本次未改动
+
+### 修复三：素材沉淀自动保存
+
+**问题**：对白结束后，对话记录没有自动存入用户素材库，需要用户手动点击"存素材库"。
+
+**修复内容**：
+1. `room/[id]/page.tsx`：
+   - 新增 `saveAssetInternal()` 内部保存函数，使用 `assetSavedRef` 防止重复保存
+   - 新增 `handleEndChat()`：点击"结束对撞"按钮时先保存对白，再跳转到 `/library`
+   - 新增组件卸载自动保存：`useEffect` cleanup 中使用 `keepalive: true` 的 fetch，确保用户直接退出浏览器时也能触发保存
+   - 新增"结束对撞"按钮（红色，带 XCircle 图标）
+2. `profile/page.tsx`：菜单列表新增【我的素材】入口（BookOpen图标），点击跳转到 `/library`
+3. `/api/assets/route.ts` 和 `/api/assets/public` 已存在，无需修改
+
+**关键教训**：
+- `keepalive: true` 的 fetch 可以在页面卸载时保证请求发出（比 `sendBeacon` 更灵活，支持自定义 headers）
+- `useRef` 配合 `useState` 是防止重复保存的可靠模式（ref 在 cleanup 中同步可读，state 用于UI反馈）
+
+### 修复四：底部导航栏恢复
+
+**问题**：深层页面（对白室、等待页等）底部导航栏消失；部分页面缺少返回键。
+
+**根因分析**：
+- `MobileContainer` 内部 `motion.div` 是 `h-full flex flex-col`，包含 page content + `BottomNav`
+- 深层页面的 page content 也是 `h-full flex flex-col`，在 flex 容器中 `h-full` 会占据100%父容器高度，把 `BottomNav` 挤出可视区域
+- 由于外层容器 `overflow-hidden`，被挤出的 `BottomNav` 被截断不可见
+
+**修复内容**：
+1. `MobileContainer.tsx`：移除外层 `div`（`h-full w-full max-w-md mx-auto bg-xh-primary relative overflow-hidden`），改为纯 `AnimatePresence` + `motion.div` wrapper
+2. `layout.tsx`：新增外层结构
+   ```tsx
+   <div className="h-full w-full max-w-md mx-auto bg-xh-primary relative overflow-hidden flex flex-col">
+     <MobileContainer className="flex-1 min-h-0 overflow-hidden">
+       {children}
+     </MobileContainer>
+     <BottomNav />
+   </div>
+   ```
+3. 效果：
+   - `BottomNav` 在 `AnimatePresence` 外面，切换页面时不再跟着做 exit/enter 动画
+   - page content 被限制在 `flex-1 min-h-0 overflow-hidden` 的 motion.div 中，不会和 `BottomNav` 抢占空间
+   - 所有深层页面的 `h-full` 会取 motion.div 的高度，内部滚动正常
+
+**返回键检查**：
+- `room/[id]/page.tsx`：已有 `TopBar showBack`
+- `duo-match/page.tsx`：已有 `TopBar showBack`
+- `duo-waiting/page.tsx`：已有 `TopBar showBack`
+- `duo-timeout/page.tsx`：已有 `TopBar showBack`
+- `library/page.tsx` 和 `profile/page.tsx` 是顶层导航页面，未加返回键（通过底部导航即可返回）
+
+### 文件变更汇总
+
+| 文件 | 变更 |
+|------|------|
+| `src/components/bubble-cloud/BubbleCloud.tsx` | 泡泡尺寸缩小：24+hotScore/20，上限28/32px |
+| `src/app/globals.css` | 文字0.65rem、半透明描边border、padding缩小 |
+| `src/app/api/ai/chat/route.ts` | System Prompt全面重写，更真实更具体 |
+| `src/app/api/rooms/ai/route.ts` | 欢迎消息更自然，不再客套 |
+| `src/app/room/[id]/page.tsx` | 自动保存+结束对撞按钮+keepalive fetch |
+| `src/app/profile/page.tsx` | 新增【我的素材】菜单入口 |
+| `src/components/layout/MobileContainer.tsx` | 移除外层div，改为纯AnimatePresence wrapper |
+| `src/app/layout.tsx` | 新增flex-col外层结构，BottomNav在AnimatePresence外 |
+
+### 环境变量
+
+服务器 `.env` 已配置：
+```
+DEEPSEEK_API_KEY="sk-181c8aa2e8f1469d9a60698f6d79d71d"
+ZHIHU_API_KEY="xrUmjOP1pferLLYrQufOIrvlbT3tFvct"
+```
+
+配置后执行：`pm2 restart qunxiang-xinghuo`

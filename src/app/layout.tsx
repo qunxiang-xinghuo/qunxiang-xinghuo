@@ -18,10 +18,12 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className="font-sans">
         <Providers>
-          <MobileContainer>
-            {children}
+          <div className="h-full w-full max-w-md mx-auto bg-xh-primary relative overflow-hidden flex flex-col">
+            <MobileContainer className="flex-1 min-h-0 overflow-hidden">
+              {children}
+            </MobileContainer>
             <BottomNav />
-          </MobileContainer>
+          </div>
         </Providers>
       </body>
     </html>

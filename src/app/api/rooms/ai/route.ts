@@ -138,13 +138,13 @@ export async function POST(request: NextRequest) {
     });
     console.log("[AI Room API] AI参与者添加成功");
 
-    // 添加欢迎消息
+    // v4.8-fix: 更自然的欢迎消息
     console.log("[AI Room API] 添加欢迎消息...");
     await db.roomMessage.create({
       data: {
         roomId: room.id,
         senderId: "liu_kanshan_ai",
-        content: `你好！我是刘看山，很高兴和你探讨"${brainholeTitle}"。我们可以慢慢聊，不用着急。`,
+        content: `"${brainholeTitle}"...这个话题我正好有点想法。你先说，我听着。`,
         identity: "刘看山",
         isAiPrompt: false,
       },

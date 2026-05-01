@@ -7,7 +7,7 @@ import ChatRoom from '@/components/room/ChatRoom';
 import { Message } from '@/components/room/MessageBubble';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/hooks/useAuth';
-import { Flame, Eye, Sparkles, Bookmark } from 'lucide-react';
+import { Flame, Eye, Sparkles, Bookmark, XCircle } from 'lucide-react';
 
 const aiPrompts = [
   '如果是你，会怎么处理这个冲突？',
@@ -49,6 +49,7 @@ export default function RoomPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingAsset, setIsSavingAsset] = useState(false);
   const [assetSaved, setAssetSaved] = useState(false);
+  const assetSavedRef = useRef(false);
   const isProcessingAI = useRef(false);
 
   // 获取房间信息
@@ -275,9 +276,9 @@ export default function RoomPage() {
     [roomId, user, markSpark]
   );
 
-  // v4.3: 保存对白到素材库
-  const handleSaveAsset = useCallback(async () => {
-    if (!roomId || assetSaved) return;
+  // v4.8: 保存对白到素材库（支持自动保存）
+  const saveAssetInternal = useCallback(async () => {
+    if (!roomId || assetSavedRef.current) return false;
     setIsSavingAsset(true);
     try {
       const res = await fetch('/api/assets', {
@@ -288,13 +289,45 @@ export default function RoomPage() {
       const result = await res.json();
       if (result.success) {
         setAssetSaved(true);
+        assetSavedRef.current = true;
+        return true;
       }
     } catch (err) {
       console.error('Save asset failed:', err);
     } finally {
       setIsSavingAsset(false);
     }
-  }, [roomId, assetSaved]);
+    return false;
+  }, [roomId]);
+
+  const handleSaveAsset = useCallback(async () => {
+    await saveAssetInternal();
+  }, [saveAssetInternal]);
+
+  // v4.8: 结束对撞，保存并退出
+  const handleEndChat = useCallback(async () => {
+    await saveAssetInternal();
+    router.push('/library');
+  }, [saveAssetInternal, router]);
+
+  // v4.8: 组件卸载时自动保存对白记录
+  useEffect(() => {
+    return () => {
+      if (roomId && !assetSavedRef.current) {
+        // 使用 sendBeacon 或 keep-alive fetch 确保请求发出
+        try {
+          fetch('/api/assets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch {
+          // 静默失败
+        }
+      }
+    };
+  }, [roomId]);
 
   // v4.3-fix: 删除硬拦截登录页。双人流程中已登录，useAuth不读取NextAuth session
   // 允许无user状态进入房间，使用fallback身份
@@ -341,7 +374,7 @@ export default function RoomPage() {
               {isAiRoom ? 'AI 对话' : '实时连接'}
             </span>
           )}
-          {/* v4.3: 保存到素材库 */}
+          {/* v4.3+v4.8: 保存到素材库 + 结束对撞 */}
           <button
             onClick={handleSaveAsset}
             disabled={isSavingAsset || assetSaved}
@@ -353,6 +386,13 @@ export default function RoomPage() {
           >
             <Bookmark className={`w-3 h-3 ${assetSaved ? 'fill-current' : ''}`} />
             {isSavingAsset ? '保存中...' : assetSaved ? '已保存' : '存素材库'}
+          </button>
+          <button
+            onClick={handleEndChat}
+            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+          >
+            <XCircle className="w-3 h-3" />
+            结束对撞
           </button>
         </div>
         <div className="flex items-center gap-1 text-[10px] text-white/40">
