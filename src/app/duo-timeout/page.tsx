@@ -13,15 +13,25 @@ function DuoTimeoutContent() {
   const matchId = searchParams.get('matchId');
   const round = parseInt(searchParams.get('round') || '1', 10);
   const [choice, setChoice] = useState<Choice | null>(null);
+  const [brainholeTitle, setBrainholeTitle] = useState('');
 
   const handleChooseAI = async () => {
     setChoice('ai');
     try {
       const identity = localStorage.getItem('xh_duo_identity') || '我';
+
+      // v4.3: 随机抽取一个脑洞用于AI对话
+      const randomRes = await fetch('/api/brainholes?mode=bubble&limit=1');
+      const randomResult = await randomRes.json();
+      const randomBrainhole = randomResult.data?.brainholes?.[0];
+
       const res = await fetch('/api/rooms/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identity }),
+        body: JSON.stringify({
+          identity,
+          brainholeId: randomBrainhole?.id,
+        }),
       });
 
       const result = await res.json();

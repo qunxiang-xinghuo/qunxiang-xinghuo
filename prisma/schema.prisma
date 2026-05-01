@@ -58,6 +58,7 @@ model User {
   brainholes       Brainhole[]          @relation("BrainholeAuthor")
   collections      BrainholeCollection[]
   voteCasts        VoteCast[]
+  assets           Asset[]
 }
 
 model UserIdentity {
@@ -119,6 +120,7 @@ model Brainhole {
   rooms       Room[]
   matches     MatchRequest[]
   collections BrainholeCollection[]
+  assets      Asset[]
 
   @@index([status, createdAt])
   @@index([difficulty])
@@ -220,6 +222,7 @@ model Room {
   reactions     Reaction[]
   votes         Vote[]
   inspirations  InspirationItem[]
+  assets        Asset[]
 
   @@index([status, type])
   @@index([brainholeId])
@@ -343,4 +346,26 @@ model StoryDraft {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId, status])
+}
+
+// ==================== 对白资产（素材库）====================
+
+model Asset {
+  id           String   @id @default(cuid())
+  userId       String
+  roomId       String?  @unique
+  brainholeId  String?
+  title        String
+  summary      String?
+  messageCount Int      @default(0)
+  sparkCount   Int      @default(0)
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id])
+  brainhole Brainhole? @relation(fields: [brainholeId], references: [id])
+  room      Room?      @relation(fields: [roomId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([isPublic, createdAt])
 }

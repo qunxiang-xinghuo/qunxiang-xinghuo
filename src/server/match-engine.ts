@@ -42,13 +42,12 @@ export async function findMatch(
 
   // 快速匹配模式：不指定脑洞，系统随机分配
   const isQuickMatch = mode === "quick";
-  const effectiveBrainholeId = brainholeId || "random";
 
-  // 创建新的匹配请求
+  // 创建新的匹配请求（v4.3: 无论是否quick模式，都保存brainholeId）
   const matchRequest = await db.matchRequest.create({
     data: {
       userId,
-      brainholeId: isQuickMatch ? null : brainholeId,
+      brainholeId: brainholeId || null,
       identity: criteria.identity || "default",
       preferDifferent: preferDifferentIdentity,
       status: "waiting",

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { User, Sparkles, Edit3, Check } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
@@ -27,6 +27,8 @@ const aiIdentities = [
 
 function DuoMatchContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedBrainholeId = searchParams.get('brainholeId');
   const [selectedType, setSelectedType] = useState<'zhihu' | 'ai' | 'custom'>('zhihu');
   const [zhihuIdentities, setZhihuIdentities] = useState<string[]>([]);
   const [selectedZhihuId, setSelectedZhihuId] = useState('');
@@ -71,6 +73,7 @@ function DuoMatchContent() {
           preferDifferent: true,
           timeoutMinutes: 1,
           mode: 'quick',
+          brainholeId: preselectedBrainholeId || undefined,
         }),
       });
 
