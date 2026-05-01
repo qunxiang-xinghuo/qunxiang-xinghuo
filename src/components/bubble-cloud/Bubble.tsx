@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { BubbleData } from '@/lib/bubble-engine';
 
@@ -28,26 +28,46 @@ export default function Bubble({
   compact = false,
 }: BubbleProps) {
   const [isBouncing, setIsBouncing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  const bubbleRef = useRef<HTMLDivElement>(null);
 
   const handleClick = useCallback(() => {
     if (isBouncing) return;
     setIsBouncing(true);
-    // 弹跳动画持续约450ms，完成后触发点击
     setTimeout(() => {
       setIsBouncing(false);
       onClick(data.id);
     }, 450);
   }, [isBouncing, data.id, onClick]);
 
+  // v4.1-fix: 鼠标移动视差效果 - 泡泡跟随鼠标方向轻微偏移
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!bubbleRef.current) return;
+    const rect = bubbleRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    // 计算鼠标相对于泡泡中心的偏移，缩放为微小移动
+    const offsetX = (e.clientX - centerX) * 0.08;
+    const offsetY = (e.clientY - centerY) * 0.08;
+    setMouseOffset({ x: offsetX, y: offsetY });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+    setMouseOffset({ x: 0, y: 0 });
+  }, []);
+
   return (
     <motion.div
+      ref={bubbleRef}
       className="absolute"
       style={{
         width: size,
         height: size,
-        left: x,
-        top: y,
-        zIndex: isBouncing ? 100 : Math.round(data.hotScore),
+        left: x + mouseOffset.x,
+        top: y + mouseOffset.y,
+        zIndex: isBouncing ? 100 : isHovered ? 50 : Math.round(data.hotScore / 10),
       }}
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -61,6 +81,9 @@ export default function Bubble({
           damping: 14,
         },
       }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
     >
       <div
         className={`w-full h-full cursor-pointer group ${isBouncing ? 'bubble-bouncing' : ''}`}
@@ -76,7 +99,16 @@ export default function Bubble({
         {/* 漂浮动画wrapper */}
         <div className="bubble-float w-full h-full">
           {/* 泡泡本体：玻璃/水晶质感 */}
-          <div className="bubble-body w-full h-full rounded-full relative overflow-hidden">
+          <div 
+            className="bubble-body w-full h-full rounded-full relative overflow-hidden"
+            style={{
+              transform: isHovered ? 'scale(1.15)' : 'scale(1)',
+              transition: 'transform 0.3s ease-out',
+              boxShadow: isHovered 
+                ? '0 0 20px rgba(226, 176, 74, 0.4), inset 0 0 10px rgba(255,255,255,0.2)' 
+                : 'none',
+            }}
+          >
             {/* 五彩虹彩层 */}
             <div className="bubble-iridescence absolute inset-0 rounded-full" />
 
