@@ -19,6 +19,7 @@ function DuoTimeoutContent() {
     setChoice('ai');
     try {
       const identity = localStorage.getItem('xh_duo_identity') || '我';
+      const guestId = localStorage.getItem('xh_user_id');
 
       // v4.3: 随机抽取一个脑洞用于AI对话
       const randomRes = await fetch('/api/brainholes?mode=bubble&limit=1');
@@ -27,7 +28,10 @@ function DuoTimeoutContent() {
 
       const res = await fetch('/api/rooms/ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(guestId ? { 'x-guest-id': guestId } : {}),
+        },
         body: JSON.stringify({
           identity,
           brainholeId: randomBrainhole?.id,
@@ -36,12 +40,21 @@ function DuoTimeoutContent() {
 
       const result = await res.json();
       if (result.success && result.data?.roomId) {
+        // v4.4-fix: 保存用户ID到localStorage，确保房间页面能识别身份
+        if (result.data.userId) {
+          localStorage.setItem('xh_user_id', result.data.userId);
+        }
         router.push(`/room/${result.data.roomId}`);
       } else {
-        router.push('/room/1');
+        // v4.4-fix: 不再跳转不存在的固定房间，而是显示错误提示
+        console.error('创建AI房间失败:', result);
+        alert(result.error?.message || '创建房间失败，请返回首页重试');
+        setChoice(null);
       }
-    } catch {
-      router.push('/room/1');
+    } catch (err) {
+      console.error('创建AI房间异常:', err);
+      alert('网络异常，请返回首页重试');
+      setChoice(null);
     }
   };
 

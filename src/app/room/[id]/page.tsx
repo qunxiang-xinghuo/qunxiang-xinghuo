@@ -53,7 +53,10 @@ export default function RoomPage() {
 
   // 获取房间信息
   useEffect(() => {
-    fetch(`/api/rooms/${roomId}`)
+    const guestId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
+    fetch(`/api/rooms/${roomId}`, {
+      headers: guestId ? { 'x-guest-id': guestId } : {},
+    })
       .then((r) => r.json())
       .then((res) => {
         if (res.success && res.data) {
@@ -314,13 +317,13 @@ export default function RoomPage() {
       />
 
       {/* 脑洞信息区 - 固定顶部 */}
-      <div className="shrink-0 px-4 py-3 bg-white/5 border-b border-white/5">
+      <div className="shrink-0 px-4 py-3 bg-[rgba(226,176,74,0.1)] border-b border-[#e2b04a]/20">
         <div className="flex items-start gap-2">
-          <Sparkles className="w-4 h-4 text-xh-gold mt-0.5 shrink-0" />
+          <Sparkles className="w-5 h-5 text-[#e2b04a] mt-0.5 shrink-0" />
           <div className="min-w-0">
-            <h3 className="text-sm font-medium text-white truncate">{brainholeTitle || '对白实验室'}</h3>
+            <h3 className="text-base font-bold text-[#e2b04a] truncate">{brainholeTitle || '对白实验室'}</h3>
             {brainholeScenario && (
-              <p className="text-[11px] text-white/40 mt-0.5 line-clamp-2">{brainholeScenario}</p>
+              <p className="text-[11px] text-[#e2b04a]/60 mt-0.5 line-clamp-2">{brainholeScenario}</p>
             )}
           </div>
         </div>

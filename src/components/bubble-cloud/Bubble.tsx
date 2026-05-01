@@ -48,8 +48,8 @@ export default function Bubble({
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     // 计算鼠标相对于泡泡中心的偏移，缩放为微小移动
-    const offsetX = (e.clientX - centerX) * 0.08;
-    const offsetY = (e.clientY - centerY) * 0.08;
+    const offsetX = (e.clientX - centerX) * 0.12;
+    const offsetY = (e.clientY - centerY) * 0.12;
     setMouseOffset({ x: offsetX, y: offsetY });
   }, []);
 
@@ -102,7 +102,7 @@ export default function Bubble({
           <div 
             className="bubble-body w-full h-full rounded-full relative overflow-hidden"
             style={{
-              transform: isHovered ? 'scale(1.15)' : 'scale(1)',
+              transform: isHovered ? 'scale(1.3)' : 'scale(1)',
               transition: 'transform 0.3s ease-out',
               boxShadow: isHovered 
                 ? '0 0 20px rgba(226, 176, 74, 0.4), inset 0 0 10px rgba(255,255,255,0.2)' 

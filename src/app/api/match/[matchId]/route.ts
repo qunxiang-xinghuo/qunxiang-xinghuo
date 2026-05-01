@@ -11,12 +11,12 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
-    }
+    // v4.4-fix: 支持guest用户
+    const guestId = request.headers.get("x-guest-id");
+    const userId = session?.user?.id || guestId;
 
     const { matchId } = await params;
-    const match = await checkMatchStatus(matchId, session.user.id);
+    const match = await checkMatchStatus(matchId, userId || matchId);
 
     // v4.3: 如果匹配成功，获取房间和脑洞信息
     let roomData = null;
@@ -57,12 +57,12 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
-    }
+    // v4.4-fix: 支持guest用户
+    const guestId = request.headers.get("x-guest-id");
+    const userId = session?.user?.id || guestId;
 
     const { matchId } = await params;
-    const success = await cancelMatch(matchId, session.user.id);
+    const success = await cancelMatch(matchId, userId || matchId);
 
     return NextResponse.json(apiResponse({ success }));
   } catch (error: any) {

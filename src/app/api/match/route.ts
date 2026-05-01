@@ -8,17 +8,17 @@ import { findMatch } from "@/server/match-engine";
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
-    }
+    // v4.4-fix: 支持guest用户
+    const guestId = request.headers.get("x-guest-id");
+    const userId = session?.user?.id || guestId || `guest-${Date.now()}`;
 
     const body = await request.json();
     const validatedData = matchRequestSchema.parse(body);
 
-    const matchResult = await findMatch(session.user.id, {
+    const matchResult = await findMatch(userId, {
       brainholeId: validatedData.brainholeId,
       identity: validatedData.identity,
-      excludeUserId: session.user.id,
+      excludeUserId: userId,
       minLevel: 1,
       maxLevel: 10,
       preferDifferentIdentity: validatedData.preferDifferent,

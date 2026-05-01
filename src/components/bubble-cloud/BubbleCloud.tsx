@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Bubble from './Bubble';
-import BubbleDetailModal from './BubbleDetailModal';
 import type { BubbleData } from '@/lib/bubble-engine';
 
 interface BubbleCloudProps {
@@ -12,28 +12,32 @@ interface BubbleCloudProps {
   compact?: boolean;
 }
 
-// 紧凑位置模板（18个）— 覆盖更大区域，更多泡泡
+// 紧凑位置模板（24个）— 覆盖更大区域，更多泡泡
 const COMPACT_TEMPLATES = [
   { x: 0.08, y: 0.10 }, { x: 0.30, y: 0.05 }, { x: 0.55, y: 0.12 }, { x: 0.78, y: 0.08 }, { x: 0.92, y: 0.18 },
   { x: 0.15, y: 0.30 }, { x: 0.40, y: 0.25 }, { x: 0.65, y: 0.32 }, { x: 0.88, y: 0.28 },
   { x: 0.08, y: 0.50 }, { x: 0.32, y: 0.45 }, { x: 0.55, y: 0.42 }, { x: 0.78, y: 0.48 }, { x: 0.95, y: 0.44 },
   { x: 0.20, y: 0.68 }, { x: 0.48, y: 0.65 }, { x: 0.72, y: 0.70 }, { x: 0.90, y: 0.62 },
+  { x: 0.05, y: 0.85 }, { x: 0.35, y: 0.88 }, { x: 0.60, y: 0.82 }, { x: 0.85, y: 0.90 },
+  { x: 0.50, y: 0.15 }, { x: 0.25, y: 0.78 },
 ];
 
-// 完整位置模板（25个）— 更大容器，更多泡泡
+// 完整位置模板（30个）— 更大容器，更多泡泡
 const FULL_TEMPLATES = [
   { x: 0.06, y: 0.08 }, { x: 0.22, y: 0.04 }, { x: 0.42, y: 0.10 }, { x: 0.62, y: 0.06 }, { x: 0.82, y: 0.12 }, { x: 0.95, y: 0.08 },
   { x: 0.12, y: 0.26 }, { x: 0.32, y: 0.22 }, { x: 0.52, y: 0.28 }, { x: 0.72, y: 0.24 }, { x: 0.90, y: 0.30 },
   { x: 0.06, y: 0.46 }, { x: 0.26, y: 0.42 }, { x: 0.46, y: 0.48 }, { x: 0.66, y: 0.44 }, { x: 0.86, y: 0.50 }, { x: 0.98, y: 0.40 },
   { x: 0.14, y: 0.66 }, { x: 0.38, y: 0.62 }, { x: 0.58, y: 0.68 }, { x: 0.78, y: 0.64 }, { x: 0.94, y: 0.58 },
   { x: 0.28, y: 0.86 }, { x: 0.52, y: 0.82 }, { x: 0.76, y: 0.88 },
+  { x: 0.10, y: 0.75 }, { x: 0.45, y: 0.78 }, { x: 0.70, y: 0.76 }, { x: 0.92, y: 0.72 },
+  { x: 0.18, y: 0.92 }, { x: 0.62, y: 0.94 },
 ];
 
 export default function BubbleCloud({ category, compact = false }: BubbleCloudProps) {
+  const router = useRouter();
   const [bubbles, setBubbles] = useState<BubbleData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(null);
   const [containerSize, setContainerSize] = useState({ w: 375, h: compact ? 260 : 420 });
 
   // 监听窗口大小变化
@@ -63,7 +67,7 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
       const url = `/api/brainholes?${params.toString()}`;
       console.log('[BubbleCloud] Fetching:', url);
 
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: 'no-store' });
       console.log('[BubbleCloud] Response status:', res.status);
 
       if (!res.ok) {
@@ -115,7 +119,7 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
   const positions = useMemo(() => {
     if (bubbles.length === 0) return [];
 
-    const MAX_BUBBLES = compact ? 18 : 25;
+    const MAX_BUBBLES = compact ? 24 : 30;
     const displayBubbles = bubbles.slice(0, MAX_BUBBLES);
     const templates = compact ? COMPACT_TEMPLATES : FULL_TEMPLATES;
     const { w: containerW, h: containerH } = containerSize;
@@ -215,18 +219,16 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
             floatDuration={floatDuration}
             floatDelay={floatDelay}
             swayAmplitude={swayAmplitude}
-            onClick={(id) => setSelectedBubbleId(id)}
+            onClick={(id) => {
+              // v4.4: 点击泡泡直接带脑洞进入身份选择页
+              router.push(`/duo-match?brainholeId=${id}`);
+            }}
             compact={compact}
           />
         ))}
       </div>
 
-      {selectedBubbleId && (
-        <BubbleDetailModal
-          brainholeId={selectedBubbleId}
-          onClose={() => setSelectedBubbleId(null)}
-        />
-      )}
+
     </>
   );
 }

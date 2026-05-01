@@ -7,9 +7,9 @@ import { apiResponse, apiError } from "@/lib/utils";
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
-    }
+    // v4.4-fix: 支持guest用户（未登录但带有x-guest-id header）
+    const guestId = request.headers.get("x-guest-id");
+    const userId = session?.user?.id || guestId || `guest-${Date.now()}`;
 
     const body = await request.json();
     let { brainholeId, identity } = body;
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     await db.roomParticipant.create({
       data: {
         roomId: room.id,
-        userId: session.user.id,
+        userId,
         identity: identity || "我",
         role: "actor",
         isOnline: true,
@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
       brainholeTitle,
       brainholeScenario,
       brainholeId,
+      userId,
     }), { status: 201 });
   } catch (error) {
     console.error("创建AI房间失败:", error);
