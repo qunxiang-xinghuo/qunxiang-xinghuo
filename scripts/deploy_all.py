@@ -38,6 +38,8 @@ FILES = [
     ("src/app/api/assets/[id]/public/route.ts", "src/app/api/assets/[id]/public/route.ts"),
     ("src/app/api/brainholes/bubble/route.ts", "src/app/api/brainholes/bubble/route.ts"),
     ("src/lib/validators/match.ts", "src/lib/validators/match.ts"),
+    ("src/lib/bubble-client.ts", "src/lib/bubble-client.ts"),
+    ("src/lib/bubble-engine.ts", "src/lib/bubble-engine.ts"),
     ("prisma/schema.prisma", "prisma/schema.prisma"),
 ]
 

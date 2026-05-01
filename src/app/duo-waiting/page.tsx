@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 
 const MATCH_TIMEOUT = 10;
 const POLL_INTERVAL = 2000;
+const MATCH_DELAY = 1000; // v4.6: 页面渲染后延迟1秒再发起匹配请求
 
 interface BrainholeInfo {
   id: string;
@@ -19,19 +20,28 @@ type MatchStatus = 'matching' | 'matched' | 'ai' | 'exiting';
 function DuoWaitingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const matchId = searchParams.get('matchId');
+
+  // v4.6: brainholeId 从 URL 参数或 localStorage 获取
+  const urlBrainholeId = searchParams.get('brainholeId');
+  const urlRound = parseInt(searchParams.get('round') || '1', 10);
+
   const [elapsedTime, setElapsedTime] = useState(0);
   const [status, setStatus] = useState<MatchStatus>('matching');
   const [matchData, setMatchData] = useState<any>(null);
   const [brainholeInfo, setBrainholeInfo] = useState<BrainholeInfo | null>(null);
+  const [matchId, setMatchId] = useState<string | null>(null);
+  const [matchError, setMatchError] = useState<string>('');
 
-  // 轮询匹配状态
-  const pollMatchStatus = useCallback(async () => {
-    if (!matchId || status !== 'matching') return false;
+  const identityRef = useRef<string>('');
+  const brainholeIdRef = useRef<string | undefined>(undefined);
+
+  // v4.6: 轮询匹配状态
+  const pollMatchStatus = useCallback(async (currentMatchId: string) => {
+    if (!currentMatchId || status !== 'matching') return false;
 
     try {
       const guestId = localStorage.getItem('xh_user_id');
-      const res = await fetch(`/api/match/${matchId}`, {
+      const res = await fetch(`/api/match/${currentMatchId}`, {
         headers: guestId ? { 'x-guest-id': guestId } : {},
       });
       const result = await res.json();
@@ -40,7 +50,7 @@ function DuoWaitingContent() {
         const data = result.data;
         setMatchData(data);
 
-        // v4.3: 显示匹配的脑洞信息
+        // 显示匹配的脑洞信息
         if (data.room?.brainhole) {
           setBrainholeInfo(data.room.brainhole);
         }
@@ -54,51 +64,108 @@ function DuoWaitingContent() {
         }
       }
       return false;
-    } catch {
+    } catch (err) {
+      console.log('[DuoWaiting] 轮询失败:', err);
       return false;
     }
-  }, [matchId, status, router]);
+  }, [status, router]);
 
-  // 10秒倒计时 + 轮询
+  // v4.6: 核心逻辑 - 页面加载后先渲染UI，延迟后再发起匹配
   useEffect(() => {
-    if (!matchId) {
-      router.push('/duo-match');
-      return;
-    }
-
-    // v4.5-fix3: 检查身份是否丢失
+    // 检查身份是否丢失
     const savedIdentity = localStorage.getItem('xh_duo_identity');
     if (!savedIdentity) {
-      alert('请重新选择你的身份');
+      console.log('[DuoWaiting] 身份丢失，跳回身份选择页');
       router.push('/duo-match');
       return;
     }
+    identityRef.current = savedIdentity;
 
+    // 获取 brainholeId（URL参数优先，其次localStorage）
+    const savedBrainhole = localStorage.getItem('xh_duo_brainhole');
+    brainholeIdRef.current = urlBrainholeId || savedBrainhole || undefined;
+    console.log('[DuoWaiting] 准备匹配 - identity:', savedIdentity, 'brainholeId:', brainholeIdRef.current);
+
+    // 延迟1秒后，在后台异步发起匹配请求
+    const matchTimer = setTimeout(async () => {
+      console.log('[DuoWaiting] 延迟结束，开始发起匹配请求...');
+      try {
+        const guestId = localStorage.getItem('xh_user_id');
+        const body = {
+          identity: savedIdentity,
+          preferDifferent: true,
+          timeoutMinutes: 1,
+          mode: 'quick',
+          brainholeId: brainholeIdRef.current || undefined,
+        };
+        console.log('[DuoWaiting] POST /api/match, body:', JSON.stringify(body));
+
+        const res = await fetch('/api/match', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(guestId ? { 'x-guest-id': guestId } : {}),
+          },
+          body: JSON.stringify(body),
+        });
+
+        const result = await res.json();
+        console.log('[DuoWaiting] 匹配响应:', JSON.stringify(result));
+
+        if (result.success && result.data?.matchId) {
+          const mid = result.data.matchId;
+          console.log('[DuoWaiting] 匹配请求创建成功, matchId:', mid);
+          setMatchId(mid);
+          localStorage.setItem('xh_duo_match_id', mid);
+        } else {
+          // 静默处理：记录日志但不阻塞UI
+          console.warn('[DuoWaiting] 匹配请求未返回matchId:', result.message || '未知原因');
+          setMatchError(result.message || '匹配请求未成功');
+        }
+      } catch (err: any) {
+        // v4.6: 接口调用失败，静默处理，倒计时继续
+        console.error('[DuoWaiting] 匹配请求异常:', err?.message || err);
+        setMatchError(err?.message || '网络异常');
+      }
+    }, MATCH_DELAY);
+
+    return () => clearTimeout(matchTimer);
+  }, [router, urlBrainholeId]);
+
+  // v4.6: 独立倒计时（无论匹配请求是否成功，倒计时都持续运行）
+  useEffect(() => {
     const timer = setInterval(() => {
       setElapsedTime((prev) => {
         const next = prev + 1;
         if (next >= MATCH_TIMEOUT) {
           clearInterval(timer);
           // 10秒结束，跳转到超时选择页
-          router.push(`/duo-timeout?matchId=${matchId}&round=1`);
+          const params = new URLSearchParams();
+          if (matchId) params.set('matchId', matchId);
+          params.set('round', String(urlRound));
+          router.push(`/duo-timeout?${params.toString()}`);
         }
         return next;
       });
     }, 1000);
 
+    return () => clearInterval(timer);
+  }, [matchId, router, urlRound]);
+
+  // v4.6: 轮询（只有在获得matchId后才开始）
+  useEffect(() => {
+    if (!matchId || status !== 'matching') return;
+
+    console.log('[DuoWaiting] 开始轮询, matchId:', matchId);
     const pollTimer = setInterval(async () => {
-      const shouldStop = await pollMatchStatus();
+      const shouldStop = await pollMatchStatus(matchId);
       if (shouldStop) {
         clearInterval(pollTimer);
-        clearInterval(timer);
       }
     }, POLL_INTERVAL);
 
-    return () => {
-      clearInterval(timer);
-      clearInterval(pollTimer);
-    };
-  }, [matchId, router, pollMatchStatus]);
+    return () => clearInterval(pollTimer);
+  }, [matchId, status, pollMatchStatus]);
 
   const progress = Math.min((elapsedTime / MATCH_TIMEOUT) * 100, 100);
   const remaining = Math.max(MATCH_TIMEOUT - elapsedTime, 0);
@@ -143,7 +210,7 @@ function DuoWaitingContent() {
               exit={{ opacity: 0 }}
               className="text-center w-full"
             >
-              {/* v4.3: 显示匹配的脑洞 */}
+              {/* 显示匹配的脑洞 */}
               {brainholeInfo && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -156,7 +223,7 @@ function DuoWaitingContent() {
               )}
 
               <p className="text-base font-medium text-white/90 mb-3">
-                刘看山正在为你寻找对撞人…
+                刘看山正在为你寻找对撞人...
               </p>
               <p className="text-3xl font-bold text-xh-gold mb-3">
                 {remaining} 秒
@@ -168,6 +235,14 @@ function DuoWaitingContent() {
                   transition={{ duration: 0.3 }}
                 />
               </div>
+
+              {/* v4.6: 调试信息（仅在控制台可见，生产环境可隐藏） */}
+              {matchError && (
+                <p className="text-[10px] text-white/20 mb-2">
+                  匹配请求处理中，请稍候...
+                </p>
+              )}
+
               <p className="text-xs text-white/30">
                 已等待 {elapsedTime} 秒
               </p>

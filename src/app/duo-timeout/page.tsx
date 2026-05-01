@@ -13,7 +13,6 @@ function DuoTimeoutContent() {
   const matchId = searchParams.get('matchId');
   const round = parseInt(searchParams.get('round') || '1', 10);
   const [choice, setChoice] = useState<Choice | null>(null);
-  const [brainholeTitle, setBrainholeTitle] = useState('');
 
   const handleChooseAI = async () => {
     setChoice('ai');
@@ -40,13 +39,11 @@ function DuoTimeoutContent() {
 
       const result = await res.json();
       if (result.success && result.data?.roomId) {
-        // v4.4-fix: 保存用户ID到localStorage，确保房间页面能识别身份
         if (result.data.userId) {
           localStorage.setItem('xh_user_id', result.data.userId);
         }
         router.push(`/room/${result.data.roomId}`);
       } else {
-        // v4.4-fix: 不再跳转不存在的固定房间，而是显示错误提示
         console.error('创建AI房间失败:', result);
         alert(result.error?.message || '创建房间失败，请返回首页重试');
         setChoice(null);
@@ -60,12 +57,8 @@ function DuoTimeoutContent() {
 
   const handleContinueWait = () => {
     setChoice('wait');
-    if (matchId) {
-      // 第二轮等待，跳回 waiting 页面
-      router.push(`/duo-waiting?matchId=${matchId}&round=2`);
-    } else {
-      router.push('/duo-match');
-    }
+    // v4.6: 继续等待时，跳转回等待页（不再依赖matchId，等待页会重新发起匹配请求）
+    router.push(`/duo-waiting?round=2`);
   };
 
   const handleExit = () => {
