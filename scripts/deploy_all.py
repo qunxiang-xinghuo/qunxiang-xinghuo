@@ -8,9 +8,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 HOST, PORT, USER, PASS = "81.70.59.228", 22, "root", "F!D)7n_mc8Mq}bx="
 REMOTE = "/www/wwwroot/qunxiang-xinghuo"
 
-# All files that need to be updated
 FILES = [
-    # Core pages
     ("src/app/page.tsx", "src/app/page.tsx"),
     ("src/app/LoginForm.tsx", "src/app/LoginForm.tsx"),
     ("src/app/home/page.tsx", "src/app/home/page.tsx"),
@@ -18,26 +16,27 @@ FILES = [
     ("src/app/duo-match/page.tsx", "src/app/duo-match/page.tsx"),
     ("src/app/duo-waiting/page.tsx", "src/app/duo-waiting/page.tsx"),
     ("src/app/duo-timeout/page.tsx", "src/app/duo-timeout/page.tsx"),
+    ("src/app/library/page.tsx", "src/app/library/page.tsx"),
+    ("src/app/room/[id]/page.tsx", "src/app/room/[id]/page.tsx"),
     ("src/app/layout.tsx", "src/app/layout.tsx"),
-    # Components
     ("src/components/bubble-cloud/Bubble.tsx", "src/components/bubble-cloud/Bubble.tsx"),
     ("src/components/bubble-cloud/BubbleCloud.tsx", "src/components/bubble-cloud/BubbleCloud.tsx"),
     ("src/components/bubble-cloud/BubbleDetailModal.tsx", "src/components/bubble-cloud/BubbleDetailModal.tsx"),
     ("src/components/match/DuoIdentityModal.tsx", "src/components/match/DuoIdentityModal.tsx"),
     ("src/components/layout/BottomNav.tsx", "src/components/layout/BottomNav.tsx"),
-    # Server
     ("src/server/match-engine.ts", "src/server/match-engine.ts"),
     ("src/server/room-manager.ts", "src/server/room-manager.ts"),
-    # Auth
     ("src/lib/auth.ts", "src/lib/auth.ts"),
-    # API
     ("src/app/api/auth/register/route.ts", "src/app/api/auth/register/route.ts"),
     ("src/app/api/auth/[...nextauth]/route.ts", "src/app/api/auth/[...nextauth]/route.ts"),
     ("src/app/api/match/route.ts", "src/app/api/match/route.ts"),
+    ("src/app/api/match/[matchId]/route.ts", "src/app/api/match/[matchId]/route.ts"),
     ("src/app/api/rooms/ai/route.ts", "src/app/api/rooms/ai/route.ts"),
-    # Validators
+    ("src/app/api/rooms/[roomId]/route.ts", "src/app/api/rooms/[roomId]/route.ts"),
+    ("src/app/api/assets/route.ts", "src/app/api/assets/route.ts"),
+    ("src/app/api/assets/public/route.ts", "src/app/api/assets/public/route.ts"),
+    ("src/app/api/assets/[id]/public/route.ts", "src/app/api/assets/[id]/public/route.ts"),
     ("src/lib/validators/match.ts", "src/lib/validators/match.ts"),
-    # Prisma
     ("prisma/schema.prisma", "prisma/schema.prisma"),
 ]
 
@@ -55,10 +54,11 @@ def run(ssh, cmd, t=300):
 def upload(sftp, local, remote):
     full = f"{REMOTE}/{remote}"
     d = os.path.dirname(full)
+    # 递归创建目录（paramiko mkdir不支持-p，我们用SSH执行mkdir -p）
     try:
-        sftp.mkdir(d)
+        sftp.stat(d)
     except IOError:
-        pass
+        pass  # 目录不存在，后面会通过SSH创建
     if os.path.exists(local):
         print(f'  UP: {local}')
         sftp.put(local, full)
@@ -70,32 +70,41 @@ def main():
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(HOST, port=PORT, username=USER, password=PASS, timeout=15)
     try:
-        print("[1/7] Uploading all files...")
+        print("[1/8] Creating directories...")
+        dirs = set()
+        for local, remote in FILES:
+            d = os.path.dirname(f"{REMOTE}/{remote}")
+            dirs.add(d)
+        for d in sorted(dirs):
+            run(ssh, f"mkdir -p '{d}'", 10)
+        print("[OK] Directories created")
+
+        print("\n[2/8] Uploading all files...")
         sftp = ssh.open_sftp()
         for local, remote in FILES:
             upload(sftp, local, remote)
         sftp.close()
         print("[OK] Uploaded")
 
-        print("\n[2/7] Remove old login pages...")
+        print("\n[3/8] Remove old login pages...")
         run(ssh, f"cd {REMOTE} && rm -rf src/app/login", 10)
 
-        print("\n[3/7] Remove .next cache...")
+        print("\n[4/8] Remove .next cache...")
         run(ssh, f"cd {REMOTE} && rm -rf .next", 10)
 
-        print("\n[4/7] Prisma db push...")
+        print("\n[5/8] Prisma db push...")
         run(ssh, f"cd {REMOTE} && npx prisma db push --accept-data-loss", 120)
 
-        print("\n[5/7] Prisma generate...")
+        print("\n[6/8] Prisma generate...")
         run(ssh, f"cd {REMOTE} && npx prisma generate", 60)
 
-        print("\n[6/7] Build...")
+        print("\n[7/8] Build...")
         code = run(ssh, f"cd {REMOTE} && npm run build", 300)
         if code != 0:
             print("[ERROR] Build failed")
             return 1
 
-        print("\n[7/7] Copy static + restart...")
+        print("\n[8/8] Copy static + restart...")
         run(ssh, f"cd {REMOTE} && cp -r .next/static .next/standalone/.next/")
         run(ssh, f"cd {REMOTE} && pm2 restart qunxiang-xinghuo")
         run(ssh, "pm2 list", 10)

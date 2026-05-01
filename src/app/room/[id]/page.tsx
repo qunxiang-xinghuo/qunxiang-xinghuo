@@ -20,7 +20,20 @@ export default function RoomPage() {
   const params = useParams();
   const router = useRouter();
   const roomId = params.id as string;
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  // v4.3-fix: 兼容 NextAuth 登录（useAuth读取localStorage，NextAuth用cookie）
+  // 如果useAuth返回null，尝试从localStorage获取身份构建临时用户
+  const user = authUser || (() => {
+    const savedIdentity = typeof window !== 'undefined' ? localStorage.getItem('xh_duo_identity') : null;
+    if (savedIdentity) {
+      return { 
+        id: localStorage.getItem('xh_user_id') || 'guest-' + Date.now(), 
+        name: savedIdentity,
+        identity: { type: 'custom' as const, label: savedIdentity },
+      };
+    }
+    return null;
+  })();
   const { isConnected, joinRoom, leaveRoom, sendMessage, markSpark, on, off } = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -280,21 +293,8 @@ export default function RoomPage() {
     }
   }, [roomId, assetSaved]);
 
-  if (!user) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center px-6 bg-[#1a1a2e]">
-        <Sparkles className="w-12 h-12 text-xh-gold mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">请先登录</h2>
-        <p className="text-white/40 text-sm mb-6">登录后才能进入对白室</p>
-        <button
-          onClick={() => router.push('/')}
-          className="px-6 py-3 bg-gradient-to-r from-xh-gold to-orange-500 text-white rounded-xl font-medium"
-        >
-          去登录
-        </button>
-      </div>
-    );
-  }
+  // v4.3-fix: 删除硬拦截登录页。双人流程中已登录，useAuth不读取NextAuth session
+  // 允许无user状态进入房间，使用fallback身份
 
   if (isLoading) {
     return (
