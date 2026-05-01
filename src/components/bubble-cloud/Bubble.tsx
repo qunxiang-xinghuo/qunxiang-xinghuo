@@ -82,10 +82,10 @@ export default function Bubble({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* 单个泡泡元素：所有视觉效果用伪元素和背景实现，不套层 */}
+      {/* v4.7-fix2: 分离漂浮层与视觉层，避免transform冲突 */}
+      {/* wrapper负责上下漂浮(translateY)，bubble-glass负责scale/hover/pop */}
       <div
-        className={`bubble-glass w-full h-full cursor-pointer select-none ${isBouncing ? 'bubble-pop' : ''}`}
-        onClick={handleClick}
+        className="bubble-float-wrapper w-full h-full"
         style={
           {
             '--float-dur': `${floatDuration}s`,
@@ -93,10 +93,15 @@ export default function Bubble({
           } as React.CSSProperties
         }
       >
-        {/* 标题文字 */}
-        <span className="bubble-text" style={{ WebkitLineClamp: compact ? 2 : 3 }}>
-          {data.title}
-        </span>
+        <div
+          className={`bubble-glass w-full h-full cursor-pointer select-none ${isBouncing ? 'bubble-pop' : ''}`}
+          onClick={handleClick}
+        >
+          {/* 标题文字 */}
+          <span className="bubble-text" style={{ WebkitLineClamp: compact ? 2 : 3 }}>
+            {data.title}
+          </span>
+        </div>
       </div>
     </motion.div>
   );

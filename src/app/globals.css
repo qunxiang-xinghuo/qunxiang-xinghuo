@@ -101,6 +101,13 @@
     100% { transform: scale(1); }
   }
 
+  /* 漂浮wrapper：负责上下浮动(translateY)，与视觉层分离避免transform冲突 */
+  .bubble-float-wrapper {
+    animation: bubble-float-updown var(--float-dur, 3s) ease-in-out infinite;
+    animation-delay: var(--float-del, 0s);
+    will-change: transform;
+  }
+
   /* 泡泡本体：单层div，所有效果用背景/伪元素实现，禁止套圈 */
   .bubble-glass {
     position: relative;
@@ -131,9 +138,6 @@
 
     /* 表面五彩光泽：用伪元素 */
     overflow: hidden;
-    animation: bubble-float-updown var(--float-dur, 3s) ease-in-out infinite;
-    animation-delay: var(--float-del, 0s);
-    will-change: transform;
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
   }
 
@@ -188,12 +192,9 @@
     animation-duration: 6s;
   }
 
-  /* 点击弹跳 */
+  /* 点击弹跳：只控制scale，不干扰wrapper的漂浮 */
   .bubble-pop {
-    animation:
-      bubble-pop-anim 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-      bubble-float-updown var(--float-dur, 3s) ease-in-out infinite;
-    animation-delay: 0s, var(--float-del, 0s);
+    animation: bubble-pop-anim 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
   /* 泡泡文字：默认小巧精致 */
