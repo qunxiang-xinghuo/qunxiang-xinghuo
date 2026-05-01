@@ -3,9 +3,9 @@
 ## 一、版本信息
 - **版本**: v4.2
 - **日期**: 2026-05-01
-- **Git**: `a56fee2` dev分支
+- **Git**: `b1373db` dev分支
 - **服务器**: http://81.70.59.228/
-- **PM2**: pid 1155675, status online
+- **PM2**: pid 1158355, status online
 
 ## 二、路由结构（v4.2-fix重要变更）
 
@@ -15,7 +15,7 @@
 | `/home` | **发现页** | 泡泡墙 + 模式卡片 |
 | `/register` | 注册页 | 用户名/密码/确认密码 |
 | `/duo-match` | 身份选择页 | "在这次对撞中，你是谁？" |
-| `/duo-waiting` | 匹配等待页 | 60秒倒计时 |
+| `/duo-waiting` | 匹配等待页 | 10秒倒计时 |
 | `/duo-timeout` | 超时选择页 | 刘看山AI/继续等待 |
 
 ## 三、页面流程
@@ -162,12 +162,12 @@ model User {
 - [x] `/` 登录页 — HTTP 200
 - [x] `/home` 发现页 — HTTP 200
 - [x] `/register` 注册页 — HTTP 200
-- [x] `/duo-match` 身份选择 — HTTP 200
-- [x] `/duo-waiting` 匹配等待 — HTTP 200
+- [x] `/duo-match` 身份选择 — HTTP 200（无二次登录）
+- [x] `/duo-waiting` 匹配等待 — HTTP 200（10秒倒计时）
 - [x] `/duo-timeout` 超时选择 — HTTP 200
 - [x] 本地Build — 42页通过
 - [x] 服务器Build — 42页通过
-- [x] PM2 online — pid 1155675
+- [x] PM2 online — pid 1158355
 
 ## 十二、文件变更
 
