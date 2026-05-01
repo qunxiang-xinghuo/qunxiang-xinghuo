@@ -20,11 +20,22 @@ function DuoTimeoutContent() {
       const identity = localStorage.getItem('xh_duo_identity') || '我';
       const guestId = localStorage.getItem('xh_user_id');
 
-      // v4.3: 随机抽取一个脑洞用于AI对话
-      const randomRes = await fetch('/api/brainholes?mode=bubble&limit=1');
-      const randomResult = await randomRes.json();
-      const randomBrainhole = randomResult.data?.brainholes?.[0];
+      console.log('[DuoTimeout] 开始创建AI房间, identity:', identity, 'guestId:', guestId);
 
+      // v4.7: 随机抽取一个脑洞用于AI对话
+      let brainholeId = undefined;
+      try {
+        const randomRes = await fetch('/api/brainholes?mode=bubble&limit=1');
+        const randomResult = await randomRes.json();
+        console.log('[DuoTimeout] 随机脑洞响应:', JSON.stringify(randomResult));
+        const randomBrainhole = randomResult.data?.brainholes?.[0];
+        brainholeId = randomBrainhole?.id;
+        console.log('[DuoTimeout] 使用脑洞:', randomBrainhole?.title, 'id:', brainholeId);
+      } catch (bhErr) {
+        console.warn('[DuoTimeout] 获取随机脑洞失败，将不使用脑洞:', bhErr);
+      }
+
+      console.log('[DuoTimeout] POST /api/rooms/ai ...');
       const res = await fetch('/api/rooms/ai', {
         method: 'POST',
         headers: {
@@ -33,24 +44,29 @@ function DuoTimeoutContent() {
         },
         body: JSON.stringify({
           identity,
-          brainholeId: randomBrainhole?.id,
+          brainholeId,
         }),
       });
 
+      console.log('[DuoTimeout] 响应状态:', res.status);
       const result = await res.json();
+      console.log('[DuoTimeout] 响应体:', JSON.stringify(result));
+
       if (result.success && result.data?.roomId) {
         if (result.data.userId) {
           localStorage.setItem('xh_user_id', result.data.userId);
         }
+        console.log('[DuoTimeout] AI房间创建成功, roomId:', result.data.roomId);
         router.push(`/room/${result.data.roomId}`);
       } else {
-        console.error('创建AI房间失败:', result);
-        alert(result.error?.message || '创建房间失败，请返回首页重试');
+        console.error('[DuoTimeout] 创建AI房间失败:', result);
+        const errMsg = result.error?.message || result.message || '创建房间失败';
+        alert('创建房间失败: ' + errMsg + '，请返回首页重试');
         setChoice(null);
       }
-    } catch (err) {
-      console.error('创建AI房间异常:', err);
-      alert('网络异常，请返回首页重试');
+    } catch (err: any) {
+      console.error('[DuoTimeout] 创建AI房间异常:', err);
+      alert('网络异常: ' + (err.message || '请检查网络连接') + '，请返回首页重试');
       setChoice(null);
     }
   };

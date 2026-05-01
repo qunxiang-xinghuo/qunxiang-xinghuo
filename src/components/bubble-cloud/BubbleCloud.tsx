@@ -104,8 +104,6 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
       // 随机漂浮参数
       const floatDuration = 6 + Math.random() * 8; // 6-14秒一个周期
       const floatDelay = Math.random() * 4; // 0-4秒延迟启动
-      const swayAmplitude = 4 + Math.random() * 6; // 左右摆动幅度
-
       return {
         bubble,
         x,
@@ -113,7 +111,6 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
         size,
         floatDuration,
         floatDelay,
-        swayAmplitude,
       };
     });
   }, [bubbles, compact, containerW, containerH, templates]);
@@ -150,7 +147,7 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
         style={{ height: containerSize.h }}
       >
         {positions.map(({
-          bubble, x, y, size, floatDuration, floatDelay, swayAmplitude,
+          bubble, x, y, size, floatDuration, floatDelay,
         }) => (
           <Bubble
             key={bubble.id}
@@ -160,7 +157,6 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
             size={size}
             floatDuration={floatDuration}
             floatDelay={floatDelay}
-            swayAmplitude={swayAmplitude}
             onClick={(id) => setSelectedBubbleId(id)}
             compact={compact}
           />

@@ -11,7 +11,6 @@ interface BubbleProps {
   size: number;
   floatDuration: number;
   floatDelay: number;
-  swayAmplitude: number;
   onClick: (id: string) => void;
   compact?: boolean;
 }
@@ -23,7 +22,6 @@ export default function Bubble({
   size,
   floatDuration,
   floatDelay,
-  swayAmplitude,
   onClick,
   compact = false,
 }: BubbleProps) {
@@ -37,17 +35,17 @@ export default function Bubble({
     setTimeout(() => {
       setIsBouncing(false);
       onClick(data.id);
-    }, 350);
+    }, 400);
   }, [isBouncing, data.id, onClick]);
 
-  // 鼠标移动视差效果 - 泡泡跟随鼠标方向轻微偏移
+  // 鼠标移动视差效果
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!bubbleRef.current) return;
     const rect = bubbleRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    const offsetX = (e.clientX - centerX) * 0.12;
-    const offsetY = (e.clientY - centerY) * 0.12;
+    const offsetX = (e.clientX - centerX) * 0.1;
+    const offsetY = (e.clientY - centerY) * 0.1;
     setMouseOffset({ x: offsetX, y: offsetY });
   }, []);
 
@@ -61,7 +59,7 @@ export default function Bubble({
   return (
     <motion.div
       ref={bubbleRef}
-      className="absolute bubble-wrapper"
+      className="absolute"
       style={{
         width: size,
         height: size,
@@ -84,43 +82,21 @@ export default function Bubble({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
+      {/* 单个泡泡元素：所有视觉效果用伪元素和背景实现，不套层 */}
       <div
-        className={`bubble-float w-full h-full cursor-pointer ${isBouncing ? 'bubble-bouncing' : ''}`}
+        className={`bubble-glass w-full h-full cursor-pointer select-none ${isBouncing ? 'bubble-pop' : ''}`}
         onClick={handleClick}
         style={
           {
-            '--float-duration': `${floatDuration}s`,
-            '--float-delay': `${floatDelay}s`,
-            '--sway-px': `${swayAmplitude}px`,
+            '--float-dur': `${floatDuration}s`,
+            '--float-del': `${floatDelay}s`,
           } as React.CSSProperties
         }
       >
-        {/* 泡泡本体：玻璃/水晶质感 */}
-        <div className="bubble-body w-full h-full rounded-full relative">
-          {/* 五彩虹彩层 */}
-          <div className="bubble-iridescence absolute inset-0 rounded-full" />
-
-          {/* 主高光：左上角小而亮 */}
-          <div className="bubble-highlight absolute" />
-
-          {/* 次高光 */}
-          <div className="bubble-highlight-secondary absolute" />
-
-          {/* 底部折射光 */}
-          <div className="bubble-caustic absolute" />
-
-          {/* 标题文字 - 纯白色加粗，清晰可读 */}
-          <div className="absolute inset-0 flex items-center justify-center px-2">
-            <span
-              className="bubble-title text-center select-none"
-              style={{
-                WebkitLineClamp: compact ? 2 : 3,
-              }}
-            >
-              {data.title}
-            </span>
-          </div>
-        </div>
+        {/* 标题文字 */}
+        <span className="bubble-text" style={{ WebkitLineClamp: compact ? 2 : 3 }}>
+          {data.title}
+        </span>
       </div>
     </motion.div>
   );
