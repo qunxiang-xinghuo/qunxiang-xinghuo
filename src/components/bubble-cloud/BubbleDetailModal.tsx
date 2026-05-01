@@ -54,7 +54,8 @@ export default function BubbleDetailModal({ brainholeId, onClose }: BubbleDetail
 
   const handleStart = () => {
     onClose();
-    router.push(`/brainhole/${brainholeId}`);
+    // 从泡泡进入：直接跳转到双人匹配页面，预选中该脑洞
+    router.push(`/duo-match?brainholeId=${brainholeId}`);
   };
 
   const categoryLabels: Record<string, string> = {

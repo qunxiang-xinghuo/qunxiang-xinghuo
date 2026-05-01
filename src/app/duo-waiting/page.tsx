@@ -24,10 +24,9 @@ function DuoWaitingContent() {
     const saved = localStorage.getItem('xh_duo_brainhole');
     if (saved) {
       setBrainhole(JSON.parse(saved));
-    } else {
-      router.push('/duo-match');
     }
-  }, [router]);
+    // 如果没有保存的brainhole（快速匹配模式），尝试从匹配状态中获取
+  }, []);
 
   // 轮询匹配状态
   const pollMatchStatus = useCallback(async () => {
@@ -44,6 +43,11 @@ function DuoWaitingContent() {
 
         if (data.status === 'matched' && data.roomId) {
           setStatus('matched');
+          // 如果有brainhole信息，保存到localStorage
+          if (data.brainhole) {
+            localStorage.setItem('xh_duo_brainhole', JSON.stringify(data.brainhole));
+            setBrainhole(data.brainhole);
+          }
           // 匹配成功，跳转到房间
           setTimeout(() => {
             router.push(`/room/${data.roomId}`);
@@ -100,13 +104,16 @@ function DuoWaitingContent() {
   const handleChooseAI = async () => {
     setStatus('ai');
     try {
+      const brainholeId = brainhole?.id;
+      const identity = localStorage.getItem('xh_duo_identity') || '我';
+
       // 调用API创建AI房间
       const res = await fetch('/api/rooms/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          brainholeId: brainhole?.id,
-          identity: localStorage.getItem('xh_duo_identity') || '我',
+          brainholeId,
+          identity,
         }),
       });
 
@@ -135,19 +142,19 @@ function DuoWaitingContent() {
   const progress = Math.min((elapsedTime / MATCH_TIMEOUT) * 100, 100);
   const remaining = Math.max(MATCH_TIMEOUT - elapsedTime, 0);
 
-  if (!brainhole) return null;
-
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]">
       <TopBar title="寻找搭档" showBack />
 
       {/* 脑洞信息 */}
-      <div className="px-4 mb-6">
-        <div className="bg-white/5 rounded-xl p-3 border border-white/5">
-          <p className="text-[10px] text-white/30 mb-1">当前脑洞</p>
-          <p className="text-sm text-white/80 leading-relaxed">{brainhole.title}</p>
+      {brainhole && (
+        <div className="px-4 mb-6">
+          <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+            <p className="text-[10px] text-white/30 mb-1">当前脑洞</p>
+            <p className="text-sm text-white/80 leading-relaxed">{brainhole.title}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 中央区域：刘看山 + 匹配状态 */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">

@@ -182,7 +182,7 @@ model Reaction {
 model MatchRequest {
   id              String    @id @default(cuid())
   userId          String
-  brainholeId     String
+  brainholeId     String?
   identity        String
   preferDifferent Boolean   @default(true)
   status          String    @default("waiting")
@@ -192,7 +192,7 @@ model MatchRequest {
   expiresAt       DateTime
   resolvedAt      DateTime?
 
-  brainhole Brainhole @relation(fields: [brainholeId], references: [id])
+  brainhole Brainhole? @relation(fields: [brainholeId], references: [id])
 
   @@index([status, brainholeId, createdAt])
   @@index([userId, status])
@@ -203,7 +203,7 @@ model MatchRequest {
 model Room {
   id           String    @id @default(cuid())
   type         String    @default("duet")
-  brainholeId  String
+  brainholeId  String?
   status       String    @default("created")
   directorId   String?
   maxRound     Int?
@@ -212,7 +212,7 @@ model Room {
   createdAt    DateTime  @default(now())
   closedAt     DateTime?
 
-  brainhole     Brainhole          @relation(fields: [brainholeId], references: [id])
+  brainhole     Brainhole?          @relation(fields: [brainholeId], references: [id])
   participants  RoomParticipant[]
   messages      RoomMessage[]
   reactions     Reaction[]
