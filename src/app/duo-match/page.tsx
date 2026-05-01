@@ -65,9 +65,13 @@ function DuoMatchContent() {
     setIsMatching(true);
 
     try {
+      const guestId = localStorage.getItem('xh_user_id');
       const res = await fetch('/api/match', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(guestId ? { 'x-guest-id': guestId } : {}),
+        },
         body: JSON.stringify({
           identity,
           preferDifferent: true,

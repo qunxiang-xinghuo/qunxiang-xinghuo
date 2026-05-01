@@ -30,7 +30,10 @@ function DuoWaitingContent() {
     if (!matchId || status !== 'matching') return false;
 
     try {
-      const res = await fetch(`/api/match/${matchId}`);
+      const guestId = localStorage.getItem('xh_user_id');
+      const res = await fetch(`/api/match/${matchId}`, {
+        headers: guestId ? { 'x-guest-id': guestId } : {},
+      });
       const result = await res.json();
 
       if (result.success && result.data) {
