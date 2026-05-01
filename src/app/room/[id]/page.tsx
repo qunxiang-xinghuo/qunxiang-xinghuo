@@ -7,7 +7,7 @@ import ChatRoom from '@/components/room/ChatRoom';
 import { Message } from '@/components/room/MessageBubble';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/hooks/useAuth';
-import { Flame, Eye, Sparkles } from 'lucide-react';
+import { Flame, Eye, Sparkles, Bookmark } from 'lucide-react';
 
 const aiPrompts = [
   '如果是你，会怎么处理这个冲突？',
@@ -34,6 +34,8 @@ export default function RoomPage() {
   const [myIdentity, setMyIdentity] = useState('我');
   const [isAiRoom, setIsAiRoom] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingAsset, setIsSavingAsset] = useState(false);
+  const [assetSaved, setAssetSaved] = useState(false);
   const isProcessingAI = useRef(false);
 
   // 获取房间信息
@@ -257,6 +259,27 @@ export default function RoomPage() {
     [roomId, user, markSpark]
   );
 
+  // v4.3: 保存对白到素材库
+  const handleSaveAsset = useCallback(async () => {
+    if (!roomId || assetSaved) return;
+    setIsSavingAsset(true);
+    try {
+      const res = await fetch('/api/assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAssetSaved(true);
+      }
+    } catch (err) {
+      console.error('Save asset failed:', err);
+    } finally {
+      setIsSavingAsset(false);
+    }
+  }, [roomId, assetSaved]);
+
   if (!user) {
     return (
       <div className="flex flex-col h-full items-center justify-center px-6 bg-[#1a1a2e]">
@@ -303,7 +326,7 @@ export default function RoomPage() {
         </div>
       </div>
 
-      {/* 连接状态 + 围观人数 */}
+      {/* 连接状态 + 保存素材 + 围观人数 */}
       <div className="flex items-center justify-between px-4 py-1.5 bg-white/5 border-b border-white/5 shrink-0">
         <div className="flex items-center gap-2">
           {!isConnected && (
@@ -315,6 +338,19 @@ export default function RoomPage() {
               {isAiRoom ? 'AI 对话' : '实时连接'}
             </span>
           )}
+          {/* v4.3: 保存到素材库 */}
+          <button
+            onClick={handleSaveAsset}
+            disabled={isSavingAsset || assetSaved}
+            className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full transition-colors ${
+              assetSaved
+                ? 'bg-emerald-500/15 text-emerald-400'
+                : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
+            }`}
+          >
+            <Bookmark className={`w-3 h-3 ${assetSaved ? 'fill-current' : ''}`} />
+            {isSavingAsset ? '保存中...' : assetSaved ? '已保存' : '存素材库'}
+          </button>
         </div>
         <div className="flex items-center gap-1 text-[10px] text-white/40">
           <Eye className="w-3 h-3" />

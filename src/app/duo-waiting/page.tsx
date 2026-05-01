@@ -8,6 +8,12 @@ import TopBar from '@/components/layout/TopBar';
 const MATCH_TIMEOUT = 10;
 const POLL_INTERVAL = 2000;
 
+interface BrainholeInfo {
+  id: string;
+  title: string;
+  scenario: string;
+}
+
 type MatchStatus = 'matching' | 'matched' | 'ai' | 'exiting';
 
 function DuoWaitingContent() {
@@ -17,6 +23,7 @@ function DuoWaitingContent() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [status, setStatus] = useState<MatchStatus>('matching');
   const [matchData, setMatchData] = useState<any>(null);
+  const [brainholeInfo, setBrainholeInfo] = useState<BrainholeInfo | null>(null);
 
   // 轮询匹配状态
   const pollMatchStatus = useCallback(async () => {
@@ -30,11 +37,16 @@ function DuoWaitingContent() {
         const data = result.data;
         setMatchData(data);
 
+        // v4.3: 显示匹配的脑洞信息
+        if (data.room?.brainhole) {
+          setBrainholeInfo(data.room.brainhole);
+        }
+
         if (data.status === 'matched' && data.roomId) {
           setStatus('matched');
           setTimeout(() => {
             router.push(`/room/${data.roomId}`);
-          }, 1000);
+          }, 1500);
           return true;
         }
       }
@@ -88,7 +100,7 @@ function DuoWaitingContent() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
         {/* 刘看山形象 */}
         <motion.div
-          className="w-24 h-24 rounded-full relative mb-8"
+          className="w-24 h-24 rounded-full relative mb-6"
           style={{
             background: 'radial-gradient(circle at 35% 30%, #f5f5f5, #e0e0e0)',
             border: '2px solid #74b9ff',
@@ -118,8 +130,20 @@ function DuoWaitingContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="text-center"
+              className="text-center w-full"
             >
+              {/* v4.3: 显示匹配的脑洞 */}
+              {brainholeInfo && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 px-4 py-2 rounded-xl bg-xh-gold/10 border border-xh-gold/20"
+                >
+                  <p className="text-[10px] text-xh-gold/60 mb-0.5">当前话题</p>
+                  <p className="text-sm text-xh-gold font-medium truncate">{brainholeInfo.title}</p>
+                </motion.div>
+              )}
+
               <p className="text-base font-medium text-white/90 mb-3">
                 刘看山正在为你寻找对撞人…
               </p>
@@ -147,6 +171,12 @@ function DuoWaitingContent() {
               exit={{ opacity: 0 }}
               className="text-center"
             >
+              {brainholeInfo && (
+                <div className="mb-4 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <p className="text-[10px] text-emerald-400/60 mb-0.5">对撞话题</p>
+                  <p className="text-sm text-emerald-400 font-medium">{brainholeInfo.title}</p>
+                </div>
+              )}
               <p className="text-lg font-medium text-emerald-400 mb-2">
                 匹配成功！
               </p>

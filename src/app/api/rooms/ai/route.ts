@@ -12,11 +12,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { brainholeId, identity } = body;
+    let { brainholeId, identity } = body;
 
-    // 获取脑洞信息
+    // v4.3: 如果没有指定脑洞，随机抽取一个
     let brainholeTitle = "未知脑洞";
     let brainholeScenario = "";
+
     if (brainholeId) {
       const brainhole = await db.brainhole.findUnique({
         where: { id: brainholeId },
@@ -24,6 +25,17 @@ export async function POST(request: NextRequest) {
       if (brainhole) {
         brainholeTitle = brainhole.title;
         brainholeScenario = brainhole.scenario || "";
+      }
+    } else {
+      // 随机抽取一个 approved 脑洞
+      const randomBrainhole = await db.brainhole.findFirst({
+        where: { status: "approved" },
+        orderBy: { hotScore: "desc" },
+      });
+      if (randomBrainhole) {
+        brainholeId = randomBrainhole.id;
+        brainholeTitle = randomBrainhole.title;
+        brainholeScenario = randomBrainhole.scenario || "";
       }
     }
 
@@ -66,7 +78,7 @@ export async function POST(request: NextRequest) {
       data: {
         roomId: room.id,
         senderId: "liu_kanshan_ai",
-        content: `你好！我是刘看山，很高兴和你探讨"${brainholeTitle}"。我们可以慢慢聊，不用着急。`,
+        content: `你好！我是刘看山，很高兴和你探讨"${brainholeTitle}”。我们可以慢慢聊，不用着急。`,
         identity: "刘看山",
         isAiPrompt: false,
       },
@@ -76,6 +88,7 @@ export async function POST(request: NextRequest) {
       roomId: room.id,
       brainholeTitle,
       brainholeScenario,
+      brainholeId,
     }), { status: 201 });
   } catch (error) {
     console.error("创建AI房间失败:", error);

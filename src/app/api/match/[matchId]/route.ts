@@ -18,7 +18,30 @@ export async function GET(
     const { matchId } = await params;
     const match = await checkMatchStatus(matchId, session.user.id);
 
-    return NextResponse.json(apiResponse(match));
+    // v4.3: 如果匹配成功，获取房间和脑洞信息
+    let roomData = null;
+    if (match.status === "matched" && match.roomId) {
+      const room = await db.room.findUnique({
+        where: { id: match.roomId },
+        include: {
+          brainhole: {
+            select: {
+              id: true,
+              title: true,
+              scenario: true,
+              category: true,
+              difficulty: true,
+            },
+          },
+        },
+      });
+      roomData = room;
+    }
+
+    return NextResponse.json(apiResponse({
+      ...match,
+      room: roomData,
+    }));
   } catch (error: any) {
     if (error.message === "MATCH_NOT_FOUND") {
       return NextResponse.json(apiError("MATCH_NOT_FOUND", "匹配不存在"), { status: 404 });

@@ -1,10 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TopBar from '@/components/layout/TopBar';
-import { useCollection } from '@/hooks/useCollection';
-import { useReaction } from '@/hooks/useReaction';
-import { BookOpen, Sparkles, Globe, MessageSquare, Clock } from 'lucide-react';
+import { BookOpen, Globe, MessageSquare, Sparkles, Eye, Lock, Unlock } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+interface AssetItem {
+  id: string;
+  title: string;
+  summary: string;
+  messageCount: number;
+  sparkCount: number;
+  isPublic: boolean;
+  createdAt: string;
+  brainhole?: { title: string; scenario: string } | null;
+  user?: { name: string | null; username: string | null } | null;
+}
 
 const tabs = [
   { id: 'mine', label: '我的素材', icon: BookOpen },
@@ -13,21 +24,49 @@ const tabs = [
 
 export default function LibraryPage() {
   const [activeTab, setActiveTab] = useState('mine');
-  const { collectedBrainholes } = useCollection();
-  const { reactions } = useReaction();
+  const [myAssets, setMyAssets] = useState<AssetItem[]>([]);
+  const [publicAssets, setPublicAssets] = useState<AssetItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // 按脑洞分组
-  const groupedReactions = reactions.reduce((acc, reaction) => {
-    const key = reaction.brainholeId || '未分类';
-    if (!acc[key]) {
-      acc[key] = {
-        brainholeTitle: reaction.aiPrompt || '未知脑洞',
-        items: [],
-      };
+  useEffect(() => {
+    // 加载我的素材
+    fetch('/api/assets')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data?.assets) {
+          setMyAssets(res.data.assets);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+
+    // 加载广场素材
+    fetch('/api/assets/public')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data?.assets) {
+          setPublicAssets(res.data.assets);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const togglePublic = async (assetId: string, current: boolean) => {
+    try {
+      const res = await fetch(`/api/assets/${assetId}/public`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublic: !current }),
+      });
+      if (res.ok) {
+        setMyAssets((prev) =>
+          prev.map((a) => (a.id === assetId ? { ...a, isPublic: !current } : a))
+        );
+      }
+    } catch (err) {
+      console.error('Toggle public failed:', err);
     }
-    acc[key].items.push(reaction);
-    return acc;
-  }, {} as Record<string, { brainholeTitle: string; items: typeof reactions }>);
+  };
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]">
@@ -57,78 +96,110 @@ export default function LibraryPage() {
       <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">
         {activeTab === 'mine' ? (
           <>
-            {/* 收藏脑洞 */}
-            <div>
-              <h3 className="text-xs text-white/40 mb-2 flex items-center gap-1">
-                <BookOpen size={12} />
-                收藏的脑洞
-              </h3>
-              {collectedBrainholes.length === 0 ? (
-                <div className="text-center py-8 bg-white/5 rounded-xl">
-                  <BookOpen className="w-10 h-10 text-white/10 mx-auto mb-2" />
-                  <p className="text-white/30 text-xs">还没有收藏任何脑洞</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {collectedBrainholes.map((brainhole) => (
-                    <div
-                      key={brainhole.id}
-                      className="bg-white/5 rounded-xl p-3 border border-white/5 hover:border-white/10 transition-colors"
-                    >
-                      <h4 className="text-sm text-white/80 font-medium">{brainhole.title}</h4>
-                      <p className="text-[11px] text-white/30 mt-1 line-clamp-2">{brainhole.content}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 对白记录 */}
-            <div>
-              <h3 className="text-xs text-white/40 mb-2 flex items-center gap-1">
-                <MessageSquare size={12} />
-                对白记录
-              </h3>
-              {Object.keys(groupedReactions).length === 0 ? (
-                <div className="text-center py-8 bg-white/5 rounded-xl">
-                  <MessageSquare className="w-10 h-10 text-white/10 mx-auto mb-2" />
-                  <p className="text-white/30 text-xs">还没有任何对白记录</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {Object.entries(groupedReactions).map(([key, group]) => (
-                    <div key={key} className="bg-white/5 rounded-xl p-3 border border-white/5">
-                      <h4 className="text-sm text-xh-gold font-medium mb-2">{group.brainholeTitle}</h4>
-                      <div className="space-y-2">
-                        {group.items.map((item) => (
-                          <div key={item.id} className="bg-white/5 rounded-lg p-2">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] text-white/40">{item.identityLabel}</span>
-                              <span className="text-[10px] text-white/20">
-                                {new Date(item.createdAt).toLocaleDateString('zh-CN')}
-                              </span>
-                            </div>
-                            <p className="text-xs text-white/60">{item.content}</p>
-                            <div className="flex items-center gap-1 mt-1">
-                              <Sparkles size={10} className="text-xh-gold" />
-                              <span className="text-[10px] text-xh-gold">{item.sparkCount} 火花</span>
-                            </div>
-                          </div>
-                        ))}
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              </div>
+            ) : myAssets.length === 0 ? (
+              <div className="text-center py-12 bg-white/5 rounded-xl">
+                <MessageSquare className="w-10 h-10 text-white/10 mx-auto mb-2" />
+                <p className="text-white/30 text-xs">还没有任何对白记录</p>
+                <p className="text-white/20 text-[10px] mt-1">完成对白后可保存到素材库</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {myAssets.map((asset, index) => (
+                  <motion.div
+                    key={asset.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm text-white/90 font-medium truncate">{asset.title}</h4>
+                        {asset.summary && (
+                          <p className="text-[11px] text-white/30 mt-1 line-clamp-2">{asset.summary}</p>
+                        )}
                       </div>
+                      <button
+                        onClick={() => togglePublic(asset.id, asset.isPublic)}
+                        className={`shrink-0 p-1.5 rounded-lg transition-colors ${
+                          asset.isPublic
+                            ? 'bg-emerald-500/15 text-emerald-400'
+                            : 'bg-white/5 text-white/30 hover:text-white/50'
+                        }`}
+                        title={asset.isPublic ? '已公开，点击取消' : '点击公开'}
+                      >
+                        {asset.isPublic ? <Unlock size={14} /> : <Lock size={14} />}
+                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+
+                    <div className="flex items-center gap-4 mt-3 text-[10px] text-white/30">
+                      <span className="flex items-center gap-1">
+                        <MessageSquare size={10} />
+                        {asset.messageCount} 条对白
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Sparkles size={10} className="text-xh-gold" />
+                        {asset.sparkCount} 火花
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye size={10} />
+                        {asset.isPublic ? '广场可见' : '仅自己'}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </>
         ) : (
-          /* 广场素材 */
-          <div className="text-center py-16">
-            <Globe className="w-12 h-12 text-white/10 mx-auto mb-3" />
-            <p className="text-white/30 text-sm">广场素材即将开放</p>
-            <p className="text-white/20 text-xs mt-1">用户可公开分享自己的精彩对白</p>
-          </div>
+          <>
+            {publicAssets.length === 0 ? (
+              <div className="text-center py-12 bg-white/5 rounded-xl">
+                <Globe className="w-10 h-10 text-white/10 mx-auto mb-2" />
+                <p className="text-white/30 text-xs">广场暂无公开素材</p>
+                <p className="text-white/20 text-[10px] mt-1">快去完成对白并公开分享吧</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {publicAssets.map((asset, index) => (
+                  <motion.div
+                    key={asset.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white/5 rounded-xl p-4 border border-white/5"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-full bg-xh-gold/20 flex items-center justify-center text-[10px] text-xh-gold">
+                        {asset.user?.name?.charAt(0) || '?'}
+                      </div>
+                      <span className="text-[10px] text-white/40">
+                        {asset.user?.name || asset.user?.username || '匿名用户'}
+                      </span>
+                    </div>
+                    <h4 className="text-sm text-white/90 font-medium">{asset.title}</h4>
+                    {asset.summary && (
+                      <p className="text-[11px] text-white/30 mt-1 line-clamp-2">{asset.summary}</p>
+                    )}
+                    <div className="flex items-center gap-4 mt-3 text-[10px] text-white/30">
+                      <span className="flex items-center gap-1">
+                        <MessageSquare size={10} />
+                        {asset.messageCount} 条对白
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Sparkles size={10} className="text-xh-gold" />
+                        {asset.sparkCount} 火花
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
