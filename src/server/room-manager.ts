@@ -6,7 +6,7 @@ export async function markSpark(
   userId: string
 ) {
   // 检查消息是否存在
-  const message = await db.roomMessage.findUnique({
+  const message = await db.roomMessage.findFirst({
     where: { id: messageId, roomId },
   });
 

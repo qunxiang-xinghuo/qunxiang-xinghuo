@@ -30,7 +30,7 @@ export async function POST(
     const { roomId, voteId } = await params;
 
     // 检查投票是否存在且处于开放状态
-    const vote = await db.vote.findUnique({
+    const vote = await db.vote.findFirst({
       where: { id: voteId, roomId },
       include: {
         options: true,
