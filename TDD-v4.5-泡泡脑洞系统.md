@@ -309,3 +309,61 @@ model Brainhole {
 - [x] 泡泡严格限制在容器内（20px安全边距+减小漂浮幅度）
 - [x] 泡泡文字加大清晰（默认size*0.22/悬停size*0.28）
 - [x] 身份选择页返回键显式使用router.back()
+
+---
+
+## 十一、v4.6 修复：双人模式无法进入等待页
+
+### 问题描述
+**严重Bug**: 用户在身份选择页点击"确认身份，开始匹配"后，如果 `/api/match` 接口调用失败（网络/服务器错误），用户无法进入等待页面，卡在身份选择页。
+
+**根因**: 匹配请求（POST `/api/match`）在身份选择页（`duo-match`）同步发起，成功后才跳转等待页。一旦请求失败，用户无处可去。
+
+### 修复方案
+
+#### 1. 流程重构：匹配请求移至等待页后台发起
+**旧流程**: `duo-match` 选身份 → POST匹配API → 成功后跳 `duo-waiting` → 轮询
+**新流程**: `duo-match` 选身份 → 直接跳 `duo-waiting` → 渲染UI → 延迟1秒后台POST匹配API → 轮询
+
+#### 2. duo-match/page.tsx 修改
+- `handleConfirm` 不再 `fetch('/api/match')`
+- 只保存 `identity` 和 `brainholeId` 到 localStorage
+- 直接 `router.push('/duo-waiting?brainholeId=xxx')`
+- 按钮文案改为"确认身份，进入匹配"
+
+#### 3. duo-waiting/page.tsx 重写（核心）
+- **先渲染UI**: 刘看山动画、倒计时、文案立即显示
+- **延迟1秒后后台请求**: `setTimeout(1000ms)` 后异步 `POST /api/match`
+- **失败静默处理**: try-catch 包裹，失败仅 `console.error`，不弹alert，倒计时继续
+- **独立倒计时**: 无论匹配请求是否成功，10秒倒计时始终运行
+- **独立轮询**: 只有获得 `matchId` 后才开始轮询 `/api/match/${matchId}`
+- **身份检查**: 进入时检查 `xh_duo_identity`，丢失则跳转 duo-match
+
+#### 4. duo-timeout/page.tsx 适配
+- "继续等待"按钮跳转 `/duo-waiting?round=2`（不再依赖 matchId）
+- 等待页会重新发起匹配请求
+
+#### 5. /api/match 接口加强
+- 请求体解析失败时返回 400 + 明确错误消息
+- `identity` 缺失时返回 400 + "缺少身份参数"
+- Zod 验证错误时返回具体字段错误信息
+- 全流程 `console.log` 打印 brainholeId、identity、mode 等关键参数
+
+### 文件变更
+| 文件 | 变更 |
+|------|------|
+| `src/app/duo-match/page.tsx` | 去掉POST匹配逻辑，直接跳转等待页 |
+| `src/app/duo-waiting/page.tsx` | 重写：先渲染UI，延迟后台请求匹配 |
+| `src/app/duo-timeout/page.tsx` | 继续等待跳转适配新流程 |
+| `src/app/api/match/route.ts` | 加强日志和参数验证错误处理 |
+| `src/lib/bubble-client.ts` | 新增（v4.5-fix4时创建） |
+
+### 测试检查清单
+- [ ] 点击【双人模式】→ 选身份 → 确认 → 立即看到等待页UI
+- [ ] 点击泡泡 → 选身份 → 确认 → 立即看到等待页UI
+- [ ] 等待页先显示刘看山动画和倒计时
+- [ ] 1秒后后台发起匹配请求（Network面板可见）
+- [ ] 匹配请求失败时，页面不崩溃，倒计时继续
+- [ ] 10秒超时后正确跳转超时选择页
+- [ ] 超时页"继续等待"可重新进入等待页
+- [ ] 匹配成功时正确跳转对白实验室
