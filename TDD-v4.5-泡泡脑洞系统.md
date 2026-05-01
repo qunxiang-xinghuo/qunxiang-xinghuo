@@ -367,3 +367,66 @@ model Brainhole {
 - [ ] 10秒超时后正确跳转超时选择页
 - [ ] 超时页"继续等待"可重新进入等待页
 - [ ] 匹配成功时正确跳转对白实验室
+
+
+---
+
+## 十二、v4.7 修复：泡泡视觉效果 + AI房间创建失败
+
+### 修复1: 泡泡视觉效果
+
+**问题**:
+1. 泡泡有实色边框 `border: 1px solid rgba(255,255,255,0.32)`，看起来像套圈
+2. 泡泡结构嵌套多层div（bubble-body > iridescence + highlight + caustic + 文字），有套圈感
+3. 漂浮动画复杂（8关键帧+左右摆动），显得僵硬
+4. 点击弹跳幅度过大（scale 1.5）
+
+**修复**:
+- `Bubble.tsx`: 简化为单层div，所有效果用CSS伪元素(::before, ::after)和背景实现
+- `globals.css`: 
+  - 去掉实色border，改用极淡box-shadow模拟边缘
+  - 五彩光泽用 `::before` 伪元素 + conic-gradient，饱和度极低（0.07-0.10）
+  - 左上角高光用 `::after` 伪元素
+  - 漂浮动画简化为纯上下浮动 `translateY(-10px)`，周期2-4秒
+  - 点击弹跳简化为 `scale(1.15) -> 0.95 -> 1.05 -> 1`
+
+**文件**: `src/components/bubble-cloud/Bubble.tsx`, `src/app/globals.css`
+
+### 修复2: AI房间创建失败
+
+**问题描述**: 用户在双人模式超时后点击"是，与刘看山对白"，提示"创建AI房间失败"。
+
+**根因诊断**:
+- `RoomParticipant` 模型有外键约束：`user User @relation(fields: [userId], references: [id])`
+- 创建AI房间时，用户userId可能是 `guest-${Date.now()}`（不在User表中）
+- AI的userId是 `"liu_kanshan_ai"`（不在User表中）
+- Prisma 插入 RoomParticipant 时外键校验失败，导致整个事务回滚
+
+**修复**:
+- `src/app/api/rooms/ai/route.ts`: 创建 RoomParticipant 之前，先 `db.user.upsert()` 确保用户记录存在
+  - 当前用户：`{id, name: identity, email: "${id}@guest.local"}`
+  - AI用户：`{id: "liu_kanshan_ai", name: "刘看山", email: "liu_kanshan_ai@system.local"}`
+- 添加全流程日志（14处），方便排查
+- `src/app/duo-timeout/page.tsx`: 加强前端错误处理和日志
+
+**DeepSeek API配置**:
+- 当前 `.env` 中无 `DEEPSEEK_API_KEY`
+- `/api/ai/chat` 有fallback处理（无key时返回随机回复）
+- 如需接入DeepSeek，需在 `.env` 中添加 `DEEPSEEK_API_KEY=sk-...`
+
+### 文件变更
+| 文件 | 变更 |
+|------|------|
+| `src/components/bubble-cloud/Bubble.tsx` | 简化结构：单层div+伪元素 |
+| `src/components/bubble-cloud/BubbleCloud.tsx` | 去掉swayAmplitude传递 |
+| `src/app/globals.css` | 重写泡泡样式：无border、伪元素高光、简化漂浮 |
+| `src/app/api/rooms/ai/route.ts` | upsert用户修复外键约束，加日志 |
+| `src/app/duo-timeout/page.tsx` | 加强前端错误处理和日志 |
+
+### 测试检查清单
+- [ ] 泡泡没有实色边框，看起来是独立的晶莹剔透个体
+- [ ] 泡泡有轻微上下浮动（幅度约10px）
+- [ ] 点击泡泡有轻微弹跳动画
+- [ ] 超时后点击"是，与刘看山对白"成功创建AI房间
+- [ ] AI房间创建成功后正确跳转到对白实验室
+- [ ] 与刘看山AI能正常对话
