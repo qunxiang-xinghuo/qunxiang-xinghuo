@@ -306,3 +306,6 @@ model Brainhole {
 - [x] WebSocket连接地址正确（非localhost）
 - [x] 所有深层页面返回按钮可用（默认router.back()）
 - [x] 底部导航栏全局显示（除登录/注册页）
+- [x] 泡泡严格限制在容器内（20px安全边距+减小漂浮幅度）
+- [x] 泡泡文字加大清晰（默认size*0.22/悬停size*0.28）
+- [x] 身份选择页返回键显式使用router.back()
