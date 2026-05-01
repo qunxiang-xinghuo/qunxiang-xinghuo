@@ -45,7 +45,7 @@ function DuoMatchContent() {
         } else {
           setIsLoggedIn(false);
           alert('请先登录后再进行双人匹配');
-          router.push('/login');
+          router.push('/');
         }
       })
       .catch(() => {

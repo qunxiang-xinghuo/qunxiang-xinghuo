@@ -12,8 +12,12 @@ REMOTE = "/www/wwwroot/qunxiang-xinghuo"
 FILES = [
     # Core pages
     ("src/app/page.tsx", "src/app/page.tsx"),
+    ("src/app/login/page.tsx", "src/app/login/page.tsx"),
+    ("src/app/login/LoginForm.tsx", "src/app/login/LoginForm.tsx"),
+    ("src/app/register/page.tsx", "src/app/register/page.tsx"),
     ("src/app/duo-match/page.tsx", "src/app/duo-match/page.tsx"),
     ("src/app/duo-waiting/page.tsx", "src/app/duo-waiting/page.tsx"),
+    ("src/app/duo-timeout/page.tsx", "src/app/duo-timeout/page.tsx"),
     ("src/app/layout.tsx", "src/app/layout.tsx"),
     # Components
     ("src/components/bubble-cloud/Bubble.tsx", "src/components/bubble-cloud/Bubble.tsx"),
@@ -23,15 +27,17 @@ FILES = [
     # Server
     ("src/server/match-engine.ts", "src/server/match-engine.ts"),
     ("src/server/room-manager.ts", "src/server/room-manager.ts"),
+    # Auth
+    ("src/lib/auth.ts", "src/lib/auth.ts"),
     # API
+    ("src/app/api/auth/register/route.ts", "src/app/api/auth/register/route.ts"),
+    ("src/app/api/auth/[...nextauth]/route.ts", "src/app/api/auth/[...nextauth]/route.ts"),
     ("src/app/api/match/route.ts", "src/app/api/match/route.ts"),
     ("src/app/api/rooms/ai/route.ts", "src/app/api/rooms/ai/route.ts"),
     # Validators
     ("src/lib/validators/match.ts", "src/lib/validators/match.ts"),
     # Prisma
     ("prisma/schema.prisma", "prisma/schema.prisma"),
-    # Docs
-    ("docs/qunxiangxinhuo-TDD-v4.0.md", "docs/qunxiangxinhuo-TDD-v4.0.md"),
 ]
 
 def run(ssh, cmd, t=300):
@@ -63,26 +69,29 @@ def main():
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(HOST, port=PORT, username=USER, password=PASS, timeout=15)
     try:
-        print("[1/5] Uploading all files...")
+        print("[1/6] Uploading all files...")
         sftp = ssh.open_sftp()
         for local, remote in FILES:
             upload(sftp, local, remote)
         sftp.close()
         print("[OK] Uploaded")
 
-        print("\n[2/5] Prisma db push...")
+        print("\n[2/6] Remove old (auth) pages...")
+        run(ssh, f"cd {REMOTE} && rm -rf src/app/'(auth)'/login src/app/'(auth)'/register", 10)
+
+        print("\n[3/6] Prisma db push...")
         run(ssh, f"cd {REMOTE} && npx prisma db push --accept-data-loss", 120)
 
-        print("\n[3/5] Prisma generate...")
+        print("\n[4/6] Prisma generate...")
         run(ssh, f"cd {REMOTE} && npx prisma generate", 60)
 
-        print("\n[4/5] Build...")
+        print("\n[5/6] Build...")
         code = run(ssh, f"cd {REMOTE} && npm run build", 300)
         if code != 0:
             print("[ERROR] Build failed")
             return 1
 
-        print("\n[5/5] Copy static + restart...")
+        print("\n[6/6] Copy static + restart...")
         run(ssh, f"cd {REMOTE} && cp -r .next/static .next/standalone/.next/")
         run(ssh, f"cd {REMOTE} && pm2 restart qunxiang-xinghuo")
         run(ssh, "pm2 list", 10)
