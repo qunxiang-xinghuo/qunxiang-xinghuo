@@ -1136,4 +1136,53 @@ bash scripts/deploy.sh
 
 ---
 
+### 12.5 功能迭代：快速匹配 + 泡泡点击对戏 + 刘看山AI（2026-04-29）
+
+#### 需求
+1. 泡泡点击后进入双人对戏匹配流程（同脑洞匹配）
+2. 双人接戏支持"快速匹配"模式（任意脑洞匹配）
+3. 匹配1分钟超时后，可选择刘看山AI陪练
+4. 修复"请求失败"错误
+
+#### 实现
+
+**快速匹配模式（mode=quick）**：
+- `match-engine.ts`：新增 `quick` 模式，不限制 `brainholeId`，任意两个waiting用户匹配
+- 匹配成功后随机分配一个brainhole（按热度排序取第一个）
+- `validators/match.ts`：`brainholeId` 变为可选，`mode` 枚举增加 `quick`
+
+**泡泡点击对戏**：
+- `BubbleDetailModal`："进入脑洞创作"改为"开始对戏"，跳转 `/duo-match?brainholeId=xxx`
+- `duo-match/page.tsx`：读取URL参数 `brainholeId`，自动预选中该脑洞并弹出身份选择弹窗
+
+**快速匹配按钮**：
+- `duo-match/page.tsx`：顶部添加"快速匹配（任意脑洞）"按钮
+- 点击后直接弹出身份选择，不选具体脑洞
+
+**Prisma Schema变更**：
+- `MatchRequest.brainholeId`：`String` → `String?`（可选）
+- `Room.brainholeId`：`String` → `String?`（可选）
+- 关系定义同步改为可选：`Brainhole?`
+
+#### 部署陷阱
+
+**陷阱1：Google Fonts导致build失败**
+- 现象：服务器build时报错 `Failed to fetch Inter from Google Fonts`
+- 原因：服务器在中国大陆，Google Fonts被墙
+- 修复：`layout.tsx` 移除 `next/font/google` 导入，改用系统字体 `font-sans`
+
+**陷阱2：Prisma Client未重新生成**
+- 现象：schema变更后build报类型错误 `Type 'null' is not assignable to type 'string | undefined'`
+- 原因：服务器上的 `src/generated/prisma` 还是旧的，没有重新生成
+- 修复：build前必须执行 `npx prisma generate`
+- 部署脚本更新：`prisma generate` → `npm run build` → `cp static` → `pm2 restart`
+
+#### 最终部署验证
+- 泡泡API：`/api/brainholes?mode=bubble` → 200 OK，31个泡泡
+- 首页：`/` → 200 OK
+- 双人匹配：`/duo-match` → 200 OK
+- PM2状态：`online`，pid 1109883
+
+---
+
 *文档版本：v4.0+ | 最后更新：2026-04-29 | 分支：dev | 测试状态：217/217 passed*
