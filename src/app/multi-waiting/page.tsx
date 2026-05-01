@@ -226,7 +226,7 @@ function MultiWaitingContent() {
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]">
-      <TopBar title="群像组队" showBack />
+      <TopBar title="群像组队" showBack onBack={() => router.back()} />
 
       {/* 脑洞信息 */}
       <div className="px-4 mb-4">

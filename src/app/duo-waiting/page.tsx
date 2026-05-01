@@ -66,6 +66,14 @@ function DuoWaitingContent() {
       return;
     }
 
+    // v4.5-fix3: 检查身份是否丢失
+    const savedIdentity = localStorage.getItem('xh_duo_identity');
+    if (!savedIdentity) {
+      alert('请重新选择你的身份');
+      router.push('/duo-match');
+      return;
+    }
+
     const timer = setInterval(() => {
       setElapsedTime((prev) => {
         const next = prev + 1;

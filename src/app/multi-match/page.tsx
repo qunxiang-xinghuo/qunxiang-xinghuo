@@ -96,7 +96,7 @@ export default function MultiMatchPage() {
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]">
-      <TopBar title="多人组队" showBack />
+      <TopBar title="多人组队" showBack onBack={() => router.back()} />
 
       <div className="px-6 py-4">
         <p className="text-sm text-white/40">

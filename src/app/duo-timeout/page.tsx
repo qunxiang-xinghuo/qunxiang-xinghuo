@@ -82,7 +82,7 @@ function DuoTimeoutContent() {
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]">
-      <TopBar title="匹配结果" showBack onBack={() => router.back()} />
+      <TopBar title="匹配结果" showBack onBack={() => router.replace('/home')} />
 
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         {/* 刘看山形象 */}
