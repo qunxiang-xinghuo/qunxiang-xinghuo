@@ -1059,15 +1059,60 @@ const size = 40 + ((bubble.hotScore || 50) / 100) * 20; // 40-60px
 
 ### 12.3 自检清单（修复后必做）
 
-- [ ] `npm run build` 本地通过（无TypeScript错误）
-- [ ] `match-engine.ts` 中 `findUnique` 已全部替换为 `findFirst`
-- [ ] `BubbleCloud.tsx` 模板数量与 MAX_BUBBLES 一致
+- [x] `npm run build` 本地通过（无TypeScript错误）
+- [x] `match-engine.ts` 中 `findUnique` 已全部替换为 `findFirst`
+- [x] `room-manager.ts` 中 `findUnique` 已全部替换为 `findFirst`
+- [x] `vote/resolve` 和 `vote/cast` 路由中 `findUnique` 已全部替换为 `findFirst`
+- [x] `BubbleCloud.tsx` 模板数量与 MAX_BUBBLES 一致
+- [x] 全局扫描 `src/` 确认无其他 `findUnique` 误用
 - [ ] 服务器执行 `npx prisma db push`（如有schema变更）
 - [ ] 服务器执行 `npm run build`
 - [ ] `cp -r .next/static .next/standalone/.next/`
 - [ ] `pm2 restart qunxiang-xinghuo`
 - [ ] 浏览器验证：泡泡墙显示12+个泡泡
 - [ ] 浏览器验证：双人匹配流程正常（创建→等待→状态轮询）
+
+### 12.4 部署记录（2026-04-29）
+
+#### 部署受阻：SSH密钥认证被拒绝
+
+**诊断过程**：
+1. `ping 81.70.59.228` → 网络正常（21ms）
+2. `Test-NetConnection -Port 22` → 端口开放
+3. `ssh -v root@81.70.59.228` → 密钥交换成功，但认证被拒绝
+4. 调试输出：`Offering public key: id_ed25519 ... explicit` → `Permission denied`
+5. 结论：服务器 `~/.ssh/authorized_keys` 中**没有这个公钥**，或root登录被禁用
+
+**已尝试的解决方案**：
+- ✅ 用 `-i` 显式指定密钥文件
+- ✅ 用 `-o PreferredAuthentications=publickey` 强制密钥认证
+- ✅ 尝试 `www` 用户替代 `root`
+- ❌ 均返回 `Permission denied`
+
+**最终方案**：通过宝塔面板Web终端手动部署
+
+#### 宝塔面板部署步骤
+
+```bash
+# 在宝塔面板 → 终端 中执行
+cd /www/wwwroot/qunxiang-xinghuo
+git pull origin dev
+npm run build
+cp -r .next/static .next/standalone/.next/
+pm2 restart qunxiang-xinghuo
+```
+
+或执行项目根目录的 `scripts/deploy.sh`：
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+bash scripts/deploy.sh
+```
+
+#### 教训
+- **SSH密钥管理**：生产服务器SSH密钥变动后，本地密钥会失效，需要通过控制台/VNC重新配置
+- **宝塔面板备用**：当SSH不可用时，宝塔Web终端是最后的部署通道
+- **部署脚本化**：将部署步骤写成 `scripts/deploy.sh`，减少人工操作错误
 
 ---
 
