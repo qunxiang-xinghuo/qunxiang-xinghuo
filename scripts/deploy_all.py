@@ -36,6 +36,7 @@ FILES = [
     ("src/app/api/assets/route.ts", "src/app/api/assets/route.ts"),
     ("src/app/api/assets/public/route.ts", "src/app/api/assets/public/route.ts"),
     ("src/app/api/assets/[id]/public/route.ts", "src/app/api/assets/[id]/public/route.ts"),
+    ("src/app/api/brainholes/bubble/route.ts", "src/app/api/brainholes/bubble/route.ts"),
     ("src/lib/validators/match.ts", "src/lib/validators/match.ts"),
     ("prisma/schema.prisma", "prisma/schema.prisma"),
 ]
