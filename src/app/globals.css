@@ -80,16 +80,16 @@
 
   /* ===== 泡泡组件专用样式 ===== */
 
-  /* 泡泡漂浮动画：缓慢上升 + 自然左右摆动 */
+  /* 泡泡漂浮动画：缓慢上升 + 自然左右摆动（减小幅度防止溢出） */
   @keyframes bubble-float {
     0% { transform: translateY(0) translateX(0); }
-    12% { transform: translateY(-9px) translateX(var(--sway-px)); }
-    24% { transform: translateY(-4px) translateX(calc(var(--sway-px) * 0.4)); }
-    36% { transform: translateY(-15px) translateX(calc(var(--sway-px) * -0.5)); }
-    48% { transform: translateY(-7px) translateX(calc(var(--sway-px) * -0.9)); }
-    60% { transform: translateY(-13px) translateX(calc(var(--sway-px) * -0.2)); }
-    72% { transform: translateY(-5px) translateX(calc(var(--sway-px) * 0.5)); }
-    84% { transform: translateY(-11px) translateX(calc(var(--sway-px) * 0.8)); }
+    12% { transform: translateY(-5px) translateX(calc(var(--sway-px) * 0.6)); }
+    24% { transform: translateY(-2px) translateX(calc(var(--sway-px) * 0.3)); }
+    36% { transform: translateY(-8px) translateX(calc(var(--sway-px) * -0.4)); }
+    48% { transform: translateY(-4px) translateX(calc(var(--sway-px) * -0.7)); }
+    60% { transform: translateY(-7px) translateX(calc(var(--sway-px) * -0.2)); }
+    72% { transform: translateY(-3px) translateX(calc(var(--sway-px) * 0.4)); }
+    84% { transform: translateY(-6px) translateX(calc(var(--sway-px) * 0.6)); }
     100% { transform: translateY(0) translateX(0); }
   }
 

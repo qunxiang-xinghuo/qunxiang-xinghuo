@@ -106,7 +106,7 @@ function DuoMatchContent() {
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]">
-      <TopBar title="身份选择" showBack />
+      <TopBar title="身份选择" showBack onBack={() => router.back()} />
 
       {/* 页面标题 */}
       <div className="px-6 pt-4 pb-2">

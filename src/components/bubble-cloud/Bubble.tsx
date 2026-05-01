@@ -147,14 +147,18 @@ export default function Bubble({
             <div className="bubble-caustic absolute" />
 
             {/* 标题文字 - 纯白色加粗，悬停时同步放大 */}
-            <div className="absolute inset-0 flex items-center justify-center px-1.5">
+            <div className="absolute inset-0 flex items-center justify-center px-2">
               <span
-                className="bubble-title text-center leading-tight select-none"
+                className="bubble-title text-center leading-tight select-none break-words"
                 style={{
-                  fontSize: isHovered ? `${size * 0.18}px` : `${size * 0.14}px`,
-                  WebkitLineClamp: compact ? 1 : 2,
-                  transform: isHovered ? 'scale(1.15)' : 'scale(1)',
+                  fontSize: isHovered ? `${size * 0.28}px` : `${size * 0.22}px`,
+                  WebkitLineClamp: compact ? 2 : 3,
+                  transform: isHovered ? 'scale(1.08)' : 'scale(1)',
                   transition: 'font-size 0.3s ease, transform 0.3s ease',
+                  maxWidth: '90%',
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitBoxOrient: 'vertical',
                 }}
               >
                 {data.title}
@@ -173,13 +177,13 @@ export default function Bubble({
           zIndex: isHovered ? 60 : 0,
         }}
       >
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-full" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-2">
-          <p className="text-white font-bold text-center leading-tight" style={{ fontSize: `${size * 0.13}px` }}>
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-full" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-3">
+          <p className="text-white font-bold text-center leading-tight break-words" style={{ fontSize: `${size * 0.20}px`, maxWidth: '85%' }}>
             {data.title}
           </p>
           {data.scenario && (
-            <p className="text-white/70 text-center leading-tight mt-0.5 line-clamp-2" style={{ fontSize: `${size * 0.09}px` }}>
+            <p className="text-white/80 text-center leading-tight mt-1 line-clamp-3 break-words" style={{ fontSize: `${size * 0.14}px`, maxWidth: '85%' }}>
               {data.scenario}
             </p>
           )}
