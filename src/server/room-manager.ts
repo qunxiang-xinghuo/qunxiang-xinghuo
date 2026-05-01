@@ -69,7 +69,7 @@ export async function markSpark(
     select: { brainholeId: true },
   });
 
-  if (room) {
+  if (room && room.brainholeId) {
     await db.brainhole.update({
       where: { id: room.brainholeId },
       data: {

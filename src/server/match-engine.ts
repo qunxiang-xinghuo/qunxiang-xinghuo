@@ -40,11 +40,15 @@ export async function findMatch(
     };
   }
 
+  // 快速匹配模式：不指定脑洞，系统随机分配
+  const isQuickMatch = mode === "quick";
+  const effectiveBrainholeId = brainholeId || "random";
+
   // 创建新的匹配请求
   const matchRequest = await db.matchRequest.create({
     data: {
       userId,
-      brainholeId,
+      brainholeId: isQuickMatch ? null : brainholeId,
       identity: criteria.identity || "default",
       preferDifferent: preferDifferentIdentity,
       status: "waiting",
@@ -52,17 +56,25 @@ export async function findMatch(
     },
   });
 
+  // 构建匹配查询条件
+  const matchWhere: any = {
+    status: "waiting",
+    expiresAt: { gt: new Date() },
+    userId: { not: excludeUserId || userId },
+  };
+
+  // 快速匹配模式：不限制脑洞；同脑洞模式：必须同脑洞
+  if (!isQuickMatch && brainholeId) {
+    matchWhere.brainholeId = brainholeId;
+  }
+
+  if (preferDifferentIdentity) {
+    matchWhere.OR = [{ identity: { not: criteria.identity || "default" } }];
+  }
+
   // 尝试寻找匹配
   const potentialMatches = await db.matchRequest.findMany({
-    where: {
-      brainholeId,
-      status: "waiting",
-      expiresAt: { gt: new Date() },
-      userId: { not: excludeUserId || userId },
-      OR: preferDifferentIdentity
-        ? [{ identity: { not: criteria.identity || "default" } }]
-        : undefined,
-    },
+    where: matchWhere,
     orderBy: { createdAt: "asc" },
     take: 10,
   });
@@ -70,13 +82,21 @@ export async function findMatch(
   if (potentialMatches.length > 0) {
     // ===== 多人模式：尝试找2-4个其他玩家（总共3-5人）=====
     if (mode === "multi" && potentialMatches.length >= 2) {
-      // 取前4个其他玩家，总共最多5人
       const matchedRequests = potentialMatches.slice(0, 4);
 
-      // 创建多人房间
+      // 确定房间使用的脑洞ID（快速模式随机选一个）
+      let roomBrainholeId = brainholeId;
+      if (isQuickMatch || !brainholeId) {
+        const randomBrainhole = await db.brainhole.findFirst({
+          where: { status: "approved" },
+          orderBy: { hotScore: "desc" },
+        });
+        roomBrainholeId = randomBrainhole?.id || brainholeId || "";
+      }
+
       const room = await db.room.create({
         data: {
-          brainholeId,
+          brainholeId: roomBrainholeId || undefined,
           type: "multi",
           status: "created",
           maxRound: 10,
@@ -84,7 +104,6 @@ export async function findMatch(
         },
       });
 
-      // 更新所有匹配请求（包括当前用户）
       await Promise.all([
         db.matchRequest.update({
           where: { id: matchRequest.id },
@@ -108,7 +127,6 @@ export async function findMatch(
         ),
       ]);
 
-      // 添加所有参与者
       await Promise.all([
         db.roomParticipant.create({
           data: {
@@ -142,12 +160,26 @@ export async function findMatch(
       };
     }
 
-    // ===== 双人模式 / 多人降级为双人 =====
+    // ===== 双人模式 / 多人降级为双人 / 快速匹配 =====
     const matchedRequest = potentialMatches[0];
+
+    // 确定房间使用的脑洞ID
+    let roomBrainholeId = brainholeId;
+    if (isQuickMatch || !brainholeId) {
+      // 快速模式：优先使用对方的brainholeId，如果对方也没有则随机选
+      roomBrainholeId = matchedRequest.brainholeId || brainholeId;
+      if (!roomBrainholeId) {
+        const randomBrainhole = await db.brainhole.findFirst({
+          where: { status: "approved" },
+          orderBy: { hotScore: "desc" },
+        });
+        roomBrainholeId = randomBrainhole?.id || "";
+      }
+    }
 
     const room = await db.room.create({
       data: {
-        brainholeId,
+        brainholeId: roomBrainholeId || undefined,
         type: "duet",
         status: "created",
         maxRound: 10,
@@ -205,7 +237,7 @@ export async function findMatch(
       matchedUserIdentity: matchedRequest.identity,
       matchedCount: 2,
       roomType: "duet",
-      message: mode === "multi" ? "双人匹配成功（多人不足自动降级）" : "匹配成功",
+      message: isQuickMatch ? "快速匹配成功" : mode === "multi" ? "双人匹配成功（多人不足自动降级）" : "匹配成功",
     };
   }
 
@@ -214,7 +246,7 @@ export async function findMatch(
     matched: false,
     matchId: matchRequest.id,
     roomType: mode,
-    message: mode === "multi" ? "等待组队中..." : "等待匹配中...",
+    message: mode === "multi" ? "等待组队中..." : isQuickMatch ? "快速匹配中..." : "等待匹配中...",
   };
 }
 
