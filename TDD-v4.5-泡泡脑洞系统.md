@@ -430,3 +430,57 @@ model Brainhole {
 - [ ] 超时后点击"是，与刘看山对白"成功创建AI房间
 - [ ] AI房间创建成功后正确跳转到对白实验室
 - [ ] 与刘看山AI能正常对话
+
+
+---
+
+## 十三、v4.7-fix2 修复：transform冲突 + 漂浮周期
+
+### 自检发现的问题
+
+**问题1: CSS transform冲突**
+- `.bubble-glass` 同时有 `animation: bubble-float-updown`（transform: translateY）和 `:hover transform: scale(1.15) translateY(-8px)`
+- CSS中 animation 会覆盖 static transform，导致 hover 放大和点击弹跳都**不生效**
+- **这是之前反复修改但一直没发现的核心bug**
+
+**问题2: 漂浮周期过长**
+- 原代码 `floatDuration = 6 + Math.random() * 8`（6-14秒）
+- 用户要求2-4秒
+
+### 修复方案
+
+**分离漂浮层与视觉层**:
+```
+Bubble.tsx 结构:
+motion.div (定位+入场动画)
+  └── .bubble-float-wrapper (漂浮: translateY)
+        └── .bubble-glass (晶莹质感+hover scale+点击弹跳)
+              └── .bubble-text (文字)
+```
+
+- `.bubble-float-wrapper`: 只负责 `animation: bubble-float-updown`（translateY上下浮动）
+- `.bubble-glass`: 只负责 `transition: transform` + `:hover transform: scale(1.15) translateY(-8px)` + `.bubble-pop animation`
+- 两者transform互不干扰
+
+**漂浮周期调整**:
+- `floatDuration`: 6-14秒 → **2-4秒**
+- `floatDelay`: 0-4秒 → **0-3秒**
+
+### 文件变更
+| 文件 | 变更 |
+|------|------|
+| `src/components/bubble-cloud/Bubble.tsx` | 添加 `.bubble-float-wrapper` 层 |
+| `src/components/bubble-cloud/BubbleCloud.tsx` | 漂浮周期2-4秒，延迟0-3秒 |
+| `src/app/globals.css` | 分离 `.bubble-float-wrapper` 和 `.bubble-glass` 的transform |
+
+### 经验教训
+1. **CSS animation和transform的冲突**：当同一个元素同时有 `animation: transform(...)` 和 `transform: ...` 或另一个 `animation: transform(...)` 时，后者会覆盖前者。
+2. **解决方案**：将不同方向的transform分离到不同层（父元素做translateY，子元素做scale）。
+3. **自检的重要性**：这个问题之前修改了多次都没发现，只有系统性地逐层检查CSS才暴露出来。
+
+### 测试检查清单
+- [ ] 泡泡有轻微上下浮动（幅度约10px，周期2-4秒）
+- [ ] 鼠标悬停时泡泡**确实**放大1.15倍 + 上浮8px
+- [ ] 悬停时文字**确实**从10px放大到14px
+- [ ] 点击泡泡时有轻微弹跳动画
+- [ ] 点击弹跳期间漂浮动画不中断
