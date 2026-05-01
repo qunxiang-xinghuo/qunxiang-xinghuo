@@ -313,7 +313,7 @@ export default function RoomPage() {
       <TopBar
         title="对白实验室"
         showBack
-        onBack={() => router.push('/home')}
+        onBack={() => router.back()}
       />
 
       {/* 脑洞信息区 - 固定顶部 */}

@@ -42,7 +42,7 @@ function IdentityPageContent() {
 
   return (
     <div className="flex flex-col h-full">
-      <TopBar title="选择你的身份" showBack />
+      <TopBar title="选择你的身份" showBack onBack={() => router.back()} />
 
       <div className="px-6 py-4">
         <p className="text-sm text-gray-400 leading-relaxed">
