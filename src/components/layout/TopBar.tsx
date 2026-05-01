@@ -1,7 +1,7 @@
 'use client';
 
 import { Bell, User } from 'lucide-react';
-
+import { useRouter } from 'next/navigation';
 
 interface TopBarProps {
   title?: string;
@@ -10,11 +10,21 @@ interface TopBarProps {
 }
 
 export default function TopBar({ title, showBack = false, onBack }: TopBarProps) {
+  const router = useRouter();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <div className="flex items-center px-4 py-4 border-b border-gray-800 bg-xh-dark/80 backdrop-blur-md z-10">
       {showBack ? (
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors mr-3"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
