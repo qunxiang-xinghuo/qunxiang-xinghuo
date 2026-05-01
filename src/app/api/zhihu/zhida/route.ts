@@ -10,7 +10,7 @@ const zhidaSchema = z.object({
       content: z.string().min(1),
     })
   ).min(1),
-  model: z.enum(["zhida-fast-1p5", "zhida-thinking-1p5"]).default("zhida-thinking-1p5"),
+  model: z.enum(["zhida-fast-1p5", "zhida-thinking-1p5", "zhida-agent"]).default("zhida-thinking-1p5"),
 });
 
 /**

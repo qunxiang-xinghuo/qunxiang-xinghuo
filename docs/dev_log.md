@@ -2,6 +2,45 @@
 
 ---
 
+## 2026-04-30 — 知乎直答与搜索页面集成 (Phase 5)
+
+### 概述
+新增两个知乎测试页面，实现知乎直答对话界面和知乎搜索/热榜页面，并修复知乎开发者 API 环境变量配置问题。
+
+### 变更内容
+
+**环境变量修复**
+- `src/lib/zhihu-dev-api.ts` — 将 `process.env.ZHIHU_APP_KEY` 更改为 `process.env.ZHIHU_API_KEY`，与 `.env.local` 中的配置键名一致
+
+**前端页面 (2 个新增)**
+- `/src/app/zhihu-zhida/page.tsx` — 知乎直答聊天界面，支持快速回答(zhida-fast-1p5)和深度思考(zhida-thinking-1p5)两种模型切换，带思考过程展示和加载动画
+- `/src/app/zhihu-search/page.tsx` — 知乎搜索与热榜页面，3 标签页设计(站内搜索/全网搜索/热榜)，搜索结果展示文章标题/摘要/作者/点赞数
+
+**TDD 测试 (2 个新增)**
+- `src/test/pages/zhihu-zhida.test.tsx` — 9 个测试用例，覆盖页面渲染、模型选择、API 调用、加载状态、错误处理
+- `src/test/pages/zhihu-search.test.tsx` — 6 个测试用例，覆盖页面渲染、标签切换、搜索功能、热榜展示
+
+**测试结果**
+- 新增 15 个测试全部通过
+- 全量测试 236 个通过（1 个 transform 错误为 socket.io-parser 预存问题）
+
+### 技术细节
+
+**知乎直答页面 (`zhihu-zhida`)**
+- 消息历史：用户消息右对齐(xh-accent背景)、AI回复左对齐(white/5背景)
+- 模型选择：快速回答(红色)/深度思考(金色)toggle按钮
+- 思考过程：AI回复中 `reasoningContent` 字段以 💭 前缀展示
+- 加载状态：`思考中...` 动态文字动画
+- API：`POST /api/zhihu/zhida`，body 格式 `{ messages, model }`
+
+**知乎搜索页面 (`zhihu-search`)**
+- 3 标签页：站内搜索(调用`/api/zhihu/search`)/全网搜索(调用`/api/zhihu/global-search`)/热榜(调用`/api/zhihu/hot-list`)
+- 搜索结果卡片：标题 + 摘要 + 作者 + 点赞数 + 评论数
+- 热榜卡片：标题 + 缩略图(如存在) + 摘要
+- 加载骨架屏：3 个占位卡片动画
+
+---
+
 ## 2026-04-28 — 全栈迁移完成 (Express+Vite → Next.js 16)
 
 ### 概述
