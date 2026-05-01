@@ -102,7 +102,9 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
               {/* 标题 */}
               <h2 className="text-lg font-bold text-white mb-1">确认你的身份</h2>
               <p className="text-xs text-white/40 mb-5">
-                选择一个身份进入"{brainholeTitle.slice(0, 20)}..."
+                {brainholeTitle === '快速匹配'
+                  ? '选择一个身份，系统将为你随机匹配对戏伙伴'
+                  : `选择一个身份进入"${brainholeTitle.slice(0, 20)}..."`}
               </p>
 
               {/* 身份选项 */}

@@ -2,44 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Users, Theater, BookOpen } from 'lucide-react';
+import { Sparkles, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import BubbleCloud from '@/components/bubble-cloud/BubbleCloud';
 import LiuKanshanWelcome from '@/components/layout/LiuKanshanWelcome';
-
-const modes = [
-  {
-    id: 'duo',
-    title: '双人模式',
-    subtitle: '即时对戏碰撞',
-    icon: Users,
-    color: '#e2b04a',
-    bg: 'bg-[#e2b04a]/15',
-    border: 'border-[#e2b04a]/40',
-    available: true,
-    core: true,
-  },
-  {
-    id: 'multi',
-    title: '多人组队',
-    subtitle: '群像共创',
-    icon: Theater,
-    color: '#4ade80',
-    bg: 'bg-[#4ade80]/10',
-    border: 'border-[#4ade80]/20',
-    available: true,
-  },
-  {
-    id: 'serial',
-    title: '长期连载',
-    subtitle: '故事连载',
-    icon: BookOpen,
-    color: '#60a5fa',
-    bg: 'bg-[#60a5fa]/10',
-    border: 'border-[#60a5fa]/20',
-    available: false,
-  },
-];
 
 export default function Home() {
   const router = useRouter();
@@ -57,18 +23,8 @@ export default function Home() {
     setShowWelcome(false);
   };
 
-  const handleModeClick = (mode: typeof modes[0]) => {
-    if (!mode.available) {
-      alert('该功能即将开放，敬请期待');
-      return;
-    }
-    if (mode.id === 'duo') {
-      router.push('/duo-match');
-    } else if (mode.id === 'multi') {
-      router.push('/multiplayer');
-    } else if (mode.id === 'serial') {
-      router.push('/story');
-    }
+  const handleDuoMode = () => {
+    router.push('/duo-match');
   };
 
   return (
@@ -98,74 +54,46 @@ export default function Home() {
         </motion.p>
       </div>
 
-      {/* 泡泡墙区域 */}
-      <div className="shrink-0 relative overflow-hidden" style={{ height: '240px' }}>
+      {/* 泡泡墙区域 - 核心交互区 */}
+      <div className="flex-1 min-h-0 relative overflow-hidden">
         <BubbleCloud compact />
       </div>
 
-      {/* 模式入口卡片 */}
-      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4">
-        <div className="flex flex-col gap-3">
-          {modes.map((mode, index) => {
-            const Icon = mode.icon;
-            return (
-              <motion.button
-                key={mode.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={mode.available ? { scale: 1.02 } : {}}
-                whileTap={mode.available ? { scale: 0.98 } : {}}
-                onClick={() => handleModeClick(mode)}
-                className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${
-                  mode.core
-                    ? `${mode.bg} ${mode.border} cursor-pointer hover:shadow-lg`
-                    : mode.available
-                    ? `${mode.bg} ${mode.border} cursor-pointer hover:shadow-lg`
-                    : 'bg-white/5 border-white/5 opacity-50 cursor-not-allowed'
-                }`}
-                style={{
-                  boxShadow: mode.core ? `0 0 24px ${mode.color}15` : mode.available ? `0 0 16px ${mode.color}10` : 'none',
-                }}
-              >
-                <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: `linear-gradient(135deg, ${mode.color}30, ${mode.color}10)`,
-                    border: `1px solid ${mode.color}30`,
-                  }}
-                >
-                  <Icon className="w-7 h-7" style={{ color: mode.color }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-white/90">{mode.title}</span>
-                    {mode.core && (
-                      <span className="text-[10px] bg-xh-gold/20 text-xh-gold px-2 py-0.5 rounded-full border border-xh-gold/30">
-                        核心
-                      </span>
-                    )}
-                    {!mode.available && (
-                      <span className="text-[10px] bg-white/10 text-white/30 px-2 py-0.5 rounded-full">
-                        即将开放
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-white/40 mt-0.5">{mode.subtitle}</p>
-                </div>
-                <svg
-                  className="w-5 h-5 shrink-0"
-                  style={{ color: mode.available ? mode.color : 'rgba(255,255,255,0.1)' }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </motion.button>
-            );
-          })}
-        </div>
+      {/* 双人模式入口 - 底部悬浮按钮 */}
+      <div className="shrink-0 px-4 pb-6 pt-2">
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleDuoMode}
+          className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#e2b04a]/20 to-[#e2b04a]/10 border border-[#e2b04a]/40 text-[#e2b04a] flex items-center justify-center gap-3 hover:shadow-lg transition-all"
+          style={{ boxShadow: '0 0 24px #e2b04a15' }}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, #e2b04a30, #e2b04a10)',
+              border: '1px solid #e2b04a30',
+            }}
+          >
+            <Users className="w-5 h-5" style={{ color: '#e2b04a' }} />
+          </div>
+          <div className="text-left">
+            <div className="text-sm font-bold">双人模式</div>
+            <div className="text-[11px] text-[#e2b04a]/60">即时对戏碰撞 · 1分钟匹配</div>
+          </div>
+          <svg
+            className="w-5 h-5 ml-auto"
+            style={{ color: '#e2b04a' }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </motion.button>
       </div>
     </div>
   );
