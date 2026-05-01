@@ -173,9 +173,9 @@
     pointer-events: none;
   }
 
-  /* 悬停：整体放大1.15倍 */
+  /* 悬停：整体放大1.15倍 + 轻微上浮 */
   .bubble-glass:hover {
-    transform: scale(1.15);
+    transform: scale(1.15) translateY(-8px);
     box-shadow:
       inset -1px -1px 4px rgba(255,255,255,0.15),
       inset 1px 1px 3px rgba(255,255,255,0.10),
@@ -196,14 +196,14 @@
     animation-delay: 0s, var(--float-del, 0s);
   }
 
-  /* 泡泡文字 */
+  /* 泡泡文字：默认小巧精致 */
   .bubble-text {
     position: relative;
     z-index: 2;
     color: #ffffff;
     font-weight: 700;
-    font-size: 11px;
-    line-height: 1.25;
+    font-size: 10px;
+    line-height: 1.2;
     text-align: center;
     text-shadow: 0 0 5px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
     word-break: break-all;
@@ -212,10 +212,13 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     pointer-events: none;
+    transition: font-size 0.3s ease, text-shadow 0.3s ease;
   }
 
+  /* 悬停：文字同步放大，清晰可读 */
   .bubble-glass:hover .bubble-text {
-    font-size: 12px;
-    text-shadow: 0 0 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5);
+    font-size: 14px;
+    line-height: 1.15;
+    text-shadow: 0 0 8px rgba(0,0,0,0.7), 0 2px 4px rgba(0,0,0,0.6), 0 0 2px rgba(255,255,255,0.3);
   }
 }
