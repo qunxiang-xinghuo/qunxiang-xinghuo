@@ -12,20 +12,21 @@ interface BubbleCloudProps {
   compact?: boolean;
 }
 
-// 紧凑位置模板（12个）— 覆盖更大区域，确保不重叠
+// 紧凑位置模板（18个）— 覆盖更大区域，更多泡泡
 const COMPACT_TEMPLATES = [
-  { x: 0.10, y: 0.15 }, { x: 0.38, y: 0.08 }, { x: 0.65, y: 0.18 },
-  { x: 0.85, y: 0.10 }, { x: 0.18, y: 0.45 }, { x: 0.50, y: 0.38 },
-  { x: 0.78, y: 0.48 }, { x: 0.08, y: 0.72 }, { x: 0.35, y: 0.68 },
-  { x: 0.62, y: 0.75 }, { x: 0.88, y: 0.65 }, { x: 0.48, y: 0.55 },
+  { x: 0.08, y: 0.10 }, { x: 0.30, y: 0.05 }, { x: 0.55, y: 0.12 }, { x: 0.78, y: 0.08 }, { x: 0.92, y: 0.18 },
+  { x: 0.15, y: 0.30 }, { x: 0.40, y: 0.25 }, { x: 0.65, y: 0.32 }, { x: 0.88, y: 0.28 },
+  { x: 0.08, y: 0.50 }, { x: 0.32, y: 0.45 }, { x: 0.55, y: 0.42 }, { x: 0.78, y: 0.48 }, { x: 0.95, y: 0.44 },
+  { x: 0.20, y: 0.68 }, { x: 0.48, y: 0.65 }, { x: 0.72, y: 0.70 }, { x: 0.90, y: 0.62 },
 ];
 
-// 完整位置模板（20个）— 更大容器，更多泡泡
+// 完整位置模板（25个）— 更大容器，更多泡泡
 const FULL_TEMPLATES = [
-  { x: 0.08, y: 0.10 }, { x: 0.28, y: 0.06 }, { x: 0.52, y: 0.12 }, { x: 0.75, y: 0.08 }, { x: 0.92, y: 0.18 },
-  { x: 0.15, y: 0.30 }, { x: 0.42, y: 0.26 }, { x: 0.65, y: 0.32 }, { x: 0.88, y: 0.28 }, { x: 0.08, y: 0.50 },
-  { x: 0.32, y: 0.46 }, { x: 0.55, y: 0.42 }, { x: 0.78, y: 0.48 }, { x: 0.95, y: 0.44 }, { x: 0.20, y: 0.68 },
-  { x: 0.48, y: 0.64 }, { x: 0.72, y: 0.70 }, { x: 0.90, y: 0.62 }, { x: 0.38, y: 0.85 }, { x: 0.62, y: 0.88 },
+  { x: 0.06, y: 0.08 }, { x: 0.22, y: 0.04 }, { x: 0.42, y: 0.10 }, { x: 0.62, y: 0.06 }, { x: 0.82, y: 0.12 }, { x: 0.95, y: 0.08 },
+  { x: 0.12, y: 0.26 }, { x: 0.32, y: 0.22 }, { x: 0.52, y: 0.28 }, { x: 0.72, y: 0.24 }, { x: 0.90, y: 0.30 },
+  { x: 0.06, y: 0.46 }, { x: 0.26, y: 0.42 }, { x: 0.46, y: 0.48 }, { x: 0.66, y: 0.44 }, { x: 0.86, y: 0.50 }, { x: 0.98, y: 0.40 },
+  { x: 0.14, y: 0.66 }, { x: 0.38, y: 0.62 }, { x: 0.58, y: 0.68 }, { x: 0.78, y: 0.64 }, { x: 0.94, y: 0.58 },
+  { x: 0.28, y: 0.86 }, { x: 0.52, y: 0.82 }, { x: 0.76, y: 0.88 },
 ];
 
 export default function BubbleCloud({ category, compact = false }: BubbleCloudProps) {
@@ -56,7 +57,7 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
       const params = new URLSearchParams();
       params.set('mode', 'bubble');
       // 获取更多泡泡：compact 15个，正常 25个
-      params.set('limit', compact ? '15' : '25');
+      params.set('limit', compact ? '22' : '30');
       if (category) params.set('category', category);
 
       const url = `/api/brainholes?${params.toString()}`;
@@ -114,7 +115,7 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
   const positions = useMemo(() => {
     if (bubbles.length === 0) return [];
 
-    const MAX_BUBBLES = compact ? 12 : 20;
+    const MAX_BUBBLES = compact ? 18 : 25;
     const displayBubbles = bubbles.slice(0, MAX_BUBBLES);
     const templates = compact ? COMPACT_TEMPLATES : FULL_TEMPLATES;
     const { w: containerW, h: containerH } = containerSize;
@@ -123,8 +124,8 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
       // 用 bubble.id 做种子，保证同一次加载中参数稳定
       const seed = bubble.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
 
-      // 大小：compact 28-42px，正常 32-48px，由热度微调
-      const baseSize = compact ? 28 : 32;
+      // 大小：compact 26-40px，正常 30-46px，由热度微调
+      const baseSize = compact ? 26 : 30;
       const sizeRange = compact ? 14 : 16;
       const size = baseSize + ((bubble.hotScore || 50) / 100) * sizeRange;
 
