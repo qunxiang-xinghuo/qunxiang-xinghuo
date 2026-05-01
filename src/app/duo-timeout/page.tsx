@@ -51,7 +51,7 @@ function DuoTimeoutContent() {
     localStorage.removeItem('xh_duo_identity');
     localStorage.removeItem('xh_duo_brainhole');
     setTimeout(() => {
-      router.push('/');
+      router.push('/home');
     }, 300);
   };
 

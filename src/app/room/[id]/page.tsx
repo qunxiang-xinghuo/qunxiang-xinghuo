@@ -264,7 +264,7 @@ export default function RoomPage() {
         <h2 className="text-xl font-bold text-white mb-2">请先登录</h2>
         <p className="text-white/40 text-sm mb-6">登录后才能进入对白室</p>
         <button
-          onClick={() => router.push('/login')}
+          onClick={() => router.push('/')}
           className="px-6 py-3 bg-gradient-to-r from-xh-gold to-orange-500 text-white rounded-xl font-medium"
         >
           去登录
@@ -287,7 +287,7 @@ export default function RoomPage() {
       <TopBar
         title="对白实验室"
         showBack
-        onBack={() => router.push('/')}
+        onBack={() => router.push('/home')}
       />
 
       {/* 脑洞信息区 - 固定顶部 */}

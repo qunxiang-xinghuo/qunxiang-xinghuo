@@ -70,7 +70,7 @@ export default function FeedbackPage() {
           </button>
 
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/home')}
             className="w-full flex items-center justify-center gap-2 bg-gray-800 text-gray-400 py-4 rounded-xl font-medium hover:text-white hover:bg-gray-700 transition-colors"
           >
             <Home className="w-4 h-4" />

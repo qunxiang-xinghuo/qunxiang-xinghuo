@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Sparkles, Eye, EyeOff, LogIn } from 'lucide-react';
@@ -9,13 +9,24 @@ import { signIn } from 'next-auth/react';
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const registered = searchParams.get('registered');
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // v4.2-fix: 注册成功后自动回填用户名和密码
+  useEffect(() => {
+    const autoUser = searchParams.get('username');
+    const autoPass = searchParams.get('password');
+    if (autoUser) {
+      setUsername(autoUser);
+    }
+    if (autoPass) {
+      setPassword(autoPass);
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +49,8 @@ export default function LoginForm() {
       if (result?.error) {
         setError('用户名或密码错误');
       } else {
-        router.push('/');
+        // v4.2: 登录成功 → 跳转到发现页 /home
+        router.push('/home');
         router.refresh();
       }
     } catch {
@@ -58,7 +70,7 @@ export default function LoginForm() {
       </div>
 
       {/* 顶部标题 */}
-      <div className="pt-16 pb-8 px-6 text-center relative z-10">
+      <div className="pt-20 pb-10 px-6 text-center relative z-10">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -66,7 +78,7 @@ export default function LoginForm() {
           className="flex items-center justify-center gap-2 mb-3"
         >
           <Sparkles className="w-5 h-5 text-[#e2b04a]/60" />
-          <h1 className="text-2xl font-bold tracking-wider text-white/90">群像·星火</h1>
+          <h1 className="text-3xl font-bold tracking-wider text-white/90">群像·星火</h1>
           <Sparkles className="w-5 h-5 text-[#e2b04a]/60" />
         </motion.div>
         <motion.p
@@ -78,17 +90,6 @@ export default function LoginForm() {
           每一个认真生活的人，都能成为故事的一部分
         </motion.p>
       </div>
-
-      {/* 注册成功提示 */}
-      {registered === '1' && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-6 mb-4 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center"
-        >
-          <p className="text-sm text-emerald-400">注册成功，请登录</p>
-        </motion.div>
-      )}
 
       {/* 登录表单 */}
       <motion.form

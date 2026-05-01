@@ -82,7 +82,7 @@ export default function RoadshowPage() {
             被同时扔进同一个冲突情境，用各自的职业本能碰撞出火花。
           </p>
           <Link
-            href="/"
+            href="/home"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full
               bg-gradient-to-r from-[#e2b04a] to-[#f0c050]
               text-[#0f0f23] font-semibold
@@ -195,7 +195,7 @@ export default function RoadshowPage() {
             选择一个脑洞，认领你的职业身份，让故事自然生长。
           </p>
           <Link
-            href="/"
+            href="/home"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full
               border border-[#e2b04a]/40 text-[#e2b04a]
               hover:bg-[#e2b04a]/10 transition-colors"
