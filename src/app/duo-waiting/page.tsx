@@ -97,7 +97,7 @@ function DuoWaitingContent() {
 
   return (
     <div className="flex flex-col h-full bg-[#1a1a2e]">
-      <TopBar title="寻找搭档" showBack />
+      <TopBar title="寻找搭档" showBack onBack={() => router.back()} />
 
       {/* 中央区域：刘看山 + 匹配状态 */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 relative">

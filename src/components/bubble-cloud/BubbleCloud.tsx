@@ -135,8 +135,8 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
 
       // 位置：基于模板 + 稳定随机偏移
       const template = templates[index % templates.length];
-      const jitterX = Math.sin(seed * 1.37) * 18;
-      const jitterY = Math.cos(seed * 2.71) * 12;
+      const jitterX = Math.sin(seed * 1.37) * 10;
+      const jitterY = Math.cos(seed * 2.71) * 8;
 
       const x = template.x * containerW + jitterX - size / 2;
       const y = template.y * containerH + jitterY - size / 2;
@@ -144,12 +144,15 @@ export default function BubbleCloud({ category, compact = false }: BubbleCloudPr
       // 漂浮参数：8-18秒，稳定随机
       const floatDuration = 8 + ((Math.sin(seed * 3.13) * 0.5 + 0.5) * 10);
       const floatDelay = (Math.cos(seed * 1.97) * 0.5 + 0.5) * 5;
-      const swayAmplitude = 3 + ((Math.sin(seed * 5.23) * 0.5 + 0.5) * 12);
+      // 减小摆动幅度，确保不溢出容器（最大8px）
+      const swayAmplitude = 3 + ((Math.sin(seed * 5.23) * 0.5 + 0.5) * 5);
 
+      // 严格限制在容器内，留出20px安全边距给漂浮动画
+      const SAFE_MARGIN = 20;
       return {
         bubble,
-        x: Math.max(4, Math.min(containerW - size - 4, x)),
-        y: Math.max(4, Math.min(containerH - size - 4, y)),
+        x: Math.max(SAFE_MARGIN, Math.min(containerW - size - SAFE_MARGIN, x)),
+        y: Math.max(SAFE_MARGIN, Math.min(containerH - size - SAFE_MARGIN, y)),
         size,
         floatDuration,
         floatDelay,
