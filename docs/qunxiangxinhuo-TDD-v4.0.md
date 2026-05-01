@@ -1074,7 +1074,7 @@ const size = 40 + ((bubble.hotScore || 50) / 100) * 20; // 40-60px
 
 ### 12.4 部署记录（2026-04-29）
 
-#### 部署受阻：SSH密钥认证被拒绝
+#### 阶段1：SSH密钥认证被拒绝
 
 **诊断过程**：
 1. `ping 81.70.59.228` → 网络正常（21ms）
@@ -1089,30 +1089,50 @@ const size = 40 + ((bubble.hotScore || 50) / 100) * 20; // 40-60px
 - ✅ 尝试 `www` 用户替代 `root`
 - ❌ 均返回 `Permission denied`
 
-**最终方案**：通过宝塔面板Web终端手动部署
+#### 阶段2：获得密码后，paramiko密码登录成功部署
 
-#### 宝塔面板部署步骤
+**部署方式**：Python paramiko 密码认证 + SFTP上传 + SSH执行build
+
+**部署脚本**：`scripts/remote_deploy.py`
+
+**部署步骤与结果**：
+
+| 步骤 | 命令 | 结果 |
+|------|------|------|
+| 1 | SSH密码连接 | ✅ 成功 |
+| 2 | SFTP上传5个修改文件 | ✅ 成功 |
+| 3 | `npm run build` | ✅ 成功（14.7s编译，exit 0） |
+| 4 | `cp -r .next/static .next/standalone/.next/` | ✅ 成功 |
+| 5 | `pm2 restart qunxiang-xinghuo` | ✅ 成功（pid 1087084，online） |
+
+**部署后验证**：
+- `Brainhole` 表：31条（seed数据正常）
+- `MatchRequest` 表：0条（无活跃匹配，正常）
+- `Room` 表：0条（无房间，正常）
+
+#### 部署脚本清单
 
 ```bash
-# 在宝塔面板 → 终端 中执行
+# 方式1：paramiko自动部署（有密码时）
+python scripts/remote_deploy.py
+
+# 方式2：宝塔面板终端手动部署
 cd /www/wwwroot/qunxiang-xinghuo
 git pull origin dev
 npm run build
 cp -r .next/static .next/standalone/.next/
 pm2 restart qunxiang-xinghuo
-```
 
-或执行项目根目录的 `scripts/deploy.sh`：
-
-```bash
+# 方式3：一键脚本
 cd /www/wwwroot/qunxiang-xinghuo
 bash scripts/deploy.sh
 ```
 
 #### 教训
-- **SSH密钥管理**：生产服务器SSH密钥变动后，本地密钥会失效，需要通过控制台/VNC重新配置
-- **宝塔面板备用**：当SSH不可用时，宝塔Web终端是最后的部署通道
-- **部署脚本化**：将部署步骤写成 `scripts/deploy.sh`，减少人工操作错误
+- **SSH密钥管理**：生产服务器SSH密钥变动后，本地密钥会失效，密码认证是备用方案
+- **paramiko部署**：当SSH密钥不可用时，Python paramiko + 密码是可靠的自动化部署方案
+- **SFTP优于git pull**：服务器git pull经常超时，SFTP直接上传文件更可靠
+- **部署脚本化**：`scripts/remote_deploy.py` + `scripts/deploy.sh` 双保险，覆盖有密码/无密码场景
 
 ---
 
