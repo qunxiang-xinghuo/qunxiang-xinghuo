@@ -24,6 +24,8 @@ export async function findMatch(
     mode,
   } = criteria;
 
+  console.log("[MatchEngine] findMatch 开始 - userId:", userId, "mode:", mode, "brainholeId:", brainholeId);
+
   // 检查用户是否已有活跃匹配
   const existingMatch = await db.matchRequest.findFirst({
     where: {
@@ -34,16 +36,21 @@ export async function findMatch(
   });
 
   if (existingMatch) {
+    console.log("[MatchEngine] 用户已有活跃匹配:", existingMatch.id);
     return {
       matched: false,
       message: "MATCH_ALREADY_EXISTS",
     };
   }
 
+  console.log("[MatchEngine] 无活跃匹配，创建新请求");
+
   // 快速匹配模式：不指定脑洞，系统随机分配
   const isQuickMatch = mode === "quick";
+  console.log("[MatchEngine] isQuickMatch:", isQuickMatch);
 
   // 创建新的匹配请求（v4.3: 无论是否quick模式，都保存brainholeId）
+  console.log("[MatchEngine] 正在创建匹配请求...");
   const matchRequest = await db.matchRequest.create({
     data: {
       userId,
@@ -72,11 +79,14 @@ export async function findMatch(
   }
 
   // 尝试寻找匹配
+  console.log("[MatchEngine] 查找潜在匹配... where:", JSON.stringify(matchWhere));
   const potentialMatches = await db.matchRequest.findMany({
     where: matchWhere,
     orderBy: { createdAt: "asc" },
     take: 10,
   });
+
+  console.log("[MatchEngine] 找到潜在匹配:", potentialMatches.length, "个");
 
   if (potentialMatches.length > 0) {
     // ===== 多人模式：尝试找2-4个其他玩家（总共3-5人）=====
@@ -161,6 +171,7 @@ export async function findMatch(
 
     // ===== 双人模式 / 多人降级为双人 / 快速匹配 =====
     const matchedRequest = potentialMatches[0];
+    console.log("[MatchEngine] 匹配到用户:", matchedRequest.userId, "brainholeId:", matchedRequest.brainholeId);
 
     // 确定房间使用的脑洞ID
     let roomBrainholeId = brainholeId;
@@ -168,14 +179,17 @@ export async function findMatch(
       // 快速模式：优先使用对方的brainholeId，如果对方也没有则随机选
       roomBrainholeId = matchedRequest.brainholeId || brainholeId;
       if (!roomBrainholeId) {
+        console.log("[MatchEngine] 双方均无brainholeId，随机抽取...");
         const randomBrainhole = await db.brainhole.findFirst({
           where: { status: "approved" },
           orderBy: { hotScore: "desc" },
         });
         roomBrainholeId = randomBrainhole?.id || "";
+        console.log("[MatchEngine] 随机抽取brainholeId:", roomBrainholeId);
       }
     }
 
+    console.log("[MatchEngine] 正在创建房间...");
     const room = await db.room.create({
       data: {
         brainholeId: roomBrainholeId || undefined,
@@ -228,6 +242,7 @@ export async function findMatch(
       }),
     ]);
 
+    console.log("[MatchEngine] 房间创建成功, ID为:", room.id);
     return {
       matched: true,
       matchId: matchRequest.id,
@@ -241,6 +256,7 @@ export async function findMatch(
   }
 
   // 没有找到匹配
+  console.log("[MatchEngine] 未找到匹配，进入等待状态. matchId:", matchRequest.id);
   return {
     matched: false,
     matchId: matchRequest.id,

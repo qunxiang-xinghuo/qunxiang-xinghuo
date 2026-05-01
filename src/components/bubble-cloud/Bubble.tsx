@@ -164,21 +164,25 @@ export default function Bubble({
         </div>
       </div>
 
-      {/* Hover tooltip - 显示场景描述 */}
+      {/* 悬停信息层 - 在泡泡内部显示，避免溢出容器 */}
       <div
-        className="absolute -top-10 left-1/2 -translate-x-1/2 pointer-events-none z-50"
+        className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
         style={{
           opacity: isHovered ? 1 : 0,
-          transform: isHovered ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(4px)',
-          transition: 'opacity 0.3s ease, transform 0.3s ease',
+          transition: 'opacity 0.3s ease',
+          zIndex: isHovered ? 60 : 0,
         }}
       >
-        <div className="bg-gray-900/95 text-white text-[10px] px-2.5 py-1.5 rounded-lg whitespace-nowrap backdrop-blur-sm border border-white/15 max-w-[200px]">
-          <p className="font-bold text-white mb-0.5 truncate">{data.title}</p>
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-full" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-2">
+          <p className="text-white font-bold text-center leading-tight" style={{ fontSize: `${size * 0.13}px` }}>
+            {data.title}
+          </p>
           {data.scenario && (
-            <p className="text-white/60 text-[9px] line-clamp-2 whitespace-normal leading-tight">{data.scenario}</p>
+            <p className="text-white/70 text-center leading-tight mt-0.5 line-clamp-2" style={{ fontSize: `${size * 0.09}px` }}>
+              {data.scenario}
+            </p>
           )}
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900/95" />
         </div>
       </div>
     </motion.div>

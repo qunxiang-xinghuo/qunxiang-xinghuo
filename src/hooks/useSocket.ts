@@ -16,7 +16,9 @@ export function useSocket() {
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    const socket = io(window.location.origin, {
+    const socketUrl = window.location.origin;
+    console.log('[Socket] 正在连接 WebSocket:', socketUrl, '/socket.io');
+    const socket = io(socketUrl, {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -38,6 +40,7 @@ export function useSocket() {
 
     socket.on('connect_error', (err) => {
       console.error('[Socket] Connection error:', err.message)
+      console.error('[Socket] 当前连接地址:', window.location.origin, '/socket.io')
       setIsConnected(false)
     })
 
