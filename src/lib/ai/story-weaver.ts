@@ -85,6 +85,90 @@ async function callDeepSeek(
 }
 
 // ============================================================================
+// generateBranchOptions: 根据对话生成剧情分支选项
+// ============================================================================
+
+export interface BranchGenerateRequest {
+  messages: string
+  storyTitle: string
+}
+
+export interface BranchGenerateResponse {
+  content: string
+  options: Array<{ text: string; description: string }>
+}
+
+export async function generateBranchOptions(
+  request: BranchGenerateRequest
+): Promise<BranchGenerateResponse> {
+  const { messages, storyTitle } = request
+
+  const systemPrompt = `你是一位资深编剧和故事分析师，擅长从群像对白的剧情中挖掘潜在的剧情分支。
+
+你的任务：
+1. 分析当前对白的发展方向和角色的动机冲突
+2. 提出一个剧情分支点（一个关键的选择时刻）
+3. 生成3个不同的分支选项，每个选项代表故事可能走向的不同方向
+
+输出格式必须是严格的 JSON：
+{
+  "content": "剧情分支描述（50字以内，说明当前面临的选择）",
+  "options": [
+    { "text": "选项A标题（10字以内）", "description": "选项A的简要描述（30字以内）" },
+    { "text": "选项B标题（10字以内）", "description": "选项B的简要描述（30字以内）" },
+    { "text": "选项C标题（10字以内）", "description": "选项C的简要描述（30字以内）" }
+  ]
+}`
+
+  const userPrompt = `故事标题：${storyTitle || '未命名故事'}
+
+最近的对白记录：
+${messages.slice(-1500)}
+
+请分析以上对白，找出一个自然的剧情分支点，并生成3个不同的分支选项。`
+
+  try {
+    const aiResponse = await callDeepSeek(systemPrompt, userPrompt)
+
+    let parsed: BranchGenerateResponse
+    try {
+      parsed = JSON.parse(aiResponse)
+    } catch {
+      const jsonMatch = aiResponse.match(/```(?:json)?\s*([\s\S]*?)```/)
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[1].trim())
+      } else {
+        const braceMatch = aiResponse.match(/\{[\s\S]*\}/)
+        if (braceMatch) {
+          parsed = JSON.parse(braceMatch[0])
+        } else {
+          throw new Error('无法解析 AI 响应')
+        }
+      }
+    }
+
+    return {
+      content: parsed.content || '剧情走到了一个关键的分岔口...',
+      options: parsed.options || [
+        { text: '选项A', description: '走向A方向' },
+        { text: '选项B', description: '走向B方向' },
+        { text: '选项C', description: '走向C方向' },
+      ],
+    }
+  } catch (error) {
+    console.error('[StoryWeaver] Branch generation failed:', error)
+    return {
+      content: '剧情走到了一个关键的分岔口，接下来的选择将改变一切...',
+      options: [
+        { text: '坚持立场', description: '角色坚持自己的想法，可能引发冲突' },
+        { text: '妥协退让', description: '角色选择让步，寻求和解的可能' },
+        { text: '另辟蹊径', description: '角色找到一个出人意料的第三种方案' },
+      ],
+    }
+  }
+}
+
+// ============================================================================
 // weaveStory: 将火花串联成完整故事
 // ============================================================================
 

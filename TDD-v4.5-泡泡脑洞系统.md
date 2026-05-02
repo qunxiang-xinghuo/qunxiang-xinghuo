@@ -1192,3 +1192,127 @@ router.push('/home');
 - [x] AI房间创建使用热度加权随机
 - [x] 广场素材卡片可点击
 
+
+
+---
+
+# v5.1 故事大厅模块开发记录（2026-05-03）
+
+## 一、模块概述
+
+故事大厅是《群像·星火》的核心共创模块，支持用户发起故事项目、设定世界观和角色、认领角色、多人实时对白共创、AI分支剧情生成、导演控场和资产沉淀。
+
+## 二、数据库模型
+
+### 新增模型（Prisma）
+
+| 模型 | 说明 |
+|------|------|
+| `Story` | 故事项目：标题、世界观、冲突、状态(recruiting/ongoing/completed)、导演 |
+| `StoryRole` | 角色定义：名称、设定、需求、认领者、认领理由 |
+| `StoryChapter` | 章节：标题、目标、顺序、状态 |
+| `StoryMessage` | 对白消息：发送者、内容、身份、是否导演备注 |
+| `StoryInspiration` | 灵感库：内容、来源消息、状态 |
+| `StoryBranch` | 剧情分支：内容描述、选项JSON、状态、获胜选项 |
+
+### User模型扩展
+```prisma
+storiesDirected  Story[]       @relation("StoryDirector")
+storyRoles       StoryRole[]   @relation("StoryRoleClaimer")
+```
+
+## 三、API接口
+
+| 方法 | 路由 | 功能 |
+|------|------|------|
+| GET | `/api/stories` | 获取故事列表（含角色统计） |
+| POST | `/api/stories` | 创建新故事（含角色+第一章节） |
+| GET | `/api/stories/[storyId]` | 获取故事详情（含角色、章节、消息） |
+| POST | `/api/stories/[storyId]/roles/[roleId]/claim` | 认领角色（一人限一个角色） |
+| GET | `/api/stories/[storyId]/messages` | 获取对白消息 |
+| POST | `/api/stories/[storyId]/messages` | 发送对白消息 + WebSocket广播 |
+| POST | `/api/stories/[storyId]/pause` | 导演暂停（仅导演） |
+| POST | `/api/stories/[storyId]/resume` | 导演继续（仅导演） |
+| GET | `/api/stories/[storyId]/branches` | 获取分支列表 |
+| POST | `/api/stories/[storyId]/branches` | 创建分支提案 |
+| POST | `/api/stories/[storyId]/branches/[branchId]/vote` | 投票/导演决议 |
+| GET | `/api/stories/[storyId]/inspirations` | 获取灵感库 |
+| POST | `/api/stories/[storyId]/inspirations` | 添加灵感 |
+
+## 四、前端页面
+
+| 路由 | 页面 | 功能 |
+|------|------|------|
+| `/story-hall` | 故事广场 | 项目列表卡片、进度条、发起新故事弹窗 |
+| `/story-hall/[storyId]` | 故事详情 | 世界观展示、角色列表、认领弹窗、进入对白室 |
+| `/story-hall/[storyId]/room` | 多人对白室 | 实时消息、导演控场、AI分支、灵感库 |
+
+## 五、WebSocket事件（v5.0扩展）
+
+| 事件 | 方向 | 说明 |
+|------|------|------|
+| `join-story` | C→S | 加入故事房间 |
+| `leave-story` | C→S | 离开故事房间 |
+| `send-story-message` | C→S | 发送消息（广播） |
+| `director-pause` | C→S→C | 导演暂停广播 |
+| `director-resume` | C→S→C | 导演继续广播 |
+| `branch-proposed` | C→S→C | 分支提案广播 |
+| `branch-vote` | C→S→C | 分支投票广播 |
+| `story-typing` | C→S→C | 输入中提示 |
+
+## 六、AI分支生成
+
+- 调用 `/api/ai/story-weave` (mode=branch)
+- DeepSeek分析最近20条对白，生成剧情分支点 + 3个选项
+- 降级方案：内置3个通用分支选项
+
+## 七、核心交互流程
+
+```
+1. 发起故事 → POST /api/stories → 创建Story+Role+Chapter
+2. 角色认领 → POST /api/stories/.../claim → 更新Role.claimedBy
+   → 全部认领后自动更新Story.status="ongoing"
+3. 进入对白室 → WebSocket join-story → 实时收发消息
+4. 导演控场 → pause/resume API → WebSocket广播全房间
+5. AI分支 → DeepSeek分析对白 → 生成分支选项 → 导演决议采纳
+6. 灵感沉淀 → 未采纳的分支自动存入灵感库
+```
+
+## 八、开发文件清单
+
+### 后端
+- `prisma/schema.prisma` - 新增6个模型
+- `src/server/socket-handler.ts` - 扩展8个故事大厅事件
+- `src/lib/ai/story-weaver.ts` - 新增 `generateBranchOptions`
+- `src/app/api/ai/story-weave/route.ts` - 支持mode=branch
+- `src/app/api/stories/route.ts` - 列表+创建
+- `src/app/api/stories/[storyId]/route.ts` - 详情
+- `src/app/api/stories/[storyId]/roles/[roleId]/claim/route.ts` - 认领
+- `src/app/api/stories/[storyId]/messages/route.ts` - 消息
+- `src/app/api/stories/[storyId]/pause/route.ts` - 暂停
+- `src/app/api/stories/[storyId]/resume/route.ts` - 继续
+- `src/app/api/stories/[storyId]/branches/route.ts` - 分支
+- `src/app/api/stories/[storyId]/branches/[branchId]/vote/route.ts` - 投票
+- `src/app/api/stories/[storyId]/inspirations/route.ts` - 灵感
+
+### 前端
+- `src/app/story-hall/page.tsx` - 故事广场
+- `src/app/story-hall/[storyId]/page.tsx` - 故事详情
+- `src/app/story-hall/[storyId]/room/page.tsx` - 对白室
+- `src/components/story/CreateStoryModal.tsx` - 发起新故事弹窗
+- `src/components/story/ClaimRoleModal.tsx` - 认领角色弹窗
+- `src/components/layout/BottomNav.tsx` - 故事导航改为/story-hall
+
+## 九、验证清单
+
+- [x] Build通过（55/55页面，新增10个路由）
+- [x] TypeScript无错误
+- [x] Prisma db push成功
+- [x] 故事广场可创建故事
+- [x] 故事详情可认领角色
+- [x] 角色满员后自动解锁对白室
+- [x] 对白室支持实时消息
+- [x] 导演可暂停/继续
+- [x] AI可生成分支选项
+- [x] 灵感库存储备用灵感
+

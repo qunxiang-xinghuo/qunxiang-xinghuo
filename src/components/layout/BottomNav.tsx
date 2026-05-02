@@ -7,7 +7,7 @@ import { Compass, BookOpen, ScrollText, User } from 'lucide-react';
 const navItems = [
   { path: '/home', label: '发现', icon: Compass },
   { path: '/library', label: '素材库', icon: BookOpen },
-  { path: '/story', label: '故事', icon: ScrollText },
+  { path: '/story-hall', label: '故事', icon: ScrollText },
   { path: '/profile', label: '我的', icon: User },
 ];
 
