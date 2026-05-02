@@ -35,6 +35,7 @@ FILES = [
     ("src/app/api/rooms/[roomId]/route.ts", "src/app/api/rooms/[roomId]/route.ts"),
     ("src/app/api/assets/route.ts", "src/app/api/assets/route.ts"),
     ("src/app/api/assets/public/route.ts", "src/app/api/assets/public/route.ts"),
+    ("src/app/api/assets/[id]/route.ts", "src/app/api/assets/[id]/route.ts"),
     ("src/app/api/assets/[id]/public/route.ts", "src/app/api/assets/[id]/public/route.ts"),
     ("src/app/api/brainholes/bubble/route.ts", "src/app/api/brainholes/bubble/route.ts"),
     ("src/app/api/ai/chat/route.ts", "src/app/api/ai/chat/route.ts"),

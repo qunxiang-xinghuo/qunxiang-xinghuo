@@ -96,11 +96,27 @@ export async function findMatch(
       // 确定房间使用的脑洞ID（快速模式随机选一个）
       let roomBrainholeId = brainholeId;
       if (isQuickMatch || !brainholeId) {
-        const randomBrainhole = await db.brainhole.findFirst({
+        // v5.0-fix: 从approved脑洞池中随机选择
+        const pool = await db.brainhole.findMany({
           where: { status: "approved" },
           orderBy: { hotScore: "desc" },
+          take: 50,
         });
-        roomBrainholeId = randomBrainhole?.id || brainholeId || "";
+        if (pool.length > 0) {
+          const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
+          let randomPoint = Math.random() * totalScore;
+          let selected = pool[0];
+          for (const b of pool) {
+            randomPoint -= (b.hotScore || 1);
+            if (randomPoint <= 0) {
+              selected = b;
+              break;
+            }
+          }
+          roomBrainholeId = selected.id;
+        } else {
+          roomBrainholeId = brainholeId || "";
+        }
       }
 
       const room = await db.room.create({
@@ -176,16 +192,29 @@ export async function findMatch(
     // 确定房间使用的脑洞ID
     let roomBrainholeId = brainholeId;
     if (isQuickMatch || !brainholeId) {
-      // 快速模式：优先使用对方的brainholeId，如果对方也没有则随机选
+      // 快速模式：优先使用对方的brainholeId，如果对方也没有则热度加权随机选
       roomBrainholeId = matchedRequest.brainholeId || brainholeId;
       if (!roomBrainholeId) {
-        console.log("[MatchEngine] 双方均无brainholeId，随机抽取...");
-        const randomBrainhole = await db.brainhole.findFirst({
+        console.log("[MatchEngine] 双方均无brainholeId，从池中热度加权随机抽取...");
+        const pool = await db.brainhole.findMany({
           where: { status: "approved" },
           orderBy: { hotScore: "desc" },
+          take: 50,
         });
-        roomBrainholeId = randomBrainhole?.id || "";
-        console.log("[MatchEngine] 随机抽取brainholeId:", roomBrainholeId);
+        if (pool.length > 0) {
+          const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
+          let randomPoint = Math.random() * totalScore;
+          let selected = pool[0];
+          for (const b of pool) {
+            randomPoint -= (b.hotScore || 1);
+            if (randomPoint <= 0) {
+              selected = b;
+              break;
+            }
+          }
+          roomBrainholeId = selected.id;
+        }
+        console.log("[MatchEngine] 热度加权随机抽取brainholeId:", roomBrainholeId, "从", pool.length, "个脑洞中");
       }
     }
 

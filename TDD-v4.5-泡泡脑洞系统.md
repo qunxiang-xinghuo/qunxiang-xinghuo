@@ -1,8 +1,9 @@
-# TDD v4.5 - 群像·星火 泡泡脑洞系统
+# TDD 5.0 - 群像·星火 故事大厅模块
 
-> 版本: v4.5
-> 日期: 2026-05-01
-> 状态: 已部署
+> 版本: 5.0
+> 日期: 2026-05-02
+> 状态: 开发中
+> 前置版本: v4.9-fix (已部署)
 
 ---
 
@@ -958,3 +959,120 @@ router.push('/home');
 
 服务器 `.env` 已配置 DeepSeek + 知乎 API Key
 部署后执行：`pm2 restart qunxiang-xinghuo`
+
+
+---
+
+# 故事大厅模块规划 (TDD 5.0)
+
+## 一、模块概述
+
+故事大厅是专业创作者与角色扮演者共同构建宏大群像叙事的空间。通过"导演+演员"的协作模式，将短期的思想碰撞，沉淀为有结构、有分支、有角色弧光的长期连载故事。
+
+## 二、核心协作流程
+
+### 故事发起
+导演创建项目，设定世界观、时代背景、核心冲突，并定义角色需求、认领人数限制、申请流程及首次对话引导语。
+
+### 角色招募
+演员在故事大厅浏览项目，提交认领申请、身份标签及角色理解声明。当所有角色被认领并确认后，项目状态更新为"进行中"。
+
+### 章节推进与决策
+导演开启新章节并设定目标，演员基于角色发言。AI实时分析剧情节点，生成多个可能的分支选项供导演发起投票决策。未通过审核的灵感存入"灵感库"备用。
+
+### 资产沉淀
+每个章节的完整对白记录、火花墙和剧情分支选项都将存档，并自动串联为故事初稿。
+
+## 三、功能模块规划 (V1.0)
+
+| 模块 | 功能点 |
+|------|--------|
+| 项目管理 | 创建故事、招募角色、管理章节、编辑世界观 |
+| 实时共创 | WebSocket支持、角色身份绑定、导演控场 |
+| AI辅助 | NPC角色扮演、分支剧情生成、章节初稿串联 |
+| 资产库 | 灵感库、共创故事库、一键打包发布至知乎 |
+
+## 四、页面与路由规划
+
+| 路由 | 页面 | 说明 |
+|------|------|------|
+| `/story-hall` | 故事广场 | 展示所有招募中的故事项目 |
+| `/story-hall/[storyId]` | 故事详情页 | 展示完整需求与角色列表 |
+| `/story-hall/[storyId]/room` | 对白实验室 | 核心共创界面，后期可集成白板、语音等功能 |
+| `/story-hall/[storyId]/inspirations` | 灵感库 | 存储所有被否决但可复用的灵感 |
+
+## 五、API接口规划
+
+| 方法 | 路由 | 功能 |
+|------|------|------|
+| POST | `/api/stories` | 导演创建新故事 |
+| GET | `/api/stories` | 获取故事列表 |
+| POST | `/api/stories/[storyId]/chapters` | 导演开启新章节 |
+| POST | `/api/stories/[storyId]/messages` | 发送对白消息 |
+| GET | `/api/stories/[storyId]/sparks` | 获取该故事的火花墙 |
+
+## 六、数据库模型规划 (待Prisma迁移)
+
+### Story (故事项目)
+- `id`, `title`, `worldview`, `setting`, `conflict`
+- `directorId`, `status` (recruiting/ongoing/completed)
+- `maxActors`, `currentChapter`, `createdAt`
+
+### StoryRole (角色定义)
+- `id`, `storyId`, `name`, `description`, `requirements`
+- `claimedBy` (userId), `claimedIdentity`, `status`
+
+### StoryChapter (章节)
+- `id`, `storyId`, `title`, `goal`, `order`
+- `status`, `createdAt`, `completedAt`
+
+### StoryMessage (章节对白)
+- `id`, `chapterId`, `senderId`, `content`, `identity`
+- `isSpark`, `createdAt`
+
+### StoryInspiration (灵感库)
+- `id`, `storyId`, `content`, `sourceMessageId`, `status`
+
+## 七、开发里程碑
+
+| 阶段 | 目标 | 预计时间 |
+|------|------|----------|
+| V1.0-alpha | 故事广场 + 创建故事 + 角色招募 | 1周 |
+| V1.0-beta | 章节共创 + WebSocket实时通信 | 1周 |
+| V1.0-rc | AI辅助 + 灵感库 + 资产沉淀 | 1周 |
+| V1.0-ga | 一键发布知乎 + 完整测试 | 3天 |
+
+---
+
+# v5.0-fix 紧急Bug修复记录（2026-05-02）
+
+## 修复一：匹配脑洞重复
+
+**问题**：用户多次进入匹配室，总是分配到同一个脑洞。
+
+**根因**：`match-engine.ts` 中使用 `db.brainhole.findFirst({ orderBy: { hotScore: "desc" } })`，`findFirst` 总是返回排序后的第一个记录（热度最高的），导致每次匹配都选同一个脑洞。
+
+**修复**：改为 `findMany` 获取前50个 approved 脑洞，然后按热度加权随机选择。热度高的脑洞被选中的概率更大，但不是100%。
+
+**涉及文件**：`src/server/match-engine.ts`
+
+## 修复二：个人素材删除
+
+**问题**：用户保存了错误的对白素材，无法删除。
+
+**修复**：
+1. 在 `/api/assets/[id]/route.ts` 中添加 `DELETE` 方法
+2. 前端素材卡片添加删除按钮（红色 Trash2 图标）
+3. 点击后确认弹窗，成功后从本地状态移除
+
+**涉及文件**：`src/app/api/assets/[id]/route.ts`, `src/app/library/page.tsx`
+
+## 修复三：广场素材显示
+
+**问题**：用户将素材设为"公开"后，切换到"广场素材"标签页，看不到刚公开的素材。
+
+**根因**：`library/page.tsx` 的 `togglePublic` 成功后只更新了 `myAssets` 本地状态，没有重新请求 `/api/assets/public`。
+
+**修复**：在 `togglePublic` 成功后，立即 `fetch('/api/assets/public')` 重新加载广场素材列表。
+
+**涉及文件**：`src/app/library/page.tsx`
