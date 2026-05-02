@@ -139,18 +139,28 @@ DATABASE_URL="file:./dev.db"
 
 ---
 
-> 最后更新：2026-05-02 v5.6-fix 泡泡系统修复+故事页面重设计部署完成
+> 最后更新：2026-05-02 v5.7 泡泡Hover浮层+双人等待页重设计+对白室精致化部署完成
 
 ---
 
-## 十一、v5.6 关键修复速查
+## 十一、v5.7 全面重设计速查
 
-### 泡泡系统数据流
+### 泡泡系统（TDD v5.0完整实现）
 ```
 前端: BubbleCloud.tsx → GET /api/brainholes/bubble?limit=20
 后端: src/app/api/brainholes/bubble/route.ts
 数据: { id, title, scenario, hotScore, category, difficulty, source }
 跳转: /brainhole/${id}
+Hover浮层: 分类标签 + 难度徽章 + 标题 + scenario摘要 + 热度分 + 进入按钮
+分类色: medical/legal/workplace/life/education/tech/emergency/general + zhihu_hot/zhihu_search/deepseek/fallback
+```
+
+### 双人模式流程
+```
+/duo-match → 身份选择（知乎/AI随机/自定义）
+  → /duo-waiting → POST /api/match → 轮询 GET /api/match/:id
+    → 匹配成功 → /room/:roomId（WebSocket实时对白）
+    → 超时 → /duo-timeout → 可选：AI对话/继续等待/返回首页
 ```
 
 ### 部署检查清单
@@ -160,6 +170,7 @@ DATABASE_URL="file:./dev.db"
 - [ ] 服务器 `rm -rf .next && NODE_ENV=production npm run build`
 - [ ] `pm2 restart qunxiang-xinghuo && pm2 save`
 - [ ] curl 验证首页 `/home` 200
-- [ ] curl 验证静态JS/CSS 200
+- [ ] curl 验证静态JS/CSS 200（查找实际存在的文件，非main-app.js）
 - [ ] curl 验证泡泡API `/api/brainholes/bubble` 返回数据
 - [ ] 更新 `ProblemLog.md`
+- [ ] 更新 `IMPORTANT.md`
