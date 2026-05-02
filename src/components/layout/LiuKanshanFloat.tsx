@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 interface LiuKanshanFloatProps {
   mode?: 'default' | 'solo' | 'duo' | 'multi';
@@ -89,12 +90,12 @@ export default function LiuKanshanFloat({ mode = 'default' }: LiuKanshanFloatPro
         )}
       </AnimatePresence>
 
-      {/* 刘看山泡泡 */}
+      {/* 刘看山浮动按钮 - 使用官方图片 */}
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="relative w-14 h-14 rounded-full flex items-center justify-center"
+        className="relative w-14 h-14 rounded-full flex items-center justify-center overflow-hidden"
         style={{
           background: `radial-gradient(circle at 30% 30%, #f5f5f5, #e8e8e8)`,
           border: `2px solid ${moodColors[mood]}`,
@@ -111,45 +112,15 @@ export default function LiuKanshanFloat({ mode = 'default' }: LiuKanshanFloatPro
           },
         }}
       >
-        {/* 刘看山表情 */}
-        <div className="relative w-10 h-10">
-          {/* 耳朵 */}
-          <div className="absolute -top-1 left-1 w-3 h-3 rounded-full bg-[#f5f5f5] border border-gray-200" />
-          <div className="absolute -top-1 right-1 w-3 h-3 rounded-full bg-[#f5f5f5] border border-gray-200" />
-          
-          {/* 脸 */}
-          <div className="absolute inset-0 rounded-full bg-[#f5f5f5] border border-gray-100 flex items-center justify-center">
-            {/* 眼睛 */}
-            <div className="flex gap-2 items-center">
-              <motion.div
-                className="w-2 h-2 rounded-full bg-[#74b9ff]"
-                animate={mood === 'surprise' ? { scale: [1, 1.3, 1] } : {}}
-                transition={{ duration: 0.5 }}
-              />
-              <motion.div
-                className="w-2 h-2 rounded-full bg-[#74b9ff]"
-                animate={mood === 'surprise' ? { scale: [1, 1.3, 1] } : {}}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-            
-            {/* 嘴巴 */}
-            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2">
-              {mood === 'happy' && <div className="w-3 h-1.5 rounded-b-full bg-[#ff9f43]" />}
-              {mood === 'think' && <div className="w-2 h-0.5 rounded-full bg-gray-400" />}
-              {mood === 'surprise' && <div className="w-2 h-2 rounded-full bg-[#ff4757]" />}
-              {mood === 'gentle' && <div className="w-3 h-1 rounded-full bg-[#ffcccc]" />}
-            </div>
-          </div>
-          
-          {/* 腮红 */}
-          {(mood === 'gentle' || mood === 'happy') && (
-            <>
-              <div className="absolute top-3 left-0.5 w-2 h-1.5 rounded-full bg-[#ffcccc] opacity-50" />
-              <div className="absolute top-3 right-0.5 w-2 h-1.5 rounded-full bg-[#ffcccc] opacity-50" />
-            </>
-          )}
-        </div>
+        <Image
+          src="/liukanshan.jpg"
+          alt="刘看山"
+          width={48}
+          height={48}
+          className="object-contain rounded-full"
+          style={{ width: 48, height: 48 }}
+          priority
+        />
 
         {/* 思考气泡 */}
         {mood === 'think' && (
