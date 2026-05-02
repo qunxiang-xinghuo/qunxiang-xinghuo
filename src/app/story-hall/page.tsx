@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Plus, Users, BookOpen, ArrowRight, User, Globe, Clock } from 'lucide-react';
+import { Plus, Users, BookOpen, ArrowRight, User, Globe, Clock, Sparkles } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import CreateStoryModal from '@/components/story/CreateStoryModal';
 
@@ -23,10 +23,31 @@ interface StoryItem {
   createdAt: string;
 }
 
-const statusConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any }> = {
-  recruiting: { text: '招募中', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Users },
-  ongoing: { text: '进行中', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock },
-  completed: { text: '已完成', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: BookOpen },
+const statusConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any; gradient: string }> = {
+  recruiting: {
+    text: '招募中',
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/20',
+    icon: Users,
+    gradient: 'from-emerald-500/10 to-teal-500/5',
+  },
+  ongoing: {
+    text: '进行中',
+    color: 'text-xh-gold',
+    bg: 'bg-xh-gold/10',
+    border: 'border-xh-gold/20',
+    icon: Clock,
+    gradient: 'from-xh-gold/10 to-orange-500/5',
+  },
+  completed: {
+    text: '已完成',
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
+    icon: BookOpen,
+    gradient: 'from-blue-500/10 to-cyan-500/5',
+  },
 };
 
 type TabType = 'personal' | 'public';
@@ -78,12 +99,15 @@ export default function StoryHallPage() {
     <div className="flex flex-col h-full page-gradient">
       <TopBar title="故事大厅" />
 
-      {/* 头部区域 */}
-      <div className="shrink-0 px-4 pt-4 pb-3">
+      {/* 头部区域 - v5.6: 更大气 */}
+      <div className="shrink-0 px-5 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-100">群像共创</h2>
-            <p className="text-xs text-slate-500 mt-0.5">认领角色，一起书写故事</p>
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="w-5 h-5 text-xh-gold" />
+              <h2 className="text-xl font-bold text-slate-100">群像共创</h2>
+            </div>
+            <p className="text-[11px] text-slate-500">认领角色，一起书写故事</p>
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
@@ -91,12 +115,12 @@ export default function StoryHallPage() {
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium shadow-lg shadow-xh-gold/20 hover:shadow-xl hover:shadow-xh-gold/30 transition-shadow"
           >
             <Plus className="w-4 h-4" />
-            发起群像共创
+            发起共创
           </motion.button>
         </div>
 
-        {/* 标签切换 */}
-        <div className="flex bg-slate-800/40 rounded-xl p-1 border border-slate-700/20">
+        {/* 标签切换 - v5.6: 更精致 */}
+        <div className="flex rounded-xl p-1 bg-slate-800/40 border border-slate-700/20">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -110,7 +134,7 @@ export default function StoryHallPage() {
                     : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                <Icon size={15} strokeWidth={isActive ? 2.5 : 1.5} />
+                <Icon size={14} strokeWidth={isActive ? 2.5 : 1.5} />
                 {tab.label}
               </button>
             );
@@ -118,7 +142,7 @@ export default function StoryHallPage() {
         </div>
       </div>
 
-      {/* 故事列表 */}
+      {/* 故事列表 - v5.6: 卡片更有层次 */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-4 space-y-3">
         {loading ? (
           <div className="flex items-center justify-center py-16">
@@ -146,6 +170,7 @@ export default function StoryHallPage() {
             const StatusIcon = sc.icon;
             const progress = story.totalRoles > 0 ? Math.round((story.approvedRoles / story.totalRoles) * 100) : 0;
             const isMyStory = story.directorId === currentUserId;
+            const isFull = progress >= 100;
 
             return (
               <motion.div
@@ -154,8 +179,12 @@ export default function StoryHallPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => router.push(`/story-hall/${story.id}`)}
-                className="group bg-slate-800/40 rounded-2xl p-4 border border-slate-700/20 hover:border-slate-600/30 hover:bg-slate-800/60 transition-all duration-300 press-feedback cursor-pointer"
+                className="group card-elevated p-4 cursor-pointer"
               >
+                {/* 顶部色带 */}
+                <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${sc.gradient} rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity`} />
+
+                {/* 标题 + 状态 */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -175,15 +204,25 @@ export default function StoryHallPage() {
                   <ArrowRight className="w-4 h-4 text-slate-700 group-hover:text-xh-gold group-hover:translate-x-0.5 transition-all duration-300 shrink-0 mt-0.5" />
                 </div>
 
-                {/* 进度条 */}
-                <div className="flex items-center gap-3 mb-2.5">
-                  <div className="flex-1 h-2 bg-slate-700/30 rounded-full overflow-hidden">
+                {/* 核心冲突预览 */}
+                {story.conflict && (
+                  <div className="mb-3 p-2.5 rounded-lg bg-slate-800/40 border border-slate-700/15">
+                    <p className="text-[11px] text-slate-500 line-clamp-1">
+                      <span className="text-slate-600 mr-1">核心冲突：</span>
+                      {story.conflict}
+                    </p>
+                  </div>
+                )}
+
+                {/* 进度条 - v5.6: 更大更醒目 */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-1 h-2.5 bg-slate-700/20 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
                       transition={{ duration: 0.8, delay: index * 0.05 }}
                       className={`h-full rounded-full ${
-                        progress === 100
+                        isFull
                           ? 'bg-gradient-to-r from-emerald-400 to-teal-400'
                           : 'bg-gradient-to-r from-xh-gold to-orange-400'
                       }`}
@@ -194,6 +233,7 @@ export default function StoryHallPage() {
                   </span>
                 </div>
 
+                {/* 底部元信息 */}
                 <div className="flex items-center gap-4 text-[11px] text-slate-600">
                   <span className="flex items-center gap-1">
                     <Users size={12} />
@@ -202,6 +242,10 @@ export default function StoryHallPage() {
                   <span className="flex items-center gap-1">
                     <BookOpen size={12} />
                     {story.messageCount} 条对白
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock size={12} />
+                    {new Date(story.createdAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
                   </span>
                 </div>
               </motion.div>

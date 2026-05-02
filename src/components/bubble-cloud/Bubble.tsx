@@ -1,116 +1,74 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import type { BubbleData } from '@/lib/bubble-engine';
+import { BubbleItem } from './types';
 
 interface BubbleProps {
-  data: BubbleData;
-  x: number;
-  y: number;
+  item: BubbleItem;
   size: number;
-  floatDuration: number;
-  floatDelay: number;
-  onClick: (id: string) => void;
-  compact?: boolean;
+  index: number;
+  onClick: () => void;
+  bgColor?: string;
+  delay?: number;
 }
 
-export default function Bubble({
-  data,
-  x,
-  y,
-  size,
-  floatDuration,
-  floatDelay,
-  onClick,
-  compact = false,
-}: BubbleProps) {
-  const [isBouncing, setIsBouncing] = useState(false);
+export default function Bubble({ item, size, index, onClick, bgColor, delay = 0 }: BubbleProps) {
+  const [isPopping, setIsPopping] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
+  const [showGlow, setShowGlow] = useState(false);
   const [showRipple, setShowRipple] = useState(false);
-  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
-  const bubbleRef = useRef<HTMLDivElement>(null);
+
+  const fontSize = Math.max(size / 5.5, 10);
+  const floatDuration = 2.5 + Math.random() * 2.5;
+  const floatDelay = Math.random() * 3;
 
   const handleClick = useCallback(() => {
-    if (isBouncing) return;
-    setIsBouncing(true);
+    if (isPopping) return;
+    setIsPopping(true);
     setIsPressed(true);
+    setShowGlow(true);
     setShowRipple(true);
+
     setTimeout(() => {
-      setIsBouncing(false);
-      setIsPressed(false);
       setShowRipple(false);
-      onClick(data.id);
-    }, 500);
-  }, [isBouncing, data.id, onClick]);
-
-  // 鼠标移动视差效果
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!bubbleRef.current) return;
-    const rect = bubbleRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const offsetX = (e.clientX - centerX) * 0.1;
-    const offsetY = (e.clientY - centerY) * 0.1;
-    setMouseOffset({ x: offsetX, y: offsetY });
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setMouseOffset({ x: 0, y: 0 });
-  }, []);
-
-  const finalX = x + mouseOffset.x;
-  const finalY = y + mouseOffset.y;
+      onClick();
+    }, 400);
+  }, [isPopping, onClick]);
 
   return (
     <motion.div
-      ref={bubbleRef}
-      className="absolute"
-      style={{
-        width: size,
-        height: size,
-        left: finalX,
-        top: finalY,
-        zIndex: isBouncing ? 200 : Math.round(data.hotScore / 10),
-      }}
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{
-        opacity: { duration: 0.5, delay: floatDelay * 0.12 },
-        scale: {
-          duration: 0.6,
-          delay: floatDelay * 0.12,
-          type: 'spring',
-          stiffness: 180,
-          damping: 14,
-        },
+        type: 'spring',
+        stiffness: 180,
+        damping: 14,
+        delay,
       }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      className="bubble-float-wrapper cursor-pointer select-none"
+      style={{
+        ['--float-dur' as any]: `${floatDuration}s`,
+        ['--float-del' as any]: `${floatDelay}s`,
+      }}
+      onClick={handleClick}
     >
-      {/* v4.7-fix2: 分离漂浮层与视觉层，避免transform冲突 */}
-      {/* wrapper负责上下漂浮(translateY)，bubble-glass负责scale/hover/pop */}
-      <div
-        className="bubble-float-wrapper w-full h-full"
-        style={
-          {
-            '--float-dur': `${floatDuration}s`,
-            '--float-del': `${floatDelay}s`,
-          } as React.CSSProperties
-        }
-      >
-        {/* v5.3: 选中光晕层 + 涟漪效果 */}
-        {isPressed && (
-          <div className="bubble-selected-glow" />
-        )}
+      <div className="relative" style={{ width: size, height: size }}>
+        {showGlow && <div className="bubble-selected-glow" />}
+        {showRipple && <div className="bubble-ripple" />}
         <div
-          className={`bubble-glass w-full h-full cursor-pointer select-none ${isBouncing ? 'bubble-pop' : ''} ${isPressed ? 'bubble-pressed' : ''}`}
-          onClick={handleClick}
+          className={`bubble-glass ${isPopping ? 'bubble-pop' : ''} ${isPressed ? 'bubble-pressed' : ''}`}
+          style={{
+            width: size,
+            height: size,
+            backgroundColor: bgColor,
+          }}
         >
-          {showRipple && <div className="bubble-ripple" />}
-          {/* 标题文字 */}
-          <span className="bubble-text" style={{ WebkitLineClamp: compact ? 2 : 3 }}>
-            {data.title}
+          <span
+            className="bubble-text"
+            style={{ fontSize }}
+          >
+            {item.text}
           </span>
         </div>
       </div>
