@@ -20,12 +20,17 @@
 
 ```bash
 cd /www/wwwroot/qunxiang-xinghuo \
-  && git pull origin dev \
+  && git reset --hard origin/dev \
+  && git clean -fd \
   && npm install \
-  && npm run build \
+  && npx prisma generate \
+  && npx prisma db push \
+  && NODE_ENV=production npm run build \
   && pm2 restart qunxiang-xinghuo \
   && pm2 save
 ```
+
+> 含 Prisma schema 变更时必须执行 `npx prisma db push`！
 
 **本地paramiko部署脚本**：`deploy_remote.py`（Python + paramiko）
 
@@ -131,4 +136,4 @@ DATABASE_URL="file:./dev.db"
 
 ---
 
-> 最后更新：2026-05-04 v5.3 部署完成
+> 最后更新：2026-05-05 v5.4 故事大厅MVP部署完成
