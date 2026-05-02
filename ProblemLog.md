@@ -515,3 +515,130 @@ cd /www/wwwroot/qunxiang-xinghuo \
 ```
 
 > 注意：含 Prisma schema 变更时必须执行 `npx prisma db push`！
+
+---
+
+## 2026-05-05 v5.5 — UI全面重设计
+
+### 需求
+用户反馈"并没有更新页面"——v5.4虽然功能正确部署，但视觉上变化太小。用户要求作为**产品设计+美工+技术**三重角色，全面重设计所有页面。
+
+### 诊断过程
+
+**第一步**：检查服务器代码版本
+- 发现服务器 `.next/BUILD_ID` 修改时间是 `2026-05-02 21:19`（旧build）
+- Git HEAD是 `9dea9da v5.4`，但build输出是旧的
+- **根因**：部署脚本中 `npm run build` 执行了，但Next.js的Turbopack可能复用了缓存，没有真正重新编译
+
+**第二步**：强制删除 `.next` 目录后重新build
+- Build时间更新到 `21:36`，验证通过
+- 但用户仍说页面没更新
+
+**第三步**：深入分析
+- v5.4主要是后端逻辑变更（导演审核、手动启动）
+- 前端UI变化极小，用户视觉上几乎感觉不到变化
+- 需要全面UI重设计
+
+### 视觉问题诊断（产品设计+美工角度）
+
+| 优先级 | 问题 | 影响 |
+|--------|------|------|
+| 高 | TopBar使用`gray-800`，与整体设计不协调 | 顶部导航突兀 |
+| 高 | 全局字体偏小（大量10px/9px） | 可读性差 |
+| 高 | 卡片背景过于平淡（统一`bg-white/[0.03]`） | 缺乏层次感 |
+| 中 | BottomNav字体10px | 底部导航难以阅读 |
+| 中 | 首页模式卡片设计平庸 | 缺乏视觉吸引力 |
+| 中 | 弹窗背景`#1a1a2e`硬编码 | 与全局背景不一致 |
+| 低 | `xh-accent`红色完全未使用 | 废弃变量 |
+
+### 解决方案：统一视觉设计系统
+
+**色彩系统升级**：
+| Token | 旧值 | 新值 | 用途 |
+|-------|------|------|------|
+| 主背景 | `#1a1a2e` | `#0f172a` (slate-950) | 更深邃的蓝黑 |
+| 卡片背景 | `white/[0.03]` | `slate-800/40` | 更有层次感 |
+| 卡片边框 | `white/[0.06]` | `slate-700/20` | 更精致的边框 |
+| 主文字 | `white/90` | `slate-100` | 更柔和的白色 |
+| 次文字 | `white/50` | `slate-500` | 统一的灰色层级 |
+| 弱文字 | `white/30` | `slate-700` | 更深的灰色 |
+
+**字体升级**：
+- 最小字号：10px/9px → **12px (text-xs)**
+- 正文：保持14px
+- 标题：保持16-20px
+
+**组件升级**：
+- TopBar：`bg-gray-800` → `bg-slate-900/80 backdrop-blur-xl`
+- BottomNav：标签页改为圆角按钮组，激活态增加背景色
+- 卡片：统一`rounded-2xl` + hover效果
+- 按钮：统一`rounded-xl` + 阴影层次
+
+### 修改文件（16个）
+
+**全面重写**：
+- `src/app/globals.css` — 新设计Token
+- `src/components/layout/TopBar.tsx` — 统一slate背景+金色Logo
+- `src/components/layout/BottomNav.tsx` — 圆角标签切换+更大字体
+- `src/app/home/page.tsx` — 全新标题区+层次卡片
+- `src/app/story-hall/page.tsx` — 新卡片+进度条动画+状态标签
+- `src/app/story-hall/[storyId]/page.tsx` — 四态角色卡片+审核面板
+
+**批量颜色替换**：
+- `src/app/duo-match/page.tsx`
+- `src/app/duo-waiting/page.tsx`
+- `src/app/library/page.tsx`
+- `src/app/profile/page.tsx`
+- `src/app/story/page.tsx`
+- `src/components/story/CreateStoryModal.tsx`
+- `src/components/story/ClaimRoleModal.tsx`
+
+### 部署问题
+
+**问题：git fetch网络超时**
+- **现象**：`git fetch origin dev` 返回 `Failure when receiving data from the peer`
+- **根因**：服务器到GitHub的网络不稳定
+- **影响**：`git reset --hard origin/dev` 无法执行，服务器代码停留在v5.4
+- **解决**：使用paramiko SFTP直接上传修改的文件到服务器对应位置
+- **教训**：
+  - 部署流程必须有fallback方案（SFTP上传）
+  - 部署后必须验证源代码是否真的是最新版本（检查关键文件内容）
+  - 不能仅依赖build成功就认定部署完成
+
+### 验证方法升级
+
+```bash
+# 1. 验证源代码版本
+grep -c 'slate-900' src/components/layout/TopBar.tsx
+# 期望: >0 (新代码)
+
+grep -c 'bg-gray-800' src/components/layout/TopBar.tsx
+# 期望: 0 (旧代码已移除)
+
+# 2. 验证编译输出
+grep -rl 'slate-800' .next/static/chunks/ | wc -l
+# 期望: >10 (新颜色已编译到JS)
+
+# 3. 验证BUILD时间
+stat .next/BUILD_ID | grep Modify
+# 期望: 当前时间
+
+# 4. 验证页面内容
+curl -s http://localhost:3000/home | wc -c
+# 期望: >20000
+```
+
+### 部署结果
+- Build：47/47 pages ✅
+- BUILD时间：2026-05-02 21:57（最新）✅
+- 新颜色体系：TopBar/home/story-hall 全部使用slate ✅
+- 旧颜色移除：bg-gray-800从TopBar中消失 ✅
+- JS chunks：23个文件包含slate-800 ✅
+- 所有页面：home(20.5K)/story-hall(14K)/duo-match(12K)/profile(22.7K)/library(13.7K) ✅
+- API：success ✅
+- PM2：online, pid 1582025, mem 73.4mb ✅
+
+### 最终线上地址
+http://81.70.59.228:3000
+
+---
