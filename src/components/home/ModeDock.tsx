@@ -129,7 +129,7 @@ export default function ModeDock() {
 
               {/* 状态标记 */}
               {!mode.available && (
-                <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded text-[8px] bg-white/10 text-white/30">
+                <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded text-[8px] bg-white/10 text-white/40">
                   即将上线
                 </span>
               )}

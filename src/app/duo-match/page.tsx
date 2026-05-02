@@ -84,7 +84,7 @@ function DuoMatchContent() {
       {/* 页面标题 */}
       <div className="px-6 pt-4 pb-2">
         <h2 className="text-lg font-bold text-white/90 mb-1">在这次对撞中，你是谁？</h2>
-        <p className="text-xs text-white/30">选择一个身份，系统将为你匹配对戏伙伴</p>
+        <p className="text-xs text-white/50">选择一个身份，系统将为你匹配对戏伙伴</p>
       </div>
 
       {/* 身份选项 - 卡片式布局 */}
@@ -120,7 +120,7 @@ function DuoMatchContent() {
                     {selectedType === option.type && <Check className="w-2.5 h-2.5 text-[#1a1a2e]" strokeWidth={4} />}
                   </div>
                 </div>
-                <p className="text-[10px] text-white/30">{option.desc}</p>
+                <p className="text-[10px] text-white/50">{option.desc}</p>
               </div>
             </div>
 
@@ -134,7 +134,7 @@ function DuoMatchContent() {
                 {option.type === 'zhihu' && (
                   <div className="space-y-1.5">
                     {zhihuIdentities.length === 0 ? (
-                      <p className="text-xs text-white/30">暂无认证身份，将使用默认身份</p>
+                      <p className="text-xs text-white/50">暂无认证身份，将使用默认身份</p>
                     ) : (
                       zhihuIdentities.map((id) => (
                         <button
@@ -180,7 +180,7 @@ function DuoMatchContent() {
                       maxLength={20}
                       onClick={(e) => e.stopPropagation()}
                     />
-                    <p className="text-[10px] text-white/20 mt-1 text-right">{customLabel.length}/20</p>
+                    <p className="text-[10px] text-white/40 mt-1 text-right">{customLabel.length}/20</p>
                   </div>
                 )}
               </motion.div>

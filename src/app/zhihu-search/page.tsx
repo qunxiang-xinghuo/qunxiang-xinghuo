@@ -80,7 +80,7 @@ export default function ZhihuSearchPage() {
               className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'text-xh-gold border-b-2 border-xh-gold'
-                  : 'text-white/30 hover:text-white/50'
+                  : 'text-white/50 hover:text-white/70'
               }`}
             >
               <Icon size={16} />
@@ -126,7 +126,7 @@ export default function ZhihuSearchPage() {
 
         {!loading && !error && results.length === 0 && searched && activeTab !== 'hot' && (
           <div className="text-center py-8">
-            <p className="text-white/30 text-sm">暂无结果</p>
+            <p className="text-white/50 text-sm">暂无结果</p>
           </div>
         )}
 
@@ -155,7 +155,7 @@ export default function ZhihuSearchPage() {
                     <>
                       <h4 className="text-sm font-medium text-white/80 mb-1">{item.Title}</h4>
                       <p className="text-xs text-white/40 line-clamp-2 mb-2">{item.ContentText}</p>
-                      <div className="flex items-center gap-4 text-xs text-white/30">
+                      <div className="flex items-center gap-4 text-xs text-white/50">
                         <span>{item.AuthorName}</span>
                         <span>👍 {item.VoteUpCount}</span>
                         <span>💬 {item.CommentCount}</span>

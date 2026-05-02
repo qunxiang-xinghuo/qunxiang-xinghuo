@@ -93,7 +93,7 @@ export default function LoginForm() {
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-xs text-white/30"
+          className="text-xs text-white/50"
         >
           每一个认真生活的人，都能成为故事的一部分
         </motion.p>

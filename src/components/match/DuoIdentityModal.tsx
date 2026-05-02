@@ -140,7 +140,7 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
                             {selectedType === option.type && <Check className="w-2.5 h-2.5 text-[#1a1a2e]" strokeWidth={4} />}
                           </div>
                         </div>
-                        <p className="text-[10px] text-white/30">{option.desc}</p>
+                        <p className="text-[10px] text-white/50">{option.desc}</p>
                       </div>
                     </div>
 
@@ -154,7 +154,7 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
                         {option.type === 'zhihu' && (
                           <div className="space-y-1.5">
                             {zhihuIdentities.length === 0 ? (
-                              <p className="text-xs text-white/30">暂无认证身份，请先设置</p>
+                              <p className="text-xs text-white/50">暂无认证身份，请先设置</p>
                             ) : (
                               zhihuIdentities.map((id) => (
                                 <button
@@ -197,11 +197,11 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
                               value={customLabel}
                               onChange={(e) => setCustomLabel(e.target.value)}
                               placeholder="例如：急诊科护士、北漂创业者..."
-                              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-white/20 focus:outline-none focus:border-orange-400/50"
+                              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-orange-400/50"
                               maxLength={20}
                               onClick={(e) => e.stopPropagation()}
                             />
-                            <p className="text-[10px] text-white/20 mt-1 text-right">{customLabel.length}/20</p>
+                            <p className="text-[10px] text-white/40 mt-1 text-right">{customLabel.length}/20</p>
                           </div>
                         )}
                       </motion.div>

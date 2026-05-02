@@ -67,7 +67,7 @@ export default function HomePage() {
     } else if (mode.id === 'multi') {
       router.push('/multiplayer');
     } else if (mode.id === 'serial') {
-      router.push('/story');
+      router.push('/story-hall');
     }
   };
 

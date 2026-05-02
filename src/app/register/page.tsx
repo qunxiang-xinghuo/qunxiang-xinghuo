@@ -104,7 +104,7 @@ export default function RegisterPage() {
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="text-xs text-white/30"
+          className="text-xs text-white/50"
         >
           开启你的群像故事之旅
         </motion.p>

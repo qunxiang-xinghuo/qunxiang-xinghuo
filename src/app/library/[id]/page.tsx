@@ -112,7 +112,7 @@ export default function AssetDetailPage() {
             {asset.summary && (
               <p className="text-[11px] text-xh-gold/60 mt-0.5 line-clamp-2">{asset.summary}</p>
             )}
-            <div className="flex items-center gap-3 mt-2 text-[10px] text-white/30">
+            <div className="flex items-center gap-3 mt-2 text-[10px] text-white/50">
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {formatDate(asset.createdAt)}
@@ -135,7 +135,7 @@ export default function AssetDetailPage() {
         {messages.length === 0 ? (
           <div className="text-center py-12">
             <MessageSquare className="w-10 h-10 text-white/10 mx-auto mb-2" />
-            <p className="text-white/30 text-xs">暂无对白记录</p>
+            <p className="text-white/50 text-xs">暂无对白记录</p>
           </div>
         ) : (
           messages.map((msg, index) => {
@@ -149,7 +149,7 @@ export default function AssetDetailPage() {
                 className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
               >
                 <div className={`max-w-[80%] ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-                  <span className={`text-[10px] text-white/30 ${isMe ? 'text-right' : 'text-left'}`}>
+                  <span className={`text-[10px] text-white/50 ${isMe ? 'text-right' : 'text-left'}`}>
                     {msg.identity || (isMe ? '我' : '刘看山')}
                   </span>
                   <div
@@ -162,7 +162,7 @@ export default function AssetDetailPage() {
                     <p className="text-sm leading-relaxed">{msg.content}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-white/25">{formatTime(msg.createdAt)}</span>
+                    <span className="text-[10px] text-white/40">{formatTime(msg.createdAt)}</span>
                     {msg.isSpark && (
                       <span className="flex items-center gap-0.5 text-[10px] text-xh-gold">
                         <Flame className="w-3 h-3 fill-xh-gold" />

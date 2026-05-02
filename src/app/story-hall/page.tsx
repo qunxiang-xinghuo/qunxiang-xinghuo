@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Plus, Users, BookOpen, Sparkles, Globe, ArrowRight } from 'lucide-react';
+import { Plus, Users, BookOpen, Sparkles, ArrowRight, User, Globe } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import CreateStoryModal from '@/components/story/CreateStoryModal';
 
@@ -13,6 +13,7 @@ interface StoryItem {
   worldview: string;
   conflict: string;
   status: string;
+  directorId: string;
   director: { id: string; name: string | null };
   maxActors: number;
   totalRoles: number;
@@ -21,17 +22,31 @@ interface StoryItem {
   createdAt: string;
 }
 
-const statusLabels: Record<string, { text: string; color: string; bg: string }> = {
-  recruiting: { text: '招募中', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  ongoing: { text: '进行中', color: 'text-xh-gold', bg: 'bg-xh-gold/10' },
-  completed: { text: '已完成', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+const statusLabels: Record<string, { text: string; color: string; bg: string; border: string }> = {
+  recruiting: { text: '招募中', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  ongoing: { text: '进行中', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20' },
+  completed: { text: '已完成', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
 };
+
+type TabType = 'personal' | 'public';
+
+const tabs = [
+  { id: 'personal' as TabType, label: '个人广场', icon: User },
+  { id: 'public' as TabType, label: '公共招募', icon: Globe },
+];
 
 export default function StoryHallPage() {
   const router = useRouter();
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('personal');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState('');
+
+  useEffect(() => {
+    const uid = localStorage.getItem('xh_user_id') || '';
+    setCurrentUserId(uid);
+  }, []);
 
   const loadStories = useCallback(async () => {
     setLoading(true);
@@ -52,13 +67,23 @@ export default function StoryHallPage() {
     loadStories();
   }, [loadStories]);
 
+  // 个人广场：用户发起或参与的故事
+  const personalStories = stories.filter(
+    (s) => s.directorId === currentUserId || s.status !== 'recruiting'
+  );
+
+  // 公共招募广场：所有招募中的故事
+  const publicStories = stories.filter((s) => s.status === 'recruiting');
+
+  const displayStories = activeTab === 'personal' ? personalStories : publicStories;
+
   return (
     <div className="flex flex-col h-full page-gradient">
       <TopBar title="故事大厅" />
 
       {/* 头部区域 */}
       <div className="shrink-0 px-4 pt-4 pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-lg font-bold text-white/90">群像共创</h2>
             <p className="text-xs text-white/50 mt-0.5">认领角色，一起书写故事</p>
@@ -68,8 +93,29 @@ export default function StoryHallPage() {
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity press-feedback"
           >
             <Plus className="w-4 h-4" />
-            发起新故事
+            发起群像共创
           </button>
+        </div>
+
+        {/* 标签切换 */}
+        <div className="flex border-b border-white/5">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'text-xh-gold border-b-2 border-xh-gold'
+                    : 'text-white/50 hover:text-white/70'
+                }`}
+              >
+                <Icon size={16} />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -79,20 +125,27 @@ export default function StoryHallPage() {
           <div className="flex items-center justify-center py-12">
             <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
           </div>
-        ) : stories.length === 0 ? (
+        ) : displayStories.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-12 bg-white/[0.03] rounded-xl border border-white/[0.06]"
           >
             <BookOpen className="w-10 h-10 text-white/10 mx-auto mb-2" />
-            <p className="text-white/30 text-xs">还没有故事项目</p>
-            <p className="text-white/20 text-[10px] mt-1">点击右上角发起第一个故事</p>
+            <p className="text-white/50 text-xs">
+              {activeTab === 'personal' ? '还没有个人故事项目' : '暂无公开招募中的故事'}
+            </p>
+            <p className="text-white/30 text-[10px] mt-1">
+              {activeTab === 'personal'
+                ? '去公共招募广场参与或发起一个故事'
+                : '点击右上角发起第一个群像共创'}
+            </p>
           </motion.div>
         ) : (
-          stories.map((story, index) => {
+          displayStories.map((story, index) => {
             const statusInfo = statusLabels[story.status] || statusLabels.recruiting;
             const progress = story.totalRoles > 0 ? Math.round((story.claimedRoles / story.totalRoles) * 100) : 0;
+            const isMyStory = story.directorId === currentUserId;
             return (
               <motion.div
                 key={story.id}
@@ -106,11 +159,16 @@ export default function StoryHallPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-sm font-bold text-white/90 truncate">{story.title}</h3>
-                      <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full ${statusInfo.bg} ${statusInfo.color}`}>
+                      <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full border ${statusInfo.bg} ${statusInfo.color} ${statusInfo.border}`}>
                         {statusInfo.text}
                       </span>
+                      {isMyStory && (
+                        <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-xh-gold/15 text-xh-gold border border-xh-gold/20">
+                          我发起的
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs text-white/40 line-clamp-2">{story.worldview}</p>
+                    <p className="text-xs text-white/50 line-clamp-2">{story.worldview}</p>
                   </div>
                   <ArrowRight className="w-4 h-4 text-white/20 shrink-0 mt-1" />
                 </div>
@@ -128,7 +186,7 @@ export default function StoryHallPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 text-[10px] text-white/30">
+                <div className="flex items-center gap-3 text-[10px] text-white/40">
                   <span className="flex items-center gap-1">
                     <Users className="w-3 h-3" />
                     {story.director.name || '匿名'}

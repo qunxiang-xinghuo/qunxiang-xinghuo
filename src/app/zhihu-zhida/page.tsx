@@ -93,7 +93,7 @@ export default function ZhihuZhidaPage() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-4">
         {messages.length === 0 && !loading && (
           <div className="text-center py-8">
-            <p className="text-white/30 text-sm">向知乎直答提问，开启深度探索</p>
+            <p className="text-white/50 text-sm">向知乎直答提问，开启深度探索</p>
           </div>
         )}
         <AnimatePresence>

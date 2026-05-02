@@ -72,7 +72,7 @@ export default function StoryPage() {
                     </div>
                     <div>
                       <h3 className="text-sm text-white/70 font-medium">{feature.title}</h3>
-                      <p className="text-xs text-white/30">{feature.desc}</p>
+                      <p className="text-xs text-white/50">{feature.desc}</p>
                     </div>
                   </div>
                 </motion.div>
