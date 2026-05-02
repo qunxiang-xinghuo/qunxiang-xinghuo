@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 export interface User {
   id: string;
@@ -15,29 +16,65 @@ export interface User {
 }
 
 export function useAuth() {
+  const { data: session, status: sessionStatus } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load user from localStorage
+    // 1. 优先从 localStorage 读取
     const savedUser = localStorage.getItem('xh_user');
     const savedIdentity = localStorage.getItem('xh_identity');
-    
+
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    } else if (savedIdentity) {
-      // Create temporary user from saved identity
-      const identity = JSON.parse(savedIdentity);
-      setUser({
-        id: 'temp-' + Date.now(),
-        name: identity.label,
-        identity,
-        level: 1,
-        sparkCount: 0,
-      });
+      try {
+        setUser(JSON.parse(savedUser));
+        setLoading(false);
+        return;
+      } catch {
+        localStorage.removeItem('xh_user');
+      }
     }
+
+    // 2. 其次从 NextAuth session 读取
+    if (sessionStatus === 'authenticated' && session?.user) {
+      const authUser: User = {
+        id: session.user.id || 'user-' + Date.now(),
+        name: session.user.name || session.user.username || '用户',
+        avatar: session.user.image || undefined,
+        identity: {
+          type: 'real',
+          label: session.user.username || session.user.name || '用户',
+        },
+        level: session.user.level || 1,
+        sparkCount: session.user.sparkCount || 0,
+      };
+      setUser(authUser);
+      localStorage.setItem('xh_user', JSON.stringify(authUser));
+      setLoading(false);
+      return;
+    }
+
+    // 3. 最后从 identity 创建临时用户
+    if (savedIdentity) {
+      try {
+        const identity = JSON.parse(savedIdentity);
+        const tempUser: User = {
+          id: 'temp-' + Date.now(),
+          name: identity.label,
+          identity,
+          level: 1,
+          sparkCount: 0,
+        };
+        setUser(tempUser);
+        setLoading(false);
+        return;
+      } catch {
+        localStorage.removeItem('xh_identity');
+      }
+    }
+
     setLoading(false);
-  }, []);
+  }, [session, sessionStatus]);
 
   const saveIdentity = (identity: User['identity']) => {
     const newUser: User = {

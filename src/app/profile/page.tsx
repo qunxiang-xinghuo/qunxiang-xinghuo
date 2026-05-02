@@ -41,7 +41,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col h-full page-gradient">
-      <TopBar title="我的" />
+      <TopBar title="我的" showBack onBack={() => router.back()} />
 
       {/* 用户信息区 */}
       <div className="px-6 py-6 text-center">
