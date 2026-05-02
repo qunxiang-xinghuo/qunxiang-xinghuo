@@ -437,3 +437,81 @@ cd /www/wwwroot/qunxiang-xinghuo \
   && pm2 restart qunxiang-xinghuo \
   && pm2 save
 ```
+
+---
+
+## 2026-05-05 v5.4 — 故事大厅MVP功能开发
+
+### 需求
+用户要求开发故事大厅MVP核心功能：
+1. 创建故事（增加最少启动人数）
+2. 故事广场（进度按审核通过角色计算）
+3. 故事详情（显示认领状态）
+4. 认领角色（增加身份标签+演绎方向）
+5. 导演审核（通过/拒绝认领申请）
+6. 启动故事（导演手动启动，非自动）
+7. 基础对白室（复用现有实现）
+
+### 数据库变更
+| 模型 | 字段 | 类型 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| Story | minActors | Int | 2 | 最少启动人数 |
+| StoryRole | claimStatus | String | "unclaimed" | 认领状态 |
+| StoryRole | identityTag | String? | null | 身份标签 |
+| StoryRole | performanceDirection | String? | null | 演绎方向 |
+
+### 新增API路由
+| 路由 | 方法 | 功能 |
+|------|------|------|
+| `/api/stories/[storyId]/roles/[roleId]/review` | POST | 导演审核（approve/reject） |
+| `/api/stories/[storyId]/start` | POST | 导演手动启动故事 |
+
+### 修改API路由
+| 路由 | 变更 |
+|------|------|
+| POST `/api/stories` | 增加 `minActors` 参数 |
+| POST `.../claim` | 认领后 `claimStatus="pending"`，不再自动启动 |
+| GET `/api/stories` | `approvedRoles` 只统计 `claimStatus="approved"` |
+
+### 开发中遇到的问题
+
+**问题1：claimStatus默认值设计缺陷**
+- **现象**：新建角色默认 `claimStatus="pending"`，与认领后的状态相同
+- **影响**：导演审核面板把未认领角色也算作待审核；`allApproved` 判断永远无法满足
+- **修复**：将默认值改为 `"unclaimed"`，状态流转：`unclaimed → pending → approved/rejected`
+- **教训**：状态机设计必须考虑初始态，不能用有意义的状态作为默认值
+
+**问题2：TypeScript类型错误**
+- **现象**：`GET /api/stories` 中 `s.roles.filter((r) => r.claimStatus === 'approved')` 报错
+- **根因**：Prisma查询中 `roles.select` 没包含 `claimStatus` 字段
+- **修复**：在 select 中增加 `claimStatus: true`
+- **教训**：修改schema后，要检查所有Prisma查询的select/include是否包含新字段
+
+**问题3：部署验证脚本误报404**
+- **现象**：curl `/_next/static/chunks/main.js` 返回404
+- **根因**：Next.js 16使用hash文件名，`main.js` 这个具体文件名不存在
+- **解决**：验证脚本改为先 `ls` 列出实际文件名，再curl验证
+- **教训**：验证脚本不能写死文件名，应该动态获取
+
+### 部署结果
+- Build：47/47 pages ✅
+- 静态资源：200 OK ✅
+- /home 页面：20513 bytes ✅
+- /story-hall 页面：13982 bytes ✅
+- /api/stories：success ✅
+- PM2：online, pid 1572515 ✅
+
+### 修正后的部署流程
+```bash
+cd /www/wwwroot/qunxiang-xinghuo \
+  && git reset --hard origin/dev \
+  && git clean -fd \
+  && npm install \
+  && npx prisma generate \
+  && npx prisma db push \
+  && NODE_ENV=production npm run build \
+  && pm2 restart qunxiang-xinghuo \
+  && pm2 save
+```
+
+> 注意：含 Prisma schema 变更时必须执行 `npx prisma db push`！
