@@ -551,6 +551,84 @@ text-white/30 → text-white/50  （描述文字、状态提示、空状态）
 **部署时间**：2026-05-04
 **Git Commit**：`2caec4f` (dev分支)
 
+---
+
+# v5.3-blank 紧急修复（2026-05-04追加）
+
+## 一、问题：页面空白
+
+**现象**：部署后访问线上页面显示空白，只有深色背景和loading spinner。
+
+**根因链**：
+```
+server.ts (自定义server)
+  → Next.js handle() 无法serve生产build静态资源
+  → /_next/static/chunks/*.js 全部404
+  → 客户端JS/CSS无法加载
+  → React无法hydrate
+  → BubbleCloud等客户端组件永远卡在loading spinner
+  → 页面看起来像"空白"
+```
+
+**技术根因**：Next.js App Router + 自定义server组合，生产模式下 `handle()` 不能正确处理 `_next/static/` 路由。
+
+## 二、修复
+
+**文件**：`server.ts`
+
+**修改**：显式拦截 `/_next/` 路径，直接读取 `.next` 目录serve静态文件。
+
+```typescript
+import fs from 'fs'
+import path from 'path'
+
+const mimeTypes: Record<string, string> = {
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.ico': 'image/x-icon',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.ttf': 'font/ttf',
+}
+
+// 在createServer中：
+if (req.url && req.url.startsWith('/_next/')) {
+  const staticPath = path.join(process.cwd(), '.next', req.url)
+  if (fs.existsSync(staticPath) && fs.statSync(staticPath).isFile()) {
+    const ext = path.extname(staticPath)
+    res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream')
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+    fs.createReadStream(staticPath).pipe(res)
+    return
+  }
+}
+```
+
+## 三、验证结果
+
+| 检查项 | 结果 |
+|--------|------|
+| `/_next/static/chunks/*.js` | HTTP 200 ✅ |
+| `/_next/static/chunks/*.css` | HTTP 200 ✅ |
+| `/home` 页面HTML | 22KB，包含标题+模式卡片 ✅ |
+| 泡泡API `/api/brainholes/bubble` | `success:true` ✅ |
+| PM2状态 | online, mem 72.9mb ✅ |
+
+## 四、教训
+
+1. **App Router + 自定义server = 必须显式处理静态资源**
+2. **部署后立即curl验证 `_next/static`**，这是页面能否正常显示的生命线
+3. **日志中的 `○ Compiling` 是开发模式标志**，生产环境绝不应该出现
+4. **BubbleCloud等客户端组件的loading spinner + JS 404 = 看起来"空白"**
+
+---
+
+*文档版本：v5.0 + v5.3整改 + v5.3-blank修复 | 已部署 | 2026-05-04*
+
 ## 四、更新后的状态
 
 | 功能 | 状态 |

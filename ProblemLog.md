@@ -319,3 +319,63 @@
 - 跨平台部署脚本必须处理Unicode编码
 - 保留密码作为SSH备用认证方式
 - 部署前执行 `git status` 检查，dirty状态下先reset再pull
+
+---
+
+## 2026-05-04 v5.3-blank — 页面空白（最严重bug）
+
+**现象**：部署后访问 `http://81.70.59.228:3000/` 显示空白页面，只有深色背景和一个loading spinner。
+
+**诊断过程**（多次自检）：
+1. 第一次检查：HTTP 200，HTML有内容，但发现 `BAILOUT_TO_CLIENT_SIDE_RENDERING` 标记
+2. 第二次检查：发现 `/_next/static/chunks/*.js` 全部404
+3. 第三次检查： standalone模式下 `.next/standalone/.next/static/` 目录缺失
+4. 第四次检查：复制static目录后仍然404
+5. 第五次检查：发现 `server.ts` 启动时Next.js在**开发模式**运行（`○ Compiling`日志）
+6. 第六次检查：用 `next start` 测试，静态资源200 OK
+7. 最终定位：App Router + 自定义server.ts， `handle()` 无法serve生产build的静态文件
+
+**根因分析**：
+
+| 层级 | 问题 |
+|------|------|
+| 直接原因 | `/_next/static/chunks/*.js` 和 `*.css` 全部404 |
+| 中间层 | BubbleCloud等客户端组件SSR时显示loading spinner |
+| 最终结果 | 客户端JS无法加载 → React无法hydrate → 页面永远loading → "空白" |
+| 技术根因 | Next.js App Router + 自定义server（server.ts）组合，生产模式下静态文件服务失效 |
+
+**修复方案**：
+
+修改 `server.ts`，显式拦截 `/_next/` 路径，直接读取 `.next` 目录serve静态文件：
+
+```typescript
+// v5.3-fix: 显式处理 _next/static 静态资源（App Router+自定义server兼容）
+if (req.url && req.url.startsWith('/_next/')) {
+  const staticPath = path.join(process.cwd(), '.next', req.url)
+  if (fs.existsSync(staticPath) && fs.statSync(staticPath).isFile()) {
+    const ext = path.extname(staticPath)
+    res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream')
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+    fs.createReadStream(staticPath).pipe(res)
+    return
+  }
+}
+```
+
+**验证方法**：
+```bash
+# 部署后必须验证
+ curl -sI http://localhost:3000/_next/static/chunks/0gscbv2oo_ix7.js
+# 期望：HTTP/1.1 200 OK
+
+ curl -s http://localhost:3000/home | grep -c '双人模式'
+# 期望：>0
+```
+
+**涉及文件**：`server.ts`
+
+**预防措施**：
+- App Router + 自定义server必须显式处理 `_next/static` 路由
+- 部署后第一时间curl验证静态资源
+- 不要迷信Next.js会自动处理所有事情
+- 日志中出现 `○ Compiling` = 开发模式，生产环境绝对不应该出现
