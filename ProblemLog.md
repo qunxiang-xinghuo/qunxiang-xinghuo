@@ -642,3 +642,86 @@ curl -s http://localhost:3000/home | wc -c
 http://81.70.59.228:3000
 
 ---
+
+---
+
+## 2026-05-05 v5.5-fix — 页面空白（v5.3同样bug复发）
+
+### 现象
+用户反馈"页面空白"——部署v5.5后访问线上页面，只有深色背景，没有任何内容。
+
+### 诊断过程
+
+**第一步**：curl检查页面HTML
+- `/home` 返回完整HTML（20KB）✅
+- 说明服务端渲染正常
+
+**第二步**：curl检查静态资源（v5.3教训：这是生命线！）
+```bash
+curl -sI http://81.70.59.228:3000/_next/static/chunks/01bq2p~9eyq-s.js
+# → HTTP/1.1 404 Not Found ❌
+```
+**静态资源全部404！**
+
+**第三步**：检查server.ts
+```typescript
+// 当前代码（错误的）
+const staticPath = path.join(process.cwd(), '.next', req.url)
+// → /www/.../.next/_next/static/chunks/xxx.js
+//   多了一个 _next 层级！❌
+```
+
+`.next` 目录结构：
+```
+.next/
+  static/
+    chunks/
+      01bq2p~9eyq-s.js  ✅ 文件在这里
+  _next/               ❌ 没有这个目录
+```
+
+**根因**：`path.join(cwd, '.next', req.url)` 中 `req.url` 包含了 `/_next/` 前缀，导致拼接后的路径多了 `_next` 层级，指向不存在的目录。
+
+### 修复
+```typescript
+// 修复前（错误）
+const staticPath = path.join(process.cwd(), '.next', req.url)
+
+// 修复后（正确）
+const staticPath = path.join(process.cwd(), '.next', req.url.replace('/_next/', ''))
+// → /www/.../.next/static/chunks/xxx.js ✅
+```
+
+### 为什么v5.3修复后会复发？
+
+回顾v5.3的原始修复代码：
+```typescript
+// v5.3原始正确代码
+const filePath = join(process.cwd(), '.next', pathname.replace('/_next/', ''))
+```
+
+但在某次后续修改中，`pathname.replace('/_next/', '')` 被意外改为了 `req.url`，导致路径拼接错误。
+
+**教训**：
+1. **关键修复代码不要轻易改动**——server.ts的静态资源处理是页面能否显示的生死线
+2. **每次部署后必须验证 `_next/static` 是否200**——这是v5.3就写在IMPORTANT.md里的教训，但没有做到
+3. **代码审查时要特别注意路径拼接逻辑**——一个字符的错误就能导致全站404
+
+### 验证方法（必须执行）
+```bash
+# 部署后立即验证
+JS=$(ls .next/static/chunks/*.js | head -1 | sed 's|.*/chunks/||')
+curl -sI http://localhost:3000/_next/static/chunks/$JS
+# 必须返回 HTTP/1.1 200 OK
+```
+
+### 部署结果
+- server.ts修复后SFTP上传 ✅
+- 强制删除 `.next` 重新build ✅
+- Build：47/47 pages ✅
+- 静态资源：`HTTP/1.1 200 OK` ✅
+- 页面内容：`slate` 关键词匹配成功 ✅
+- 泡泡API：`success` ✅
+- PM2：online, pid 1586017 ✅
+
+---
