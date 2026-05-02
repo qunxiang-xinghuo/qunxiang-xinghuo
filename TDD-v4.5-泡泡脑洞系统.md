@@ -1316,3 +1316,97 @@ storyRoles       StoryRole[]   @relation("StoryRoleClaimer")
 - [x] AI可生成分支选项
 - [x] 灵感库存储备用灵感
 
+
+---
+
+# v5.3 全面诊断与整改记录（2026-05-04）
+
+## 一、整改背景
+
+v5.2上线后出现以下问题：
+1. 刘看山头像误用写实北极狐照片，不符合知乎官方IP形象
+2. 首页"多人组队"入口跳转到不存在的 `/multiplayer`
+3. 全平台大量页面文本对比度不足（`text-white/20`~`/30`），部分屏幕难以阅读
+4. 泡泡点击反馈不够明显，用户不确定是否触发
+
+## 二、整改内容
+
+### 1. 刘看山形象修正
+
+| 项目 | 修正前 | 修正后 |
+|------|--------|--------|
+| 图片来源 | Unsplash写实北极狐照片 | 知乎官方卡通头像 `pic1.zhimg.com/da8e974dc.jpg` |
+| 尺寸 | 可变 | 640x640（已知可用） |
+| 回退 | CSS简笔画 | 保留onError回退到CSS简笔画 |
+
+**文件**: `src/components/layout/LiuKanshanAvatar.tsx`
+
+### 2. 首页导航修正
+
+| 入口 | 修正前 | 修正后 |
+|------|--------|--------|
+| 多人组队 | `/multiplayer`（404） | `/story-hall`（故事广场） |
+
+**文件**: `src/app/home/page.tsx`
+
+### 3. 全平台对比度修复（WCAG AA）
+
+**修复规则**：
+```
+text-white/20 → text-white/40  （提示文字、字数统计、placeholder）
+text-white/25 → text-white/40  （次要文本、时间戳）
+text-white/30 → text-white/50  （描述文字、状态提示、空状态）
+```
+
+**涉及文件（25个）**：
+- `src/app/LoginForm.tsx`
+- `src/app/register/page.tsx`
+- `src/app/duo-match/page.tsx`
+- `src/app/duo-timeout/page.tsx`
+- `src/app/duo-waiting/page.tsx`
+- `src/app/multi-match/page.tsx`
+- `src/app/multi-waiting/page.tsx`
+- `src/app/library/page.tsx`
+- `src/app/library/[id]/page.tsx`
+- `src/app/profile/page.tsx`
+- `src/app/story/page.tsx`
+- `src/app/story-hall/page.tsx`
+- `src/app/story-hall/[storyId]/page.tsx`
+- `src/app/story-hall/[storyId]/room/page.tsx`
+- `src/app/zhihu-search/page.tsx`
+- `src/app/zhihu-zhida/page.tsx`
+- `src/components/bubble-cloud/Bubble.tsx`
+- `src/components/home/ModeDock.tsx`
+- `src/components/layout/LiuKanshanAvatar.tsx`
+- `src/components/match/DuoIdentityModal.tsx`
+- `src/components/room/ChatRoom.tsx`
+- `src/components/room/MessageBubble.tsx`
+- `src/components/story/ClaimRoleModal.tsx`
+- `src/app/globals.css`
+
+### 4. 泡泡交互强化
+
+**v5.3新增效果**：
+
+| 效果 | 实现 |
+|------|------|
+| 按下光晕强化 | box-shadow内发光+外发光+金边，border-color金色 |
+| 涟漪扩散 | 点击时渲染 `.bubble-ripple` 层，scale 1→1.5，opacity 0.8→0 |
+| 选中光晕增大 | inset -8px → scale 1.6，opacity 0.9→0 |
+| 动画时长 | 400ms → 500ms（与涟漪同步） |
+
+**文件**: `src/components/bubble-cloud/Bubble.tsx`, `src/app/globals.css`
+
+## 三、Build验证
+
+```
+✓ Compiled successfully in 6.3s
+✓ TypeScript in 11.3s
+✓ 47/47 static pages generated
+✓ No errors
+```
+
+## 四、部署状态
+
+- [x] Git commit & push (`dev` branch: `a335d8e`)
+- [ ] 服务器部署（SSH连接超时，待网络恢复后执行 `git pull && npm run build && pm2 restart`）

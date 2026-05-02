@@ -246,3 +246,48 @@
 - `src/app/room/[id]/page.tsx`
 - `src/components/layout/LiuKanshanAvatar.tsx`
 - `src/app/api/ai/chat/route.ts`
+
+---
+
+## 2026-05-04 v5.3 — 形象修正+导航修正+全平台对比度修复+泡泡交互强化
+
+**现象1**：v5.2中刘看山使用了写实北极狐照片，与知乎官方卡通形象不符。
+
+**根因**：搜索图片时误用了Unsplash上的真实北极狐 wildlife 照片，而非知乎IP形象。
+
+**修复**：
+1. 替换为知乎官方卡通头像 `https://pic1.zhimg.com/da8e974dc.jpg`（经多次验证可用，640x640）
+2. 保留 `onError` 回退到CSS简笔画，防止外部CDN故障
+
+**现象2**：首页"多人组队"入口跳转到了不存在的 `/multiplayer`。
+
+**根因**：v5.1新增故事大厅模块后，首页入口URL未同步更新。
+
+**修复**：`home/page.tsx` 中 `mode.id === 'multi'` 时路由改为 `/story-hall`。
+
+**现象3**：全平台大量页面使用 `text-white/30` 及以下透明度，对比度不足。
+
+**根因**：设计时追求"精致暗色调"，过度降低次要文本透明度，导致在部分屏幕上难以阅读。
+
+**修复规则**：
+- `text-white/20` → `text-white/40`（提示文字、字数统计）
+- `text-white/25` → `text-white/40`（次要文本、时间戳）
+- `text-white/30` → `text-white/50`（描述文字、状态提示）
+- `placeholder-white/20` → `placeholder-white/30`
+- 禁用态/不可用状态保持或适当提高
+
+**涉及文件（25个）**：LoginForm, register, duo-match, duo-timeout, duo-waiting, library, library/[id], multi-match, multi-waiting, profile, story, story-hall（3个）, story-hall/room, zhihu-search, zhihu-zhida, Bubble, ModeDock, LiuKanshanAvatar, DuoIdentityModal, ChatRoom, MessageBubble, ClaimRoleModal, globals.css
+
+**现象4**：泡泡点击反馈不够明显，用户不确定是否触发。
+
+**修复**：
+1. CSS强化按下态光晕（内发光+外发光+金边）
+2. 新增涟漪扩散动画 `.bubble-ripple`
+3. Bubble组件增加 `showRipple` 状态，点击时渲染涟漪层
+4. 增大选中光晕扩散范围（inset -8px → scale 1.6）
+
+**预防措施**：
+- 使用外部图片URL前必须验证来源和版权（知乎官方图片可直接使用）
+- 新增页面/修改路由时同步检查所有入口跳转
+- 暗色背景文本透明度最低限度：主文本≥50%，次要文本≥40%，提示≥30%
+- 交互反馈需要"视觉确认"——用户操作后必须有明确的视觉变化
