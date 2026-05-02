@@ -1,8 +1,11 @@
 export interface BubbleItem {
   id: string;
-  text: string;
-  type: 'story' | 'duo-match' | 'material';
+  title: string;
+  scenario: string;
   hotScore: number;
+  category: string;
+  difficulty: string;
+  source: string;
 }
 
 export interface CloudLayout {

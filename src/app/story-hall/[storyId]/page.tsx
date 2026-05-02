@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Users, Sparkles, MessageSquare, ArrowRight, UserCheck,
-  Lock, Check, X, Clock, Play, Shield, UserCircle, Tag, PenTool, Crown
+  Lock, Check, X, Clock, Play, Shield, UserCircle, Tag, PenTool, Crown, Flame, BookOpen
 } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import ClaimRoleModal from '@/components/story/ClaimRoleModal';
@@ -40,17 +40,17 @@ interface StoryDetail {
   _count: { messages: number; inspirations: number };
 }
 
-const statusConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any }> = {
-  recruiting: { text: '招募中', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Users },
-  ongoing: { text: '进行中', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock },
-  completed: { text: '已完成', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: MessageSquare },
+const statusConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any; gradient: string }> = {
+  recruiting: { text: '招募中', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Users, gradient: 'from-emerald-500/15 to-teal-500/5' },
+  ongoing: { text: '进行中', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock, gradient: 'from-xh-gold/15 to-orange-500/5' },
+  completed: { text: '已完成', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: MessageSquare, gradient: 'from-blue-500/15 to-cyan-500/5' },
 };
 
-const claimConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any }> = {
-  unclaimed: { text: '待认领', color: 'text-slate-500', bg: 'bg-slate-700/20', border: 'border-slate-600/20', icon: UserCircle },
-  pending: { text: '审核中', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Clock },
-  approved: { text: '已通过', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Check },
-  rejected: { text: '已拒绝', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: X },
+const claimConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any; dotColor: string }> = {
+  unclaimed: { text: '待认领', color: 'text-slate-500', bg: 'bg-slate-700/20', border: 'border-slate-600/20', icon: UserCircle, dotColor: 'bg-slate-500' },
+  pending: { text: '审核中', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Clock, dotColor: 'bg-amber-400' },
+  approved: { text: '已通过', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Check, dotColor: 'bg-emerald-400' },
+  rejected: { text: '已拒绝', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: X, dotColor: 'bg-red-400' },
 };
 
 export default function StoryDetailPage() {
@@ -144,77 +144,78 @@ export default function StoryDetailPage() {
       <TopBar title="故事详情" showBack onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto no-scrollbar">
-        {/* 故事信息卡 - v5.6: 更有剧场感 */}
+        {/* 故事信息卡 - 剧目海报风格 */}
         <div className="px-5 pt-5 pb-3">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             className="card-elevated p-5 relative overflow-hidden"
           >
-            {/* 顶部金色装饰条 */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-xh-gold via-orange-400 to-xh-gold-dark opacity-0 group-hover:opacity-100 transition-opacity" />
+            {/* 背景装饰 */}
+            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${sc.gradient} rounded-full blur-3xl opacity-30 pointer-events-none`} />
 
-            {/* 标题 + 状态 */}
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-bold text-slate-100 mb-2">{story.title}</h2>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full border font-medium ${sc.bg} ${sc.color} ${sc.border}`}>
-                    <StatusIcon size={10} />
-                    {sc.text}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] text-slate-500">
-                    <Shield size={10} />
-                    导演: {story.director.name || '匿名'}
-                  </span>
+            {/* 标题 + 状态 + 导演皇冠 */}
+            <div className="relative">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold text-slate-100 mb-2 leading-tight">{story.title}</h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full border font-medium ${sc.bg} ${sc.color} ${sc.border}`}>
+                      <StatusIcon size={10} />
+                      {sc.text}
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                      <Shield size={10} />
+                      导演: {story.director.name || '匿名'}
+                    </span>
+                  </div>
                 </div>
+                {isDirector && (
+                  <div className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-xh-gold/20 to-orange-500/10 flex items-center justify-center border border-xh-gold/25">
+                    <Crown className="w-5 h-5 text-xh-gold" />
+                  </div>
+                )}
               </div>
-              {/* 导演皇冠 */}
-              {isDirector && (
-                <div className="shrink-0 w-8 h-8 rounded-lg bg-xh-gold/15 flex items-center justify-center border border-xh-gold/25">
-                  <Crown className="w-4 h-4 text-xh-gold" />
+
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">{story.worldview}</p>
+
+              {/* 核心冲突区 */}
+              <div className="bg-gradient-to-r from-xh-gold/8 to-orange-500/5 rounded-xl p-3.5 border border-xh-gold/15 mb-3">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Flame className="w-3.5 h-3.5 text-xh-gold/70" />
+                  <span className="text-[10px] text-xh-gold/70 font-medium uppercase tracking-wider">核心冲突</span>
                 </div>
-              )}
-            </div>
-
-            <p className="text-xs text-slate-500 leading-relaxed mb-4">{story.worldview}</p>
-
-            {/* 核心冲突 */}
-            <div className="bg-gradient-to-r from-xh-gold/8 to-orange-500/5 rounded-xl p-3.5 border border-xh-gold/15 mb-3">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-xh-gold/70" />
-                <span className="text-[10px] text-xh-gold/70 font-medium uppercase tracking-wider">核心冲突</span>
+                <p className="text-xs text-slate-300 leading-relaxed">{story.conflict}</p>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">{story.conflict}</p>
-            </div>
 
-            {/* 统计 */}
-            <div className="flex items-center gap-5 text-[11px] text-slate-600">
-              <span className="flex items-center gap-1.5">
-                <MessageSquare size={12} className="text-slate-500" />
-                {story._count.messages} 条对白
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Users size={12} className="text-slate-500" />
-                {story.roles.length} 个角色
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Clock size={12} className="text-slate-500" />
-                {new Date(story.createdAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
-              </span>
+              {/* 统计 */}
+              <div className="flex items-center gap-5 text-[11px] text-slate-600">
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare size={12} className="text-slate-500" />
+                  {story._count.messages} 条对白
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Users size={12} className="text-slate-500" />
+                  {story.roles.length} 个角色
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Clock size={12} className="text-slate-500" />
+                  {new Date(story.createdAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
+                </span>
+              </div>
             </div>
           </motion.div>
         </div>
 
-        {/* 角色列表 - v5.6: 角色卡片更有设计感 */}
+        {/* 角色列表 - 角色卡风格 */}
         <div className="px-4 pb-3">
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-center gap-2">
               <div className="w-1 h-4 rounded-full bg-xh-gold" />
-              <h3 className="text-sm font-semibold text-slate-200">角色列表</h3>
+              <h3 className="text-sm font-semibold text-slate-200">角色卡</h3>
             </div>
             <span className="text-[11px] text-slate-600 font-medium">
-              {story.roles.filter((r) => r.claimStatus === 'approved').length}/{story.roles.length} 已通过
+              {story.roles.filter((r) => r.claimStatus === 'approved').length}/{story.roles.length} 就位
             </span>
           </div>
 
@@ -231,7 +232,7 @@ export default function StoryDetailPage() {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.04 }}
-                  className={`rounded-xl p-4 border transition-all duration-300 ${
+                  className={`rounded-xl p-4 border transition-all duration-300 relative overflow-hidden ${
                     role.claimStatus === 'approved'
                       ? 'bg-emerald-500/[0.04] border-emerald-500/15'
                       : role.claimStatus === 'pending'
@@ -241,34 +242,41 @@ export default function StoryDetailPage() {
                       : 'bg-slate-800/30 border-slate-700/20'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  {/* 状态指示条 */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${cs.dotColor}`} />
+
+                  <div className="flex items-start justify-between gap-2 pl-2">
                     <div className="flex-1 min-w-0">
-                      {/* 角色名称 + 状态 */}
+                      {/* 角色头 */}
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border ${cs.bg} ${cs.color} ${cs.border}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border ${cs.bg} ${cs.color} ${cs.border}`}>
                           {role.name.charAt(0)}
                         </div>
-                        <span className="text-sm font-medium text-slate-100">{role.name}</span>
-                        <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium ${cs.bg} ${cs.color} ${cs.border}`}>
-                          <CSIcon size={10} />
-                          {cs.text}
-                        </span>
-                        {isMyClaim && role.claimStatus === 'pending' && (
-                          <span className="text-[10px] text-amber-400 font-medium">· 我的申请</span>
-                        )}
+                        <div>
+                          <span className="text-sm font-medium text-slate-100">{role.name}</span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${cs.bg} ${cs.color} ${cs.border}`}>
+                              <CSIcon size={9} />
+                              {cs.text}
+                            </span>
+                            {isMyClaim && role.claimStatus === 'pending' && (
+                              <span className="text-[10px] text-amber-400 font-medium">我的申请</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-500 ml-8">{role.description}</p>
+                      <p className="text-xs text-slate-500 pl-10">{role.description}</p>
 
                       {/* 认领者信息 */}
                       {role.claimedBy && role.user && (
-                        <div className="mt-3 ml-8 space-y-2">
+                        <div className="mt-3 pl-10 space-y-2">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-xh-gold/30 to-orange-500/20 flex items-center justify-center text-[10px] text-xh-gold font-bold border border-xh-gold/20">
                               {role.user.name?.charAt(0) || '?'}
                             </div>
                             <span className="text-xs text-slate-400 font-medium">{role.user.name || '匿名演员'}</span>
                           </div>
-                          <div className="space-y-1.5 pl-1">
+                          <div className="space-y-1.5">
                             {role.identityTag && (
                               <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
                                 <Tag size={10} className="text-slate-600" />
@@ -295,7 +303,7 @@ export default function StoryDetailPage() {
                     {canClaim && (
                       <motion.button
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => setClaimingRole(role)}
+                        onClick={(e) => { e.stopPropagation(); setClaimingRole(role); }}
                         className="shrink-0 px-3 py-1.5 rounded-lg bg-xh-gold/15 text-xh-gold text-xs font-medium hover:bg-xh-gold/25 transition-colors border border-xh-gold/20"
                       >
                         认领
@@ -303,23 +311,23 @@ export default function StoryDetailPage() {
                     )}
                   </div>
 
-                  {/* 导演审核按钮 */}
+                  {/* 导演审核 */}
                   {isDirector && role.claimStatus === 'pending' && role.claimedBy && (
-                    <div className="mt-3 flex items-center gap-2 pt-3 border-t border-slate-700/20">
+                    <div className="mt-3 flex items-center gap-2 pt-3 border-t border-slate-700/20 pl-2">
                       <motion.button
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => handleReview(role.id, 'approve')}
+                        onClick={(e) => { e.stopPropagation(); handleReview(role.id, 'approve'); }}
                         disabled={reviewing === role.id}
-                        className="flex-1 py-2.5 rounded-xl bg-emerald-500/12 text-emerald-400 text-xs font-medium hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 border border-emerald-500/20"
+                        className="flex-1 py-2 rounded-xl bg-emerald-500/12 text-emerald-400 text-xs font-medium hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 border border-emerald-500/20"
                       >
                         <Check size={14} />
                         通过
                       </motion.button>
                       <motion.button
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => handleReview(role.id, 'reject')}
+                        onClick={(e) => { e.stopPropagation(); handleReview(role.id, 'reject'); }}
                         disabled={reviewing === role.id}
-                        className="flex-1 py-2.5 rounded-xl bg-red-500/12 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 border border-red-500/20"
+                        className="flex-1 py-2 rounded-xl bg-red-500/12 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 border border-red-500/20"
                       >
                         <X size={14} />
                         拒绝
@@ -347,7 +355,7 @@ export default function StoryDetailPage() {
           </motion.div>
         )}
 
-        {/* 启动故事按钮 */}
+        {/* 启动故事 */}
         {isDirector && allApproved && story.status === 'recruiting' && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-4">
             <motion.button
