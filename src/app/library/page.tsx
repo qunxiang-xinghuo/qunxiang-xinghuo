@@ -111,7 +111,7 @@ export default function LibraryPage() {
               className={`flex-1 py-3.5 min-h-11 flex items-center justify-center gap-1.5 text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'text-xh-gold border-b-2 border-xh-gold'
-                  : 'text-white/50 hover:text-white/70'
+                  : 'text-slate-500 hover:text-slate-400'
               }`}
             >
               <Icon size={16} />
@@ -132,11 +132,11 @@ export default function LibraryPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-12 bg-white/[0.03] rounded-xl border border-white/[0.06]"
+                className="text-center py-12 bg-slate-800/40 rounded-xl border border-slate-700/20"
               >
                 <MessageSquare className="w-10 h-10 text-white/10 mx-auto mb-2" />
-                <p className="text-white/50 text-xs">还没有任何对白记录</p>
-                <p className="text-white/40 text-[10px] mt-1">完成对白后可保存到素材库</p>
+                <p className="text-slate-500 text-xs">还没有任何对白记录</p>
+                <p className="text-slate-600 text-[10px] mt-1">完成对白后可保存到素材库</p>
               </motion.div>
             ) : (
               <div className="space-y-3">
@@ -147,13 +147,13 @@ export default function LibraryPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => router.push(`/library/${asset.id}`)}
-                    className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all press-feedback cursor-pointer"
+                    className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/20 hover:border-slate-600/20 hover:bg-white/[0.05] transition-all press-feedback cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm text-white/90 font-medium truncate">{asset.title}</h4>
+                        <h4 className="text-sm text-slate-100 font-medium truncate">{asset.title}</h4>
                         {asset.summary && (
-                          <p className="text-[11px] text-white/50 mt-1 line-clamp-2">{asset.summary}</p>
+                          <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{asset.summary}</p>
                         )}
                       </div>
                       <div className="flex items-center gap-1">
@@ -162,7 +162,7 @@ export default function LibraryPage() {
                           className={`shrink-0 p-1.5 rounded-lg transition-colors ${
                             asset.isPublic
                               ? 'bg-emerald-500/15 text-emerald-400'
-                              : 'bg-white/5 text-white/50 hover:text-white/70'
+                              : 'bg-slate-700/30 text-slate-500 hover:text-slate-400'
                           }`}
                           title={asset.isPublic ? '已公开，点击取消' : '点击公开'}
                         >
@@ -175,11 +175,11 @@ export default function LibraryPage() {
                         >
                           <Trash2 size={14} />
                         </button>
-                        <ChevronRight className="w-4 h-4 text-white/40" />
+                        <ChevronRight className="w-4 h-4 text-slate-600" />
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 mt-3 text-[10px] text-white/50">
+                    <div className="flex items-center gap-4 mt-3 text-[10px] text-slate-500">
                       <span className="flex items-center gap-1">
                         <MessageSquare size={10} />
                         {asset.messageCount} 条对白
@@ -204,11 +204,11 @@ export default function LibraryPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-12 bg-white/[0.03] rounded-xl border border-white/[0.06]"
+                className="text-center py-12 bg-slate-800/40 rounded-xl border border-slate-700/20"
               >
                 <Globe className="w-10 h-10 text-white/10 mx-auto mb-2" />
-                <p className="text-white/50 text-xs">广场暂无公开素材</p>
-                <p className="text-white/40 text-[10px] mt-1">快去完成对白并公开分享吧</p>
+                <p className="text-slate-500 text-xs">广场暂无公开素材</p>
+                <p className="text-slate-600 text-[10px] mt-1">快去完成对白并公开分享吧</p>
               </motion.div>
             ) : (
               <div className="space-y-3">
@@ -219,21 +219,21 @@ export default function LibraryPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => router.push(`/library/${asset.id}`)}
-                    className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all press-feedback cursor-pointer"
+                    className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/20 hover:border-slate-600/20 hover:bg-white/[0.05] transition-all press-feedback cursor-pointer"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-6 h-6 rounded-full bg-xh-gold/20 flex items-center justify-center text-[10px] text-xh-gold">
                         {asset.user?.name?.charAt(0) || '?'}
                       </div>
-                      <span className="text-[10px] text-white/40">
+                      <span className="text-[10px] text-slate-600">
                         {asset.user?.name || asset.user?.username || '匿名用户'}
                       </span>
                     </div>
-                    <h4 className="text-sm text-white/90 font-medium">{asset.title}</h4>
+                    <h4 className="text-sm text-slate-100 font-medium">{asset.title}</h4>
                     {asset.summary && (
-                      <p className="text-[11px] text-white/50 mt-1 line-clamp-2">{asset.summary}</p>
+                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{asset.summary}</p>
                     )}
-                    <div className="flex items-center gap-4 mt-3 text-[10px] text-white/50">
+                    <div className="flex items-center gap-4 mt-3 text-[10px] text-slate-500">
                       <span className="flex items-center gap-1">
                         <MessageSquare size={10} />
                         {asset.messageCount} 条对白

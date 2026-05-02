@@ -57,15 +57,15 @@ export default function ProfilePage() {
         <div className="flex items-center justify-center gap-8 mt-5">
           <div className="text-center">
             <div className="text-xh-gold font-bold text-xl">{user?.level || 1}</div>
-            <div className="text-white/50 text-xs mt-1">等级</div>
+            <div className="text-slate-500 text-xs mt-1">等级</div>
           </div>
           <div className="text-center">
             <div className="text-xh-gold font-bold text-xl">{user?.sparkCount || 0}</div>
-            <div className="text-white/50 text-xs mt-1">火花数</div>
+            <div className="text-slate-500 text-xs mt-1">火花数</div>
           </div>
           <div className="text-center">
             <div className="text-xh-gold font-bold text-xl">0</div>
-            <div className="text-white/50 text-xs mt-1">收益</div>
+            <div className="text-slate-500 text-xs mt-1">收益</div>
           </div>
         </div>
       </div>
@@ -80,16 +80,16 @@ export default function ProfilePage() {
               whileHover={{ x: 2 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleMenuClick(item)}
-              className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all flex items-center justify-between cursor-pointer"
+              className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/20 hover:border-slate-600/20 hover:bg-slate-700/40 transition-all flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-white/5 text-white/50">
+                <div className="p-2 rounded-lg bg-slate-700/30 text-slate-500">
                   <Icon size={18} />
                 </div>
                 <div>
-                  <span className="text-white/80 text-sm">{item.label}</span>
+                  <span className="text-slate-300 text-sm">{item.label}</span>
                   {item.desc && (
-                    <p className="text-[10px] text-white/40 mt-0.5">{item.desc}</p>
+                    <p className="text-[10px] text-slate-600 mt-0.5">{item.desc}</p>
                   )}
                 </div>
               </div>
@@ -99,7 +99,7 @@ export default function ProfilePage() {
                     {item.badge}
                   </span>
                 )}
-                <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                 </svg>
               </div>

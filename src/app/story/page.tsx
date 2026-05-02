@@ -40,7 +40,7 @@ export default function StoryPage() {
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-sm text-white/40 mb-6"
+            className="text-sm text-slate-600 mb-6"
           >
             认领角色，共创群像故事
           </motion.p>
@@ -64,15 +64,15 @@ export default function StoryPage() {
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
-                  className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all"
+                  className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-slate-600/20 hover:bg-white/[0.05] transition-all"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-xh-gold/10 flex items-center justify-center shrink-0">
                       <Icon className="w-4 h-4 text-xh-gold/60" />
                     </div>
                     <div>
-                      <h3 className="text-sm text-white/70 font-medium">{feature.title}</h3>
-                      <p className="text-xs text-white/50">{feature.desc}</p>
+                      <h3 className="text-sm text-slate-400 font-medium">{feature.title}</h3>
+                      <p className="text-xs text-slate-500">{feature.desc}</p>
                     </div>
                   </div>
                 </motion.div>

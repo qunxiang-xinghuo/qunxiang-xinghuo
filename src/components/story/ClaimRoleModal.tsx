@@ -62,7 +62,7 @@ export default function ClaimRoleModal({
       >
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
         <motion.div
-          className="relative w-full max-w-sm bg-[#1a1a2e] rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+          className="relative w-full max-w-sm bg-slate-900 rounded-2xl overflow-hidden border border-slate-600/20 shadow-2xl"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -71,7 +71,7 @@ export default function ClaimRoleModal({
           <div className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-white">认领角色</h3>
-              <button onClick={onClose} className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+              <button onClick={onClose} className="p-2 rounded-full bg-slate-700/30 hover:bg-white/10 transition-colors">
                 <X className="w-4 h-4 text-white/60" />
               </button>
             </div>
@@ -81,40 +81,40 @@ export default function ClaimRoleModal({
                 <User className="w-4 h-4 text-xh-gold" />
                 <span className="text-sm font-medium text-xh-gold">{roleName}</span>
               </div>
-              <p className="text-xs text-white/50">{roleDescription}</p>
+              <p className="text-xs text-slate-500">{roleDescription}</p>
             </div>
 
-            <label className="text-xs text-white/50 mb-1.5 block">身份标签</label>
+            <label className="text-xs text-slate-500 mb-1.5 block">身份标签</label>
             <input
               type="text"
               value={identityTag}
               onChange={(e) => setIdentityTag(e.target.value)}
               placeholder="例如：急诊科医生"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-xh-gold/40 mb-3"
+              className="w-full bg-slate-700/30 border border-slate-600/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 mb-3"
               maxLength={40}
             />
 
-            <label className="text-xs text-white/50 mb-1.5 block">演绎方向</label>
+            <label className="text-xs text-slate-500 mb-1.5 block">演绎方向</label>
             <textarea
               value={performanceDirection}
               onChange={(e) => setPerformanceDirection(e.target.value)}
               placeholder="例如：理性与情感交织，关键时刻会为了患者打破规则..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-xh-gold/40 resize-none mb-3"
+              className="w-full bg-slate-700/30 border border-slate-600/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 resize-none mb-3"
               rows={2}
               maxLength={150}
             />
-            <p className="text-[10px] text-white/40 mt-1 text-right">{performanceDirection.length}/150</p>
+            <p className="text-[10px] text-slate-600 mt-1 text-right">{performanceDirection.length}/150</p>
 
-            <label className="text-xs text-white/50 mb-1.5 block">扮演此角色的理由 / 一句话人设</label>
+            <label className="text-xs text-slate-500 mb-1.5 block">扮演此角色的理由 / 一句话人设</label>
             <textarea
               value={claimReason}
               onChange={(e) => setClaimReason(e.target.value)}
               placeholder="例如：我是一名急诊科医生，面对生死抉择时总是理性与情感交织..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-xh-gold/40 resize-none"
+              className="w-full bg-slate-700/30 border border-slate-600/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 resize-none"
               rows={2}
               maxLength={150}
             />
-            <p className="text-[10px] text-white/40 mt-1 text-right">{claimReason.length}/150</p>
+            <p className="text-[10px] text-slate-600 mt-1 text-right">{claimReason.length}/150</p>
           </div>
 
           <div className="px-5 pb-5">

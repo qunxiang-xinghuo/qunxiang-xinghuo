@@ -202,13 +202,13 @@ function DuoWaitingContent() {
                 </motion.div>
               )}
 
-              <p className="text-base font-medium text-white/90 mb-3">
+              <p className="text-base font-medium text-slate-100 mb-3">
                 刘看山正在为你寻找对撞人...
               </p>
               <p className="text-3xl font-bold text-xh-gold mb-3">
                 {remaining} 秒
               </p>
-              <div className="w-60 h-2 bg-white/10 rounded-full overflow-hidden mb-4 mx-auto">
+              <div className="w-60 h-2 bg-slate-600/20 rounded-full overflow-hidden mb-4 mx-auto">
                 <motion.div
                   className="h-full bg-xh-gold rounded-full"
                   style={{ width: `${progress}%` }}
@@ -218,12 +218,12 @@ function DuoWaitingContent() {
 
               {/* v4.6: 调试信息（仅在控制台可见，生产环境可隐藏） */}
               {matchError && (
-                <p className="text-[10px] text-white/40 mb-2">
+                <p className="text-[10px] text-slate-600 mb-2">
                   匹配请求处理中，请稍候...
                 </p>
               )}
 
-              <p className="text-xs text-white/50">
+              <p className="text-xs text-slate-500">
                 已等待 {elapsedTime} 秒
               </p>
             </motion.div>
@@ -246,7 +246,7 @@ function DuoWaitingContent() {
               <p className="text-lg font-medium text-emerald-400 mb-2">
                 匹配成功！
               </p>
-              <p className="text-xs text-white/40">
+              <p className="text-xs text-slate-600">
                 正在进入对白实验室...
               </p>
             </motion.div>
@@ -256,7 +256,7 @@ function DuoWaitingContent() {
 
       {/* 底部提示 */}
       <div className="px-6 py-4 text-center">
-        <p className="text-[10px] text-white/40">
+        <p className="text-[10px] text-slate-600">
           优先真人匹配 · 超时可选 AI 对话
         </p>
       </div>
@@ -268,7 +268,7 @@ export default function DuoWaitingPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col h-full page-gradient items-center justify-center">
-        <p className="text-white/40 text-sm">加载中...</p>
+        <p className="text-slate-600 text-sm">加载中...</p>
       </div>
     }>
       <DuoWaitingContent />

@@ -83,8 +83,8 @@ function DuoMatchContent() {
 
       {/* 页面标题 */}
       <div className="px-6 pt-4 pb-2">
-        <h2 className="text-lg font-bold text-white/90 mb-1">在这次对撞中，你是谁？</h2>
-        <p className="text-xs text-white/50">选择一个身份，系统将为你匹配对戏伙伴</p>
+        <h2 className="text-lg font-bold text-slate-100 mb-1">在这次对撞中，你是谁？</h2>
+        <p className="text-xs text-slate-500">选择一个身份，系统将为你匹配对戏伙伴</p>
       </div>
 
       {/* 身份选项 - 卡片式布局 */}
@@ -96,13 +96,13 @@ function DuoMatchContent() {
             className={`relative rounded-xl p-4 cursor-pointer transition-all border ${
               selectedType === option.type
                 ? 'border-xh-gold/40 bg-xh-gold/10'
-                : 'border-white/5 bg-white/5 hover:border-white/10'
+                : 'border-slate-700/15 bg-slate-700/30 hover:border-slate-600/20'
             }`}
           >
             <div className="flex items-center gap-3">
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  selectedType === option.type ? 'bg-xh-gold/20' : 'bg-white/5'
+                  selectedType === option.type ? 'bg-xh-gold/20' : 'bg-slate-700/30'
                 }`}
               >
                 {option.type === 'zhihu' && <User className="w-5 h-5 text-xh-gold" />}
@@ -120,7 +120,7 @@ function DuoMatchContent() {
                     {selectedType === option.type && <Check className="w-2.5 h-2.5 text-[#1a1a2e]" strokeWidth={4} />}
                   </div>
                 </div>
-                <p className="text-[10px] text-white/50">{option.desc}</p>
+                <p className="text-[10px] text-slate-500">{option.desc}</p>
               </div>
             </div>
 
@@ -129,12 +129,12 @@ function DuoMatchContent() {
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
-                className="mt-3 pt-3 border-t border-white/5"
+                className="mt-3 pt-3 border-t border-slate-700/15"
               >
                 {option.type === 'zhihu' && (
                   <div className="space-y-1.5">
                     {zhihuIdentities.length === 0 ? (
-                      <p className="text-xs text-white/50">暂无认证身份，将使用默认身份</p>
+                      <p className="text-xs text-slate-500">暂无认证身份，将使用默认身份</p>
                     ) : (
                       zhihuIdentities.map((id) => (
                         <button
@@ -143,7 +143,7 @@ function DuoMatchContent() {
                           className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors ${
                             selectedZhihuId === id
                               ? 'bg-xh-gold/15 text-xh-gold border border-xh-gold/20'
-                              : 'bg-white/5 text-white/50 hover:bg-white/10'
+                              : 'bg-slate-700/30 text-slate-500 hover:bg-slate-600/20'
                           }`}
                         >
                           {id}
@@ -176,11 +176,11 @@ function DuoMatchContent() {
                       value={customLabel}
                       onChange={(e) => setCustomLabel(e.target.value)}
                       placeholder="例如：急诊科护士、北漂创业者..."
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-white/20 focus:outline-none focus:border-orange-400/50"
+                      className="w-full bg-slate-700/30 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-orange-400/50"
                       maxLength={20}
                       onClick={(e) => e.stopPropagation()}
                     />
-                    <p className="text-[10px] text-white/40 mt-1 text-right">{customLabel.length}/20</p>
+                    <p className="text-[10px] text-slate-600 mt-1 text-right">{customLabel.length}/20</p>
                   </div>
                 )}
               </motion.div>
@@ -190,7 +190,7 @@ function DuoMatchContent() {
       </div>
 
       {/* 底部确认按钮 */}
-      <div className="shrink-0 px-6 py-4 border-t border-white/5">
+      <div className="shrink-0 px-6 py-4 border-t border-slate-700/15">
         <button
           onClick={handleConfirm}
           className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
@@ -207,7 +207,7 @@ export default function DuoMatchPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col h-full page-gradient items-center justify-center">
-        <p className="text-white/40 text-sm">加载中...</p>
+        <p className="text-slate-600 text-sm">加载中...</p>
       </div>
     }>
       <DuoMatchContent />
