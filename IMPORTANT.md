@@ -139,7 +139,7 @@ DATABASE_URL="file:./dev.db"
 
 ---
 
-> 最后更新：2026-05-02 v5.7-fix 泡泡limit参数bug修复+多人组队全面重设计+故事对白室精致化部署完成
+> 最后更新：2026-05-02 v5.8 泡泡彻底修复（flex布局+emergency fallback+范例故事+server_build.py加入git reset）部署完成
 
 ---
 
