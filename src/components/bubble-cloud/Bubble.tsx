@@ -27,6 +27,7 @@ export default function Bubble({
 }: BubbleProps) {
   const [isBouncing, setIsBouncing] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
+  const [showRipple, setShowRipple] = useState(false);
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
   const bubbleRef = useRef<HTMLDivElement>(null);
 
@@ -34,11 +35,13 @@ export default function Bubble({
     if (isBouncing) return;
     setIsBouncing(true);
     setIsPressed(true);
+    setShowRipple(true);
     setTimeout(() => {
       setIsBouncing(false);
       setIsPressed(false);
+      setShowRipple(false);
       onClick(data.id);
-    }, 400);
+    }, 500);
   }, [isBouncing, data.id, onClick]);
 
   // 鼠标移动视差效果
@@ -96,7 +99,7 @@ export default function Bubble({
           } as React.CSSProperties
         }
       >
-        {/* v5.0: 选中光晕层（独立于视觉层） */}
+        {/* v5.3: 选中光晕层 + 涟漪效果 */}
         {isPressed && (
           <div className="bubble-selected-glow" />
         )}
@@ -104,6 +107,7 @@ export default function Bubble({
           className={`bubble-glass w-full h-full cursor-pointer select-none ${isBouncing ? 'bubble-pop' : ''} ${isPressed ? 'bubble-pressed' : ''}`}
           onClick={handleClick}
         >
+          {showRipple && <div className="bubble-ripple" />}
           {/* 标题文字 */}
           <span className="bubble-text" style={{ WebkitLineClamp: compact ? 2 : 3 }}>
             {data.title}

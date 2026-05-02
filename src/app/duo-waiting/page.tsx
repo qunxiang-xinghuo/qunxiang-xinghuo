@@ -218,12 +218,12 @@ function DuoWaitingContent() {
 
               {/* v4.6: 调试信息（仅在控制台可见，生产环境可隐藏） */}
               {matchError && (
-                <p className="text-[10px] text-white/20 mb-2">
+                <p className="text-[10px] text-white/40 mb-2">
                   匹配请求处理中，请稍候...
                 </p>
               )}
 
-              <p className="text-xs text-white/30">
+              <p className="text-xs text-white/50">
                 已等待 {elapsedTime} 秒
               </p>
             </motion.div>
@@ -256,7 +256,7 @@ function DuoWaitingContent() {
 
       {/* 底部提示 */}
       <div className="px-6 py-4 text-center">
-        <p className="text-[10px] text-white/20">
+        <p className="text-[10px] text-white/40">
           优先真人匹配 · 超时可选 AI 对话
         </p>
       </div>

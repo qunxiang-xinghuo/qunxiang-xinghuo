@@ -57,15 +57,15 @@ export default function ProfilePage() {
         <div className="flex items-center justify-center gap-8 mt-5">
           <div className="text-center">
             <div className="text-xh-gold font-bold text-xl">{user?.level || 1}</div>
-            <div className="text-white/30 text-xs mt-1">等级</div>
+            <div className="text-white/50 text-xs mt-1">等级</div>
           </div>
           <div className="text-center">
             <div className="text-xh-gold font-bold text-xl">{user?.sparkCount || 0}</div>
-            <div className="text-white/30 text-xs mt-1">火花数</div>
+            <div className="text-white/50 text-xs mt-1">火花数</div>
           </div>
           <div className="text-center">
             <div className="text-xh-gold font-bold text-xl">0</div>
-            <div className="text-white/30 text-xs mt-1">收益</div>
+            <div className="text-white/50 text-xs mt-1">收益</div>
           </div>
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function ProfilePage() {
                 <div>
                   <span className="text-white/80 text-sm">{item.label}</span>
                   {item.desc && (
-                    <p className="text-[10px] text-white/25 mt-0.5">{item.desc}</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">{item.desc}</p>
                   )}
                 </div>
               </div>
@@ -99,7 +99,7 @@ export default function ProfilePage() {
                     {item.badge}
                   </span>
                 )}
-                <svg className="w-4 h-4 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                 </svg>
               </div>

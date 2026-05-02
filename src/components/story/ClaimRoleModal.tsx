@@ -87,7 +87,7 @@ export default function ClaimRoleModal({
               rows={3}
               maxLength={150}
             />
-            <p className="text-[10px] text-white/20 mt-1 text-right">{claimReason.length}/150</p>
+            <p className="text-[10px] text-white/40 mt-1 text-right">{claimReason.length}/150</p>
           </div>
 
           <div className="px-5 pb-5">

@@ -125,7 +125,7 @@ function DuoTimeoutContent() {
           <p className="text-sm text-white/40">
             是否与刘看山一起探讨？
           </p>
-          <p className="text-[10px] text-white/20 mt-3">
+          <p className="text-[10px] text-white/40 mt-3">
             {isSecondRound ? '第 2 次匹配尝试（最后一次）' : '第 1 次匹配尝试'}
           </p>
         </motion.div>

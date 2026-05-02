@@ -38,7 +38,7 @@ export default function MessageBubble({ message, onSpark, className = '', index 
     >
       <div className={`max-w-[80%] ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
         {/* 身份标签 */}
-        <span className={`text-[10px] text-white/30 ${isMe ? 'text-right' : 'text-left'}`}>
+        <span className={`text-[10px] text-white/50 ${isMe ? 'text-right' : 'text-left'}`}>
           {message.identity || (isMe ? '我' : '对方')}
         </span>
 
@@ -52,7 +52,7 @@ export default function MessageBubble({ message, onSpark, className = '', index 
           <p className="text-sm leading-relaxed">{message.content}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-white/25">{message.timestamp}</span>
+          <span className="text-[10px] text-white/40">{message.timestamp}</span>
           {!isMe && (
             <SparkButton
               isSparked={message.isSparked}

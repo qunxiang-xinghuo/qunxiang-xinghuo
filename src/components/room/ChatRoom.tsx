@@ -97,7 +97,7 @@ export default function ChatRoom({
           <button
             onClick={handleSend}
             disabled={!inputValue.trim()}
-            className="p-3 rounded-full transition-all disabled:bg-white/5 disabled:text-white/20 bg-xh-gold/20 text-xh-gold border border-xh-gold/30"
+            className="p-3 rounded-full transition-all disabled:bg-white/5 disabled:text-white/40 bg-xh-gold/20 text-xh-gold border border-xh-gold/30"
           >
             <Send className="w-4 h-4" />
           </button>

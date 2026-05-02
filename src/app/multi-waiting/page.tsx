@@ -231,7 +231,7 @@ function MultiWaitingContent() {
       {/* 脑洞信息 */}
       <div className="px-4 mb-4">
         <div className="bg-white/5 rounded-xl p-3 border border-white/5">
-          <p className="text-[10px] text-white/30 mb-1">当前脑洞</p>
+          <p className="text-[10px] text-white/50 mb-1">当前脑洞</p>
           <p className="text-sm text-white/80 leading-relaxed">{brainhole.title}</p>
         </div>
       </div>
@@ -289,7 +289,7 @@ function MultiWaitingContent() {
           <p className="text-base font-medium text-white/90 mb-2">
             {current.title}
           </p>
-          <p className="text-xs text-white/30 mb-2">
+          <p className="text-xs text-white/50 mb-2">
             {current.subtitle}
           </p>
           {current.detail && (

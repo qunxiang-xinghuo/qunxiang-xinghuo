@@ -93,7 +93,7 @@ export default function StoryDetailPage() {
       <div className="flex flex-col h-full page-gradient">
         <TopBar title="故事详情" showBack onBack={() => router.back()} />
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-white/30 text-sm">故事不存在</p>
+          <p className="text-white/50 text-sm">故事不存在</p>
         </div>
       </div>
     );
@@ -122,7 +122,7 @@ export default function StoryDetailPage() {
               <p className="text-[10px] text-xh-gold/60 mb-0.5">核心冲突</p>
               <p className="text-xs text-white/70">{story.conflict}</p>
             </div>
-            <div className="flex items-center gap-3 text-[10px] text-white/30">
+            <div className="flex items-center gap-3 text-[10px] text-white/50">
               <span className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 导演: {story.director.name || '匿名'}
@@ -167,7 +167,7 @@ export default function StoryDetailPage() {
                           已认领
                         </span>
                       ) : (
-                        <span className="text-[10px] text-white/30">待认领</span>
+                        <span className="text-[10px] text-white/50">待认领</span>
                       )}
                     </div>
                     <p className="text-xs text-white/40">{role.description}</p>
@@ -178,7 +178,7 @@ export default function StoryDetailPage() {
                         </div>
                         <span className="text-[10px] text-white/50">{role.user.name || '匿名演员'}</span>
                         {role.claimReason && (
-                          <span className="text-[10px] text-white/30 truncate">· {role.claimReason}</span>
+                          <span className="text-[10px] text-white/50 truncate">· {role.claimReason}</span>
                         )}
                       </div>
                     )}
@@ -218,8 +218,8 @@ export default function StoryDetailPage() {
         {!allClaimed && story.status === 'recruiting' && (
           <div className="px-4 pb-6">
             <div className="flex items-center justify-center gap-1.5 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-              <Lock className="w-3.5 h-3.5 text-white/20" />
-              <span className="text-xs text-white/30">所有角色被认领后解锁对白室</span>
+              <Lock className="w-3.5 h-3.5 text-white/40" />
+              <span className="text-xs text-white/50">所有角色被认领后解锁对白室</span>
             </div>
           </div>
         )}

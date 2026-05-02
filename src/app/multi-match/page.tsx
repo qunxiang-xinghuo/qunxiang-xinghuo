@@ -109,11 +109,11 @@ export default function MultiMatchPage() {
         {isLoading ? (
           <div className="text-center py-12">
             <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs text-white/30">加载脑洞中...</p>
+            <p className="text-xs text-white/50">加载脑洞中...</p>
           </div>
         ) : brainholes.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-xs text-white/30">暂无可用脑洞</p>
+            <p className="text-xs text-white/50">暂无可用脑洞</p>
           </div>
         ) : (
           brainholes.map((brainhole) => (

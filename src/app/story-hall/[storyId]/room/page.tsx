@@ -365,7 +365,7 @@ export default function StoryRoomPage() {
                 </button>
               </div>
               {branches.length === 0 ? (
-                <p className="text-[10px] text-white/30 text-center py-2">暂无分支提案</p>
+                <p className="text-[10px] text-white/50 text-center py-2">暂无分支提案</p>
               ) : (
                 <div className="space-y-2">
                   {branches.map((branch) => {
@@ -420,7 +420,7 @@ export default function StoryRoomPage() {
             <div className="p-3 max-h-40 overflow-y-auto no-scrollbar">
               <span className="text-xs font-medium text-white/70 block mb-2">灵感库</span>
               {inspirations.length === 0 ? (
-                <p className="text-[10px] text-white/30 text-center py-2">AI生成的备用灵感将保存在这里</p>
+                <p className="text-[10px] text-white/50 text-center py-2">AI生成的备用灵感将保存在这里</p>
               ) : (
                 <div className="space-y-1.5">
                   {inspirations.map((inp) => (
@@ -440,8 +440,8 @@ export default function StoryRoomPage() {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <BookOpen className="w-10 h-10 text-white/10 mb-2" />
-            <p className="text-white/30 text-xs">还没有对白</p>
-            <p className="text-white/20 text-[10px] mt-1">以你的角色身份发送第一条消息</p>
+            <p className="text-white/50 text-xs">还没有对白</p>
+            <p className="text-white/40 text-[10px] mt-1">以你的角色身份发送第一条消息</p>
           </div>
         ) : (
           messages.map((msg) => {
@@ -486,8 +486,8 @@ export default function StoryRoomPage() {
           </div>
         ) : !myIdentity ? (
           <div className="flex items-center justify-center py-2">
-            <Users className="w-4 h-4 text-white/30 mr-1.5" />
-            <span className="text-xs text-white/30">你需要先认领角色才能发言</span>
+            <Users className="w-4 h-4 text-white/50 mr-1.5" />
+            <span className="text-xs text-white/50">你需要先认领角色才能发言</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
