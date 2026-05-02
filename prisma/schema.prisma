@@ -54,6 +54,8 @@ model User {
   identities       UserIdentity[]
   reactions        Reaction[]
   roomParticipants RoomParticipant[]
+  storiesDirected  Story[]              @relation("StoryDirector")
+  storyRoles       StoryRole[]          @relation("StoryRoleClaimer")
   stories          StoryDraft[]
   brainholes       Brainhole[]          @relation("BrainholeAuthor")
   collections      BrainholeCollection[]
@@ -368,4 +370,103 @@ model Asset {
 
   @@index([userId, createdAt])
   @@index([isPublic, createdAt])
+}
+
+
+// ==================== 故事大厅 ====================
+
+model Story {
+  id          String   @id @default(cuid())
+  title       String
+  worldview   String   // 世界观背景
+  conflict    String   // 核心冲突
+  status      String   @default("recruiting") // recruiting/ongoing/completed
+  directorId  String
+  maxActors   Int      @default(5)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  director     User       @relation("StoryDirector", fields: [directorId], references: [id])
+  roles        StoryRole[]
+  chapters     StoryChapter[]
+  messages     StoryMessage[]
+  inspirations StoryInspiration[]
+  branches     StoryBranch[]
+
+  @@index([status, createdAt])
+  @@index([directorId])
+}
+
+model StoryRole {
+  id            String   @id @default(cuid())
+  storyId       String
+  name          String   // 角色名
+  description   String   // 角色设定
+  requirements  String?  // 角色需求
+  claimedBy     String?  // 认领者userId
+  claimedAt     DateTime?
+  claimReason   String?  // 认领理由/人设
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user  User? @relation("StoryRoleClaimer", fields: [claimedBy], references: [id])
+
+  @@index([storyId])
+}
+
+model StoryChapter {
+  id          String   @id @default(cuid())
+  storyId     String
+  title       String
+  goal        String?  // 章节目标
+  order       Int      @default(0)
+  status      String   @default("draft") // draft/active/completed
+  createdAt   DateTime @default(now())
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+}
+
+model StoryMessage {
+  id             String   @id @default(cuid())
+  storyId        String
+  chapterId      String?
+  senderId       String
+  content        String
+  identity       String   // 角色名
+  isSpark        Boolean  @default(false)
+  isDirectorNote Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId, createdAt])
+}
+
+model StoryInspiration {
+  id          String   @id @default(cuid())
+  storyId     String
+  content     String
+  sourceMsgId String?
+  status      String   @default("pending") // pending/approved/rejected
+  createdAt   DateTime @default(now())
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+}
+
+model StoryBranch {
+  id          String   @id @default(cuid())
+  storyId     String
+  chapterId   String?
+  content     String   // 分支剧情描述
+  options     String   // JSON数组 [{text, description}]
+  status      String   @default("pending") // pending/voting/resolved
+  winnerIdx   Int?     // 获胜选项索引
+  createdAt   DateTime @default(now())
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
 }

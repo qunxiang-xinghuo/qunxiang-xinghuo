@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { apiResponse, apiError } from "@/lib/utils";
-import { weaveStory } from "@/lib/ai/story-weaver";
+import { weaveStory, generateBranchOptions } from "@/lib/ai/story-weaver";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
+    const body = await request.json();
+    const mode = body.mode || "weave";
+
+    // v5.0: 分支生成模式（故事大厅AI分支剧情）
+    if (mode === "branch") {
+      if (!body.messages) {
+        return NextResponse.json(apiError("INVALID_INPUT", "需要提供对话内容"), { status: 400 });
+      }
+      const branch = await generateBranchOptions({
+        messages: body.messages,
+        storyTitle: body.storyTitle || "",
+      });
+      return NextResponse.json(apiResponse({ branch }));
     }
 
-    const body = await request.json();
-    
-    // 验证请求数据
+    // 原有模式：火花串联成故事
     if (!body.sparks || !Array.isArray(body.sparks) || body.sparks.length === 0) {
       return NextResponse.json(apiError("INVALID_INPUT", "需要提供火花数据"), { status: 400 });
     }
@@ -26,8 +32,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(apiResponse(result));
-  } catch (error) {
-    console.error("生成故事失败:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "生成故事失败"), { status: 500 });
+  } catch (error: any) {
+    console.error("[StoryWeave API] Error:", error);
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "生成失败: " + error.message), { status: 500 });
   }
 }

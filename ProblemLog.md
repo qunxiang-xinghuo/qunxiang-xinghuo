@@ -169,3 +169,30 @@
 - 暗色背景上文本对比度至少4.5:1（WCAG AA）
 - 所有可交互元素最小触控区域44x44dp
 - 使用 `env(safe-area-inset-bottom)` 适配iOS刘海屏
+
+---
+
+## 2026-05-03 v5.1 — 故事大厅模块开发
+
+**新增功能**：
+1. 故事广场（/story-hall）- 发起故事+项目列表
+2. 故事详情（/story-hall/[storyId]）- 世界观+角色认领
+3. 多人对白室（/story-hall/[storyId]/room）- WebSocket实时+导演控场+AI分支
+
+**数据库模型**（Prisma新增）：
+- `Story` / `StoryRole` / `StoryChapter` / `StoryMessage` / `StoryInspiration` / `StoryBranch`
+
+**WebSocket扩展**：
+- `join-story` / `leave-story` / `send-story-message` / `director-pause` / `director-resume` / `branch-proposed` / `branch-vote` / `story-typing`
+
+**AI集成**：
+- `generateBranchOptions()` 函数：DeepSeek分析对白生成3个分支选项
+- 降级方案：内置通用分支选项
+
+**文件清单**（新增15个文件）：
+- 9个API路由 + 3个前端页面 + 2个弹窗组件 + socket-handler扩展
+
+**预防措施**：
+- 新模块开发前先完成数据库模型设计
+- WebSocket事件命名使用 `story-` 前缀避免与原有房间事件冲突
+- 认领角色时检查是否已认领该故事的其他角色（一人一角色）
