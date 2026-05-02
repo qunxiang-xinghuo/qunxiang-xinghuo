@@ -108,10 +108,10 @@ export default function LibraryPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-sm font-medium transition-colors ${
+              className={`flex-1 py-3.5 min-h-11 flex items-center justify-center gap-1.5 text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'text-xh-gold border-b-2 border-xh-gold'
-                  : 'text-white/30 hover:text-white/50'
+                  : 'text-white/50 hover:text-white/70'
               }`}
             >
               <Icon size={16} />
@@ -218,7 +218,8 @@ export default function LibraryPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all"
+                    onClick={() => router.push(`/library/${asset.id}`)}
+                    className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all press-feedback cursor-pointer"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-6 h-6 rounded-full bg-xh-gold/20 flex items-center justify-center text-[10px] text-xh-gold">

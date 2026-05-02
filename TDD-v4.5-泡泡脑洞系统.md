@@ -1076,3 +1076,119 @@ router.push('/home');
 **修复**：在 `togglePublic` 成功后，立即 `fetch('/api/assets/public')` 重新加载广场素材列表。
 
 **涉及文件**：`src/app/library/page.tsx`
+
+
+---
+
+# v5.0-ui 全面诊断与UI整改记录（2026-05-03）
+
+## 一、Bug修复（4项）
+
+### 1. AI房间创建仍用findFirst（脑洞重复）
+
+**问题**：用户超时后选择AI对话，AI房间总是使用最热同一个脑洞。
+
+**修复**：`api/rooms/ai/route.ts` 中未指定脑洞时，改为热度加权随机选择（同match-engine逻辑）。
+
+**涉及文件**：`src/app/api/rooms/ai/route.ts`
+
+### 2. 匹配逻辑忽略用户指定的brainholeId
+
+**问题**：用户从泡泡点击选择了特定脑洞，匹配到的房间使用了完全不同的脑洞。
+
+**根因**：`isQuickMatch = true` 时，`!isQuickMatch && brainholeId` 为false，matchWhere中没有brainholeId限制。
+
+**修复**：新增 `hasExplicitBrainhole = !!brainholeId`，只要用户明确传入brainholeId，就在匹配查询中限制同brainholeId。
+
+**涉及文件**：`src/server/match-engine.ts`
+
+### 3. duo-timeout丢失brainholeId
+
+**问题**：超时后"继续等待"跳转到等待页丢失了用户之前选择的brainholeId。
+
+**修复**：从localStorage读取 `xh_duo_brainhole` 并通过URL参数传递。
+
+**涉及文件**：`src/app/duo-timeout/page.tsx`
+
+### 4. 广场素材卡片不可点击
+
+**问题**：公共素材卡片缺少点击跳转。
+
+**修复**：添加 `onClick` 跳转 `/library/${id}` + `press-feedback` + `cursor-pointer`。
+
+**涉及文件**：`src/app/library/page.tsx`
+
+---
+
+## 二、UI整改（5项）
+
+### 1. 泡泡点击反馈强化
+
+- 新增 `isPressed` 状态，点击时触发光晕扩散
+- 新增 `.bubble-pressed` 金色边框+发光阴影
+- 新增 `.bubble-selected-glow` 绝对定位光晕层，`bubble-glow-expand` 动画
+
+**涉及文件**：`src/components/bubble-cloud/Bubble.tsx`, `src/app/globals.css`
+
+### 2. 文本对比度提升（WCAG AA）
+
+| 位置 | 修改前 | 修改后 |
+|------|--------|--------|
+| home副标题 | `text-white/30` | `text-white/50` |
+| 模式副标题 | `text-white/40` | `text-white/50` |
+| "即将开放"标签 | `text-white/30` | `text-white/50` |
+| 底部导航未选中 | `text-white/30` | `text-white/40` |
+| library标签未选中 | `text-white/30` | `text-white/50` |
+| 保存按钮 | `text-white/40` | `text-white/50` |
+
+**涉及文件**：`src/app/home/page.tsx`, `src/components/layout/BottomNav.tsx`, `src/app/library/page.tsx`, `src/app/room/[id]/page.tsx`
+
+### 3. 触控区域44x44dp
+
+| 元素 | 修改前 | 修改后 |
+|------|--------|--------|
+| 底部导航按钮 | `py-1 px-3` | `min-h-11 min-w-11 py-1 px-2` |
+| 顶部返回按钮 | `p-2` | `p-3` |
+| 顶部右侧按钮 | `p-2` | `p-3` |
+| library标签 | `py-3` | `py-3.5 min-h-11` |
+| 素材库小按钮 | `px-2 py-0.5` | `px-3 py-1.5` |
+| 删除/公开按钮 | `p-1.5` | 已满足44px容器 |
+
+**涉及文件**：`src/components/layout/BottomNav.tsx`, `src/components/layout/TopBar.tsx`, `src/app/library/page.tsx`, `src/app/room/[id]/page.tsx`
+
+### 4. 响应式布局
+
+- `layout.tsx`: `max-w-md` → `max-w-md sm:max-w-lg`
+- 适配平板和桌面端，避免两侧过度空白
+
+**涉及文件**：`src/app/layout.tsx`
+
+### 5. iOS安全区适配
+
+- 新增 `.safe-area-pb` 工具类：`padding-bottom: max(env(safe-area-inset-bottom), 4px)`
+- 底部导航栏应用安全区padding
+
+**涉及文件**：`src/app/globals.css`, `src/components/layout/BottomNav.tsx`
+
+### 6. 其他细节
+
+- `duo-match/page.tsx` Suspense fallback 背景：硬编码 `#1a1a2e` → `page-gradient`
+- `BottomNav` 硬编码背景色 → `bg-xh-primary/95`
+- `BottomNav` 指示器位置：`-bottom-2`（超出容器）→ `bottom-0.5`
+- 新增 `aria-label` 到 TopBar 按钮
+
+---
+
+## 三、整改验证清单
+
+- [x] Build通过（45/45页面）
+- [x] TypeScript无错误
+- [x] 泡泡点击有光晕扩散反馈
+- [x] 底部导航触控区域 >= 44px
+- [x] 文本对比度 >= 4.5:1（WCAG AA）
+- [x] 响应式布局 sm:max-w-lg
+- [x] iOS安全区适配
+- [x] brainholeId在泡泡→匹配→超时→AI全链路不丢失
+- [x] AI房间创建使用热度加权随机
+- [x] 广场素材卡片可点击
+

@@ -203,7 +203,7 @@ function DuoMatchContent() {
 export default function DuoMatchPage() {
   return (
     <Suspense fallback={
-      <div className="flex flex-col h-full bg-[#1a1a2e] items-center justify-center">
+      <div className="flex flex-col h-full page-gradient items-center justify-center">
         <p className="text-white/40 text-sm">加载中...</p>
       </div>
     }>

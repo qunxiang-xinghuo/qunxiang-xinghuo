@@ -25,6 +25,22 @@
     scrollbar-width: none;
   }
 
+  /* v5.0: 安全区底部padding（iOS notch兼容） */
+  .safe-area-pb {
+    padding-bottom: max(env(safe-area-inset-bottom), 4px);
+  }
+
+  /* v5.0: 文本对比度优化 - WCAG AA级别 */
+  .text-readable {
+    color: rgba(255, 255, 255, 0.65);
+  }
+  .text-readable-secondary {
+    color: rgba(255, 255, 255, 0.50);
+  }
+  .text-readable-muted {
+    color: rgba(255, 255, 255, 0.35);
+  }
+
   .swipe-card {
     transition: transform 0.3s ease, opacity 0.3s ease;
     touch-action: pan-y;
@@ -246,6 +262,31 @@
   /* 点击弹跳：只控制scale */
   .bubble-pop {
     animation: bubble-pop-anim 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  /* v5.0: 泡泡按下态 - 外圈光晕扩散 */
+  .bubble-pressed {
+    box-shadow:
+      inset 0 1px 2px rgba(255,255,255,0.25),
+      0 0 24px rgba(226, 176, 74, 0.35),
+      0 0 8px rgba(255,255,255,0.15);
+    border-color: rgba(226, 176, 74, 0.5);
+  }
+
+  /* v5.0: 选中光晕层（绝对定位在bubble-glass下方） */
+  .bubble-selected-glow {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(226, 176, 74, 0.2) 0%, transparent 70%);
+    animation: bubble-glow-expand 0.6s ease-out forwards;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  @keyframes bubble-glow-expand {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    100% { transform: scale(1.4); opacity: 0; }
   }
 
   /* 泡泡文字：默认小巧精致 */
