@@ -65,6 +65,17 @@ DATABASE_URL="file:./dev.db"
 - **解决**：使用密码通过paramiko连接
 - **教训**：保留密码作为备用认证方式
 
+### 问题4：页面空白（v5.3最严重bug）
+- **现象**：部署后访问线上页面显示空白/只有loading spinner
+- **根因1（直接原因）**：App Router + 自定义server.ts组合下，Next.js `handle()` 无法正确serve生产build的静态资源（`/_next/static/chunks/*`），所有JS/CSS返回404
+- **根因2（深层原因）**：`output: 'standalone'` 模式下，standalone/server.js也未自动包含static文件；`server.ts` + `tsx` 在生产模式下静态文件服务失效
+- **根因3（表象误导）**：BubbleCloud等客户端组件在SSR时显示loading spinner，客户端JS无法加载导致永远卡住，看起来像"空白"
+- **解决**：修改 `server.ts`，显式添加 `/_next/` 静态文件路由，直接读取 `.next` 目录serve文件
+- **教训**：
+  - App Router + 自定义server需显式处理 `_next/static` 路由
+  - 部署后第一件事：curl验证 `_next/static/chunks/*.js` 是否200
+  - 永远不要假设Next.js会自动处理好所有静态资源
+
 ## 六、技术栈版本锁定
 
 | 技术 | 版本 |
