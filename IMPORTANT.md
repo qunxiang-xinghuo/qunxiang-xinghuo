@@ -139,4 +139,27 @@ DATABASE_URL="file:./dev.db"
 
 ---
 
-> 最后更新：2026-05-05 v5.5 UI全面重设计部署完成
+> 最后更新：2026-05-02 v5.6-fix 泡泡系统修复+故事页面重设计部署完成
+
+---
+
+## 十一、v5.6 关键修复速查
+
+### 泡泡系统数据流
+```
+前端: BubbleCloud.tsx → GET /api/brainholes/bubble?limit=20
+后端: src/app/api/brainholes/bubble/route.ts
+数据: { id, title, scenario, hotScore, category, difficulty, source }
+跳转: /brainhole/${id}
+```
+
+### 部署检查清单
+- [ ] 本地 `npm run build` 47/47通过
+- [ ] `git commit` + `git push origin dev`
+- [ ] SFTP上传关键文件（GitHub超时时）
+- [ ] 服务器 `rm -rf .next && NODE_ENV=production npm run build`
+- [ ] `pm2 restart qunxiang-xinghuo && pm2 save`
+- [ ] curl 验证首页 `/home` 200
+- [ ] curl 验证静态JS/CSS 200
+- [ ] curl 验证泡泡API `/api/brainholes/bubble` 返回数据
+- [ ] 更新 `ProblemLog.md`
