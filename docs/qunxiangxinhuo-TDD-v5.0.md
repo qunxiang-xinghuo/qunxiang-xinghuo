@@ -705,4 +705,129 @@ const sizeMap = {
 
 ---
 
-*文档版本：v5.0 + v5.3整改 + v5.3-blank修复 + v5.3-avatar替换 | 已部署 | 2026-05-04*
+# v5.4 故事大厅MVP功能开发（2026-05-05）
+
+## 一、需求背景
+
+v5.1已实现故事大厅基础骨架（创建故事、角色认领、实时对白室、AI分支）。但MVP核心流程中**导演审核**和**手动启动故事**两个关键环节缺失：
+- 角色认领后**自动通过**，导演无法把控演员质量
+- 所有角色被认领后**自动启动**，缺少导演确认环节
+- 认领信息仅有"扮演理由"，缺少"身份标签"和"演绎方向"
+
+## 二、MVP功能清单实现
+
+| 编号 | 功能 | 状态 | 说明 |
+|------|------|------|------|
+| 1 | 创建故事 | ✅ 已有 | 增加 `minActors`（最少启动人数）字段 |
+| 2 | 故事广场 | ✅ 已有 | 进度条改为按`approved`角色计算 |
+| 3 | 故事详情 | ✅ 已有 | 增加认领状态显示（待审核/已通过/已拒绝） |
+| 4 | 认领角色 | 🆕 增强 | 增加身份标签、演绎方向两个字段 |
+| 5 | 导演审核 | 🆕 新增 | 导演查看申请列表，approve/reject |
+| 6 | 启动故事 | 🆕 新增 | 导演手动启动，条件：所有角色审核通过 |
+| 7 | 基础对白室 | ✅ 已有 | 复用v5.1实现，无需修改 |
+
+## 三、数据库变更
+
+### 3.1 Story模型新增字段
+```prisma
+minActors  Int      @default(2)  // 最少启动人数
+```
+
+### 3.2 StoryRole模型新增字段
+```prisma
+claimStatus          String   @default("pending") // pending/approved/rejected
+identityTag          String?  // 身份标签（如"急诊科医生"）
+performanceDirection String?  // 演绎方向（如"理性与情感交织"）
+```
+
+### 3.3 状态流转
+
+```
+创建故事 → recruiting
+  ↓
+用户认领角色 → claimStatus="pending"
+  ↓
+导演审核 → approve: claimStatus="approved"
+         → reject: claimStatus="rejected", claimedBy=null
+  ↓
+所有角色 approved → 导演点击"启动故事" → status="ongoing"
+  ↓
+进入对白室
+```
+
+## 四、API变更
+
+### 4.1 修改：POST /api/stories
+- 增加 `minActors` 参数（可选，默认2）
+
+### 4.2 修改：POST /api/stories/[storyId]/roles/[roleId]/claim
+- 请求体增加 `identityTag` 和 `performanceDirection`
+- 认领后 `claimStatus = "pending"`（不再自动成功）
+- 移除"所有角色被认领后自动更新story.status"逻辑
+
+### 4.3 新增：POST /api/stories/[storyId]/roles/[roleId]/review
+```typescript
+// 只有导演可操作
+body: { action: "approve" | "reject" }
+
+// approve: claimStatus="approved"
+// reject: claimStatus="rejected", 清空 claimedBy/claimedAt/claimReason/identityTag/performanceDirection
+```
+
+### 4.4 新增：POST /api/stories/[storyId]/start
+```typescript
+// 只有导演可操作
+// 条件：所有角色 claimStatus="approved"
+// 效果：story.status="ongoing"
+```
+
+### 4.5 修改：GET /api/stories
+- `claimedRoles` → `approvedRoles`（只统计approved的角色）
+
+### 4.6 修改：GET /api/stories/[storyId]
+- 返回角色完整字段：`claimStatus`, `identityTag`, `performanceDirection`
+
+## 五、前端变更
+
+### 5.1 CreateStoryModal.tsx
+- 增加"最少启动人数"输入（数字，默认2，最小2）
+
+### 5.2 ClaimRoleModal.tsx
+- 增加"身份标签"输入（单行，40字内）
+- 增加"演绎方向"输入（多行，150字内）
+- 保留原有"扮演理由"字段
+
+### 5.3 story-hall/[storyId]/page.tsx
+- 角色卡片显示4种状态：
+  - `未认领`：白色边框，显示"认领"按钮
+  - `待审核`：黄色边框，显示申请人信息和"审核中"标签
+  - `已通过`：绿色边框，显示演员信息和"已通过"标签
+  - `已拒绝`：红色边框（仅导演可见）
+- 导演视角新增"审核面板"：
+  - 列出所有 `claimStatus="pending"` 的申请
+  - 每个申请显示：角色名、申请人、身份标签、演绎方向、扮演理由
+  - 操作按钮："通过" / "拒绝"
+- 所有角色审核通过后，导演可见"启动故事"按钮（金色高亮）
+- 启动后，所有参与者可见"进入对白室"按钮
+
+### 5.4 story-hall/page.tsx
+- 进度条按 `approvedRoles / totalRoles` 计算（而非claimedRoles）
+
+## 六、测试验证清单
+
+- [ ] Prisma migrate成功
+- [ ] Build通过
+- [ ] 创建故事可设置minActors
+- [ ] 认领角色可填写身份标签和演绎方向
+- [ ] 认领后角色状态为"待审核"
+- [ ] 导演可见审核面板
+- [ ] 导演可通过/拒绝申请
+- [ ] 拒绝后角色恢复为"未认领"
+- [ ] 所有角色通过后，导演可见"启动故事"按钮
+- [ ] 启动后故事状态变为"进行中"
+- [ ] 所有参与者可进入对白室
+- [ ] 广场进度条正确显示approved比例
+
+---
+
+*文档版本：v5.0 + v5.3整改 + v5.3-blank修复 + v5.3-avatar替换 + v5.4故事大厅MVP | 开发中 | 2026-05-05*

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       include: {
         director: { select: { id: true, name: true } },
         roles: {
-          select: { id: true, name: true, claimedBy: true },
+          select: { id: true, name: true, claimedBy: true, claimStatus: true },
         },
         _count: {
           select: { messages: true },
@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
       maxActors: s.maxActors,
       totalRoles: s.roles.length,
       claimedRoles: s.roles.filter((r) => r.claimedBy).length,
+      approvedRoles: s.roles.filter((r) => r.claimStatus === 'approved').length,
       messageCount: s._count.messages,
       createdAt: s.createdAt,
     }));
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
     }
 
-    const { title, worldview, conflict, roles, maxActors = 5 } = body;
+    const { title, worldview, conflict, roles, maxActors = 5, minActors = 2 } = body;
 
     if (!title || !worldview || !conflict) {
       return NextResponse.json(apiError("BAD_REQUEST", "缺少必要参数: title, worldview, conflict"), { status: 400 });
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
         conflict,
         directorId: userId,
         maxActors,
+        minActors: Math.max(2, minActors),
         roles: {
           create: roles.map((r: any) => ({
             name: r.name,

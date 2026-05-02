@@ -18,6 +18,7 @@ interface StoryItem {
   maxActors: number;
   totalRoles: number;
   claimedRoles: number;
+  approvedRoles: number;
   messageCount: number;
   createdAt: string;
 }
@@ -144,7 +145,7 @@ export default function StoryHallPage() {
         ) : (
           displayStories.map((story, index) => {
             const statusInfo = statusLabels[story.status] || statusLabels.recruiting;
-            const progress = story.totalRoles > 0 ? Math.round((story.claimedRoles / story.totalRoles) * 100) : 0;
+            const progress = story.totalRoles > 0 ? Math.round((story.approvedRoles / story.totalRoles) * 100) : 0;
             const isMyStory = story.directorId === currentUserId;
             return (
               <motion.div
@@ -182,7 +183,7 @@ export default function StoryHallPage() {
                     />
                   </div>
                   <span className="text-[10px] text-white/40 shrink-0">
-                    {story.claimedRoles}/{story.totalRoles} 角色
+                    {story.approvedRoles}/{story.totalRoles} 角色
                   </span>
                 </div>
 
