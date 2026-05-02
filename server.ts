@@ -34,7 +34,7 @@ app.prepare().then(() => {
     try {
       // v5.3-fix: 显式处理 _next/static 静态资源（App Router+自定义server兼容）
       if (req.url && req.url.startsWith('/_next/')) {
-        const staticPath = path.join(process.cwd(), '.next', req.url)
+        const staticPath = path.join(process.cwd(), '.next', req.url.replace('/_next/', ''))
         if (fs.existsSync(staticPath) && fs.statSync(staticPath).isFile()) {
           const ext = path.extname(staticPath)
           res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream')
