@@ -69,7 +69,7 @@ export default function LibraryPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e]">
+    <div className="flex flex-col h-full page-gradient">
       <TopBar title="素材库" />
 
       {/* 顶部标签页 */}
@@ -101,11 +101,15 @@ export default function LibraryPage() {
                 <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
               </div>
             ) : myAssets.length === 0 ? (
-              <div className="text-center py-12 bg-white/5 rounded-xl">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-12 bg-white/[0.03] rounded-xl border border-white/[0.06]"
+              >
                 <MessageSquare className="w-10 h-10 text-white/10 mx-auto mb-2" />
                 <p className="text-white/30 text-xs">还没有任何对白记录</p>
                 <p className="text-white/20 text-[10px] mt-1">完成对白后可保存到素材库</p>
-              </div>
+              </motion.div>
             ) : (
               <div className="space-y-3">
                 {myAssets.map((asset, index) => (
@@ -114,7 +118,7 @@ export default function LibraryPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors"
+                    className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all press-feedback"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -158,11 +162,15 @@ export default function LibraryPage() {
         ) : (
           <>
             {publicAssets.length === 0 ? (
-              <div className="text-center py-12 bg-white/5 rounded-xl">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-12 bg-white/[0.03] rounded-xl border border-white/[0.06]"
+              >
                 <Globe className="w-10 h-10 text-white/10 mx-auto mb-2" />
                 <p className="text-white/30 text-xs">广场暂无公开素材</p>
                 <p className="text-white/20 text-[10px] mt-1">快去完成对白并公开分享吧</p>
-              </div>
+              </motion.div>
             ) : (
               <div className="space-y-3">
                 {publicAssets.map((asset, index) => (
@@ -171,7 +179,7 @@ export default function LibraryPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white/5 rounded-xl p-4 border border-white/5"
+                    className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-6 h-6 rounded-full bg-xh-gold/20 flex items-center justify-center text-[10px] text-xh-gold">

@@ -69,7 +69,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e] relative overflow-hidden">
+    <div className="flex flex-col h-full page-gradient relative overflow-hidden">
       {/* 装饰泡泡背景 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#e2b04a]/10 blur-xl" />

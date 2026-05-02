@@ -334,7 +334,7 @@ export default function RoomPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full items-center justify-center bg-[#1a1a2e]">
+      <div className="flex flex-col h-full items-center justify-center page-gradient">
         <div className="w-8 h-8 border-2 border-white/20 border-t-xh-gold rounded-full animate-spin mb-4" />
         <p className="text-sm text-white/40">正在加载房间...</p>
       </div>
@@ -342,7 +342,7 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e]">
+    <div className="flex flex-col h-full page-gradient">
       <TopBar
         title="对白实验室"
         showBack

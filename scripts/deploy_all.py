@@ -37,9 +37,13 @@ FILES = [
     ("src/app/api/assets/public/route.ts", "src/app/api/assets/public/route.ts"),
     ("src/app/api/assets/[id]/public/route.ts", "src/app/api/assets/[id]/public/route.ts"),
     ("src/app/api/brainholes/bubble/route.ts", "src/app/api/brainholes/bubble/route.ts"),
+    ("src/app/api/ai/chat/route.ts", "src/app/api/ai/chat/route.ts"),
     ("src/lib/validators/match.ts", "src/lib/validators/match.ts"),
     ("src/lib/bubble-client.ts", "src/lib/bubble-client.ts"),
     ("src/lib/bubble-engine.ts", "src/lib/bubble-engine.ts"),
+    ("src/components/layout/MobileContainer.tsx", "src/components/layout/MobileContainer.tsx"),
+    ("src/app/profile/page.tsx", "src/app/profile/page.tsx"),
+    ("src/app/globals.css", "src/app/globals.css"),
     ("prisma/schema.prisma", "prisma/schema.prisma"),
 ]
 

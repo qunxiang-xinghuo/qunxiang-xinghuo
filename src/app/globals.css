@@ -78,6 +78,63 @@
     animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
 
+  /* ===== 全局交互反馈 ===== */
+  .press-feedback {
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .press-feedback:active {
+    transform: scale(0.96);
+  }
+
+  /* ===== 页面统一背景 ===== */
+  .page-gradient {
+    background: linear-gradient(180deg, #1a1a2e 0%, #1a1a2e 60%, #16213e 100%);
+  }
+
+  /* ===== 统一卡片样式 ===== */
+  .card-glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+  }
+
+  /* ===== 消息气泡入场动画 ===== */
+  @keyframes message-in-right {
+    0% { opacity: 0; transform: translateX(20px) scale(0.95); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+  }
+  @keyframes message-in-left {
+    0% { opacity: 0; transform: translateX(-20px) scale(0.95); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+  }
+  .animate-message-in-right {
+    animation: message-in-right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  .animate-message-in-left {
+    animation: message-in-left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  /* ===== 微妙光晕动画 ===== */
+  @keyframes soft-glow {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+  .animate-soft-glow {
+    animation: soft-glow 4s ease-in-out infinite;
+  }
+
+  /* ===== 骨架屏微光 ===== */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .animate-shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
   /* ===== 泡泡组件专用样式 v4.8 ===== */
 
   /* 漂浮动画：纯上下浮动，幅度10px */

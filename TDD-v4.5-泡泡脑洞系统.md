@@ -680,3 +680,162 @@ ZHIHU_API_KEY="xrUmjOP1pferLLYrQufOIrvlbT3tFvct"
 ```
 
 配置后执行：`pm2 restart qunxiang-xinghuo`
+
+
+---
+
+## v4.9 整体视觉统一与体验优化（2026-04-29）
+
+### 整体规划背景
+
+经过 v4.2-v4.8 的功能迭代，核心功能（泡泡、双人模式、AI对话、素材库）已基本完善，但视觉和体验层面存在明显问题：
+1. 刘看山CSS形象在3处重复（Welcome/等待/超时）
+2. 所有页面硬编码 `bg-[#1a1a2e]`，视觉单调
+3. 消息气泡无入场动画，聊天体验生硬
+4. 空状态、加载状态不够精致
+5. 交互缺少按压反馈
+
+本次升级目标：**统一视觉语言 + 提升交互质感 + 组件化重构**
+
+---
+
+### 一、组件化重构
+
+#### 1. `LiuKanshanAvatar` 组件
+**文件**：`src/components/layout/LiuKanshanAvatar.tsx`（新建）
+
+**功能**：
+- 统一刘看山形象，支持4种尺寸（sm/md/lg/xl）
+- 支持4种情绪状态（neutral/happy/thinking/sleepy）
+- 支持开关动画（idle弹跳）
+- 替换以下重复代码：
+  - `LiuKanshanWelcome.tsx` 中的内联CSS
+  - `duo-waiting/page.tsx` 中的内联CSS
+  - `duo-timeout/page.tsx` 中的内联CSS
+
+**设计参数**：
+- 尺寸通过 `sizeMap` 统一计算（容器、耳朵、眼睛、嘴巴、腮红比例）
+- 情绪影响眼睛颜色和嘴巴颜色
+- `sleepy` 状态眼睛半透明
+
+#### 2. `page-gradient` 全局样式
+**文件**：`src/app/globals.css`
+
+```css
+.page-gradient {
+  background: linear-gradient(180deg, #1a1a2e 0%, #1a1a2e 60%, #16213e 100%);
+}
+```
+
+**应用范围**：所有页面统一使用，替代死板的纯色背景，增加微妙的底部层次。
+
+#### 3. 全局交互反馈样式
+**文件**：`src/app/globals.css`
+
+```css
+.press-feedback:active { transform: scale(0.96); }
+```
+
+**应用范围**：所有可点击卡片、按钮。
+
+---
+
+### 二、动效增强
+
+#### 1. 消息气泡入场动画
+**文件**：`src/components/room/MessageBubble.tsx`
+
+使用 `framer-motion` 的 `motion.div` 包装每条消息：
+- 我方消息：`initial={{ opacity: 0, x: 30, scale: 0.9 }}`
+- 对方消息：`initial={{ opacity: 0, x: -30, scale: 0.9 }}`
+- 动画类型：`spring`，`stiffness: 200, damping: 18`
+- 按消息索引延迟：`delay: index * 0.03`
+
+**效果**：消息发送/接收时有自然的弹性滑入效果，不再生硬出现。
+
+#### 2. 底部导航栏微动画
+**文件**：`src/components/layout/BottomNav.tsx`
+
+- active 图标增加 `y: [0, -2, 0]` 微弹跳
+- 新增 `layoutId="bottom-nav-indicator"` 小圆点指示器，切换时有弹簧动画
+- 按钮增加 `whileTap={{ scale: 0.9 }}` 按压反馈
+
+#### 3. 页面元素动画
+- **首页模式卡片**：`whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}`
+- **Profile 菜单项**：`whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}`
+- **Profile 头像**：`whileHover={{ scale: 1.05 }}`，增加阴影
+- **Story 占位页**：全套 framer-motion 入场动画（头像、标题、功能卡片依次入场）
+
+---
+
+### 三、页面级视觉优化
+
+| 页面 | 优化内容 |
+|------|---------|
+| 登录页 | `page-gradient` 背景 |
+| 注册页 | `page-gradient` 背景 + 返回键保持原样 |
+| 首页 | `page-gradient` + 模式卡片按压反馈 + 图标微动效 |
+| 等待页 | `page-gradient` + `LiuKanshanAvatar` 组件（thinking/happy情绪） |
+| 超时页 | `page-gradient` + `LiuKanshanAvatar` 组件（sleepy情绪） |
+| 对白室 | `page-gradient` + 消息入场动画 + 输入框 `caret-xh-gold` + 底部半透明毛玻璃 |
+| 素材库 | `page-gradient` + 空状态动画 + 卡片 hover 效果 + 按压反馈 |
+| 故事页 | `page-gradient` + `LiuKanshanAvatar` + 全套入场动画 + 图标化功能卡片 |
+| 我的 | `page-gradient` + 头像阴影 + 菜单微动效 |
+
+---
+
+### 四、关键设计决策
+
+#### 为什么不把所有 `bg-[#1a1a2e]` 都替换？
+- **Modal 弹窗**（`DuoIdentityModal`、`BubbleDetailModal`）保持 `bg-[#1a1a2e]`，因为弹窗需要更暗的背景与页面区分层次
+- **底部导航栏**保持 `bg-[#1a1a2e]/95`，因为导航栏需要略微透明以展示底层内容
+
+#### 为什么使用 `page-gradient` 而不是 Tailwind 的 `bg-gradient-to-b`？
+- 需要在 CSS 中统一定义，方便后续全局调整
+- 避免每个页面重复写冗长的 gradient class
+
+#### 消息动画使用 framer-motion 而不是 CSS keyframes？
+- framer-motion 的 `spring` 物理动画更自然
+- 支持按索引延迟，新消息依次入场
+- 支持按方向区分（我方/对方不同方向）
+
+---
+
+### 五、文件变更汇总
+
+| 文件 | 变更类型 | 说明 |
+|------|---------|------|
+| `src/components/layout/LiuKanshanAvatar.tsx` | 新增 | 刘看山形象统一组件 |
+| `src/components/layout/LiuKanshanWelcome.tsx` | 修改 | 使用 LiuKanshanAvatar 组件 |
+| `src/components/room/MessageBubble.tsx` | 修改 | framer-motion 入场动画 |
+| `src/components/room/ChatRoom.tsx` | 修改 | 传递 index + 输入框 caret 颜色 |
+| `src/components/layout/BottomNav.tsx` | 修改 | 微弹跳动画 + 指示器 |
+| `src/app/globals.css` | 修改 | page-gradient + press-feedback + 动画keyframes |
+| `src/app/home/page.tsx` | 修改 | page-gradient + 按压反馈 |
+| `src/app/LoginForm.tsx` | 修改 | page-gradient |
+| `src/app/register/page.tsx` | 修改 | page-gradient |
+| `src/app/duo-match/page.tsx` | 修改 | page-gradient |
+| `src/app/duo-waiting/page.tsx` | 修改 | page-gradient + LiuKanshanAvatar |
+| `src/app/duo-timeout/page.tsx` | 修改 | page-gradient + LiuKanshanAvatar |
+| `src/app/room/[id]/page.tsx` | 修改 | page-gradient + loading fallback |
+| `src/app/library/page.tsx` | 修改 | page-gradient + 空状态动画 + 卡片样式 |
+| `src/app/story/page.tsx` | 重写 | 全套动画 + LiuKanshanAvatar + 图标化 |
+| `src/app/profile/page.tsx` | 修改 | page-gradient + 头像阴影 + 菜单微动效 |
+
+---
+
+### 六、已知问题与后续规划
+
+**已解决**：
+- 刘看山形象代码重复 ✅
+- 页面背景单调 ✅
+- 消息无动画 ✅
+- 交互无反馈 ✅
+- 空状态粗糙 ✅
+
+**后续可优化**（v5.0 方向）：
+1. 首页泡泡区域与模式卡片的视觉过渡可以更强
+2. 对白室可以增加"打字中"的更多视觉反馈（如对方头像旁边显示打字动画）
+3. 素材库卡片可以展示对白摘要预览
+4. 可以增加深色/浅色主题切换
+5. PWA 支持（离线可用、添加到主屏幕）

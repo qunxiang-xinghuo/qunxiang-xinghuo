@@ -75,7 +75,7 @@ function DuoMatchContent() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e]">
+    <div className="flex flex-col h-full page-gradient">
       <TopBar title="身份选择" showBack onBack={() => router.back()} />
 
       {/* 页面标题 */}

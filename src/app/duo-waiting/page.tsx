@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
+import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
 
 const MATCH_TIMEOUT = 10;
 const POLL_INTERVAL = 2000;
@@ -171,34 +172,13 @@ function DuoWaitingContent() {
   const remaining = Math.max(MATCH_TIMEOUT - elapsedTime, 0);
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e]">
+    <div className="flex flex-col h-full page-gradient">
       <TopBar title="寻找搭档" showBack onBack={() => router.back()} />
 
       {/* 中央区域：刘看山 + 匹配状态 */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
         {/* 刘看山形象 */}
-        <motion.div
-          className="w-24 h-24 rounded-full relative mb-6"
-          style={{
-            background: 'radial-gradient(circle at 35% 30%, #f5f5f5, #e0e0e0)',
-            border: '2px solid #74b9ff',
-            boxShadow: '0 0 24px #74b9ff40, inset -2px -2px 6px rgba(0,0,0,0.1)',
-          }}
-          animate={status === 'matching' ? { y: [0, -8, 0] } : {}}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <div className="absolute -top-2.5 left-3 w-5 h-5 rounded-full bg-[#f5f5f5] border border-gray-200" />
-          <div className="absolute -top-2.5 right-3 w-5 h-5 rounded-full bg-[#f5f5f5] border border-gray-200" />
-          <div className="absolute inset-1 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-            <div className="flex gap-3 items-center mt-[-2px]">
-              <div className="w-3.5 h-3.5 rounded-full bg-[#74b9ff]" />
-              <div className="w-3.5 h-3.5 rounded-full bg-[#74b9ff]" />
-            </div>
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-4 h-2.5 rounded-b-full bg-[#ff9f43]" />
-          </div>
-          <div className="absolute top-6 left-2 w-3.5 h-3 rounded-full bg-[#ffcccc] opacity-40" />
-          <div className="absolute top-6 right-2 w-3.5 h-3 rounded-full bg-[#ffcccc] opacity-40" />
-        </motion.div>
+        <LiuKanshanAvatar size="lg" animate emotion={status === 'matched' ? 'happy' : 'thinking'} className="mb-6" />
 
         {/* 状态文案 */}
         <AnimatePresence mode="wait">
@@ -287,7 +267,7 @@ function DuoWaitingContent() {
 export default function DuoWaitingPage() {
   return (
     <Suspense fallback={
-      <div className="flex flex-col h-full bg-[#1a1a2e] items-center justify-center">
+      <div className="flex flex-col h-full page-gradient items-center justify-center">
         <p className="text-white/40 text-sm">加载中...</p>
       </div>
     }>
