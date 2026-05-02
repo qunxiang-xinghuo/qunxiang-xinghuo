@@ -409,5 +409,31 @@ if (req.url && req.url.startsWith('/_next/')) {
 | 欢迎弹窗 `home` | flex居中 + `mb-2` | 不重叠 ✅ |
 | 浮动按钮 `home` | `fixed bottom-20 right-4` | 不重叠 ✅ |
 
-**Build验证**：✅ 通过（Compiled successfully in 5.6s）
-**部署验证**：✅ 通过（9/9自检通过）
+**Build验证**：✅ 本地通过（Compiled successfully in 5.6s）
+**部署验证**：❌ 失败 — 服务器没有重新 `npm run build`，旧 `.next/` 目录仍在运行
+
+**根因（自检发现）**：
+- 服务器 `.next/server/app/home/page.js` 修改时间：2026-05-02 19:20:02（旧build）
+- 线上 `/home` HTML中：`liukanshan` 匹配0次，`svg viewBox` 匹配1次（仍是旧SVG）
+- 服务器Git HEAD是最新代码，但 `.next/` 目录是旧编译输出
+
+**教训**：
+- **git pull ≠ 生效！必须 `npm run build` 重新编译 `.next/` 目录**
+- 部署流程中 `git reset --hard` 之后必须接 `npm run build`
+- 只 `pm2 restart` 不build = 运行旧代码
+
+**最终修复**：
+1. 服务器上执行 `NODE_ENV=production npm run build`（编译耗时~25s）
+2. `pm2 restart qunxiang-xinghuo`
+3. 验证：home页 `liukanshan` 出现5次，`svg viewBox` 0次
+4. 验证：所有 `_next/static/chunks/*` 返回200
+
+**修正后的部署命令**：
+```bash
+cd /www/wwwroot/qunxiang-xinghuo \
+  && git fetch origin dev \
+  && git reset --hard origin/dev \
+  && NODE_ENV=production npm run build \
+  && pm2 restart qunxiang-xinghuo \
+  && pm2 save
+```
