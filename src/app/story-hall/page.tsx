@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Plus, Users, BookOpen, Sparkles, ArrowRight, User, Globe } from 'lucide-react';
+import { Plus, Users, BookOpen, ArrowRight, User, Globe, Clock } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import CreateStoryModal from '@/components/story/CreateStoryModal';
 
@@ -23,10 +23,10 @@ interface StoryItem {
   createdAt: string;
 }
 
-const statusLabels: Record<string, { text: string; color: string; bg: string; border: string }> = {
-  recruiting: { text: '招募中', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-  ongoing: { text: '进行中', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20' },
-  completed: { text: '已完成', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+const statusConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any }> = {
+  recruiting: { text: '招募中', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Users },
+  ongoing: { text: '进行中', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock },
+  completed: { text: '已完成', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: BookOpen },
 };
 
 type TabType = 'personal' | 'public';
@@ -68,14 +68,10 @@ export default function StoryHallPage() {
     loadStories();
   }, [loadStories]);
 
-  // 个人广场：用户发起或参与的故事
   const personalStories = stories.filter(
     (s) => s.directorId === currentUserId || s.status !== 'recruiting'
   );
-
-  // 公共招募广场：所有招募中的故事
   const publicStories = stories.filter((s) => s.status === 'recruiting');
-
   const displayStories = activeTab === 'personal' ? personalStories : publicStories;
 
   return (
@@ -84,35 +80,37 @@ export default function StoryHallPage() {
 
       {/* 头部区域 */}
       <div className="shrink-0 px-4 pt-4 pb-3">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-white/90">群像共创</h2>
-            <p className="text-xs text-white/50 mt-0.5">认领角色，一起书写故事</p>
+            <h2 className="text-lg font-bold text-slate-100">群像共创</h2>
+            <p className="text-xs text-slate-500 mt-0.5">认领角色，一起书写故事</p>
           </div>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity press-feedback"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium shadow-lg shadow-xh-gold/20 hover:shadow-xl hover:shadow-xh-gold/30 transition-shadow"
           >
             <Plus className="w-4 h-4" />
             发起群像共创
-          </button>
+          </motion.button>
         </div>
 
         {/* 标签切换 */}
-        <div className="flex border-b border-white/5">
+        <div className="flex bg-slate-800/40 rounded-xl p-1 border border-slate-700/20">
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'text-xh-gold border-b-2 border-xh-gold'
-                    : 'text-white/50 hover:text-white/70'
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-slate-700/60 text-slate-100 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                <Icon size={16} />
+                <Icon size={15} strokeWidth={isActive ? 2.5 : 1.5} />
                 {tab.label}
               </button>
             );
@@ -123,20 +121,20 @@ export default function StoryHallPage() {
       {/* 故事列表 */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-4 space-y-3">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-2 border-slate-600 border-t-xh-gold rounded-full animate-spin" />
           </div>
         ) : displayStories.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-12 bg-white/[0.03] rounded-xl border border-white/[0.06]"
+            className="text-center py-16 bg-slate-800/30 rounded-2xl border border-slate-700/20"
           >
-            <BookOpen className="w-10 h-10 text-white/10 mx-auto mb-2" />
-            <p className="text-white/50 text-xs">
+            <BookOpen className="w-12 h-12 text-slate-700 mx-auto mb-3" />
+            <p className="text-slate-500 text-sm">
               {activeTab === 'personal' ? '还没有个人故事项目' : '暂无公开招募中的故事'}
             </p>
-            <p className="text-white/30 text-[10px] mt-1">
+            <p className="text-slate-600 text-xs mt-1.5">
               {activeTab === 'personal'
                 ? '去公共招募广场参与或发起一个故事'
                 : '点击右上角发起第一个群像共创'}
@@ -144,56 +142,65 @@ export default function StoryHallPage() {
           </motion.div>
         ) : (
           displayStories.map((story, index) => {
-            const statusInfo = statusLabels[story.status] || statusLabels.recruiting;
+            const sc = statusConfig[story.status] || statusConfig.recruiting;
+            const StatusIcon = sc.icon;
             const progress = story.totalRoles > 0 ? Math.round((story.approvedRoles / story.totalRoles) * 100) : 0;
             const isMyStory = story.directorId === currentUserId;
+
             return (
               <motion.div
                 key={story.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => router.push(`/story-hall/${story.id}`)}
-                className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all press-feedback cursor-pointer"
+                className="group bg-slate-800/40 rounded-2xl p-4 border border-slate-700/20 hover:border-slate-600/30 hover:bg-slate-800/60 transition-all duration-300 press-feedback cursor-pointer"
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-sm font-bold text-white/90 truncate">{story.title}</h3>
-                      <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full border ${statusInfo.bg} ${statusInfo.color} ${statusInfo.border}`}>
-                        {statusInfo.text}
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <h3 className="text-sm font-semibold text-slate-100 truncate">{story.title}</h3>
+                      <span className={`shrink-0 flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium ${sc.bg} ${sc.color} ${sc.border}`}>
+                        <StatusIcon size={10} />
+                        {sc.text}
                       </span>
                       {isMyStory && (
-                        <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-xh-gold/15 text-xh-gold border border-xh-gold/20">
+                        <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-xh-gold/15 text-xh-gold border border-xh-gold/25 font-medium">
                           我发起的
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-white/50 line-clamp-2">{story.worldview}</p>
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{story.worldview}</p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-white/20 shrink-0 mt-1" />
+                  <ArrowRight className="w-4 h-4 text-slate-700 group-hover:text-xh-gold group-hover:translate-x-0.5 transition-all duration-300 shrink-0 mt-0.5" />
                 </div>
 
                 {/* 进度条 */}
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-xh-gold rounded-full transition-all duration-500"
-                      style={{ width: `${progress}%` }}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="flex-1 h-2 bg-slate-700/30 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                      transition={{ duration: 0.8, delay: index * 0.05 }}
+                      className={`h-full rounded-full ${
+                        progress === 100
+                          ? 'bg-gradient-to-r from-emerald-400 to-teal-400'
+                          : 'bg-gradient-to-r from-xh-gold to-orange-400'
+                      }`}
                     />
                   </div>
-                  <span className="text-[10px] text-white/40 shrink-0">
-                    {story.approvedRoles}/{story.totalRoles} 角色
+                  <span className="text-[11px] text-slate-500 shrink-0 font-medium">
+                    {story.approvedRoles}/{story.totalRoles}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 text-[10px] text-white/40">
+                <div className="flex items-center gap-4 text-[11px] text-slate-600">
                   <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
+                    <Users size={12} />
                     {story.director.name || '匿名'}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
+                    <BookOpen size={12} />
                     {story.messageCount} 条对白
                   </span>
                 </div>
