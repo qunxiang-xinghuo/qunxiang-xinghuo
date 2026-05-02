@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Pause, Play, Sparkles, BookOpen, Lightbulb, Vote, Users, ArrowLeft } from 'lucide-react';
+import { Send, Pause, Play, Sparkles, BookOpen, Lightbulb, Vote, Users, Crown, MessageSquare, Flame, Bookmark, XCircle } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import { useSocket } from '@/hooks/useSocket';
 
@@ -28,6 +28,7 @@ interface StoryBranch {
 interface StoryDetail {
   id: string;
   title: string;
+  worldview: string;
   status: string;
   directorId: string;
   roles: { id: string; name: string; claimedBy: string | null; user: { id: string; name: string | null } | null }[];
@@ -52,7 +53,9 @@ export default function StoryRoomPage() {
   const [myIdentity, setMyIdentity] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [isSavingAsset, setIsSavingAsset] = useState(false);
+  const [assetSaved, setAssetSaved] = useState(false);
 
   useEffect(() => {
     const uid = localStorage.getItem('xh_user_id') || `guest-${Date.now()}`;
@@ -60,91 +63,60 @@ export default function StoryRoomPage() {
     localStorage.setItem('xh_user_id', uid);
   }, []);
 
-  // 加载故事详情
   const loadStory = useCallback(async () => {
     try {
       const res = await fetch(`/api/stories/${storyId}`);
       const result = await res.json();
       if (result.success && result.data?.story) {
         setStory(result.data.story);
-        // 找到自己的角色身份
         const uid = localStorage.getItem('xh_user_id') || '';
         const myRole = result.data.story.roles.find((r: any) => r.claimedBy === uid);
-        if (myRole) {
-          setMyIdentity(myRole.name);
-        }
+        if (myRole) setMyIdentity(myRole.name);
       }
-    } catch (err) {
-      console.error('Load story failed:', err);
-    }
+    } catch {}
   }, [storyId]);
 
-  // 加载消息
   const loadMessages = useCallback(async () => {
     try {
       const res = await fetch(`/api/stories/${storyId}/messages`);
       const result = await res.json();
-      if (result.success && result.data?.messages) {
-        setMessages(result.data.messages);
-      }
-    } catch (err) {
-      console.error('Load messages failed:', err);
-    }
+      if (result.success && result.data?.messages) setMessages(result.data.messages);
+    } catch {}
   }, [storyId]);
 
-  // 加载分支
   const loadBranches = useCallback(async () => {
     try {
       const res = await fetch(`/api/stories/${storyId}/branches`);
       const result = await res.json();
-      if (result.success && result.data?.branches) {
-        setBranches(result.data.branches);
-      }
-    } catch (err) {
-      console.error('Load branches failed:', err);
-    }
+      if (result.success && result.data?.branches) setBranches(result.data.branches);
+    } catch {}
   }, [storyId]);
 
-  // 加载灵感
   const loadInspirations = useCallback(async () => {
     try {
       const res = await fetch(`/api/stories/${storyId}/inspirations`);
       const result = await res.json();
-      if (result.success && result.data?.inspirations) {
-        setInspirations(result.data.inspirations);
-      }
-    } catch (err) {
-      console.error('Load inspirations failed:', err);
-    }
+      if (result.success && result.data?.inspirations) setInspirations(result.data.inspirations);
+    } catch {}
   }, [storyId]);
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadStory(), loadMessages(), loadBranches(), loadInspirations()]).finally(() =>
-      setLoading(false)
-    );
+    Promise.all([loadStory(), loadMessages(), loadBranches(), loadInspirations()]).finally(() => setLoading(false));
   }, [loadStory, loadMessages, loadBranches, loadInspirations]);
 
-  // WebSocket事件
+  // WebSocket
   useEffect(() => {
     if (!storyId || !currentUserId || !myIdentity) return;
-
     joinRoom(`story-${storyId}`, currentUserId, myIdentity);
-
     const handleNewMessage = (msg: StoryMessage) => {
-      setMessages((prev) => {
-        if (prev.find((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
+      setMessages((prev) => { if (prev.find((m) => m.id === msg.id)) return prev; return [...prev, msg]; });
     };
-
     const handlePause = () => setIsPaused(true);
     const handleResume = () => setIsPaused(false);
-
     on('new-story-message', handleNewMessage);
     on('director-pause', handlePause);
     on('director-resume', handleResume);
-
     return () => {
       off('new-story-message', handleNewMessage);
       off('director-pause', handlePause);
@@ -153,130 +125,101 @@ export default function StoryRoomPage() {
     };
   }, [storyId, currentUserId, myIdentity, joinRoom, leaveRoom, on, off]);
 
-  // 自动滚动到底部
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim() || isPaused || !myIdentity) return;
-
     const content = input.trim();
     setInput('');
-
+    if (inputRef.current) inputRef.current.style.height = 'auto';
     try {
       const res = await fetch(`/api/stories/${storyId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content,
-          identity: myIdentity,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, identity: myIdentity }),
       });
       const result = await res.json();
-      if (result.success && result.data?.message) {
-        // 通过WebSocket广播
-        socketSend(`story-${storyId}`, result.data.message);
-      }
-    } catch (err) {
-      console.error('Send message failed:', err);
-    }
+      if (result.success && result.data?.message) socketSend(`story-${storyId}`, result.data.message);
+    } catch {}
   };
 
   const handleDirectorPause = async () => {
-    try {
-      await fetch(`/api/stories/${storyId}/pause`, { method: 'POST' });
-      setIsPaused(true);
-    } catch (err) {
-      console.error('Pause failed:', err);
-    }
+    try { await fetch(`/api/stories/${storyId}/pause`, { method: 'POST' }); setIsPaused(true); } catch {}
   };
-
   const handleDirectorResume = async () => {
-    try {
-      await fetch(`/api/stories/${storyId}/resume`, { method: 'POST' });
-      setIsPaused(false);
-    } catch (err) {
-      console.error('Resume failed:', err);
-    }
+    try { await fetch(`/api/stories/${storyId}/resume`, { method: 'POST' }); setIsPaused(false); } catch {}
   };
 
-  // AI生成分支剧情
   const handleGenerateBranch = async () => {
     if (generatingBranch) return;
     setGeneratingBranch(true);
     try {
-      // 收集最近20条消息作为上下文
       const recentMessages = messages.slice(-20).map((m) => `${m.identity}: ${m.content}`).join('\n');
-
       const res = await fetch('/api/ai/story-weave', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: recentMessages,
-          storyTitle: story?.title || '',
-          mode: 'branch',
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: recentMessages, storyTitle: story?.title || '', mode: 'branch' }),
       });
       const result = await res.json();
       if (result.success && result.data?.branch) {
-        const branchData = result.data.branch;
-        // 保存到数据库
-        const saveRes = await fetch(`/api/stories/${storyId}/branches`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: branchData.content,
-            options: branchData.options,
-          }),
+        await fetch(`/api/stories/${storyId}/branches`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: result.data.branch.content, options: result.data.branch.options }),
         });
-        if (saveRes.ok) {
-          loadBranches();
-          setShowBranches(true);
-        }
+        loadBranches();
+        setShowBranches(true);
       }
-    } catch (err) {
-      console.error('Generate branch failed:', err);
-    } finally {
-      setGeneratingBranch(false);
-    }
+    } catch {}
+    setGeneratingBranch(false);
   };
 
-  // 投票
   const handleVote = async (branchId: string, optionIdx: number) => {
     try {
       await fetch(`/api/stories/${storyId}/branches/${branchId}/vote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ optionIdx }),
       });
-    } catch (err) {
-      console.error('Vote failed:', err);
-    }
+    } catch {}
   };
 
-  // 导演决议
   const handleResolveBranch = async (branchId: string, optionIdx: number) => {
     try {
       await fetch(`/api/stories/${storyId}/branches/${branchId}/vote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ optionIdx, resolve: true }),
       });
       loadBranches();
-    } catch (err) {
-      console.error('Resolve failed:', err);
-    }
+    } catch {}
+  };
+
+  const handleSaveAsset = async () => {
+    if (assetSaved) return;
+    setIsSavingAsset(true);
+    try {
+      const res = await fetch('/api/assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ storyId }) });
+      const result = await res.json();
+      if (result.success) setAssetSaved(true);
+    } catch {}
+    setIsSavingAsset(false);
+  };
+
+  const handleEndChat = async () => {
+    await handleSaveAsset();
+    router.push('/library');
   };
 
   const isDirector = story?.directorId === currentUserId;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px';
+  };
 
   if (loading) {
     return (
       <div className="flex flex-col h-full page-gradient">
         <TopBar title="对白室" showBack onBack={() => router.back()} />
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-gold rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -286,17 +229,32 @@ export default function StoryRoomPage() {
     <div className="flex flex-col h-full page-gradient">
       <TopBar title={story?.title || '对白室'} showBack onBack={() => router.back()} />
 
-      {/* 状态栏 */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <span className={`flex items-center gap-1 text-[10px] ${isConnected ? 'text-emerald-400' : 'text-yellow-400'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-yellow-400'} animate-pulse`} />
+      {/* 脑洞信息区 - 金色剧场风格 */}
+      <div className="shrink-0 px-4 py-3 bg-gradient-to-r from-xh-gold/8 to-orange-500/5 border-b border-xh-gold/15">
+        <div className="flex items-start gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-xh-gold/15 flex items-center justify-center shrink-0 border border-xh-gold/20">
+            <Sparkles className="w-4 h-4 text-xh-gold" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-bold text-xh-gold truncate">{story?.title || '对白实验室'}</h3>
+            {story?.worldview && (
+              <p className="text-[11px] text-xh-gold/50 mt-0.5 line-clamp-2">{story.worldview}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 状态栏 - 更精致 */}
+      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 bg-slate-800/30 border-b border-slate-700/20">
+        <div className="flex items-center gap-2.5">
+          <span className={`flex items-center gap-1 text-[10px] ${isConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
+            <Users className="w-3 h-3" />
             {isConnected ? '实时连接' : '连接中...'}
           </span>
           {isPaused && (
-            <span className="text-[10px] text-red-400 flex items-center gap-1">
-              <Pause className="w-3 h-3" />
-              导演已暂停
+            <span className="text-[10px] text-red-400 flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/15">
+              <Pause className="w-3 h-3" />导演已暂停
             </span>
           )}
         </div>
@@ -304,37 +262,29 @@ export default function StoryRoomPage() {
           {isDirector && (
             <>
               {isPaused ? (
-                <button
-                  onClick={handleDirectorResume}
-                  className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
-                >
-                  <Play className="w-3 h-3" />
-                  继续
+                <button onClick={handleDirectorResume} className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/12 text-emerald-400 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20">
+                  <Play className="w-3 h-3" />继续
                 </button>
               ) : (
-                <button
-                  onClick={handleDirectorPause}
-                  className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
-                >
-                  <Pause className="w-3 h-3" />
-                  暂停
+                <button onClick={handleDirectorPause} className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-red-500/12 text-red-400 hover:bg-red-500/20 transition-colors border border-red-500/20">
+                  <Pause className="w-3 h-3" />暂停
                 </button>
               )}
             </>
           )}
-          <button
-            onClick={() => setShowBranches(!showBranches)}
-            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/50 hover:bg-white/10 transition-colors"
-          >
-            <Vote className="w-3 h-3" />
-            分支
+          <button onClick={() => setShowBranches(!showBranches)} className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-slate-700/30 text-slate-400 hover:bg-slate-700/50 transition-colors border border-slate-600/20">
+            <Vote className="w-3 h-3" />分支
           </button>
-          <button
-            onClick={() => setShowInspirations(!showInspirations)}
-            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/50 hover:bg-white/10 transition-colors"
-          >
-            <Lightbulb className="w-3 h-3" />
-            灵感
+          <button onClick={() => setShowInspirations(!showInspirations)} className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-slate-700/30 text-slate-400 hover:bg-slate-700/50 transition-colors border border-slate-600/20">
+            <Lightbulb className="w-3 h-3" />灵感
+          </button>
+          <button onClick={handleSaveAsset} disabled={isSavingAsset || assetSaved}
+            className={`flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full transition-colors border ${assetSaved ? 'bg-emerald-500/12 text-emerald-400 border-emerald-500/20' : 'bg-slate-700/30 text-slate-400 hover:bg-slate-700/50 border-slate-600/20'}`}>
+            <Bookmark className={`w-3 h-3 ${assetSaved ? 'fill-current' : ''}`} />
+            {assetSaved ? '已保存' : '存素材'}
+          </button>
+          <button onClick={handleEndChat} className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/15 transition-colors border border-red-500/20">
+            <XCircle className="w-3 h-3" />结束
           </button>
         </div>
       </div>
@@ -342,58 +292,40 @@ export default function StoryRoomPage() {
       {/* 分支侧边栏 */}
       <AnimatePresence>
         {showBranches && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="shrink-0 overflow-hidden border-b border-white/5 bg-white/[0.02]"
-          >
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            className="shrink-0 overflow-hidden border-b border-slate-700/20 bg-slate-800/20">
             <div className="p-3 max-h-48 overflow-y-auto no-scrollbar">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-white/70">剧情分支</span>
-                <button
-                  onClick={handleGenerateBranch}
-                  disabled={generatingBranch}
-                  className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-xh-gold/15 text-xh-gold hover:bg-xh-gold/25 transition-colors disabled:opacity-50"
-                >
-                  {generatingBranch ? (
-                    <div className="w-3 h-3 border-2 border-xh-gold/30 border-t-xh-gold rounded-full animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3 h-3" />
-                  )}
+                <span className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                  <Vote className="w-3.5 h-3.5 text-xh-gold" />剧情分支
+                </span>
+                <button onClick={handleGenerateBranch} disabled={generatingBranch}
+                  className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-xh-gold/12 text-xh-gold hover:bg-xh-gold/20 transition-colors disabled:opacity-50 border border-xh-gold/20">
+                  {generatingBranch ? <div className="w-3 h-3 border-2 border-xh-gold/30 border-t-xh-gold rounded-full animate-spin" /> : <Sparkles className="w-3 h-3" />}
                   AI生成分支
                 </button>
               </div>
               {branches.length === 0 ? (
-                <p className="text-[10px] text-white/50 text-center py-2">暂无分支提案</p>
+                <p className="text-[10px] text-slate-600 text-center py-3">暂无分支提案，点击上方按钮生成</p>
               ) : (
                 <div className="space-y-2">
                   {branches.map((branch) => {
                     const opts = JSON.parse(branch.options || '[]');
                     return (
-                      <div key={branch.id} className="bg-white/[0.03] rounded-lg p-2.5 border border-white/[0.06]">
-                        <p className="text-[11px] text-white/70 mb-1.5">{branch.content}</p>
+                      <div key={branch.id} className="bg-slate-800/30 rounded-lg p-2.5 border border-slate-700/15">
+                        <p className="text-[11px] text-slate-300 mb-1.5">{branch.content}</p>
                         <div className="space-y-1">
                           {opts.map((opt: any, idx: number) => (
                             <div key={idx} className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => handleVote(branch.id, idx)}
-                                disabled={branch.status === 'resolved'}
-                                className={`flex-1 text-left text-[10px] px-2 py-1 rounded-md transition-colors ${
-                                  branch.winnerIdx === idx
-                                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-                                    : 'bg-white/5 text-white/50 hover:bg-white/10'
-                                }`}
-                              >
+                              <button onClick={() => handleVote(branch.id, idx)} disabled={branch.status === 'resolved'}
+                                className={`flex-1 text-left text-[10px] px-2.5 py-1.5 rounded-md transition-colors ${
+                                  branch.winnerIdx === idx ? 'bg-emerald-500/12 text-emerald-400 border border-emerald-500/20' : 'bg-slate-700/20 text-slate-500 hover:bg-slate-700/30'
+                                }`}>
                                 {opt.text || opt}
                               </button>
                               {isDirector && branch.status !== 'resolved' && (
-                                <button
-                                  onClick={() => handleResolveBranch(branch.id, idx)}
-                                  className="text-[10px] px-2 py-1 rounded-md bg-xh-gold/15 text-xh-gold hover:bg-xh-gold/25 transition-colors"
-                                >
-                                  采纳
-                                </button>
+                                <button onClick={() => handleResolveBranch(branch.id, idx)}
+                                  className="text-[10px] px-2.5 py-1.5 rounded-md bg-xh-gold/12 text-xh-gold hover:bg-xh-gold/20 transition-colors border border-xh-gold/20">采纳</button>
                               )}
                             </div>
                           ))}
@@ -411,22 +343,18 @@ export default function StoryRoomPage() {
       {/* 灵感侧边栏 */}
       <AnimatePresence>
         {showInspirations && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="shrink-0 overflow-hidden border-b border-white/5 bg-white/[0.02]"
-          >
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            className="shrink-0 overflow-hidden border-b border-slate-700/20 bg-slate-800/20">
             <div className="p-3 max-h-40 overflow-y-auto no-scrollbar">
-              <span className="text-xs font-medium text-white/70 block mb-2">灵感库</span>
+              <span className="text-xs font-medium text-slate-300 block mb-2 flex items-center gap-1.5">
+                <Lightbulb className="w-3.5 h-3.5 text-xh-gold" />灵感库
+              </span>
               {inspirations.length === 0 ? (
-                <p className="text-[10px] text-white/50 text-center py-2">AI生成的备用灵感将保存在这里</p>
+                <p className="text-[10px] text-slate-600 text-center py-3">AI生成的备用灵感将保存在这里</p>
               ) : (
                 <div className="space-y-1.5">
                   {inspirations.map((inp) => (
-                    <div key={inp.id} className="text-[10px] text-white/40 bg-white/[0.03] rounded-md px-2 py-1.5">
-                      {inp.content}
-                    </div>
+                    <div key={inp.id} className="text-[10px] text-slate-500 bg-slate-700/20 rounded-md px-2.5 py-1.5 border border-slate-700/10">{inp.content}</div>
                   ))}
                 </div>
               )}
@@ -435,39 +363,52 @@ export default function StoryRoomPage() {
         )}
       </AnimatePresence>
 
-      {/* 消息列表 */}
-      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-3">
+      {/* 消息列表 - 精致消息气泡 */}
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <BookOpen className="w-10 h-10 text-white/10 mb-2" />
-            <p className="text-white/50 text-xs">还没有对白</p>
-            <p className="text-white/40 text-[10px] mt-1">以你的角色身份发送第一条消息</p>
+            <div className="w-14 h-14 rounded-2xl bg-xh-gold/8 flex items-center justify-center mb-3 border border-xh-gold/15">
+              <BookOpen className="w-6 h-6 text-xh-gold/60" />
+            </div>
+            <p className="text-sm text-slate-400 font-medium mb-1">对白室已就绪</p>
+            <p className="text-xs text-slate-600">
+              {myIdentity ? `以「${myIdentity}」的身份发送第一句话` : '你需要先认领角色才能发言'}
+            </p>
           </div>
         ) : (
           messages.map((msg) => {
             const isMe = msg.senderId === currentUserId;
+            const isDirectorMsg = msg.isDirectorNote;
             return (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[80%] ${isMe ? 'items-end' : 'items-start'}`}>
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[10px] text-white/40">{msg.identity}</span>
-                    {msg.isDirectorNote && (
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-xh-gold/15 text-xh-gold">导演</span>
+              <motion.div key={msg.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[82%] ${isMe ? 'items-end' : 'items-start'}`}>
+                  {/* 身份标签 */}
+                  <div className="flex items-center gap-1.5 mb-1 px-1">
+                    <span className={`text-[10px] font-medium ${isMe ? 'text-xh-gold' : 'text-slate-500'}`}>{msg.identity}</span>
+                    {isDirectorMsg && (
+                      <span className="flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded bg-xh-gold/12 text-xh-gold border border-xh-gold/15">
+                        <Crown className="w-2.5 h-2.5" />导演
+                      </span>
                     )}
+                    <span className="text-[9px] text-slate-700">{new Date(msg.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
-                  <div
-                    className={`px-3 py-2 rounded-xl text-sm ${
-                      isMe
-                        ? 'bg-xh-gold/15 text-white/90 rounded-br-sm border border-xh-gold/20'
-                        : 'bg-white/5 text-white/80 rounded-bl-sm border border-white/[0.06]'
-                    }`}
-                  >
+                  {/* 气泡 - 带小尾巴 */}
+                  <div className={`relative px-3.5 py-2.5 text-sm leading-relaxed ${
+                    isMe
+                      ? 'bg-gradient-to-br from-xh-gold/15 to-xh-gold/5 text-slate-100 rounded-2xl rounded-tr-sm border border-xh-gold/20'
+                      : isDirectorMsg
+                      ? 'bg-xh-gold/8 text-slate-200 rounded-2xl rounded-tl-sm border border-xh-gold/15'
+                      : 'bg-slate-800/50 text-slate-300 rounded-2xl rounded-tl-sm border border-slate-700/20'
+                  }`}>
                     {msg.content}
+                    {/* 小三角 */}
+                    <div className={`absolute -bottom-[5px] w-2.5 h-2.5 rotate-45 ${
+                      isMe
+                        ? 'right-3 bg-xh-gold/15 border-r border-b border-xh-gold/20'
+                        : isDirectorMsg
+                        ? 'left-3 bg-xh-gold/8 border-l border-b border-xh-gold/15'
+                        : 'left-3 bg-slate-800/50 border-l border-b border-slate-700/20'
+                    }`} />
                   </div>
                 </div>
               </motion.div>
@@ -477,36 +418,33 @@ export default function StoryRoomPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 输入栏 */}
-      <div className="shrink-0 px-4 py-3 border-t border-white/5 bg-white/[0.02]">
+      {/* 输入栏 - textarea自动增高 */}
+      <div className="shrink-0 px-4 py-3 border-t border-slate-700/20 bg-slate-900/50 backdrop-blur-xl">
         {isPaused ? (
-          <div className="flex items-center justify-center py-2">
+          <div className="flex items-center justify-center py-2.5">
             <Pause className="w-4 h-4 text-red-400 mr-1.5" />
             <span className="text-xs text-red-400">导演已暂停对白</span>
           </div>
         ) : !myIdentity ? (
-          <div className="flex items-center justify-center py-2">
-            <Users className="w-4 h-4 text-white/50 mr-1.5" />
-            <span className="text-xs text-white/50">你需要先认领角色才能发言</span>
+          <div className="flex items-center justify-center py-2.5">
+            <Users className="w-4 h-4 text-slate-500 mr-1.5" />
+            <span className="text-xs text-slate-500">你需要先认领角色才能发言</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <div className="flex-1 relative">
-              <input
+          <div className="flex items-end gap-2">
+            <div className="flex-1 bg-slate-800/50 rounded-2xl border border-slate-700/30 px-4 py-2.5 focus-within:border-xh-gold/30 transition-colors">
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                onChange={handleInputChange}
                 placeholder={`以 ${myIdentity} 的身份发言...`}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-xh-gold/40 pr-10"
+                rows={1}
+                className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-600 resize-none focus:outline-none max-h-24 caret-xh-gold"
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               />
             </div>
-            <button
-              onClick={handleSend}
-              disabled={!input.trim()}
-              className="p-2.5 rounded-xl bg-xh-gold/20 text-xh-gold hover:bg-xh-gold/30 transition-colors disabled:opacity-30"
-            >
+            <button onClick={handleSend} disabled={!input.trim()}
+              className="p-3 rounded-full transition-all disabled:bg-slate-800/30 disabled:text-slate-600 disabled:border-slate-700/20 bg-xh-gold/15 text-xh-gold border border-xh-gold/25 hover:bg-xh-gold/25 active:scale-95">
               <Send className="w-4 h-4" />
             </button>
           </div>
