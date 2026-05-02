@@ -72,7 +72,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col h-full relative overflow-hidden bg-[#1a1a2e]">
+    <div className="flex flex-col h-full relative overflow-hidden page-gradient">
       {/* 刘看山欢迎引导 */}
       <LiuKanshanWelcome show={showWelcome} onDismiss={dismissWelcome} />
 
@@ -115,9 +115,9 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={mode.available ? { scale: 1.02 } : {}}
-                whileTap={mode.available ? { scale: 0.98 } : {}}
+                whileTap={mode.available ? { scale: 0.97 } : {}}
                 onClick={() => handleModeClick(mode)}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left press-feedback ${
                   mode.core
                     ? `${mode.bg} ${mode.border} cursor-pointer hover:shadow-lg`
                     : mode.available

@@ -4,6 +4,7 @@ import TopBar from '@/components/layout/TopBar';
 import { useAuth } from '@/hooks/useAuth';
 import { User, Heart, Lock, ScrollText, Coins, Settings, LogOut, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 const menuItems = [
   { id: 'heal', label: '个人疗愈中心', icon: Heart, badge: '即将开放', desc: '密码保护，永不公开' },
@@ -39,7 +40,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e]">
+    <div className="flex flex-col h-full page-gradient">
       <TopBar title="我的" />
 
       {/* 用户信息区 */}
@@ -74,10 +75,12 @@ export default function ProfilePage() {
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
-            <div
+            <motion.div
               key={item.id}
+              whileHover={{ x: 2 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => handleMenuClick(item)}
-              className="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors flex items-center justify-between cursor-pointer"
+              className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-white/5 text-white/50">
@@ -100,7 +103,7 @@ export default function ProfilePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-            </div>
+            </motion.div>
           );
         })}
 

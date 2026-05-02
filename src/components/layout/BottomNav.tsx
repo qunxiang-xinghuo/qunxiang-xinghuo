@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { Compass, BookOpen, ScrollText, User } from 'lucide-react';
 
 const navItems = [
@@ -28,21 +29,34 @@ export default function BottomNav() {
           const isActive = pathname === item.path;
           const Icon = item.icon;
           return (
-            <button
+            <motion.button
               key={item.path}
+              whileTap={{ scale: 0.9 }}
               onClick={() => router.push(item.path)}
-              className="flex flex-col items-center gap-0.5 transition-colors py-1 px-3"
+              className="flex flex-col items-center gap-0.5 transition-colors py-1 px-3 relative"
             >
-              <Icon
-                size={20}
-                className={isActive ? 'text-xh-gold' : 'text-white/30 hover:text-white/50'}
-              />
+              <motion.div
+                animate={isActive ? { y: [0, -2, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <Icon
+                  size={20}
+                  className={isActive ? 'text-xh-gold' : 'text-white/30 hover:text-white/50'}
+                />
+              </motion.div>
               <span
                 className={`text-[10px] ${isActive ? 'text-xh-gold font-medium' : 'text-white/30 hover:text-white/50'}`}
               >
                 {item.label}
               </span>
-            </button>
+              {isActive && (
+                <motion.div
+                  layoutId="bottom-nav-indicator"
+                  className="absolute -bottom-2 w-1 h-1 rounded-full bg-xh-gold"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+            </motion.button>
           );
         })}
       </div>
