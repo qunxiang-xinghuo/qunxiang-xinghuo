@@ -25,14 +25,15 @@ export default function TopBar({ title, showBack = false, onBack }: TopBarProps)
       {showBack ? (
         <button
           onClick={handleBack}
-          className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors mr-3"
+          className="p-3 -ml-1 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors mr-2"
+          aria-label="返回"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
       ) : null}
-      
+
       {title ? (
         <h2 className="flex-1 text-center text-lg font-medium text-white pr-10">{title}</h2>
       ) : (
@@ -43,16 +44,14 @@ export default function TopBar({ title, showBack = false, onBack }: TopBarProps)
           <h1 className="text-xl font-bold tracking-wider text-white">群像·星火</h1>
         </div>
       )}
-      
+
       {!title && (
         <div className="flex items-center gap-3 ml-auto">
-          <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+          <button className="p-3 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors" aria-label="通知">
             <Bell size={18} />
           </button>
-          <a href="/profile">
-            <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
-              <User size={18} />
-            </button>
+          <a href="/profile" className="p-3 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors" aria-label="个人中心">
+            <User size={18} />
           </a>
         </div>
       )}

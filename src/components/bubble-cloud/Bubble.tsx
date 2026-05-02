@@ -26,14 +26,17 @@ export default function Bubble({
   compact = false,
 }: BubbleProps) {
   const [isBouncing, setIsBouncing] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
   const bubbleRef = useRef<HTMLDivElement>(null);
 
   const handleClick = useCallback(() => {
     if (isBouncing) return;
     setIsBouncing(true);
+    setIsPressed(true);
     setTimeout(() => {
       setIsBouncing(false);
+      setIsPressed(false);
       onClick(data.id);
     }, 400);
   }, [isBouncing, data.id, onClick]);
@@ -93,8 +96,12 @@ export default function Bubble({
           } as React.CSSProperties
         }
       >
+        {/* v5.0: 选中光晕层（独立于视觉层） */}
+        {isPressed && (
+          <div className="bubble-selected-glow" />
+        )}
         <div
-          className={`bubble-glass w-full h-full cursor-pointer select-none ${isBouncing ? 'bubble-pop' : ''}`}
+          className={`bubble-glass w-full h-full cursor-pointer select-none ${isBouncing ? 'bubble-pop' : ''} ${isPressed ? 'bubble-pressed' : ''}`}
           onClick={handleClick}
         >
           {/* 标题文字 */}

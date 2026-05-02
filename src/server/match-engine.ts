@@ -45,9 +45,11 @@ export async function findMatch(
 
   console.log("[MatchEngine] 无活跃匹配，创建新请求");
 
-  // 快速匹配模式：不指定脑洞，系统随机分配
-  const isQuickMatch = mode === "quick";
-  console.log("[MatchEngine] isQuickMatch:", isQuickMatch);
+  // v5.0-fix: 如果用户明确传入了brainholeId（从泡泡点击进入），优先使用它
+  const hasExplicitBrainhole = !!brainholeId;
+  // 快速匹配模式：不指定脑洞，系统随机分配；但若明确指定则不视为quick
+  const isQuickMatch = mode === "quick" && !hasExplicitBrainhole;
+  console.log("[MatchEngine] hasExplicitBrainhole:", hasExplicitBrainhole, "isQuickMatch:", isQuickMatch);
 
   // 创建新的匹配请求（v4.3: 无论是否quick模式，都保存brainholeId）
   console.log("[MatchEngine] 正在创建匹配请求...");
@@ -69,8 +71,9 @@ export async function findMatch(
     userId: { not: excludeUserId || userId },
   };
 
-  // 快速匹配模式：不限制脑洞；同脑洞模式：必须同脑洞
-  if (!isQuickMatch && brainholeId) {
+  // v5.0-fix: 如果用户明确指定了brainholeId，优先匹配同脑洞的用户
+  // 快速匹配且未指定脑洞：不限制；其他情况：使用用户指定的brainholeId
+  if (hasExplicitBrainhole) {
     matchWhere.brainholeId = brainholeId;
   }
 

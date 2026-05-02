@@ -23,17 +23,21 @@ function DuoTimeoutContent() {
 
       console.log('[DuoTimeout] 开始创建AI房间, identity:', identity, 'guestId:', guestId);
 
-      // v4.7: 随机抽取一个脑洞用于AI对话
-      let brainholeId = undefined;
-      try {
-        const randomRes = await fetch('/api/brainholes?mode=bubble&limit=1');
-        const randomResult = await randomRes.json();
-        console.log('[DuoTimeout] 随机脑洞响应:', JSON.stringify(randomResult));
-        const randomBrainhole = randomResult.data?.brainholes?.[0];
-        brainholeId = randomBrainhole?.id;
-        console.log('[DuoTimeout] 使用脑洞:', randomBrainhole?.title, 'id:', brainholeId);
-      } catch (bhErr) {
-        console.warn('[DuoTimeout] 获取随机脑洞失败，将不使用脑洞:', bhErr);
+      // v5.0-fix: 优先使用用户之前选择的brainholeId，没有才随机抽取
+      let brainholeId = localStorage.getItem('xh_duo_brainhole') || undefined;
+      if (!brainholeId) {
+        try {
+          const randomRes = await fetch('/api/brainholes?mode=bubble&limit=1');
+          const randomResult = await randomRes.json();
+          console.log('[DuoTimeout] 随机脑洞响应:', JSON.stringify(randomResult));
+          const randomBrainhole = randomResult.data?.brainholes?.[0];
+          brainholeId = randomBrainhole?.id;
+          console.log('[DuoTimeout] 使用随机脑洞:', randomBrainhole?.title, 'id:', brainholeId);
+        } catch (bhErr) {
+          console.warn('[DuoTimeout] 获取随机脑洞失败:', bhErr);
+        }
+      } else {
+        console.log('[DuoTimeout] 使用用户选择的brainholeId:', brainholeId);
       }
 
       console.log('[DuoTimeout] POST /api/rooms/ai ...');
@@ -74,8 +78,12 @@ function DuoTimeoutContent() {
 
   const handleContinueWait = () => {
     setChoice('wait');
-    // v4.6: 继续等待时，跳转回等待页（不再依赖matchId，等待页会重新发起匹配请求）
-    router.push(`/duo-waiting?round=2`);
+    // v5.0-fix: 继续等待时传递brainholeId，确保用户之前选择的脑洞不丢失
+    const savedBrainhole = localStorage.getItem('xh_duo_brainhole');
+    const params = new URLSearchParams();
+    if (savedBrainhole) params.set('brainholeId', savedBrainhole);
+    params.set('round', '2');
+    router.push(`/duo-waiting?${params.toString()}`);
   };
 
   const handleExit = () => {

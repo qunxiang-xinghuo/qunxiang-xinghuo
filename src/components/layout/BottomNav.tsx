@@ -23,8 +23,8 @@ export default function BottomNav() {
   }
 
   return (
-    <div className="border-t border-white/5 bg-[#1a1a2e]/95 backdrop-blur-md px-4 py-2 z-50 shrink-0">
-      <div className="flex items-center justify-around">
+    <div className="border-t border-white/5 bg-xh-primary/95 backdrop-blur-md px-4 z-50 shrink-0 safe-area-pb">
+      <div className="flex items-center justify-around py-1">
         {navItems.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
@@ -33,7 +33,7 @@ export default function BottomNav() {
               key={item.path}
               whileTap={{ scale: 0.9 }}
               onClick={() => router.push(item.path)}
-              className="flex flex-col items-center gap-0.5 transition-colors py-1 px-3 relative"
+              className="flex flex-col items-center justify-center gap-0.5 transition-colors min-h-11 min-w-11 py-1 px-2 relative"
             >
               <motion.div
                 animate={isActive ? { y: [0, -2, 0] } : {}}
@@ -41,18 +41,18 @@ export default function BottomNav() {
               >
                 <Icon
                   size={20}
-                  className={isActive ? 'text-xh-gold' : 'text-white/30 hover:text-white/50'}
+                  className={isActive ? 'text-xh-gold' : 'text-white/40 hover:text-white/60'}
                 />
               </motion.div>
               <span
-                className={`text-[10px] ${isActive ? 'text-xh-gold font-medium' : 'text-white/30 hover:text-white/50'}`}
+                className={`text-[10px] ${isActive ? 'text-xh-gold font-medium' : 'text-white/40 hover:text-white/60'}`}
               >
                 {item.label}
               </span>
               {isActive && (
                 <motion.div
                   layoutId="bottom-nav-indicator"
-                  className="absolute -bottom-2 w-1 h-1 rounded-full bg-xh-gold"
+                  className="absolute bottom-0.5 w-1 h-1 rounded-full bg-xh-gold"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}

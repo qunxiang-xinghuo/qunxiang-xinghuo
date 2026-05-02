@@ -374,14 +374,14 @@ export default function RoomPage() {
               {isAiRoom ? 'AI 对话' : '实时连接'}
             </span>
           )}
-          {/* v4.3+v4.8: 保存到素材库 + 结束对撞 */}
+          {/* v5.0: 保存到素材库 + 结束对撞，触控区域最小44px */}
           <button
             onClick={handleSaveAsset}
             disabled={isSavingAsset || assetSaved}
-            className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full transition-colors ${
+            className={`flex items-center gap-1 text-[10px] px-3 py-1.5 rounded-full transition-colors ${
               assetSaved
                 ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'
+                : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70'
             }`}
           >
             <Bookmark className={`w-3 h-3 ${assetSaved ? 'fill-current' : ''}`} />
@@ -389,7 +389,7 @@ export default function RoomPage() {
           </button>
           <button
             onClick={handleEndChat}
-            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+            className="flex items-center gap-1 text-[10px] px-3 py-1.5 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
           >
             <XCircle className="w-3 h-3" />
             结束对撞

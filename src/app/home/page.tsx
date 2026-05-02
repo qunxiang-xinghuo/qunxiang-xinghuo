@@ -92,7 +92,7 @@ export default function HomePage() {
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-[11px] text-white/30"
+          className="text-[11px] text-white/50"
         >
           每一个认真生活的人，都能成为故事的一部分
         </motion.p>
@@ -146,12 +146,12 @@ export default function HomePage() {
                       </span>
                     )}
                     {!mode.available && (
-                      <span className="text-[10px] bg-white/10 text-white/30 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] bg-white/10 text-white/50 px-2 py-0.5 rounded-full">
                         即将开放
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-white/40 mt-0.5">{mode.subtitle}</p>
+                  <p className="text-[11px] text-white/50 mt-0.5">{mode.subtitle}</p>
                 </div>
                 <svg
                   className="w-5 h-5 shrink-0"
