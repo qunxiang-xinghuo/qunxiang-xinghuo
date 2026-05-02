@@ -291,3 +291,31 @@
 - 新增页面/修改路由时同步检查所有入口跳转
 - 暗色背景文本透明度最低限度：主文本≥50%，次要文本≥40%，提示≥30%
 - 交互反馈需要"视觉确认"——用户操作后必须有明确的视觉变化
+
+---
+
+## 2026-05-04 v5.3-deploy — 服务器部署问题
+
+**现象1**：SSH密钥认证失败，无法自动登录服务器。
+
+**根因**：服务器上 `~/.ssh/authorized_keys` 未包含本地 `id_ed25519.pub`，或sshd配置禁用了该密钥。
+
+**解决**：使用paramiko + 密码认证作为备用方案。
+
+**现象2**：`git pull origin dev` 连接GitHub超时（135秒）。
+
+**根因**：服务器工作目录有大量未提交的本地修改（`M`/`??`标记），git处于dirty状态，导致pull操作异常缓慢/失败。
+
+**解决**：`git reset --hard origin/dev && git clean -fd` 强制同步到远程dev分支，放弃所有服务器本地修改。
+
+**现象3**：Windows控制台 `UnicodeEncodeError: 'gbk' codec can't encode character '\u2713'`。
+
+**根因**：PowerShell默认GBK编码，npm输出的✓（对勾）字符无法编码。
+
+**解决**：Python脚本中 `sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')`。
+
+**预防措施**：
+- 服务器代码永远以GitHub的`dev`分支为唯一真理源，服务器不做任何本地修改
+- 跨平台部署脚本必须处理Unicode编码
+- 保留密码作为SSH备用认证方式
+- 部署前执行 `git status` 检查，dirty状态下先reset再pull
