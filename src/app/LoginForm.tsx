@@ -49,7 +49,15 @@ export default function LoginForm() {
       if (result?.error) {
         setError('用户名或密码错误');
       } else {
-        // v4.2: 登录成功 → 跳转到发现页 /home
+        // v4.9-fix: 登录成功 → 保存用户信息到 localStorage → 跳转
+        const userData = {
+          id: 'user-' + Date.now(),
+          name: username.trim(),
+          identity: { type: 'real' as const, label: username.trim() },
+          level: 1,
+          sparkCount: 0,
+        };
+        localStorage.setItem('xh_user', JSON.stringify(userData));
         router.push('/home');
         router.refresh();
       }

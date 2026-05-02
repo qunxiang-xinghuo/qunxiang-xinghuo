@@ -839,3 +839,122 @@ ZHIHU_API_KEY="xrUmjOP1pferLLYrQufOIrvlbT3tFvct"
 3. 素材库卡片可以展示对白摘要预览
 4. 可以增加深色/浅色主题切换
 5. PWA 支持（离线可用、添加到主屏幕）
+
+
+---
+
+## v4.9-fix 紧急UI修复（2026-04-29）
+
+### 修复一：「我的」页面左上角返回键
+
+**问题**：`profile/page.tsx` 的 `TopBar` 只传了 `title="我的"`，没有传 `showBack`，导致左上角没有返回按钮。
+
+**修复**：
+```tsx
+<TopBar title="我的" showBack onBack={() => router.back()} />
+```
+
+**文件**：`src/app/profile/page.tsx`
+
+---
+
+### 修复二：「我的」页面用户名与登录名不一致
+
+**问题诊断**：
+1. `LoginForm.tsx` 使用 NextAuth 的 `signIn('credentials', ...)` 登录，成功后只执行了 `router.push('/home')`，**没有把用户信息保存到 localStorage**
+2. `useAuth.ts` 从 `localStorage.getItem('xh_user')` 读取用户，由于登录时没写入，读取结果为 `null`
+3. 当 `xh_user` 不存在时，`useAuth` 回退到 `savedIdentity`（从双人模式流程中保存的身份），显示的是身份标签而非登录用户名
+4. 如果没有 `savedIdentity`，则显示 "游客用户"
+
+**修复内容**：
+
+**A. `LoginForm.tsx` — 登录成功后保存用户信息到 localStorage**
+```tsx
+// 登录成功 → 保存用户信息到 localStorage → 跳转
+const userData = {
+  id: 'user-' + Date.now(),
+  name: username.trim(),
+  identity: { type: 'real' as const, label: username.trim() },
+  level: 1,
+  sparkCount: 0,
+};
+localStorage.setItem('xh_user', JSON.stringify(userData));
+router.push('/home');
+```
+
+**B. `useAuth.ts` — 增加 NextAuth session 作为 fallback 来源**
+- 引入 `useSession` from `next-auth/react`
+- 优先级：localStorage `xh_user` > NextAuth session > localStorage `xh_identity`
+- 从 session 读取 `name`、`username`、`level`、`sparkCount`，构造 `User` 对象
+- 获取到 session 用户后，自动同步到 localStorage，确保后续刷新页面仍可用
+
+**C. `providers.tsx` — 添加 `SessionProvider`**
+- `useSession` 必须在 `SessionProvider` 包裹下才能工作
+- 原 `providers.tsx` 是空 wrapper，现添加 `SessionProvider`
+
+**关键教训**：
+- NextAuth 的 `signIn` 只负责设置 httpOnly cookie，不会自动同步到 localStorage
+- 自定义 `useAuth` hook 需要同时支持多种用户来源（localStorage、NextAuth session、临时身份）
+- `useSession` 在 SSR 时必须被 `SessionProvider` 包裹，否则返回 undefined 导致 build 失败
+
+---
+
+### 修复三：素材库列表点不开（无详情页）
+
+**问题诊断**：
+1. `library/page.tsx` 中的素材卡片只有公开/私密切换按钮，**没有点击跳转事件**
+2. 没有素材详情页路由 `/library/[id]`
+3. 没有获取单个资产详情的 API `/api/assets/[id]`
+
+**修复内容**：
+
+**A. `library/page.tsx` — 添加点击跳转**
+- 素材卡片整体添加 `onClick={() => router.push(`/library/${asset.id}`)}`
+- 公开/私密按钮添加 `e.stopPropagation()`，防止点击按钮时触发卡片跳转
+- 卡片右侧添加 `ChevronRight` 箭头图标，提示可点击
+
+**B. 新建 `/api/assets/[id]/route.ts` — 获取素材详情**
+- GET 接口，根据 asset id 查询数据库
+- `include` 嵌套：asset → brainhole + room → messages + participants
+- 权限检查：未公开的素材只有所有者可见
+- 返回完整素材信息（标题、摘要、消息列表、火花数等）
+
+**C. 新建 `/library/[id]/page.tsx` — 素材详情页**
+- 顶部信息卡：展示脑洞标题、摘要、创建时间、消息数、火花数
+- 下方对白记录：按时间顺序展示所有 room messages
+- 消息气泡样式与对白室一致（我方金色右对齐，对方白色左对齐）
+- 火花消息带 Flame 标记
+- 加载状态、错误状态、空状态均处理
+- 顶部 `TopBar` 带返回键
+
+**文件变更**：
+| 文件 | 变更 |
+|------|------|
+| `src/app/profile/page.tsx` | TopBar 添加 `showBack onBack` |
+| `src/app/LoginForm.tsx` | 登录成功后保存 `xh_user` 到 localStorage |
+| `src/hooks/useAuth.ts` | 引入 `useSession`，支持 NextAuth session fallback |
+| `src/app/providers.tsx` | 添加 `SessionProvider` |
+| `src/app/library/page.tsx` | 素材卡片添加 `onClick` 跳转 + ChevronRight 图标 |
+| `src/app/api/assets/[id]/route.ts` | 新建：获取素材详情 API |
+| `src/app/library/[id]/page.tsx` | 新建：素材详情页 |
+
+---
+
+### 自检记录
+
+**第一次 build 失败**：
+- 错误：`TypeError: Cannot destructure property 'data' of 'useSession(...)' as it is undefined`
+- 原因：`useSession` 在 SSR 时没有被 `SessionProvider` 包裹，返回 undefined
+- 解决：在 `providers.tsx` 中添加 `SessionProvider`
+- **教训**：任何使用 `useSession` 的组件，其祖先必须包裹 `SessionProvider`
+
+**第二次 build 成功**：
+- 所有 45 个页面正常生成
+- 新增 `/api/assets/[id]` 和 `/library/[id]` 路由
+
+---
+
+### 部署状态
+
+服务器 `.env` 已配置 DeepSeek + 知乎 API Key
+部署后执行：`pm2 restart qunxiang-xinghuo`

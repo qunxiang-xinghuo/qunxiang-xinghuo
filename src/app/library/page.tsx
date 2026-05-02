@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import TopBar from '@/components/layout/TopBar';
-import { BookOpen, Globe, MessageSquare, Sparkles, Eye, Lock, Unlock } from 'lucide-react';
+import { BookOpen, Globe, MessageSquare, Sparkles, Eye, Lock, Unlock, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 interface AssetItem {
   id: string;
@@ -23,6 +24,7 @@ const tabs = [
 ];
 
 export default function LibraryPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('mine');
   const [myAssets, setMyAssets] = useState<AssetItem[]>([]);
   const [publicAssets, setPublicAssets] = useState<AssetItem[]>([]);
@@ -118,7 +120,8 @@ export default function LibraryPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all press-feedback"
+                    onClick={() => router.push(`/library/${asset.id}`)}
+                    className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all press-feedback cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -127,17 +130,20 @@ export default function LibraryPage() {
                           <p className="text-[11px] text-white/30 mt-1 line-clamp-2">{asset.summary}</p>
                         )}
                       </div>
-                      <button
-                        onClick={() => togglePublic(asset.id, asset.isPublic)}
-                        className={`shrink-0 p-1.5 rounded-lg transition-colors ${
-                          asset.isPublic
-                            ? 'bg-emerald-500/15 text-emerald-400'
-                            : 'bg-white/5 text-white/30 hover:text-white/50'
-                        }`}
-                        title={asset.isPublic ? '已公开，点击取消' : '点击公开'}
-                      >
-                        {asset.isPublic ? <Unlock size={14} /> : <Lock size={14} />}
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); togglePublic(asset.id, asset.isPublic); }}
+                          className={`shrink-0 p-1.5 rounded-lg transition-colors ${
+                            asset.isPublic
+                              ? 'bg-emerald-500/15 text-emerald-400'
+                              : 'bg-white/5 text-white/30 hover:text-white/50'
+                          }`}
+                          title={asset.isPublic ? '已公开，点击取消' : '点击公开'}
+                        >
+                          {asset.isPublic ? <Unlock size={14} /> : <Lock size={14} />}
+                        </button>
+                        <ChevronRight className="w-4 h-4 text-white/20" />
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-4 mt-3 text-[10px] text-white/30">
