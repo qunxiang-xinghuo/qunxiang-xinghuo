@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import TopBar from '@/components/layout/TopBar';
-import { BookOpen, Globe, MessageSquare, Sparkles, Eye, Lock, Unlock, ChevronRight } from 'lucide-react';
+import { BookOpen, Globe, MessageSquare, Sparkles, Eye, Lock, Unlock, ChevronRight, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
@@ -64,9 +64,35 @@ export default function LibraryPage() {
         setMyAssets((prev) =>
           prev.map((a) => (a.id === assetId ? { ...a, isPublic: !current } : a))
         );
+        // v5.0-fix: 公开状态变更后，重新加载广场素材
+        const publicRes = await fetch('/api/assets/public');
+        const publicResult = await publicRes.json();
+        if (publicResult.success && publicResult.data?.assets) {
+          setPublicAssets(publicResult.data.assets);
+        }
       }
     } catch (err) {
       console.error('Toggle public failed:', err);
+    }
+  };
+
+  // v5.0: 删除素材
+  const handleDelete = async (assetId: string) => {
+    if (!confirm('确定要删除这个素材吗？删除后无法恢复。')) return;
+    try {
+      const res = await fetch(`/api/assets/${assetId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setMyAssets((prev) => prev.filter((a) => a.id !== assetId));
+        // 同时从广场素材中移除
+        setPublicAssets((prev) => prev.filter((a) => a.id !== assetId));
+      } else {
+        alert('删除失败，请稍后重试');
+      }
+    } catch (err) {
+      console.error('Delete asset failed:', err);
+      alert('删除失败，请检查网络');
     }
   };
 
@@ -141,6 +167,13 @@ export default function LibraryPage() {
                           title={asset.isPublic ? '已公开，点击取消' : '点击公开'}
                         >
                           {asset.isPublic ? <Unlock size={14} /> : <Lock size={14} />}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(asset.id); }}
+                          className="shrink-0 p-1.5 rounded-lg transition-colors bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                          title="删除素材"
+                        >
+                          <Trash2 size={14} />
                         </button>
                         <ChevronRight className="w-4 h-4 text-white/20" />
                       </div>
