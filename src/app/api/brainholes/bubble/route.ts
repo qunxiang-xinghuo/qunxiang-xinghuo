@@ -242,7 +242,7 @@ function mergeAndDeduplicate(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "30", 10), 30), 1);
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "30", 10), 1), 30);
     const refresh = searchParams.get("refresh") === "true";
 
     // 1. 如果不是强制刷新，先尝试从数据库获取近期数据（1小时内）
