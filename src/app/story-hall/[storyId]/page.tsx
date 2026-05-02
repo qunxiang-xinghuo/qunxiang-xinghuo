@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Users, Sparkles, MessageSquare, ArrowRight, UserCheck,
-  Lock, Check, X, Clock, Play, Shield, UserCircle, Tag, PenTool, Crown, Flame, BookOpen
+  Lock, Check, X, Clock, Play, Shield, UserCircle, Tag, PenTool, Crown, Flame, BookOpen, Theater, Star
 } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import ClaimRoleModal from '@/components/story/ClaimRoleModal';
@@ -40,17 +40,41 @@ interface StoryDetail {
   _count: { messages: number; inspirations: number };
 }
 
-const statusConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any; gradient: string }> = {
-  recruiting: { text: '招募中', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Users, gradient: 'from-emerald-500/15 to-teal-500/5' },
-  ongoing: { text: '进行中', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock, gradient: 'from-xh-gold/15 to-orange-500/5' },
-  completed: { text: '已完成', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: MessageSquare, gradient: 'from-blue-500/15 to-cyan-500/5' },
+const statusConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any; barColor: string; gradient: string }> = {
+  recruiting: {
+    text: '招募中', color: 'text-emerald-400', bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/20', icon: Users, barColor: 'bg-emerald-500',
+    gradient: 'from-emerald-500/10 to-teal-500/5',
+  },
+  ongoing: {
+    text: '进行中', color: 'text-xh-gold', bg: 'bg-xh-gold/10',
+    border: 'border-xh-gold/20', icon: Clock, barColor: 'bg-xh-gold',
+    gradient: 'from-xh-gold/10 to-orange-500/5',
+  },
+  completed: {
+    text: '已完成', color: 'text-blue-400', bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20', icon: MessageSquare, barColor: 'bg-blue-500',
+    gradient: 'from-blue-500/10 to-cyan-500/5',
+  },
 };
 
-const claimConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any; dotColor: string }> = {
-  unclaimed: { text: '待认领', color: 'text-slate-500', bg: 'bg-slate-700/20', border: 'border-slate-600/20', icon: UserCircle, dotColor: 'bg-slate-500' },
-  pending: { text: '审核中', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Clock, dotColor: 'bg-amber-400' },
-  approved: { text: '已通过', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Check, dotColor: 'bg-emerald-400' },
-  rejected: { text: '已拒绝', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: X, dotColor: 'bg-red-400' },
+const claimConfig: Record<string, { text: string; color: string; bg: string; border: string; icon: any; avatarBg: string }> = {
+  unclaimed: {
+    text: '待认领', color: 'text-slate-500', bg: 'bg-slate-700/20',
+    border: 'border-slate-600/20', icon: UserCircle, avatarBg: 'bg-slate-700/40',
+  },
+  pending: {
+    text: '审核中', color: 'text-amber-400', bg: 'bg-amber-500/10',
+    border: 'border-amber-500/20', icon: Clock, avatarBg: 'bg-amber-500/20',
+  },
+  approved: {
+    text: '已通过', color: 'text-emerald-400', bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/20', icon: Check, avatarBg: 'bg-emerald-500/20',
+  },
+  rejected: {
+    text: '已拒绝', color: 'text-red-400', bg: 'bg-red-500/10',
+    border: 'border-red-500/20', icon: X, avatarBg: 'bg-red-500/20',
+  },
 };
 
 export default function StoryDetailPage() {
@@ -65,23 +89,16 @@ export default function StoryDetailPage() {
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
 
-  useEffect(() => {
-    setCurrentUserId(localStorage.getItem('xh_user_id') || '');
-  }, []);
+  useEffect(() => { setCurrentUserId(localStorage.getItem('xh_user_id') || ''); }, []);
 
   const loadStory = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/stories/${storyId}`);
       const result = await res.json();
-      if (result.success && result.data?.story) {
-        setStory(result.data.story);
-      }
-    } catch (err) {
-      console.error('Load story failed:', err);
-    } finally {
-      setLoading(false);
-    }
+      if (result.success && result.data?.story) setStory(result.data.story);
+    } catch (err) { console.error('Load story failed:', err); }
+    finally { setLoading(false); }
   }, [storyId]);
 
   useEffect(() => { loadStory(); }, [loadStory]);
@@ -96,9 +113,7 @@ export default function StoryDetailPage() {
     setReviewing(roleId);
     try {
       const res = await fetch(`/api/stories/${storyId}/roles/${roleId}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
       });
       const result = await res.json();
       if (result.success) loadStory();
@@ -144,82 +159,102 @@ export default function StoryDetailPage() {
       <TopBar title="故事详情" showBack onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto no-scrollbar">
-        {/* 故事信息卡 - 剧目海报风格 */}
+        {/* ====== 剧目海报头部 ====== */}
         <div className="px-5 pt-5 pb-3">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="card-elevated p-5 relative overflow-hidden"
+            className="card-elevated p-0 relative overflow-hidden"
           >
-            {/* 背景装饰 */}
-            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${sc.gradient} rounded-full blur-3xl opacity-30 pointer-events-none`} />
+            {/* 背景渐变 */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${sc.gradient} opacity-40 pointer-events-none`} />
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-xh-gold/10 to-transparent rounded-full blur-2xl pointer-events-none" />
 
-            {/* 标题 + 状态 + 导演皇冠 */}
-            <div className="relative">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-bold text-slate-100 mb-2 leading-tight">{story.title}</h2>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full border font-medium ${sc.bg} ${sc.color} ${sc.border}`}>
-                      <StatusIcon size={10} />
-                      {sc.text}
-                    </span>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500">
-                      <Shield size={10} />
-                      导演: {story.director.name || '匿名'}
-                    </span>
+            <div className="relative p-5">
+              {/* 状态 + 导演 */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full border font-medium ${sc.bg} ${sc.color} ${sc.border}`}>
+                    <StatusIcon size={11} />
+                    {sc.text}
                   </div>
+                  <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <Shield size={10} />
+                    导演: {story.director.name || '匿名'}
+                  </span>
                 </div>
                 {isDirector && (
-                  <div className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-xh-gold/20 to-orange-500/10 flex items-center justify-center border border-xh-gold/25">
-                    <Crown className="w-5 h-5 text-xh-gold" />
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-xh-gold/10 border border-xh-gold/20">
+                    <Crown className="w-3.5 h-3.5 text-xh-gold" />
+                    <span className="text-[10px] text-xh-gold font-medium">导演</span>
                   </div>
                 )}
               </div>
 
-              <p className="text-xs text-slate-500 leading-relaxed mb-4">{story.worldview}</p>
+              {/* 大标题 */}
+              <h2 className="text-xl font-bold text-slate-100 mb-3 leading-tight">{story.title}</h2>
 
-              {/* 核心冲突区 */}
-              <div className="bg-gradient-to-r from-xh-gold/8 to-orange-500/5 rounded-xl p-3.5 border border-xh-gold/15 mb-3">
+              {/* 统计数字行 */}
+              <div className="flex items-center gap-5 mb-4">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-xh-gold">{story.roles.length}</div>
+                  <div className="text-[10px] text-slate-500">角色</div>
+                </div>
+                <div className="w-px h-8 bg-slate-700/30" />
+                <div className="text-center">
+                  <div className="text-lg font-bold text-xh-gold">{story._count.messages}</div>
+                  <div className="text-[10px] text-slate-500">对白</div>
+                </div>
+                <div className="w-px h-8 bg-slate-700/30" />
+                <div className="text-center">
+                  <div className="text-lg font-bold text-xh-gold">
+                    {story.roles.filter(r => r.claimStatus === 'approved').length}
+                  </div>
+                  <div className="text-[10px] text-slate-500">已就位</div>
+                </div>
+                <div className="w-px h-8 bg-slate-700/30" />
+                <div className="text-center">
+                  <div className="text-lg font-bold text-slate-500">
+                    {new Date(story.createdAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
+                  </div>
+                  <div className="text-[10px] text-slate-500">创建</div>
+                </div>
+              </div>
+
+              {/* 世界观 */}
+              <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/15 mb-3">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Theater className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">世界观</span>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">{story.worldview}</p>
+              </div>
+
+              {/* 核心冲突 */}
+              <div className="p-3 rounded-xl bg-gradient-to-r from-xh-gold/8 to-orange-500/5 border border-xh-gold/15">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Flame className="w-3.5 h-3.5 text-xh-gold/70" />
                   <span className="text-[10px] text-xh-gold/70 font-medium uppercase tracking-wider">核心冲突</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">{story.conflict}</p>
               </div>
-
-              {/* 统计 */}
-              <div className="flex items-center gap-5 text-[11px] text-slate-600">
-                <span className="flex items-center gap-1.5">
-                  <MessageSquare size={12} className="text-slate-500" />
-                  {story._count.messages} 条对白
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Users size={12} className="text-slate-500" />
-                  {story.roles.length} 个角色
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock size={12} className="text-slate-500" />
-                  {new Date(story.createdAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
-                </span>
-              </div>
             </div>
           </motion.div>
         </div>
 
-        {/* 角色列表 - 角色卡风格 */}
+        {/* ====== 角色列表 - 演员表风格 ====== */}
         <div className="px-4 pb-3">
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-center gap-2">
               <div className="w-1 h-4 rounded-full bg-xh-gold" />
-              <h3 className="text-sm font-semibold text-slate-200">角色卡</h3>
+              <h3 className="text-sm font-semibold text-slate-200">演员表</h3>
             </div>
             <span className="text-[11px] text-slate-600 font-medium">
               {story.roles.filter((r) => r.claimStatus === 'approved').length}/{story.roles.length} 就位
             </span>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {story.roles.map((role, index) => {
               const cs = claimConfig[role.claimStatus] || claimConfig.unclaimed;
               const CSIcon = cs.icon;
@@ -232,74 +267,59 @@ export default function StoryDetailPage() {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.04 }}
-                  className={`rounded-xl p-4 border transition-all duration-300 relative overflow-hidden ${
-                    role.claimStatus === 'approved'
-                      ? 'bg-emerald-500/[0.04] border-emerald-500/15'
-                      : role.claimStatus === 'pending'
-                      ? 'bg-amber-500/[0.04] border-amber-500/15'
-                      : role.claimStatus === 'rejected'
-                      ? 'bg-red-500/[0.04] border-red-500/15'
-                      : 'bg-slate-800/30 border-slate-700/20'
+                  className={`card-elevated p-3.5 relative overflow-hidden ${
+                    role.claimStatus === 'approved' ? 'border-l-2 border-l-emerald-500' :
+                    role.claimStatus === 'pending' ? 'border-l-2 border-l-amber-400' :
+                    role.claimStatus === 'rejected' ? 'border-l-2 border-l-red-400' :
+                    ''
                   }`}
                 >
-                  {/* 状态指示条 */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${cs.dotColor}`} />
+                  <div className="flex items-start gap-3">
+                    {/* 角色头像 */}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${cs.avatarBg} ${cs.color} border ${cs.border}`}>
+                      {role.name.charAt(0)}
+                    </div>
 
-                  <div className="flex items-start justify-between gap-2 pl-2">
+                    {/* 角色信息 */}
                     <div className="flex-1 min-w-0">
-                      {/* 角色头 */}
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border ${cs.bg} ${cs.color} ${cs.border}`}>
-                          {role.name.charAt(0)}
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-slate-100">{role.name}</span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${cs.bg} ${cs.color} ${cs.border}`}>
-                              <CSIcon size={9} />
-                              {cs.text}
-                            </span>
-                            {isMyClaim && role.claimStatus === 'pending' && (
-                              <span className="text-[10px] text-amber-400 font-medium">我的申请</span>
-                            )}
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-sm font-semibold text-slate-100">{role.name}</span>
+                        <span className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${cs.bg} ${cs.color} ${cs.border}`}>
+                          <CSIcon size={9} />
+                          {cs.text}
+                        </span>
+                        {isMyClaim && role.claimStatus === 'pending' && (
+                          <span className="text-[10px] text-amber-400 font-medium">我的申请</span>
+                        )}
                       </div>
-                      <p className="text-xs text-slate-500 pl-10">{role.description}</p>
+                      <p className="text-xs text-slate-500 mb-2">{role.description}</p>
 
                       {/* 认领者信息 */}
                       {role.claimedBy && role.user && (
-                        <div className="mt-3 pl-10 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-xh-gold/30 to-orange-500/20 flex items-center justify-center text-[10px] text-xh-gold font-bold border border-xh-gold/20">
-                              {role.user.name?.charAt(0) || '?'}
-                            </div>
-                            <span className="text-xs text-slate-400 font-medium">{role.user.name || '匿名演员'}</span>
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-800/30 border border-slate-700/15">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-xh-gold/30 to-orange-500/20 flex items-center justify-center text-[10px] text-xh-gold font-bold border border-xh-gold/20">
+                            {role.user.name?.charAt(0) || '?'}
                           </div>
-                          <div className="space-y-1.5">
-                            {role.identityTag && (
-                              <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                                <Tag size={10} className="text-slate-600" />
-                                <span className="text-slate-400">{role.identityTag}</span>
-                              </p>
-                            )}
-                            {role.performanceDirection && (
-                              <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                                <PenTool size={10} className="text-slate-600" />
-                                <span className="text-slate-400">{role.performanceDirection}</span>
-                              </p>
-                            )}
-                            {role.claimReason && (
-                              <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                                <UserCheck size={10} className="text-slate-600" />
-                                <span className="text-slate-400">{role.claimReason}</span>
-                              </p>
-                            )}
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs text-slate-400 font-medium">{role.user.name || '匿名演员'}</span>
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                              {role.identityTag && (
+                                <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                                  <Tag size={9} />{role.identityTag}
+                                </span>
+                              )}
+                              {role.performanceDirection && (
+                                <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                                  <PenTool size={9} />{role.performanceDirection}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
 
+                    {/* 认领按钮 */}
                     {canClaim && (
                       <motion.button
                         whileTap={{ scale: 0.95 }}
@@ -313,15 +333,14 @@ export default function StoryDetailPage() {
 
                   {/* 导演审核 */}
                   {isDirector && role.claimStatus === 'pending' && role.claimedBy && (
-                    <div className="mt-3 flex items-center gap-2 pt-3 border-t border-slate-700/20 pl-2">
+                    <div className="mt-2.5 flex items-center gap-2 pt-2.5 border-t border-slate-700/20">
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={(e) => { e.stopPropagation(); handleReview(role.id, 'approve'); }}
                         disabled={reviewing === role.id}
                         className="flex-1 py-2 rounded-xl bg-emerald-500/12 text-emerald-400 text-xs font-medium hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 border border-emerald-500/20"
                       >
-                        <Check size={14} />
-                        通过
+                        <Check size={14} />通过
                       </motion.button>
                       <motion.button
                         whileTap={{ scale: 0.95 }}
@@ -329,8 +348,7 @@ export default function StoryDetailPage() {
                         disabled={reviewing === role.id}
                         className="flex-1 py-2 rounded-xl bg-red-500/12 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 border border-red-500/20"
                       >
-                        <X size={14} />
-                        拒绝
+                        <X size={14} />拒绝
                       </motion.button>
                     </div>
                   )}
@@ -340,22 +358,20 @@ export default function StoryDetailPage() {
           </div>
         </div>
 
-        {/* 导演待审核汇总 */}
+        {/* ====== 导演待审核汇总 ====== */}
         {isDirector && pendingRoles.length > 0 && story.status === 'recruiting' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-3">
             <div className="bg-amber-500/[0.04] rounded-xl p-3.5 border border-amber-500/15">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="w-4 h-4 text-amber-400" />
-                <span className="text-sm font-medium text-amber-400">
-                  待审核申请 ({pendingRoles.length})
-                </span>
+                <span className="text-sm font-medium text-amber-400">待审核申请 ({pendingRoles.length})</span>
               </div>
               <p className="text-[11px] text-slate-500">通过所有角色的审核后，即可启动故事</p>
             </div>
           </motion.div>
         )}
 
-        {/* 启动故事 */}
+        {/* ====== 启动故事 ====== */}
         {isDirector && allApproved && story.status === 'recruiting' && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-4">
             <motion.button
@@ -367,10 +383,7 @@ export default function StoryDetailPage() {
               {starting ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>
-                  <Play className="w-5 h-5" />
-                  启动故事
-                </>
+                <><Play className="w-5 h-5" />启动故事</>
               )}
               <ArrowRight className="w-4 h-4" />
             </motion.button>
@@ -378,7 +391,7 @@ export default function StoryDetailPage() {
           </motion.div>
         )}
 
-        {/* 进入对白室 */}
+        {/* ====== 进入对白室 ====== */}
         {story.status === 'ongoing' && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-6">
             <motion.button
@@ -386,14 +399,12 @@ export default function StoryDetailPage() {
               onClick={() => router.push(`/story-hall/${storyId}/room`)}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-bold shadow-lg shadow-xh-gold/20 hover:shadow-xl hover:shadow-xh-gold/30 transition-all flex items-center justify-center gap-2"
             >
-              <Sparkles className="w-5 h-5" />
-              进入对白室
-              <ArrowRight className="w-4 h-4" />
+              <Sparkles className="w-5 h-5" />进入对白室<ArrowRight className="w-4 h-4" />
             </motion.button>
           </motion.div>
         )}
 
-        {/* 锁定提示 */}
+        {/* ====== 锁定提示 ====== */}
         {story.status === 'recruiting' && !allApproved && (
           <div className="px-4 pb-6">
             <div className="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-slate-800/30 border border-slate-700/20">
