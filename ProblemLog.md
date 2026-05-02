@@ -1,5 +1,58 @@
 # 问题记录与修复日志
 
+## v5.8 泡泡彻底修复+范例故事+50年PM重设计 (2026-05-02)
+
+### 根因诊断：泡泡里的脑洞为什么还是没有？（三层根因）
+
+**第一层：API limit参数bug（已修复但未部署）**
+- 本地代码已修复：`Math.min(Math.max(parseInt(...), 1), 30)`
+- 但 `server_build.py` **没有执行 `git reset --hard origin/dev`**！
+- 服务器上跑的还是 `v5.4` 的旧代码，limit bug仍然存在
+- **修复server_build.py**：改为SFTP上传 + 远程git reset + build + restart
+
+**第二层：前端布局不可靠**
+- 旧BubbleCloud使用 `absolute` 定位 + `Math.random()` 计算位置
+- SSR时 `window` 未定义，containerWidth 固定为430，布局不稳定
+- home page容器高度300px < BubbleCloud内部420px，导致裁剪
+- **修复**：改用 `flex-wrap` 布局，移除absolute定位，高度自适应
+
+**第三层：前端容错不足**
+- API返回非200时直接 `setBubbles([])`，显示"暂无热门内容"
+- **修复**：增加 `generateEmergencyFallback()` 函数，API失败时显示12个保底脑洞
+
+### 修改内容
+- **泡泡API** (`api/brainholes/bubble/route.ts`)：
+  - limit参数彻底修复 + 异常处理增强 + emergency_fallback保底
+  - 每个API调用独立try-catch，任一失败不影响其他
+- **泡泡前端** (`bubble-cloud/BubbleCloud.tsx` + `Bubble.tsx`)：
+  - 从absolute蜂窝布局改为flex-wrap流式布局
+  - 增加emergency fallback数据（12个精选脑洞）
+  - 增加"点击刷新"按钮
+- **首页** (`home/page.tsx`)：
+  - 泡泡区域改为自适应高度，移除固定300px限制
+  - 渐变遮罩只覆盖底部，不裁剪泡泡
+- **故事大厅** (`story-hall/page.tsx`)：
+  - 内置5个范例故事（40年专业编辑+作者视角）
+  - 范例故事有完整世界观、核心冲突、角色设定
+  - 无真实故事时自动显示范例
+  - 范例卡片带"范例"蓝色badge
+- **故事详情** (`story-hall/[storyId]/page.tsx`)：
+  - 支持范例故事详情展示（demo-1 / demo-2）
+  - 范例故事提示区：说明+返回大厅/发起故事按钮
+  - 每个角色有详细的人物描述和演绎要求
+
+### 验证
+- 本地Build：47/47 ✅
+- 服务器Build：47/47 ✅
+- 首页 `/home`：200 ✅
+- 故事大厅 `/story-hall`：200 ✅
+- 泡泡API `/api/brainholes/bubble?limit=20`：**返回20个真实知乎热榜数据** ✅
+- 静态JS `_buildManifest.js`：200 ✅
+- 静态Chunk JS：200 ✅
+- PM2状态：online, uptime 4s ✅
+
+---
+
 ## v5.7-fix 泡泡消失+多人组队重设计+故事对白室精致化 (2026-05-02)
 
 ### 根因诊断：泡泡里的脑洞为什么消失？
