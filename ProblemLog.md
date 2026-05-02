@@ -379,3 +379,35 @@ if (req.url && req.url.startsWith('/_next/')) {
 - 部署后第一时间curl验证静态资源
 - 不要迷信Next.js会自动处理所有事情
 - 日志中出现 `○ Compiling` = 开发模式，生产环境绝对不应该出现
+
+
+---
+
+## 2026-05-04 v5.3-avatar — 刘看山形象替换为官方图片
+
+**任务**：把项目中所有刘看山形象（SVG绘制/CSS简笔画）替换为官方卡通图片。
+
+**涉及文件**：
+| 文件 | 原实现 | 新实现 |
+|------|--------|--------|
+| `LiuKanshanAvatar.tsx` | SVG代码绘制（236行） | `next/image` 加载 `/liukanshan.jpg` |
+| `LiuKanshanFloat.tsx` | CSS简笔画（耳朵+眼睛+嘴巴） | `next/image` 加载 `/liukanshan.jpg` |
+| `LiuKanshanWelcome.tsx` | 引用Avatar组件（自动更新） | 无需修改 |
+
+**图片位置**：`public/liukanshan.jpg`（Next.js静态资源目录，可直接通过 `/liukanshan.jpg` 访问）
+
+**尺寸调整**：
+- sizeMap: lg 96→120px, xl 128→144px（用户要求"宽度120px左右"）
+- 使用 `next/image` 的 `object-contain` 保持比例
+
+**位置确认**（用户要求"不要重叠不要挤角落"）：
+| 使用位置 | 原位置 | 状态 |
+|----------|--------|------|
+| 等待页 `duo-waiting` | flex居中 + `mb-6` | 不重叠 ✅ |
+| 超时页 `duo-timeout` | flex居中 + `mb-8` | 不重叠 ✅ |
+| 故事页 `story` | flex居中 + `mx-auto mb-4` | 不重叠 ✅ |
+| 欢迎弹窗 `home` | flex居中 + `mb-2` | 不重叠 ✅ |
+| 浮动按钮 `home` | `fixed bottom-20 right-4` | 不重叠 ✅ |
+
+**Build验证**：✅ 通过（Compiled successfully in 5.6s）
+**部署验证**：✅ 通过（9/9自检通过）

@@ -95,7 +95,26 @@ DATABASE_URL="file:./dev.db"
 - **文件**：`src/components/layout/LiuKanshanAvatar.tsx`
 - **回退**：`onError` → CSS简笔画
 
-## 八、关键路由速查
+## 八、TDD文档位置（用户常找不到）
+
+| 文档 | 实际路径 | 说明 |
+|------|---------|------|
+| **TDD v5.0** | `docs/qunxiangxinhuo-TDD-v5.0.md` | 产品需求文档（用户反馈的找不到的文件） |
+| TDD v4.5 | `TDD-v4.5-泡泡脑洞系统.md` | 泡泡系统技术细节 |
+| TDD v1.0~v4.3 | `docs/qunxiangxinhuo-TDD-v*.md` | 历史版本 |
+
+> 用户找不到TDD5.0？它在 `docs/` 子目录里，不在根目录。
+
+## 九、刘看山形象资源
+
+| 资源 | 路径 | 用途 |
+|------|------|------|
+| 官方图片 | `public/liukanshan.jpg` | 所有页面共用 |
+| 组件 | `src/components/layout/LiuKanshanAvatar.tsx` | 等待页/超时页/故事页 |
+| 浮动按钮 | `src/components/layout/LiuKanshanFloat.tsx` | 首页右下角浮动 |
+| 欢迎弹窗 | `src/components/layout/LiuKanshanWelcome.tsx` | 首页新用户引导 |
+
+## 十、关键路由速查
 
 | 功能 | 路由 |
 |------|------|
