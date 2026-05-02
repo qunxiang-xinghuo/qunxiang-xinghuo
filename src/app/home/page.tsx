@@ -57,7 +57,7 @@ export default function HomePage() {
     <div className="flex flex-col h-full relative overflow-hidden page-gradient">
       <LiuKanshanWelcome show={showWelcome} onDismiss={dismissWelcome} />
 
-      {/* 顶部标题区 - v5.6: 更大气 */}
+      {/* 顶部标题区 */}
       <div className="shrink-0 pt-5 pb-2 px-5">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
@@ -73,17 +73,16 @@ export default function HomePage() {
             <p className="text-[11px] text-slate-500 mt-0.5">每一个认真生活的人，都能成为故事的一部分</p>
           </div>
         </motion.div>
-        {/* 金色装饰线 */}
         <div className="h-px bg-gradient-to-r from-transparent via-xh-gold/30 to-transparent mt-2" />
       </div>
 
-      {/* 泡泡墙区域 - v5.6: 更大更沉浸 */}
-      <div className="shrink-0 relative overflow-hidden" style={{ height: '320px' }}>
+      {/* 泡泡墙区域 */}
+      <div className="shrink-0 relative overflow-hidden" style={{ height: '300px' }}>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0e1a] z-10 pointer-events-none" />
-        <BubbleCloud variant="compact" />
+        <BubbleCloud limit={20} />
       </div>
 
-      {/* 模式入口卡片 - v5.6: 更有层次感 */}
+      {/* 模式入口卡片 */}
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-3">
         <div className="flex items-center gap-2 mb-3 px-1">
           <div className="w-1 h-4 rounded-full bg-xh-gold" />
@@ -106,7 +105,6 @@ export default function HomePage() {
                     : 'bg-slate-800/20 border border-slate-700/10 opacity-50 cursor-not-allowed'
                 }`}
               >
-                {/* 左侧色带装饰 */}
                 {mode.core && (
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-xh-gold to-orange-500 rounded-l-2xl" />
                 )}
@@ -153,11 +151,8 @@ export default function HomePage() {
           })}
         </div>
 
-        {/* 底部提示 */}
         <div className="mt-4 mb-2 text-center">
-          <p className="text-[10px] text-slate-600">
-            点击泡泡探索热门内容 · v5.6
-          </p>
+          <p className="text-[10px] text-slate-600">点击泡泡探索热门脑洞 · v5.6</p>
         </div>
       </div>
     </div>

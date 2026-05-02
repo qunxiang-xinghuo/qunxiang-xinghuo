@@ -10,15 +10,17 @@ interface BubbleProps {
   index: number;
   onClick: () => void;
   bgColor?: string;
+  borderColor?: string;
   delay?: number;
 }
 
-export default function Bubble({ item, size, index, onClick, bgColor, delay = 0 }: BubbleProps) {
+export default function Bubble({ item, size, index, onClick, bgColor, borderColor, delay = 0 }: BubbleProps) {
   const [isPopping, setIsPopping] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [showGlow, setShowGlow] = useState(false);
   const [showRipple, setShowRipple] = useState(false);
 
+  // 根据泡泡大小计算字体大小
   const fontSize = Math.max(size / 5.5, 10);
   const floatDuration = 2.5 + Math.random() * 2.5;
   const floatDelay = Math.random() * 3;
@@ -35,6 +37,9 @@ export default function Bubble({ item, size, index, onClick, bgColor, delay = 0 
       onClick();
     }, 400);
   }, [isPopping, onClick]);
+
+  // 截断标题以适应泡泡大小
+  const displayTitle = item.title.length > 6 ? item.title.slice(0, 5) + '…' : item.title;
 
   return (
     <motion.div
@@ -62,13 +67,14 @@ export default function Bubble({ item, size, index, onClick, bgColor, delay = 0 
             width: size,
             height: size,
             backgroundColor: bgColor,
+            borderColor: borderColor,
           }}
         >
           <span
             className="bubble-text"
             style={{ fontSize }}
           >
-            {item.text}
+            {displayTitle}
           </span>
         </div>
       </div>
