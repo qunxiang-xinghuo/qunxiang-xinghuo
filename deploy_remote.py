@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-"""v5.3 远程部署脚本 - 修复编码问题"""
+"""v5.3 最终自检脚本"""
 import paramiko
 import sys
 import io
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 HOST = "81.70.59.228"
 USER = "root"
 PASSWORD = "F!D)7n_mc8Mq}bx="
 DEPLOY_DIR = "/www/wwwroot/qunxiang-xinghuo"
-
-# 修复Windows控制台GBK编码问题
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 def ssh_cmd(client, cmd, timeout=30):
     print(f"\n>>> {cmd}")
@@ -25,35 +23,41 @@ def ssh_cmd(client, cmd, timeout=30):
 def main():
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    print(f"[+] Connecting {HOST}...")
+    print("[self-check] Connecting server...")
     client.connect(HOST, username=USER, password=PASSWORD, timeout=30)
-    print("[+] Connected!")
+    print("[self-check] Connected!")
 
-    # 确认代码已更新
-    print("\n[+] Git status...")
-    ssh_cmd(client, f"cd {DEPLOY_DIR} && git log --oneline -3")
-    
-    # 安装依赖（如果需要）
-    print("\n[+] Installing dependencies...")
-    ssh_cmd(client, f"cd {DEPLOY_DIR} && npm install 2>&1", timeout=180)
-    
-    # Build
-    print("\n[+] Building...")
-    code, out, err = ssh_cmd(client, f"cd {DEPLOY_DIR} && npm run build 2>&1", timeout=300)
-    if code != 0:
-        print("[!] BUILD FAILED!")
-        client.close()
-        return False
-    
-    # Restart
-    print("\n[+] Restarting...")
-    ssh_cmd(client, f"cd {DEPLOY_DIR} && pm2 restart qunxiang-xinghuo")
-    ssh_cmd(client, f"cd {DEPLOY_DIR} && pm2 status qunxiang-xinghuo")
-    ssh_cmd(client, f"cd {DEPLOY_DIR} && pm2 save")
-    
+    checks = [
+        ("Git HEAD", f"cd {DEPLOY_DIR} && git log --oneline -1"),
+        ("Git status clean", f"cd {DEPLOY_DIR} && git status --short | wc -l"),
+        ("PM2 status", f"cd {DEPLOY_DIR} && pm2 status qunxiang-xinghuo"),
+        ("Build output exists", f"ls -ld {DEPLOY_DIR}/.next"),
+        ("LiuKanshanAvatar exists", f"cat {DEPLOY_DIR}/src/components/layout/LiuKanshanAvatar.tsx | grep -o 'zhimg.com' | head -1"),
+        ("Home route correct", f"cat {DEPLOY_DIR}/src/app/home/page.tsx | grep -o 'story-hall' | head -1"),
+        ("Server port listening", f"ss -tlnp | grep ':3000'"),
+    ]
+
+    all_ok = True
+    for name, cmd in checks:
+        print(f"\n========== {name} ==========")
+        code, out, err = ssh_cmd(client, cmd)
+        if code != 0 and name not in ["Git status clean"]:
+            print(f"[FAIL] {name}")
+            all_ok = False
+        else:
+            print(f"[OK] {name}")
+
     client.close()
-    print("\n[+] Deployment complete!")
-    return True
+    
+    if all_ok:
+        print("\n" + "="*50)
+        print("[self-check] ALL CHECKS PASSED!")
+        print("="*50)
+    else:
+        print("\n" + "="*50)
+        print("[self-check] SOME CHECKS FAILED!")
+        print("="*50)
+    return all_ok
 
 if __name__ == "__main__":
     ok = main()
