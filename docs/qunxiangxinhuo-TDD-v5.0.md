@@ -462,4 +462,118 @@ useEffect(() => {
 
 ---
 
-*文档版本：v5.0 | 待用户确认 | 确认后开发*
+---
+
+# v5.3 全面诊断与整改记录（2026-05-04）
+
+## 一、整改背景
+
+v5.2上线后出现以下问题，进行全面诊断与整改：
+1. 刘看山头像误用写实北极狐照片，与知乎官方卡通形象不符
+2. 首页"多人组队"入口跳转到不存在的 `/multiplayer`
+3. 全平台大量页面文本对比度不足（`text-white/20`~`/30`），部分屏幕难以阅读
+4. 泡泡点击反馈不够明显，用户不确定是否触发
+
+## 二、整改结果
+
+### 2.1 刘看山形象修正
+
+| 项目 | 修正前 | 修正后 |
+|------|--------|--------|
+| 图片来源 | Unsplash写实北极狐照片 | 知乎官方卡通头像 `https://pic1.zhimg.com/da8e974dc.jpg` |
+| 尺寸 | 可变 | 640x640 |
+| 回退 | CSS简笔画 | 保留 `onError` 回退到CSS简笔画 |
+
+**文件**: `src/components/layout/LiuKanshanAvatar.tsx`
+
+### 2.2 首页导航修正
+
+| 入口 | 修正前 | 修正后 |
+|------|--------|--------|
+| 多人组队 | `/multiplayer`（404） | `/story-hall`（故事广场） |
+
+**注意**：v5.1已将多人组队重构为"故事大厅"模块（`/story-hall`），首页入口未同步更新。
+
+### 2.3 全平台对比度修复（WCAG AA）
+
+**修复规则**：
+```
+text-white/20 → text-white/40  （提示文字、字数统计、placeholder）
+text-white/25 → text-white/40  （次要文本、时间戳）
+text-white/30 → text-white/50  （描述文字、状态提示、空状态）
+```
+
+**涉及文件（25个）**：LoginForm、register、duo-match、duo-timeout、duo-waiting、multi-match、multi-waiting、library、library/[id]、profile、story、story-hall（3文件）、story-hall/room、zhihu-search、zhihu-zhida、Bubble、ModeDock、LiuKanshanAvatar、DuoIdentityModal、ChatRoom、MessageBubble、ClaimRoleModal、globals.css
+
+### 2.4 泡泡交互强化
+
+| 效果 | v5.2 | v5.3 |
+|------|------|------|
+| 按下光晕 | 简单外发光 | 内发光+外发光+金边，`border-color: rgba(226,176,74,0.6)` |
+| 涟漪扩散 | 无 | 新增 `.bubble-ripple`，scale 1→1.5，opacity 0.8→0 |
+| 选中光晕 | inset -6px, scale 1.4 | inset -8px, scale 1.6，opacity 0.9→0 |
+| 动画时长 | 400ms | 500ms（与涟漪同步） |
+
+## 三、部署记录
+
+### 3.1 部署问题诊断
+
+**问题1：服务器GitHub HTTPS连接超时**
+- **现象**：`git pull origin dev` 卡住135秒失败
+- **根因**：服务器工作目录有大量未提交的本地修改（`M`/`??`标记），git处于dirty状态
+- **解决**：`git reset --hard origin/dev && git clean -fd` 强制同步
+- **教训**：服务器代码永远以GitHub的`dev`分支为唯一真理源
+
+**问题2：Windows控制台Unicode编码错误**
+- **现象**：`UnicodeEncodeError: 'gbk' codec can't encode character '\u2713'`
+- **根因**：Windows PowerShell默认GBK编码，npm输出的✓字符无法显示
+- **解决**：Python脚本中 `sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')`
+- **教训**：跨平台部署脚本必须处理编码问题
+
+**问题3：SSH密钥认证失败**
+- **现象**：`id_ed25519` 公钥被服务器拒绝
+- **根因**：服务器上 `~/.ssh/authorized_keys` 可能未包含本地公钥
+- **解决**：使用密码通过paramiko连接
+- **教训**：保留密码作为备用认证方式
+
+### 3.2 部署结果
+
+```
+[+] Git reset --hard origin/dev 成功
+[+] git clean -fd 成功
+[+] npm install 成功（prisma generate ✔）
+[+] npm run build 成功（47/47 pages, 14.4s compile）
+[+] pm2 restart qunxiang-xinghuo 成功
+[+] pm2 status: online, pid 1540040, mem 72.9mb
+[+] pm2 save 成功
+```
+
+**部署时间**：2026-05-04
+**Git Commit**：`2caec4f` (dev分支)
+
+## 四、更新后的状态
+
+| 功能 | 状态 |
+|------|------|
+| 刘看山卡通形象 | ✅ 已部署 |
+| 首页→故事大厅导航 | ✅ 已部署 |
+| 全平台对比度修复 | ✅ 已部署 |
+| 泡泡交互强化 | ✅ 已部署 |
+| 故事大厅模块 | ✅ v5.1已上线 |
+| 双人模式真实匹配 | ✅ v4.6已修复 |
+| AI对话上下文 | ✅ v4.8已接入 |
+| 素材自动保存 | ✅ v4.8-fix已接入 |
+
+## 五、重要文件路径速查
+
+| 文件 | 路径 | 用途 |
+|------|------|------|
+| 重要信息记录 | `IMPORTANT.md` | 服务器信息、部署命令、环境变量 |
+| 问题记录 | `ProblemLog.md` | 所有bug根因、修复、预防措施 |
+| 部署脚本 | `deploy_remote.py` | paramiko SSH自动部署 |
+| TDD v5.0 | `docs/qunxiangxinhuo-TDD-v5.0.md` | 本文件 |
+| TDD v4.5 | `TDD-v4.5-泡泡脑洞系统.md` | 泡泡系统+故事大厅技术细节 |
+
+---
+
+*文档版本：v5.0 + v5.3整改记录 | 已部署 | 2026-05-04*
