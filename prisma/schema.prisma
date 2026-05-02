@@ -383,6 +383,7 @@ model Story {
   status      String   @default("recruiting") // recruiting/ongoing/completed
   directorId  String
   maxActors   Int      @default(5)
+  minActors   Int      @default(2)  // 最少启动人数
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -402,10 +403,13 @@ model StoryRole {
   storyId       String
   name          String   // 角色名
   description   String   // 角色设定
-  requirements  String?  // 角色需求
-  claimedBy     String?  // 认领者userId
-  claimedAt     DateTime?
-  claimReason   String?  // 认领理由/人设
+  requirements       String?  // 角色需求
+  claimedBy          String?  // 认领者userId
+  claimedAt          DateTime?
+  claimReason        String?  // 认领理由/人设
+  claimStatus        String   @default("unclaimed") // unclaimed/pending/approved/rejected
+  identityTag        String?  // 身份标签（如"急诊科医生"）
+  performanceDirection String? // 演绎方向（如"理性与情感交织"）
 
   story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
   user  User? @relation("StoryRoleClaimer", fields: [claimedBy], references: [id])

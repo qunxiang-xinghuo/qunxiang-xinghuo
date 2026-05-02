@@ -22,6 +22,7 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
   const [roles, setRoles] = useState<RoleInput[]>([
     { name: '', description: '', requirements: '' },
   ]);
+  const [minActors, setMinActors] = useState(2);
   const [loading, setLoading] = useState(false);
 
   const addRole = () => {
@@ -47,6 +48,10 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
     const validRoles = roles.filter((r) => r.name.trim());
     if (validRoles.length === 0) {
       alert('至少需要一个角色');
+      return;
+    }
+    if (minActors > validRoles.length) {
+      alert('最少启动人数不能大于角色总数');
       return;
     }
 
@@ -139,6 +144,23 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
                 rows={2}
                 maxLength={150}
               />
+            </div>
+
+            {/* 最少启动人数 */}
+            <div>
+              <label className="text-xs text-white/50 mb-1.5 block">最少启动人数</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={2}
+                  max={roles.filter((r) => r.name.trim()).length || 5}
+                  value={minActors}
+                  onChange={(e) => setMinActors(parseInt(e.target.value))}
+                  className="flex-1 accent-xh-gold"
+                />
+                <span className="text-sm text-white/70 w-8 text-center">{minActors}</span>
+              </div>
+              <p className="text-[10px] text-white/30 mt-1">所有角色被认领并审核通过后，导演可启动故事</p>
             </div>
 
             {/* 角色列表 */}

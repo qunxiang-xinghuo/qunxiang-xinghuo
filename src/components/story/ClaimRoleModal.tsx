@@ -22,6 +22,8 @@ export default function ClaimRoleModal({
   onClaimed,
 }: ClaimRoleModalProps) {
   const [claimReason, setClaimReason] = useState('');
+  const [identityTag, setIdentityTag] = useState('');
+  const [performanceDirection, setPerformanceDirection] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -30,7 +32,11 @@ export default function ClaimRoleModal({
       const res = await fetch(`/api/stories/${storyId}/roles/${roleId}/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claimReason: claimReason.trim() || undefined }),
+        body: JSON.stringify({
+          claimReason: claimReason.trim() || undefined,
+          identityTag: identityTag.trim() || undefined,
+          performanceDirection: performanceDirection.trim() || undefined,
+        }),
       });
       const result = await res.json();
       if (result.success) {
@@ -78,13 +84,34 @@ export default function ClaimRoleModal({
               <p className="text-xs text-white/50">{roleDescription}</p>
             </div>
 
+            <label className="text-xs text-white/50 mb-1.5 block">身份标签</label>
+            <input
+              type="text"
+              value={identityTag}
+              onChange={(e) => setIdentityTag(e.target.value)}
+              placeholder="例如：急诊科医生"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-xh-gold/40 mb-3"
+              maxLength={40}
+            />
+
+            <label className="text-xs text-white/50 mb-1.5 block">演绎方向</label>
+            <textarea
+              value={performanceDirection}
+              onChange={(e) => setPerformanceDirection(e.target.value)}
+              placeholder="例如：理性与情感交织，关键时刻会为了患者打破规则..."
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-xh-gold/40 resize-none mb-3"
+              rows={2}
+              maxLength={150}
+            />
+            <p className="text-[10px] text-white/40 mt-1 text-right">{performanceDirection.length}/150</p>
+
             <label className="text-xs text-white/50 mb-1.5 block">扮演此角色的理由 / 一句话人设</label>
             <textarea
               value={claimReason}
               onChange={(e) => setClaimReason(e.target.value)}
               placeholder="例如：我是一名急诊科医生，面对生死抉择时总是理性与情感交织..."
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-xh-gold/40 resize-none"
-              rows={3}
+              rows={2}
               maxLength={150}
             />
             <p className="text-[10px] text-white/40 mt-1 text-right">{claimReason.length}/150</p>

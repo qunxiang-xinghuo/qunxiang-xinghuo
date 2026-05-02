@@ -21,9 +21,9 @@ export async function POST(
     } catch {
       body = {};
     }
-    const { claimReason } = body;
+    const { claimReason, identityTag, performanceDirection } = body;
 
-    // 检查角色是否存在且未被认领
+    // 检查角色是否存在且未被认领（或之前被拒绝过）
     const role = await db.storyRole.findFirst({
       where: { id: roleId, storyId },
     });
@@ -31,7 +31,7 @@ export async function POST(
     if (!role) {
       return NextResponse.json(apiError("NOT_FOUND", "角色不存在"), { status: 404 });
     }
-    if (role.claimedBy) {
+    if (role.claimedBy && role.claimStatus !== "rejected") {
       return NextResponse.json(apiError("ALREADY_CLAIMED", "该角色已被认领"), { status: 400 });
     }
 
@@ -54,31 +54,22 @@ export async function POST(
       },
     });
 
-    // 更新角色认领
-    await db.storyRole.update({
+    // 更新角色认领（状态设为pending，等待导演审核）
+    const updatedRole = await db.storyRole.update({
       where: { id: roleId },
       data: {
         claimedBy: userId,
         claimedAt: new Date(),
         claimReason: claimReason || null,
+        claimStatus: "pending",
+        identityTag: identityTag || null,
+        performanceDirection: performanceDirection || null,
       },
     });
 
-    // 检查是否所有角色都被认领
-    const allRoles = await db.storyRole.findMany({ where: { storyId } });
-    const allClaimed = allRoles.every((r) => r.claimedBy);
-
-    if (allClaimed) {
-      await db.story.update({
-        where: { id: storyId },
-        data: { status: "ongoing" },
-      });
-    }
-
     return NextResponse.json(apiResponse({
       success: true,
-      allClaimed,
-      role: { ...role, claimedBy: userId, claimReason },
+      role: updatedRole,
     }));
   } catch (error: any) {
     console.error("[ClaimRole POST] Error:", error);
