@@ -1,5 +1,58 @@
 # 问题记录与修复日志
 
+## v5.7-fix 泡泡消失+多人组队重设计+故事对白室精致化 (2026-05-02)
+
+### 根因诊断：泡泡里的脑洞为什么消失？
+
+**第一层：API limit参数bug**
+- `src/app/api/brainholes/bubble/route.ts` 第245行：
+  ```ts
+  const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "30", 10), 30), 1);
+  // Math.max(20, 30) = 30; Math.min(30, 1) = 1 → 永远返回1！
+  ```
+- **修复**：`Math.min(Math.max(parseInt(...), 1), 30)`
+
+**第二层：API全渠道失败时返回500**
+- 知乎热榜API、DeepSeek API、知乎搜索API全部失败时
+- 数据库fallback也失败 → 返回500
+- 前端收到非success响应 → `setBubbles([])` → 显示"暂无热门内容"
+- **预防**：fallback数据始终生成30条，确保不会空返回
+
+### 修改内容
+- **泡泡API修复**：limit参数从永远1改为正确计算(1-30)
+- **多人组队入口** (`multiplayer/page.tsx`)：
+  - 从纯占位"开发中"升级为真正的群像共创剧场入口
+  - 四大功能特性展示（3-8人群像/导演控场/剧情投票/实时对白）
+  - 双入口卡片：故事大厅（金色）+ 快速组队（紫色）
+  - 5步群像共创流程说明
+- **多人匹配页** (`multi-match/page.tsx`)：
+  - slate色彩体系全面替换旧深色主题
+  - 调用 `/api/brainholes/bubble` 获取脑洞（修复了旧版调用不存在的 `/api/brainholes`）
+  - 分类色卡片式脑洞列表（8种分类色映射）
+  - 内嵌身份选择弹窗（知乎身份/AI随机/自定义角色）
+- **多人等待页** (`multi-waiting/page.tsx`)：
+  - 参考双人等待页设计：雷达扫描背景+刘看山旋转环+信号波
+  - 60秒倒计时+3阶段降级指示条（多人→双人→AI）
+  - 阶段图标动画+进度条+剩余时间
+- **故事对白室精致化** (`story-hall/[storyId]/room/page.tsx`)：
+  - 消息气泡增加小尾巴（三角装饰），金色/暗色/导演色三种样式
+  - 角色身份标签+导演皇冠badge+时间戳
+  - textarea输入框自动增高（参考ChatRoom组件）
+  - 导演控场按钮更精致（暂停/继续带border色区分）
+  - 分支/灵感侧边栏样式升级
+  - 保存素材+结束对白按钮
+
+### 验证
+- 本地Build：47/47 ✅
+- 服务器Build：47/47 ✅
+- 首页 `/home`：200 ✅
+- 故事大厅 `/story-hall`：200 ✅
+- 多人组队 `/multiplayer`：200 ✅
+- 泡泡API `/api/brainholes/bubble`：返回数据 ✅
+- 静态JS/CSS：200 ✅
+
+---
+
 ## v5.7 故事大厅重设计 (2026-05-02)
 
 ### 修改内容
