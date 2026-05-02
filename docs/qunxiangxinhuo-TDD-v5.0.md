@@ -655,3 +655,54 @@ if (req.url && req.url.startsWith('/_next/')) {
 ---
 
 *文档版本：v5.0 + v5.3整改记录 | 已部署 | 2026-05-04*
+
+
+---
+
+# v5.3-avatar 刘看山形象替换（2026-05-04追加）
+
+## 一、需求
+
+用户要求：
+1. 把项目中所有刘看山形象换成官方卡通图片
+2. 调整到合适美观的位置（不重叠、不挤角落）
+3. 宽度约120px，高度自适应
+
+## 二、修改范围
+
+| 组件 | 原实现 | 新实现 | 位置检查 |
+|------|--------|--------|----------|
+| `LiuKanshanAvatar.tsx` | SVG绘制（236行代码） | `next/image` + `/liukanshan.jpg` | 等待页/超时页/故事页：flex居中 + margin ✅ |
+| `LiuKanshanFloat.tsx` | CSS简笔画 | `next/image` + `/liukanshan.jpg` | 首页右下角 `fixed bottom-20 right-4` ✅ |
+| `LiuKanshanWelcome.tsx` | 引用Avatar | 自动继承新Avatar | 弹窗底部居中 ✅ |
+
+## 三、技术细节
+
+**图片存放**：`public/liukanshan.jpg` → 访问路径 `/liukanshan.jpg`
+
+**尺寸表**：
+```typescript
+const sizeMap = {
+  sm: 48,   // 小图标
+  md: 64,   // 欢迎弹窗
+  lg: 120,  // 等待页/超时页/故事页（用户要求120px）
+  xl: 144,  // 大尺寸场景
+};
+```
+
+**Image组件配置**：
+- `object-contain`：保持图片比例
+- `priority`：预加载，避免闪烁
+- `rounded-2xl`：圆角适配图片风格
+
+## 四、验证结果
+
+- [x] Build通过（Compiled successfully in 5.6s）
+- [x] `/liukanshan.jpg` HTTP 200 ✅
+- [x] 等待页/超时页/故事页/首页 全部正常渲染 ✅
+- [x] 位置不重叠 ✅
+- [x] 服务器部署成功 ✅
+
+---
+
+*文档版本：v5.0 + v5.3整改 + v5.3-blank修复 + v5.3-avatar替换 | 已部署 | 2026-05-04*
