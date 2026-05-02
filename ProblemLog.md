@@ -196,3 +196,53 @@
 - 新模块开发前先完成数据库模型设计
 - WebSocket事件命名使用 `story-` 前缀避免与原有房间事件冲突
 - 认领角色时检查是否已认领该故事的其他角色（一人一角色）
+
+---
+
+## 2026-05-03 v5.2 — 聊天身份显示错误+刘看山形象修复
+
+**现象1**：用户选择了身份（如"急诊科护士"）进入对白实验室后，聊天界面显示的身份不正确，有时显示为"我"或默认身份。
+
+**根因**：
+1. `duo-match/page.tsx` 保存身份到 `xh_duo_identity`，但没有确保 `xh_user_id` 稳定存在
+2. `room/[id]/page.tsx` 中 `user?.id` 不匹配 `RoomParticipant.userId`（guest id 每次刷新变化）
+3. 当参与者记录匹配失败时，没有回退到 localStorage 中的身份
+
+**修复**：
+1. `duo-match/page.tsx`：保存身份时同时确保 `xh_user_id` 存在且稳定
+2. `room/[id]/page.tsx`：
+   - 优先读取 `xh_duo_identity` 作为 myIdentity 回退
+   - 参与者匹配失败时，尝试找非AI参与者
+   - 如果仍然找不到，直接使用 localStorage 中的身份
+3. 历史消息渲染时也使用 effectiveIdentity 确保一致性
+
+**预防措施**：
+- guest userId 必须在流程开始时生成并持久化到 localStorage
+- 任何依赖 userId 匹配的地方都必须有身份回退机制
+- 身份选择页面的数据必须和对白室的数据源一致
+
+**现象2**：刘看山头像是一个CSS绘制的简单圆形，不符合"北极狐"形象要求。
+
+**根因**：`LiuKanshanAvatar.tsx` 使用纯CSS绘制（圆形+耳朵+眼睛），没有真实北极狐图片。
+
+**修复**：
+1. 改为 `img` 标签加载真实北极狐图片（Unsplash高质量照片）
+2. 添加 `onError` 回退到CSS简笔画版本（确保图片加载失败时仍有显示）
+3. 保留浮动动画效果
+
+**现象3**：AI system prompt 缺少刘看山的官方设定细节。
+
+**根因**：之前的prompt只有"温暖治愈真实"的抽象描述，没有具体的北极狐身份设定。
+
+**修复**：将完整的官方设定写入system prompt：
+- 种族：北极狐，身高75cm，体重7.5kg，尾巴特别短
+- 背景：知乎吉祥物、上海走失经历、爸爸看冰山的故事
+- 喜好：冰上滑行、钓鱼、柴可夫斯基、北冰洋鳕鱼
+- 语言特点：不用第一人称"我"，用"刘看山"自称
+- 禁止：客服语气、说教、正确的废话
+
+**涉及文件**：
+- `src/app/duo-match/page.tsx`
+- `src/app/room/[id]/page.tsx`
+- `src/components/layout/LiuKanshanAvatar.tsx`
+- `src/app/api/ai/chat/route.ts`

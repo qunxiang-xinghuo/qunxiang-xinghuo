@@ -21,19 +21,15 @@ export default function RoomPage() {
   const router = useRouter();
   const roomId = params.id as string;
   const { user: authUser } = useAuth();
-  // v4.3-fix: 兼容 NextAuth 登录（useAuth读取localStorage，NextAuth用cookie）
-  // 如果useAuth返回null，尝试从localStorage获取身份构建临时用户
-  const user = authUser || (() => {
-    const savedIdentity = typeof window !== 'undefined' ? localStorage.getItem('xh_duo_identity') : null;
-    if (savedIdentity) {
-      return { 
-        id: localStorage.getItem('xh_user_id') || 'guest-' + Date.now(), 
-        name: savedIdentity,
-        identity: { type: 'custom' as const, label: savedIdentity },
-      };
-    }
-    return null;
-  })();
+  // v5.2-fix: 优先从localStorage获取稳定的身份和userId
+  // 确保房间参与者匹配时userId一致
+  const savedIdentity = typeof window !== 'undefined' ? localStorage.getItem('xh_duo_identity') : null;
+  const savedUserId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
+  const user = authUser || (savedIdentity ? {
+    id: savedUserId || 'guest-' + Date.now(),
+    name: savedIdentity,
+    identity: { type: 'custom' as const, label: savedIdentity },
+  } : null);
   const { isConnected, joinRoom, leaveRoom, sendMessage, markSpark, on, off } = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -52,9 +48,10 @@ export default function RoomPage() {
   const assetSavedRef = useRef(false);
   const isProcessingAI = useRef(false);
 
-  // 获取房间信息
+  // v5.2-fix: 获取房间信息，优先使用localStorage中的身份作为回退
   useEffect(() => {
     const guestId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
+    const localIdentity = typeof window !== 'undefined' ? localStorage.getItem('xh_duo_identity') : null;
     fetch(`/api/rooms/${roomId}`, {
       headers: guestId ? { 'x-guest-id': guestId } : {},
     })
@@ -75,16 +72,24 @@ export default function RoomPage() {
           setIsAiRoom(aiRoom);
 
           // 从参与者信息中获取身份
-          let myIdentityLabel = '我';
+          let myIdentityLabel = localIdentity || '我';
           let partnerIdentityLabel = aiRoom ? '刘看山' : '对方';
 
           if (room.participants && Array.isArray(room.participants)) {
-            const me = room.participants.find((p: any) => p.userId === user?.id);
-            const partner = room.participants.find((p: any) => p.userId !== user?.id);
+            // v5.2-fix: 先尝试用userId匹配，如果失败则尝试用identity匹配
+            let me = room.participants.find((p: any) => p.userId === user?.id);
+            // 如果userId不匹配（guest id变化），尝试找非AI/非对方的参与者
+            if (!me && room.participants.length > 0) {
+              me = room.participants.find((p: any) => p.userId !== 'liu_kanshan_ai');
+            }
+            const partner = room.participants.find((p: any) => p.userId !== (me?.userId || user?.id));
 
             if (me) {
-              myIdentityLabel = me.identity || '我';
+              myIdentityLabel = me.identity || localIdentity || '我';
               setMyIdentity(myIdentityLabel);
+            } else if (localIdentity) {
+              // 参与者记录没找到，但localStorage有身份，直接使用
+              setMyIdentity(localIdentity);
             }
 
             if (partner) {
@@ -96,11 +101,15 @@ export default function RoomPage() {
             } else if (aiRoom) {
               setPartnerIdentity({ type: 'recommended', label: '刘看山' });
             }
+          } else if (localIdentity) {
+            // 没有参与者记录，但localStorage有身份
+            setMyIdentity(localIdentity);
           }
 
           // 加载历史消息
           if (room.messages && Array.isArray(room.messages)) {
             const myId = user?.id;
+            const effectiveIdentity = myIdentityLabel;
             const historyMessages: Message[] = room.messages.map((m: any) => ({
               id: m.id,
               userId: m.senderId === myId ? 'me' : 'partner',
@@ -108,7 +117,7 @@ export default function RoomPage() {
               timestamp: new Date(m.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
               isSparked: m.isSpark,
               sparkCount: m.isSpark ? 1 : 0,
-              identity: m.identity || (m.senderId === myId ? myIdentityLabel : partnerIdentityLabel),
+              identity: m.identity || (m.senderId === myId ? effectiveIdentity : partnerIdentityLabel),
             }));
             setMessages(historyMessages);
           }

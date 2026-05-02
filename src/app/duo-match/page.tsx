@@ -63,6 +63,9 @@ function DuoMatchContent() {
 
     // v4.6-fix: 不再在这里POST匹配请求，只保存身份，跳转到等待页
     // 等待页会在后台异步发起匹配请求
+    // v5.2-fix: 确保保存稳定的userId，用于房间身份匹配
+    const stableUserId = localStorage.getItem('xh_user_id') || `guest-${Date.now()}`;
+    localStorage.setItem('xh_user_id', stableUserId);
     localStorage.setItem('xh_duo_identity', identity);
     if (preselectedBrainholeId) {
       localStorage.setItem('xh_duo_brainhole', preselectedBrainholeId);
