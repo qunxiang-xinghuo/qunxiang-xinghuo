@@ -7,12 +7,10 @@ import { BubbleItem } from './types';
 
 interface BubbleProps {
   item: BubbleItem;
-  size: number;
   index: number;
   onClick: () => void;
   bgColor?: string;
   borderColor?: string;
-  delay?: number;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -24,27 +22,19 @@ const CATEGORY_LABELS: Record<string, string> = {
 const DIFFICULTY_LABELS: Record<string, string> = { easy: '简单', medium: '中等', hard: '困难' };
 const DIFFICULTY_COLORS: Record<string, string> = { easy: 'text-emerald-400', medium: 'text-xh-gold', hard: 'text-red-400' };
 
-export default function Bubble({ item, size, index, onClick, bgColor, borderColor, delay = 0 }: BubbleProps) {
+export default function Bubble({ item, index, onClick, bgColor, borderColor }: BubbleProps) {
   const [isPopping, setIsPopping] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-  const [showGlow, setShowGlow] = useState(false);
-  const [showRipple, setShowRipple] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  const size = Math.min(Math.max(44 + (item.hotScore || 50) / 6, 40), 68);
   const fontSize = Math.max(size / 5.5, 10);
-  const floatDuration = 2.5 + Math.random() * 2.5;
-  const floatDelay = Math.random() * 3;
+  const floatDuration = 2.5 + (index % 5) * 0.5;
+  const floatDelay = (index % 7) * 0.4;
 
   const handleClick = useCallback(() => {
     if (isPopping) return;
     setIsPopping(true);
-    setIsPressed(true);
-    setShowGlow(true);
-    setShowRipple(true);
-    setTimeout(() => {
-      setShowRipple(false);
-      onClick();
-    }, 400);
+    setTimeout(() => { onClick(); }, 400);
   }, [isPopping, onClick]);
 
   const displayTitle = item.title.length > 5 ? item.title.slice(0, 4) + '…' : item.title;
@@ -56,25 +46,23 @@ export default function Bubble({ item, size, index, onClick, bgColor, borderColo
     <motion.div
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: 'spring', stiffness: 180, damping: 14, delay }}
-      className="bubble-float-wrapper cursor-pointer select-none relative"
+      transition={{ type: 'spring', stiffness: 180, damping: 14, delay: index * 0.04 }}
+      className="bubble-float-wrapper cursor-pointer select-none relative inline-block"
       style={{ ['--float-dur' as any]: `${floatDuration}s`, ['--float-del' as any]: `${floatDelay}s` }}
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative" style={{ width: size, height: size }}>
-        {showGlow && <div className="bubble-selected-glow" />}
-        {showRipple && <div className="bubble-ripple" />}
         <div
-          className={`bubble-glass ${isPopping ? 'bubble-pop' : ''} ${isPressed ? 'bubble-pressed' : ''}`}
+          className={`bubble-glass ${isPopping ? 'bubble-pop' : ''}`}
           style={{ width: size, height: size, backgroundColor: bgColor, borderColor: borderColor }}
         >
           <span className="bubble-text" style={{ fontSize }}>{displayTitle}</span>
         </div>
       </div>
 
-      {/* Hover 脑洞气泡浮层 - TDD v5.0 核心设计 */}
+      {/* Hover 脑洞气泡浮层 */}
       <AnimatePresence>
         {isHovered && (
           <motion.div
@@ -87,41 +75,21 @@ export default function Bubble({ item, size, index, onClick, bgColor, borderColo
             onClick={(e) => e.stopPropagation()}
           >
             <div className="card-elevated p-3.5 relative">
-              {/* 小三角 */}
               <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[rgba(30,42,75,0.55)] rotate-45 border-r border-b border-rgba(148,163,184,0.06)" />
-
-              {/* 分类+难度 */}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-slate-400 bg-slate-700/30 px-2 py-0.5 rounded-full">
-                  {categoryLabel}
-                </span>
-                <span className={`text-[10px] ${difficultyColor} font-medium`}>
-                  {difficultyLabel}
-                </span>
+                <span className="text-[10px] text-slate-400 bg-slate-700/30 px-2 py-0.5 rounded-full">{categoryLabel}</span>
+                <span className={`text-[10px] ${difficultyColor} font-medium`}>{difficultyLabel}</span>
               </div>
-
-              {/* 标题 */}
-              <h4 className="text-sm font-bold text-slate-100 leading-snug mb-1.5">
-                {item.title}
-              </h4>
-
-              {/* Scenario 摘要 */}
-              <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2 mb-2.5">
-                {item.scenario}
-              </p>
-
-              {/* 热度 + 进入按钮 */}
+              <h4 className="text-sm font-bold text-slate-100 leading-snug mb-1.5">{item.title}</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2 mb-2.5">{item.scenario}</p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <Flame className="w-3 h-3 text-xh-gold" />
                   <span className="text-[11px] text-xh-gold font-semibold">{item.hotScore}</span>
                 </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onClick(); }}
-                  className="flex items-center gap-1 text-[10px] text-slate-300 bg-slate-700/40 hover:bg-xh-gold/20 hover:text-xh-gold px-2.5 py-1 rounded-full transition-colors border border-slate-600/20"
-                >
-                  进入
-                  <ArrowRight className="w-3 h-3" />
+                <button onClick={(e) => { e.stopPropagation(); onClick(); }}
+                  className="flex items-center gap-1 text-[10px] text-slate-300 bg-slate-700/40 hover:bg-xh-gold/20 hover:text-xh-gold px-2.5 py-1 rounded-full transition-colors border border-slate-600/20">
+                  进入<ArrowRight className="w-3 h-3" />
                 </button>
               </div>
             </div>
