@@ -2,33 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Users, Theater, BookOpen, ArrowRight, Flame } from 'lucide-react';
+import { Sparkles, Users, Theater, BookOpen, ArrowRight, Flame, Zap, MessageSquare, Crown, Vote } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import BubbleCloud from '@/components/bubble-cloud/BubbleCloud';
 import LiuKanshanWelcome from '@/components/layout/LiuKanshanWelcome';
 
 const modes = [
   {
-    id: 'duo',
-    title: '双人模式',
-    subtitle: '即时对戏碰撞 · 1分钟匹配',
-    icon: Users,
-    available: true,
-    core: true,
+    id: 'duo', title: '双人模式', subtitle: '即时对戏碰撞 · 1分钟匹配',
+    icon: Users, available: true, core: true, path: '/duo-match',
   },
   {
-    id: 'multi',
-    title: '多人组队',
-    subtitle: '群像共创 · 认领角色书写故事',
-    icon: Theater,
-    available: true,
+    id: 'multi', title: '多人组队', subtitle: '群像共创 · 认领角色书写故事',
+    icon: Theater, available: true, path: '/multiplayer',
   },
   {
-    id: 'serial',
-    title: '长期连载',
-    subtitle: '故事连载 · 灵感沉淀归档',
-    icon: BookOpen,
-    available: false,
+    id: 'serial', title: '长期连载', subtitle: '故事连载 · 灵感沉淀归档',
+    icon: BookOpen, available: false, path: '/story-hall',
   },
 ];
 
@@ -44,13 +34,6 @@ export default function HomePage() {
   const dismissWelcome = () => {
     localStorage.setItem('xh_welcome_seen', '1');
     setShowWelcome(false);
-  };
-
-  const handleModeClick = (mode: typeof modes[0]) => {
-    if (!mode.available) return;
-    if (mode.id === 'duo') router.push('/duo-match');
-    else if (mode.id === 'multi') router.push('/story-hall');
-    else if (mode.id === 'serial') router.push('/story-hall');
   };
 
   return (
@@ -76,9 +59,9 @@ export default function HomePage() {
         <div className="h-px bg-gradient-to-r from-transparent via-xh-gold/30 to-transparent mt-2" />
       </div>
 
-      {/* 泡泡墙区域 */}
-      <div className="shrink-0 relative overflow-hidden" style={{ height: '300px' }}>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0e1a] z-10 pointer-events-none" />
+      {/* 泡泡墙区域 - 自适应高度 */}
+      <div className="shrink-0 relative">
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0a0e1a] to-transparent z-10 pointer-events-none" />
         <BubbleCloud limit={20} />
       </div>
 
@@ -98,61 +81,42 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.1 }}
                 whileTap={mode.available ? { scale: 0.96 } : {}}
-                onClick={() => handleModeClick(mode)}
+                onClick={() => mode.available && router.push(mode.path)}
                 className={`group relative flex items-center gap-4 p-4 rounded-2xl text-left press-feedback overflow-hidden ${
-                  mode.available
-                    ? 'card-elevated cursor-pointer'
-                    : 'bg-slate-800/20 border border-slate-700/10 opacity-50 cursor-not-allowed'
+                  mode.available ? 'card-elevated cursor-pointer' : 'bg-slate-800/20 border border-slate-700/10 opacity-50 cursor-not-allowed'
                 }`}
               >
                 {mode.core && (
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-xh-gold to-orange-500 rounded-l-2xl" />
                 )}
-                <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
-                    mode.core
-                      ? 'bg-gradient-to-br from-xh-gold/20 to-orange-500/10 border border-xh-gold/20 shadow-lg shadow-xh-gold/10'
-                      : mode.available
-                      ? 'bg-slate-700/30 border border-slate-600/20'
-                      : 'bg-slate-700/20 border border-slate-600/10'
-                  }`}
-                >
-                  <Icon
-                    size={22}
-                    className={mode.available ? (mode.core ? 'text-xh-gold' : 'text-slate-400') : 'text-slate-600'}
-                  />
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+                  mode.core ? 'bg-gradient-to-br from-xh-gold/20 to-orange-500/10 border border-xh-gold/20 shadow-lg shadow-xh-gold/10'
+                    : mode.available ? 'bg-slate-700/30 border border-slate-600/20' : 'bg-slate-700/20 border border-slate-600/10'
+                }`}>
+                  <Icon size={22} className={mode.available ? (mode.core ? 'text-xh-gold' : 'text-slate-400') : 'text-slate-600'} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-slate-100">{mode.title}</span>
                     {mode.core && (
-                      <span className="text-[10px] bg-xh-gold/15 text-xh-gold px-2 py-0.5 rounded-full border border-xh-gold/25 font-medium">
-                        核心
-                      </span>
+                      <span className="text-[10px] bg-xh-gold/15 text-xh-gold px-2 py-0.5 rounded-full border border-xh-gold/25 font-medium">核心</span>
                     )}
                     {!mode.available && (
-                      <span className="text-[10px] bg-slate-700/50 text-slate-500 px-2 py-0.5 rounded-full">
-                        即将开放
-                      </span>
+                      <span className="text-[10px] bg-slate-700/50 text-slate-500 px-2 py-0.5 rounded-full">即将开放</span>
                     )}
                   </div>
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">{mode.subtitle}</p>
                 </div>
-                <ArrowRight
-                  size={18}
-                  className={`shrink-0 transition-all duration-300 ${
-                    mode.available
-                      ? 'text-slate-600 group-hover:text-xh-gold group-hover:translate-x-1'
-                      : 'text-slate-700'
-                  }`}
-                />
+                <ArrowRight size={18} className={`shrink-0 transition-all duration-300 ${
+                  mode.available ? 'text-slate-600 group-hover:text-xh-gold group-hover:translate-x-1' : 'text-slate-700'
+                }`} />
               </motion.button>
             );
           })}
         </div>
 
         <div className="mt-4 mb-2 text-center">
-          <p className="text-[10px] text-slate-600">点击泡泡探索热门脑洞 · v5.6</p>
+          <p className="text-[10px] text-slate-600">点击泡泡探索热门脑洞 · v5.8</p>
         </div>
       </div>
     </div>
