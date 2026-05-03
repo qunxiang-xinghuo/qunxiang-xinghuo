@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { User, Sparkles, Edit3, Check } from 'lucide-react';
+import { User, Sparkles, Edit3, Check, BrainCircuit, ArrowRight } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 
 interface IdentityOption {
@@ -29,13 +29,16 @@ function DuoMatchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedBrainholeId = searchParams.get('brainholeId');
+  const fromBubble = searchParams.get('from') === 'bubble';
+  
   const [selectedType, setSelectedType] = useState<'zhihu' | 'ai' | 'custom'>('zhihu');
   const [zhihuIdentities, setZhihuIdentities] = useState<string[]>([]);
   const [selectedZhihuId, setSelectedZhihuId] = useState('');
   const [customLabel, setCustomLabel] = useState('');
   const [aiGenerated, setAiGenerated] = useState('');
+  const [brainholeInfo, setBrainholeInfo] = useState<{id: string; title: string; scenario: string} | null>(null);
 
-  // 获取知乎身份（无需登录检查，用户已在首页登录）
+  // 获取知乎身份 + 预选的brainhole信息
   useEffect(() => {
     fetch('/api/users/identities')
       .then((r) => r.json())
@@ -47,9 +50,25 @@ function DuoMatchContent() {
         }
       })
       .catch(() => {});
-    // AI随机
+    
     setAiGenerated(aiIdentities[Math.floor(Math.random() * aiIdentities.length)]);
-  }, []);
+
+    // v6.0: 如果从泡泡来，获取brainhole信息展示
+    if (preselectedBrainholeId) {
+      fetch(`/api/brainholes/${preselectedBrainholeId}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.data) {
+            setBrainholeInfo({
+              id: res.data.id,
+              title: res.data.title,
+              scenario: res.data.scenario,
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [preselectedBrainholeId]);
 
   const handleConfirm = () => {
     let identity = '';
@@ -61,9 +80,6 @@ function DuoMatchContent() {
       identity = customLabel.trim() || '自定义角色';
     }
 
-    // v4.6-fix: 不再在这里POST匹配请求，只保存身份，跳转到等待页
-    // 等待页会在后台异步发起匹配请求
-    // v5.2-fix: 确保保存稳定的userId，用于房间身份匹配
     const stableUserId = localStorage.getItem('xh_user_id') || `guest-${Date.now()}`;
     localStorage.setItem('xh_user_id', stableUserId);
     localStorage.setItem('xh_duo_identity', identity);
@@ -81,10 +97,32 @@ function DuoMatchContent() {
     <div className="flex flex-col h-full page-gradient">
       <TopBar title="身份选择" showBack onBack={() => router.back()} />
 
+      {/* v6.0: 如果从泡泡来，显示预选brainhole卡片 */}
+      {brainholeInfo && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-5 mt-3 mb-1"
+        >
+          <div className="card-elevated p-3 border-l-2 border-xh-gold">
+            <div className="flex items-center gap-2 mb-1.5">
+              <BrainCircuit className="w-3.5 h-3.5 text-xh-gold" />
+              <span className="text-[10px] text-xh-gold/70 font-medium">已选话题</span>
+            </div>
+            <p className="text-sm font-semibold text-slate-100 line-clamp-1">{brainholeInfo.title}</p>
+            <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{brainholeInfo.scenario}</p>
+          </div>
+        </motion.div>
+      )}
+
       {/* 页面标题 */}
       <div className="px-6 pt-4 pb-2">
-        <h2 className="text-lg font-bold text-slate-100 mb-1">在这次对撞中，你是谁？</h2>
-        <p className="text-xs text-slate-500">选择一个身份，系统将为你匹配对戏伙伴</p>
+        <h2 className="text-lg font-bold text-slate-100 mb-1">
+          {fromBubble ? '确认身份，即刻对撞' : '在这次对撞中，你是谁？'}
+        </h2>
+        <p className="text-xs text-slate-500">
+          {fromBubble ? '话题已选好，选一个身份就开始' : '选择一个身份，系统将为你匹配对戏伙伴'}
+        </p>
       </div>
 
       {/* 身份选项 - 卡片式布局 */}
@@ -195,8 +233,18 @@ function DuoMatchContent() {
           onClick={handleConfirm}
           className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
         >
-          <Sparkles className="w-4 h-4" />
-          确认身份，进入匹配
+          {fromBubble ? (
+            <>
+              <Sparkles className="w-4 h-4" />
+              确认身份，开始匹配
+              <ArrowRight className="w-4 h-4" />
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              确认身份，进入匹配
+            </>
+          )}
         </button>
       </div>
     </div>

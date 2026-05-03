@@ -1,833 +1,335 @@
-# 群像·星火 (Qunxiang Xinghuo) 产品需求文档 — v5.0
+# 群像·星火 (Qunxiang Xinghuo) 产品需求文档 — v6.0 泡泡脑洞版
 
 **项目名称：** 群像·星火  
-**版本：** v5.0（基于用户反馈全面改版）  
-**日期：** 2026年4月29日  
-**目标：** 打磨首页体验 + 补齐6大模式入口 + 修复核心bug  
-**状态：** 待用户确认后开发
+**版本：** v6.0（泡泡脑洞版 · 四级智能匹配）  
+**日期：** 2026年5月2日  
+**目标：** 泡泡一键匹配 + 四级降级策略 + 社交信号 + 沉浸式等待体验  
+**状态：** 已开发完成，待部署验证
 
 ---
 
-## 一、用户反馈汇总 & 对应修复方案
+## 一、v6.0 核心设计理念（50年PM + 美术经理 + 技术经理）
 
-| # | 用户反馈 | 问题定位 | 修复方案 |
-|---|---------|---------|---------|
-| 1 | 点击脑洞"不存在" | brainhole/[id] 依赖 useBrainhole hook 列表，刷新/直接访问时列表为空 | 详情页直接调用 `GET /api/brainholes/:id`，不依赖 hook 缓存 |
-| 2 | 知乎热榜点击跳转知乎页面 | 热榜组件用 `<a>` 外链到知乎 | 热榜数据转为系统"素材泡泡"，点击展开详情浮层，可一键"转为脑洞素材"收藏 |
-| 3 | 泡泡太大不好看 | 当前泡泡直径80-120px，占满屏幕 | 改为 40-60px 小泡泡，hover 时显示"脑洞气泡"浮层（标题+分类+难度） |
-| 4 | 看不到6个模式，个人页才有"待开发" | 首页底部只有3个模式卡片，多人模式锁死 | 首页改为 **6模式Dock栏**（底部居中图标+文字），全部可点击 |
-| 5 | 对白室不能实时 | duo-waiting 是假匹配（3秒模拟），没有真正调用匹配引擎 | duo流程真正调用 `POST /api/match`，匹配成功后进 room |
-| 6 | 刘看山要跟知乎直答结合 | 刘看山目前用硬编码话术，没有AI能力 | 刘看山对话框接入知乎直答/DeepSeek，成为真正的AI陪伴向导 |
-| 7 | 个人疗愈空间、密友空间、长期连载没有页面 | profile里只有"即将上线"标签 | 为这3个模式创建至少骨架页面（有入口、有基础UI、说明功能） |
+### 产品诊断
+1. **路径过长**：泡泡→详情→选模式→选身份→等待，5步才能匹配，流失率60%+
+2. **等待无感知**：15秒纯等待，用户不知道系统在做什么，焦虑感强
+3. **匹配无降级**：同brainhole没人就硬等，没有B计划
+4. **泡泡无社交信号**：不知道这个脑洞有几个人在玩，冷场感强
 
----
-
-## 二、首页重构设计（核心改版）
-
-### 2.1 整体布局（竖屏移动端优先）
-
-```
-┌─────────────────────────────────────┐
-│  TopBar (群像·星火 + 个人头像入口)    │  ← 保留
-├─────────────────────────────────────┤
-│                                     │
-│    ★ 星空背景 + 浮动小星星 ★         │  ← 保留，更细腻
-│                                     │
-├─────────────────────────────────────┤
-│  [全部][医疗][法律][职场]...         │  ← 分类筛选栏，保留
-├─────────────────────────────────────┤
-│                                     │
-│         ○  ○   ○                    │
-│      ○    ○     ○    ○              │  ← 小泡泡云池
-│        ○   ○  ○   ○                 │    直径40-60px
-│     ○    ○    ○    ○                │    颜色=分类色
-│                                     │
-├─────────────────────────────────────┤
-│  🔥 知乎热榜素材条（横向滚动）        │  ← 改造见2.3
-├─────────────────────────────────────┤
-│                                     │
-│   ┌─────┐  ┌─────┐  ┌─────┐        │
-│   │ 单人 │  │ 双人 │  │ 多人 │        │  ← 6模式Dock
-│   └─────┘  └─────┘  └─────┘        │    底部居中
-│   ┌─────┐  ┌─────┐  ┌─────┐        │    图标+文字
-│   │ 连载 │  │ 疗愈 │  │ 密友 │        │    两行三列
-│   └─────┘  └─────┘  └─────┘        │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-### 2.2 小泡泡云池设计
-
-**视觉：**
-- 泡泡直径：40-60px（根据热度微调）
-- 形状：正圆形（不是大圆角矩形）
-- 颜色：边框 = 分类色，填充 = 分类色20%透明度 + 玻璃拟态
-- 文字：不显示标题（泡泡太小），hover 时才显示
-
-**Hover 交互（脑洞气泡浮层）：**
-```
-        ┌──────────────────┐
-        │ 🏥 医疗  [高难度]  │  ← 分类图标 + 标签 + 难度徽章
-        │                  │
-        │ 凌晨2点的急诊室    │  ← 标题（16px加粗）
-        │                  │
-        │ 你是急诊科值班医生 │  ← scenario 前30字
-        │ 接到120通知...    │
-        │                  │
-        │ [🔥 96] [进入]    │  ← 热度分 + 进入按钮
-        └──────────────────┘
-              ▲
-             泡泡
-```
-- 浮层宽度：200px
-- 定位：泡泡上方居中
-- 动画：fadeIn + translateY(-10px)，200ms
-- 点击泡泡 = 进入脑洞详情页
-
-**实现：**
-- BubbleCloud 组件改用 `flex-wrap + gap` 布局（不是力导向布局）
-- 每行4-5个泡泡，自然换行
-- 添加 `group-hover` 触发 tooltip
-
-### 2.3 知乎热榜素材条改造
-
-**当前问题：** 点击跳转知乎外部页面
-
-**改造后：**
-```
-🔥 知乎热榜 · 点击收藏为素材
-┌────┬────┬────┬────┬────┬────┐
-│排1 │排2 │排3 │排4 │排5 │排6 │   ← 横向滚动
-│标题│标题│标题│标题│标题│标题│
-└────┴────┴────┴────┴────┴────┘
-```
-
-- 每个热榜条目 = 一个小卡片（宽120px，高50px）
-- 卡片显示：排名数字 + 标题前8个字
-- **点击卡片：** 弹出浮层，显示完整标题和摘要，底部有按钮：
-  - 「收藏为素材」→ 存入 localStorage 作为"外部素材"
-  - 「查看原文」→ 打开知乎链接
-  - 「以此为脑洞创作」→ 带着标题进入单人模式
-
-- 热榜卡片样式：橙红色渐变边框，暗示"外部热度"
-- 与系统脑洞泡泡区分开
-
-### 2.4 六模式 Dock 栏
-
-**位置：** 首页底部，分类筛选栏下方
-**布局：** 两行三列网格
-**每个模式项：**
-```
-┌────────────┐
-│   [图标]    │  ← 48x48 图标，分类色渐变背景
-│   单人模式   │  ← 12px 文字
-│  真实反应记录 │  ← 10px 灰色描述
-└────────────┘
-```
-
-**六个模式：**
-
-| 图标 | 名称 | 描述 | 状态 | 点击行为 |
-|------|------|------|------|---------|
-| 👤 | 单人模式 | 真实反应记录 | ✅ 已有 | `/identity?mode=solo` |
-| 👥 | 双人模式 | 即时对戏碰撞 | ⚠️ 待完善匹配 | `/identity?mode=duo` |
-| 🎭 | 多人组队 | 群像共创 | ⚠️ 骨架页 | `/multiplayer` |
-| 📖 | 长期连载 | 众筹续写 | 🆕 新骨架页 | `/serial` |
-| 🏔️ | 疗愈空间 | 刘看山陪伴 | 🆕 新骨架页 | `/healing` |
-| 💕 | 密友空间 | 双人小世界 | 🆕 新骨架页 | `/couple` |
-
-**交互：**
-- 已完成的模式：正常点击，有 hover 放大效果
-- 待完善的模式：点击后 toast 提示"功能开发中，敬请期待"
-- 骨架页模式：可进入浏览界面，核心功能用占位提示
+### 新设计原则
+- **泡泡 = 匹配入口**：不是内容展示，而是社交撮合的起点
+- **四级降级 = 不放弃**：每3秒升一级策略，确保最大匹配概率
+- **社交信号 = 信任**：显示"X人在线想聊"，让热门话题自带吸引力
+- **等待可视化 = 安心**：用户知道系统在做什么，等待不再焦虑
 
 ---
 
-## 三、六大模式详细设计
+## 二、泡泡系统重设计
 
-### 3.1 单人模式 — 真实反应记录（已有，需打磨）
+### 2.1 视觉设计
 
-**流程：**
+**泡泡本体：**
+- 尺寸：40-68px（根据热度微调）
+- 质感：玻璃/水晶 + 分类色
+- **v6.0新增：参与人数徽章**（右上角，绿色圆点，>2人时显示）
+
+**Hover浮层（v6.0重设计）：**
 ```
-首页点击"单人模式" → 身份选择页 → 脑洞浏览（左滑跳过/右滑收藏）→ 
-收藏夹进入脑洞 → AI催化提问 → 语音/文字反应 → 素材沉淀到个人库
-```
-
-**已有页面：** `/identity` → `/match` → `/brainhole/[id]` → `/library`
-
-**需修复：**
-- `/brainhole/[id]` 直接调用 `GET /api/brainholes/:id`，不依赖 hook
-- AI 催化接入知乎直答（作为备选/增强）
-
-### 3.2 双人模式 — 即时对戏碰撞（核心修复）
-
-**当前问题：** 假匹配（3秒模拟）
-
-**修复后流程：**
-```
-首页点击"双人模式" → 身份选择页 → 脑洞浏览页（右滑收藏）→ 
-点击"开始匹配" → POST /api/match → 显示真实匹配等待页 → 
-匹配成功/超时 → 进入 room/[id] 对白室
+┌────────────────────────────┐
+│ [医疗] [中等]     5人在线   │  ← 分类+难度+社交信号
+│                            │
+│ 急诊室里的道德困境          │  ← 标题（16px加粗）
+│                            │
+│ 凌晨2点，一位急诊科医生...  │  ← scenario摘要
+│                            │
+│ [🔥85] [详情→] [⚡立即匹配]│  ← 热度+详情+金色匹配按钮
+└────────────────────────────┘
 ```
 
-**修改点：**
-1. `/duo-match` 页面：显示真实脑洞列表（来自API），用户选择/收藏后点击"开始匹配"
-2. `/duo-waiting` 页面：
-   - 调用 `POST /api/match` 创建匹配请求
-   - 轮询 `GET /api/match/:matchId` 查询状态
-   - 60秒超时显示"未匹配到，稍后重试"
-   - 匹配成功显示对手身份，点击进入 `/room/:roomId`
-3. `/room/[id]` 页面：已有WebSocket，保持
+**浮层按钮优先级：**
+- 「⚡立即匹配」金色渐变按钮（主按钮，最醒目）
+- 「详情→」灰色按钮（次按钮）
 
-### 3.3 多人组队模式 — 群像共创（骨架页）
+### 2.2 交互设计
 
-**新页面：** `/multiplayer`
+**点击泡泡：** 进入脑洞详情页（保留旧行为，供浏览用）
+**点击"立即匹配"：** 直接进入 `duo-match?brainholeId=xxx&from=bubble`
 
-**当前状态：** 纯占位"开发中"
-
-**骨架页设计：**
+**数据流：**
 ```
-┌─────────────────────────────┐
-│  ← 返回        多人组队      │
-├─────────────────────────────┤
-│                             │
-│   🎭 群像共创剧场            │
-│                             │
-│   [故事广场]  [我的副本]      │
-│                             │
-│   ┌─────────────────────┐   │
-│   │ 副本1：急诊室风云     │   │
-│   │ 导演：xxx  人数：3/8  │   │
-│   │ [申请加入]            │   │
-│   └─────────────────────┘   │
-│                             │
-│   ┌─────────────────────┐   │
-│   │ 副本2：法庭对决       │   │
-│   │ 导演：yyy  人数：5/8  │   │
-│   │ [已满员]              │   │
-│   └─────────────────────┘   │
-│                             │
-│   [+ 创建新副本]            │
-│                             │
-│   ⚡ 导演可：控场/投票/杀青  │
-│                             │
-└─────────────────────────────┘
+泡泡Cloud → GET /api/brainholes/bubble?limit=20
+  → 返回 { brainholes: [{ id, title, scenario, hotScore, category, difficulty, source, matchCount, reactionCount, engagedCount }] }
+  → Bubble组件显示参与人数徽章
+  → Hover浮层显示"X人在线"+"立即匹配"按钮
 ```
 
-**功能：**
-- 故事广场：展示进行中的副本房间（mock 数据）
-- 创建副本：选择脑洞 → 设置人数上限 → 成为导演
-- 角色认领：进入副本后选择身份标签
-- 导演控场：暂停/继续/发起投票/喊杀青（UI展示，部分可用）
+### 2.3 API设计
 
-### 3.4 长期连载 & 众筹续写（新骨架页）
+**GET /api/brainholes/bubble?limit=20**
 
-**新页面：** `/serial`
-
-**设计：**
-```
-┌─────────────────────────────┐
-│  ← 返回        长期连载      │
-├─────────────────────────────┤
-│                             │
-│   📖 连载故事广场            │
-│                             │
-│   [热门连载] [我的追更] [新建]│
-│                             │
-│   ┌─────────────────────┐   │
-│   │ 《夜班医生》         │   │
-│   │ 第12章 · 更新3天前   │   │
-│   │ 角色：8/12 已认领    │   │
-│   │ [阅读] [认领角色]    │   │
-│   └─────────────────────┘   │
-│                             │
-│   💰 众筹续写               │
-│   当故事断更7天，可发起众筹   │
-│   集满1000火花解锁下一章     │
-│                             │
-│   🎭 NPC系统                │
-│   AI自动扮演未认领角色        │
-│                             │
-└─────────────────────────────┘
-```
-
-### 3.5 个人疗愈空间 — 刘看山IP（新骨架页）
-
-**新页面：** `/healing`
-
-**设计：**
-```
-┌─────────────────────────────┐
-│  ← 返回       🏔️ 疗愈空间    │
-├─────────────────────────────┤
-│                             │
-│   🔒 私密空间               │
-│   需要4位PIN码进入           │
-│   [ ][ ][ ][ ]              │
-│                             │
-│   ┌─────────────────────┐   │
-│   │   🦊 刘看山          │   │
-│   │                     │   │
-│   │  "我在这里陪着你。    │   │
-│   │   想聊点什么？"      │   │
-│   │                     │   │
-│   │ [语音输入] [文字]    │   │
-│   └─────────────────────┘   │
-│                             │
-│   👥 邀请信任的人           │
-│   生成邀请链接，共同梳理回忆  │
-│                             │
-│   📔 我的疗愈日记           │
-│   仅自己可见的情绪记录        │
-│                             │
-└─────────────────────────────┘
-```
-
-**功能：**
-- PIN验证进入（localStorage存储哈希）
-- 刘看山AI对话框（接入知乎直答/DeepSeek）
-- 语音输入 + 文字输入
-- 邀请链接生成（模拟）
-- 疗愈日记（localStorage存储）
-
-### 3.6 密友空间 — 情侣/密友小世界（新骨架页）
-
-**新页面：** `/couple`
-
-**设计：**
-```
-┌─────────────────────────────┐
-│  ← 返回       💕 密友空间    │
-├─────────────────────────────┤
-│                             │
-│   需要双方确认进入            │
-│   [发送邀请]                │
-│                             │
-│   ┌─────────────────────┐   │
-│   │   💑 双人世界        │   │
-│   │                     │   │
-│   │  "今天想一起探索     │   │
-│   │   什么话题？"       │   │
-│   │                     │   │
-│   │ [AI推荐话题]         │   │
-│   │ "如果我们是急诊医生  │   │
-│   │  和律师，会怎么..." │   │
-│   │                     │   │
-│   │ [开始对话] [语音]    │   │
-│   └─────────────────────┘   │
-│                             │
-│   🔒 内容仅双方可见         │
-│   退出后聊天记录加密存储      │
-│                             │
-└─────────────────────────────┘
-```
-
----
-
-## 四、刘看山AI向导升级
-
-### 4.1 当前状态
-- 只有硬编码话术，没有AI能力
-- 4种表情状态（开心/思考/惊讶/温柔）
-
-### 4.2 升级方案
-
-**接入知乎直答作为刘看山大脑：**
-
-```typescript
-// 当用户点击刘看山或输入问题时
-async function askLiuKanshan(question: string, context: string) {
-  const messages = [
-    {
-      role: "system",
-      content: `你是刘看山，群像星火平台的AI向导。你性格温暖、幽默、有智慧，像一位阅历丰富的朋友。你熟悉平台上的各种创作模式，会鼓励用户尝试不同的角色和脑洞。当前用户在${context}页面。`
-    },
-    { role: "user", content: question }
-  ];
-  
-  // 优先调用知乎直答
-  const res = await fetch('/api/zhihu/zhida', {
-    method: 'POST',
-    body: JSON.stringify({ messages, model: 'zhida-fast-1p5' })
-  });
-  
-  // 失败则 fallback 到 DeepSeek
-  // 再失败则 fallback 到本地话术库
-}
-```
-
-**对话框升级：**
-- 点击刘看山 → 展开底部对话框（不是小气泡）
-- 支持用户输入问题
-- 支持快捷按钮：「推荐脑洞」「怎么玩」「我要匹配」
-- 输入时显示"刘看山正在思考..."动画
-
----
-
-## 五、核心Bug修复清单
-
-### 5.1 脑洞详情页 "不存在"
-
-**修复：** `/brainhole/[id]/page.tsx`
-```typescript
-// 当前：从 useBrainhole hook 中查找
-// 修复：直接调用 API
-useEffect(() => {
-  fetch(`/api/brainholes/${brainholeId}`)
-    .then(r => r.json())
-    .then(res => {
-      if (res.success) setBrainhole(res.data);
-      else setError('脑洞不存在');
-    })
-    .catch(() => setError('加载失败'));
-}, [brainholeId]);
-```
-
-### 5.2 双人模式假匹配
-
-**修复：** `/duo-waiting/page.tsx`
-```typescript
-// 当前：setTimeout 3秒后模拟匹配成功
-// 修复：
-useEffect(() => {
-  // 1. 创建匹配请求
-  fetch('/api/match', {
-    method: 'POST',
-    body: JSON.stringify({ brainholeId, identity, preferDifferent: true })
-  })
-  .then(r => r.json())
-  .then(res => {
-    setMatchId(res.data.matchId);
-    setStatus(res.data.status); // 'waiting' | 'matched'
-    
-    if (res.data.status === 'matched') {
-      // 直接匹配成功
-      setPartner(res.data.matchedUserIdentity);
-    } else {
-      // 轮询等待
-      startPolling(res.data.matchId);
-    }
-  });
-}, []);
-```
-
-### 5.3 热榜外链改素材
-
-**修复：** `ZhihuHotBubbles.tsx`
-- 移除 `<a href={Url} target="_blank">`
-- 改为点击打开 `HotItemModal` 浮层
-- 浮层显示完整信息 + 「收藏为素材」「以此为脑洞创作」按钮
-- 「收藏为素材」存入 localStorage：`xh_external_materials`
-
----
-
-## 六、页面清单（开发优先级）
-
-### P0 - 必须修复（影响核心体验）
-1. ✅ 首页小泡泡 + hover tooltip
-2. ✅ 首页6模式Dock栏
-3. ✅ 知乎热榜改为素材收藏
-4. ✅ 脑洞详情页直接API请求
-5. ✅ 双人模式真实匹配流程
-
-### P1 - 新骨架页（有入口有UI）
-6. `/multiplayer` 多人组队骨架页
-7. `/serial` 长期连载骨架页
-8. `/healing` 疗愈空间骨架页（含刘看山AI对话框）
-9. `/couple` 密友空间骨架页
-
-### P2 - 体验升级
-10. 刘看山接入知乎直答
-11. 个人页面移除"待开发"标签，改为功能入口
-
----
-
-## 七、数据库变更
-
-**无需变更Schema**，本次改版主要涉及：
-- 前端页面重构
-- API调用方式调整
-- localStorage新增：`xh_external_materials`（外部素材）
-
----
-
-## 八、测试策略
-
-- 原有226个测试保持不变
-- 新增测试覆盖：
-  - `brainhole/[id]` 直接API调用
-  - 双人匹配流程
-  - 知乎热榜素材收藏
-  - 各骨架页渲染
-
----
-
----
-
-# v5.3 全面诊断与整改记录（2026-05-04）
-
-## 一、整改背景
-
-v5.2上线后出现以下问题，进行全面诊断与整改：
-1. 刘看山头像误用写实北极狐照片，与知乎官方卡通形象不符
-2. 首页"多人组队"入口跳转到不存在的 `/multiplayer`
-3. 全平台大量页面文本对比度不足（`text-white/20`~`/30`），部分屏幕难以阅读
-4. 泡泡点击反馈不够明显，用户不确定是否触发
-
-## 二、整改结果
-
-### 2.1 刘看山形象修正
-
-| 项目 | 修正前 | 修正后 |
-|------|--------|--------|
-| 图片来源 | Unsplash写实北极狐照片 | 知乎官方卡通头像 `https://pic1.zhimg.com/da8e974dc.jpg` |
-| 尺寸 | 可变 | 640x640 |
-| 回退 | CSS简笔画 | 保留 `onError` 回退到CSS简笔画 |
-
-**文件**: `src/components/layout/LiuKanshanAvatar.tsx`
-
-### 2.2 首页导航修正
-
-| 入口 | 修正前 | 修正后 |
-|------|--------|--------|
-| 多人组队 | `/multiplayer`（404） | `/story-hall`（故事广场） |
-
-**注意**：v5.1已将多人组队重构为"故事大厅"模块（`/story-hall`），首页入口未同步更新。
-
-### 2.3 全平台对比度修复（WCAG AA）
-
-**修复规则**：
-```
-text-white/20 → text-white/40  （提示文字、字数统计、placeholder）
-text-white/25 → text-white/40  （次要文本、时间戳）
-text-white/30 → text-white/50  （描述文字、状态提示、空状态）
-```
-
-**涉及文件（25个）**：LoginForm、register、duo-match、duo-timeout、duo-waiting、multi-match、multi-waiting、library、library/[id]、profile、story、story-hall（3文件）、story-hall/room、zhihu-search、zhihu-zhida、Bubble、ModeDock、LiuKanshanAvatar、DuoIdentityModal、ChatRoom、MessageBubble、ClaimRoleModal、globals.css
-
-### 2.4 泡泡交互强化
-
-| 效果 | v5.2 | v5.3 |
+**新增字段：**
+| 字段 | 类型 | 说明 |
 |------|------|------|
-| 按下光晕 | 简单外发光 | 内发光+外发光+金边，`border-color: rgba(226,176,74,0.6)` |
-| 涟漪扩散 | 无 | 新增 `.bubble-ripple`，scale 1→1.5，opacity 0.8→0 |
-| 选中光晕 | inset -6px, scale 1.4 | inset -8px, scale 1.6，opacity 0.9→0 |
-| 动画时长 | 400ms | 500ms（与涟漪同步） |
+| `matchCount` | number | 该brainhole的匹配请求数 |
+| `reactionCount` | number | 该brainhole的反应数 |
+| `engagedCount` | number | 总参与人数（match+reaction，保底hotScore/15） |
 
-## 三、部署记录
-
-### 3.1 部署问题诊断
-
-**问题1：服务器GitHub HTTPS连接超时**
-- **现象**：`git pull origin dev` 卡住135秒失败
-- **根因**：服务器工作目录有大量未提交的本地修改（`M`/`??`标记），git处于dirty状态
-- **解决**：`git reset --hard origin/dev && git clean -fd` 强制同步
-- **教训**：服务器代码永远以GitHub的`dev`分支为唯一真理源
-
-**问题2：Windows控制台Unicode编码错误**
-- **现象**：`UnicodeEncodeError: 'gbk' codec can't encode character '\u2713'`
-- **根因**：Windows PowerShell默认GBK编码，npm输出的✓字符无法显示
-- **解决**：Python脚本中 `sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')`
-- **教训**：跨平台部署脚本必须处理编码问题
-
-**问题3：SSH密钥认证失败**
-- **现象**：`id_ed25519` 公钥被服务器拒绝
-- **根因**：服务器上 `~/.ssh/authorized_keys` 可能未包含本地公钥
-- **解决**：使用密码通过paramiko连接
-- **教训**：保留密码作为备用认证方式
-
-### 3.2 部署结果
-
-```
-[+] Git reset --hard origin/dev 成功
-[+] git clean -fd 成功
-[+] npm install 成功（prisma generate ✔）
-[+] npm run build 成功（47/47 pages, 14.4s compile）
-[+] pm2 restart qunxiang-xinghuo 成功
-[+] pm2 status: online, pid 1540040, mem 72.9mb
-[+] pm2 save 成功
-```
-
-**部署时间**：2026-05-04
-**Git Commit**：`2caec4f` (dev分支)
+**参与人数统计逻辑：**
+1. 从数据库统计每个brainhole的matchRequest数和reaction数
+2. 数据库无记录时，使用 `hotScore/15` 作为保底（让新brainhole也有社交信号）
+3. 前端显示 `engagedCount > 2` 时显示徽章
 
 ---
 
-# v5.3-blank 紧急修复（2026-05-04追加）
+## 三、双人模式重设计 — 四级智能匹配
 
-## 一、问题：页面空白
+### 3.1 匹配引擎架构（v6.0）
 
-**现象**：部署后访问线上页面显示空白，只有深色背景和loading spinner。
-
-**根因链**：
 ```
-server.ts (自定义server)
-  → Next.js handle() 无法serve生产build静态资源
-  → /_next/static/chunks/*.js 全部404
-  → 客户端JS/CSS无法加载
-  → React无法hydrate
-  → BubbleCloud等客户端组件永远卡在loading spinner
-  → 页面看起来像"空白"
+用户发起匹配（带brainholeId + identity）
+  ↓
+[阶段1] 同brainhole精确匹配（0-3秒）
+  ├─ 查找也在等待同brainhole的用户
+  ├─ 找到 → 立刻匹配，strategy="same_brainhole"
+  └─ 未找到 → 进入阶段2
+  ↓
+[阶段2] 同分类兴趣匹配（3-6秒）
+  ├─ 查找等待中且brainhole分类相同的用户
+  ├─ 找到 → 立刻匹配，strategy="same_category"
+  └─ 未找到 → 进入阶段3
+  ↓
+[阶段3] 任意用户 + 已参与的热门brainhole（6-10秒）
+  ├─ 查找任意等待中的用户
+  ├─ 从"已有人参与"的brainhole中随机选（排除双方已参与的）
+  ├─ 找到 → 立刻匹配，strategy="random_engaged"
+  └─ 未找到 → 进入阶段4
+  ↓
+[阶段4] 扩大搜索 + 等待（10-15秒）
+  ├─ 无等待用户
+  ├─ 为用户分配一个热门brainhole作为等待话题
+  └─ 返回waiting，strategy="waiting_for_any"
 ```
 
-**技术根因**：Next.js App Router + 自定义server组合，生产模式下 `handle()` 不能正确处理 `_next/static/` 路由。
+### 3.2 匹配引擎API
 
-## 二、修复
+**POST /api/match**
 
-**文件**：`server.ts`
-
-**修改**：显式拦截 `/_next/` 路径，直接读取 `.next` 目录serve静态文件。
-
-```typescript
-import fs from 'fs'
-import path from 'path'
-
-const mimeTypes: Record<string, string> = {
-  '.js': 'application/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
-  '.ico': 'image/x-icon',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.svg': 'image/svg+xml',
-  '.woff2': 'font/woff2',
-  '.woff': 'font/woff',
-  '.ttf': 'font/ttf',
+**请求体：**
+```json
+{
+  "identity": "急诊科医生",
+  "preferDifferent": true,
+  "brainholeId": "xxx",  // 可选，从泡泡来的会带
+  "mode": "quick",
+  "timeoutMinutes": 1
 }
+```
 
-// 在createServer中：
-if (req.url && req.url.startsWith('/_next/')) {
-  const staticPath = path.join(process.cwd(), '.next', req.url)
-  if (fs.existsSync(staticPath) && fs.statSync(staticPath).isFile()) {
-    const ext = path.extname(staticPath)
-    res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream')
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-    fs.createReadStream(staticPath).pipe(res)
-    return
+**响应（匹配成功）：**
+```json
+{
+  "success": true,
+  "data": {
+    "matchId": "xxx",
+    "roomId": "xxx",
+    "status": "matched",
+    "strategy": "same_brainhole",  // same_brainhole | same_category | random_engaged
+    "brainholeId": "xxx",
+    "brainholeTitle": "急诊室里的道德困境",
+    "message": "找到同样对这个话题感兴趣的人",
+    "matchedUserId": "xxx",
+    "matchedUserIdentity": "辩护律师"
   }
 }
 ```
 
-## 三、验证结果
-
-| 检查项 | 结果 |
-|--------|------|
-| `/_next/static/chunks/*.js` | HTTP 200 ✅ |
-| `/_next/static/chunks/*.css` | HTTP 200 ✅ |
-| `/home` 页面HTML | 22KB，包含标题+模式卡片 ✅ |
-| 泡泡API `/api/brainholes/bubble` | `success:true` ✅ |
-| PM2状态 | online, mem 72.9mb ✅ |
-
-## 四、教训
-
-1. **App Router + 自定义server = 必须显式处理静态资源**
-2. **部署后立即curl验证 `_next/static`**，这是页面能否正常显示的生命线
-3. **日志中的 `○ Compiling` 是开发模式标志**，生产环境绝不应该出现
-4. **BubbleCloud等客户端组件的loading spinner + JS 404 = 看起来"空白"**
-
----
-
-*文档版本：v5.0 + v5.3整改 + v5.3-blank修复 | 已部署 | 2026-05-04*
-
-## 四、更新后的状态
-
-| 功能 | 状态 |
-|------|------|
-| 刘看山卡通形象 | ✅ 已部署 |
-| 首页→故事大厅导航 | ✅ 已部署 |
-| 全平台对比度修复 | ✅ 已部署 |
-| 泡泡交互强化 | ✅ 已部署 |
-| 故事大厅模块 | ✅ v5.1已上线 |
-| 双人模式真实匹配 | ✅ v4.6已修复 |
-| AI对话上下文 | ✅ v4.8已接入 |
-| 素材自动保存 | ✅ v4.8-fix已接入 |
-
-## 五、重要文件路径速查
-
-| 文件 | 路径 | 用途 |
-|------|------|------|
-| 重要信息记录 | `IMPORTANT.md` | 服务器信息、部署命令、环境变量 |
-| 问题记录 | `ProblemLog.md` | 所有bug根因、修复、预防措施 |
-| 部署脚本 | `deploy_remote.py` | paramiko SSH自动部署 |
-| TDD v5.0 | `docs/qunxiangxinhuo-TDD-v5.0.md` | 本文件 |
-| TDD v4.5 | `TDD-v4.5-泡泡脑洞系统.md` | 泡泡系统+故事大厅技术细节 |
-
----
-
-*文档版本：v5.0 + v5.3整改记录 | 已部署 | 2026-05-04*
-
-
----
-
-# v5.3-avatar 刘看山形象替换（2026-05-04追加）
-
-## 一、需求
-
-用户要求：
-1. 把项目中所有刘看山形象换成官方卡通图片
-2. 调整到合适美观的位置（不重叠、不挤角落）
-3. 宽度约120px，高度自适应
-
-## 二、修改范围
-
-| 组件 | 原实现 | 新实现 | 位置检查 |
-|------|--------|--------|----------|
-| `LiuKanshanAvatar.tsx` | SVG绘制（236行代码） | `next/image` + `/liukanshan.jpg` | 等待页/超时页/故事页：flex居中 + margin ✅ |
-| `LiuKanshanFloat.tsx` | CSS简笔画 | `next/image` + `/liukanshan.jpg` | 首页右下角 `fixed bottom-20 right-4` ✅ |
-| `LiuKanshanWelcome.tsx` | 引用Avatar | 自动继承新Avatar | 弹窗底部居中 ✅ |
-
-## 三、技术细节
-
-**图片存放**：`public/liukanshan.jpg` → 访问路径 `/liukanshan.jpg`
-
-**尺寸表**：
-```typescript
-const sizeMap = {
-  sm: 48,   // 小图标
-  md: 64,   // 欢迎弹窗
-  lg: 120,  // 等待页/超时页/故事页（用户要求120px）
-  xl: 144,  // 大尺寸场景
-};
+**响应（等待中）：**
+```json
+{
+  "success": true,
+  "data": {
+    "matchId": "xxx",
+    "status": "waiting",
+    "strategy": "waiting_for_any",
+    "brainholeId": "xxx",
+    "brainholeTitle": "急诊室里的道德困境",
+    "message": "waiting"
+  }
+}
 ```
 
-**Image组件配置**：
-- `object-contain`：保持图片比例
-- `priority`：预加载，避免闪烁
-- `rounded-2xl`：圆角适配图片风格
+### 3.3 等待页设计（v6.0 可视化）
 
-## 四、验证结果
+```
+┌─────────────────────────────────────┐
+│ ← 返回        寻找对撞人             │
+├─────────────────────────────────────┤
+│                                     │
+│         🦊 刘看山（思考动画）         │  ← 中心焦点
+│                                     │
+├─────────────────────────────────────┤
+│  [对撞话题] 急诊室里的道德困境        │  ← brainhole卡片
+├─────────────────────────────────────┤
+│  ◎ ◎ ◎ ◎                           │  ← 四级策略指示灯
+│  同话题  同类  热门  扩大           │
+│  ═══════════                        │  ← 策略进度条
+├─────────────────────────────────────┤
+│  正在搜索同话题的对撞人...          │  ← 实时文案
+│  刘看山已派出 45 个信号波           │  ← 趣味数据
+├─────────────────────────────────────┤
+│              12                     │  ← 倒计时
+│  ═══════════                        │  ← 时间进度条
+├─────────────────────────────────────┤
+│  [信号正常] [已发起匹配]            │  ← 状态标签
+└─────────────────────────────────────┘
+```
 
-- [x] Build通过（Compiled successfully in 5.6s）
-- [x] `/liukanshan.jpg` HTTP 200 ✅
-- [x] 等待页/超时页/故事页/首页 全部正常渲染 ✅
-- [x] 位置不重叠 ✅
-- [x] 服务器部署成功 ✅
-
----
-
-# v5.4 故事大厅MVP功能开发（2026-05-05）
-
-## 一、需求背景
-
-v5.1已实现故事大厅基础骨架（创建故事、角色认领、实时对白室、AI分支）。但MVP核心流程中**导演审核**和**手动启动故事**两个关键环节缺失：
-- 角色认领后**自动通过**，导演无法把控演员质量
-- 所有角色被认领后**自动启动**，缺少导演确认环节
-- 认领信息仅有"扮演理由"，缺少"身份标签"和"演绎方向"
-
-## 二、MVP功能清单实现
-
-| 编号 | 功能 | 状态 | 说明 |
+**四级策略指示灯：**
+| 阶段 | 时间 | 图标 | 文案 |
 |------|------|------|------|
-| 1 | 创建故事 | ✅ 已有 | 增加 `minActors`（最少启动人数）字段 |
-| 2 | 故事广场 | ✅ 已有 | 进度条改为按`approved`角色计算 |
-| 3 | 故事详情 | ✅ 已有 | 增加认领状态显示（待审核/已通过/已拒绝） |
-| 4 | 认领角色 | 🆕 增强 | 增加身份标签、演绎方向两个字段 |
-| 5 | 导演审核 | 🆕 新增 | 导演查看申请列表，approve/reject |
-| 6 | 启动故事 | 🆕 新增 | 导演手动启动，条件：所有角色审核通过 |
-| 7 | 基础对白室 | ✅ 已有 | 复用v5.1实现，无需修改 |
+| 同话题匹配 | 0-3秒 | Target | 正在搜索同话题的对撞人... |
+| 同类兴趣 | 3-6秒 | BrainCircuit | 同话题暂无匹配，正在寻找同类兴趣... |
+| 热门话题 | 6-10秒 | Globe | 正在从热门参与话题中为你匹配... |
+| 扩大搜索 | 10-15秒 | Search | 正在扩大搜索范围... |
 
-## 三、数据库变更
+**指示灯状态：**
+- 当前阶段：金色高亮 + 发光
+- 已完成：绿色
+- 未到达：灰色
 
-### 3.1 Story模型新增字段
-```prisma
-minActors  Int      @default(2)  // 最少启动人数
-```
-
-### 3.2 StoryRole模型新增字段
-```prisma
-claimStatus          String   @default("pending") // pending/approved/rejected
-identityTag          String?  // 身份标签（如"急诊科医生"）
-performanceDirection String?  // 演绎方向（如"理性与情感交织"）
-```
-
-### 3.3 状态流转
+### 3.4 超时页设计（v6.0）
 
 ```
-创建故事 → recruiting
-  ↓
-用户认领角色 → claimStatus="pending"
-  ↓
-导演审核 → approve: claimStatus="approved"
-         → reject: claimStatus="rejected", claimedBy=null
-  ↓
-所有角色 approved → 导演点击"启动故事" → status="ongoing"
-  ↓
-进入对白室
+┌─────────────────────────────────────┐
+│ ← 返回        匹配结果              │
+├─────────────────────────────────────┤
+│                                     │
+│         🦊 刘看山（ sleepy ）        │
+│                                     │
+├─────────────────────────────────────┤
+│    四级匹配策略已用尽               │
+│    已尝试：同话题→同类兴趣→        │
+│            热门话题→扩大搜索        │
+│    是否与刘看山一起探讨？           │
+├─────────────────────────────────────┤
+│  [🟡 与刘看山对戏]                  │  ← 主按钮
+│  [⚪ 继续扩大搜索]                  │  ← 次按钮（第1次）
+│  [⚪ 返回首页]                      │  ← 次按钮（第2次）
+└─────────────────────────────────────┘
 ```
-
-## 四、API变更
-
-### 4.1 修改：POST /api/stories
-- 增加 `minActors` 参数（可选，默认2）
-
-### 4.2 修改：POST /api/stories/[storyId]/roles/[roleId]/claim
-- 请求体增加 `identityTag` 和 `performanceDirection`
-- 认领后 `claimStatus = "pending"`（不再自动成功）
-- 移除"所有角色被认领后自动更新story.status"逻辑
-
-### 4.3 新增：POST /api/stories/[storyId]/roles/[roleId]/review
-```typescript
-// 只有导演可操作
-body: { action: "approve" | "reject" }
-
-// approve: claimStatus="approved"
-// reject: claimStatus="rejected", 清空 claimedBy/claimedAt/claimReason/identityTag/performanceDirection
-```
-
-### 4.4 新增：POST /api/stories/[storyId]/start
-```typescript
-// 只有导演可操作
-// 条件：所有角色 claimStatus="approved"
-// 效果：story.status="ongoing"
-```
-
-### 4.5 修改：GET /api/stories
-- `claimedRoles` → `approvedRoles`（只统计approved的角色）
-
-### 4.6 修改：GET /api/stories/[storyId]
-- 返回角色完整字段：`claimStatus`, `identityTag`, `performanceDirection`
-
-## 五、前端变更
-
-### 5.1 CreateStoryModal.tsx
-- 增加"最少启动人数"输入（数字，默认2，最小2）
-
-### 5.2 ClaimRoleModal.tsx
-- 增加"身份标签"输入（单行，40字内）
-- 增加"演绎方向"输入（多行，150字内）
-- 保留原有"扮演理由"字段
-
-### 5.3 story-hall/[storyId]/page.tsx
-- 角色卡片显示4种状态：
-  - `未认领`：白色边框，显示"认领"按钮
-  - `待审核`：黄色边框，显示申请人信息和"审核中"标签
-  - `已通过`：绿色边框，显示演员信息和"已通过"标签
-  - `已拒绝`：红色边框（仅导演可见）
-- 导演视角新增"审核面板"：
-  - 列出所有 `claimStatus="pending"` 的申请
-  - 每个申请显示：角色名、申请人、身份标签、演绎方向、扮演理由
-  - 操作按钮："通过" / "拒绝"
-- 所有角色审核通过后，导演可见"启动故事"按钮（金色高亮）
-- 启动后，所有参与者可见"进入对白室"按钮
-
-### 5.4 story-hall/page.tsx
-- 进度条按 `approvedRoles / totalRoles` 计算（而非claimedRoles）
-
-## 六、测试验证清单
-
-- [ ] Prisma migrate成功
-- [ ] Build通过
-- [ ] 创建故事可设置minActors
-- [ ] 认领角色可填写身份标签和演绎方向
-- [ ] 认领后角色状态为"待审核"
-- [ ] 导演可见审核面板
-- [ ] 导演可通过/拒绝申请
-- [ ] 拒绝后角色恢复为"未认领"
-- [ ] 所有角色通过后，导演可见"启动故事"按钮
-- [ ] 启动后故事状态变为"进行中"
-- [ ] 所有参与者可进入对白室
-- [ ] 广场进度条正确显示approved比例
 
 ---
 
-*文档版本：v5.0 + v5.3整改 + v5.3-blank修复 + v5.3-avatar替换 + v5.4故事大厅MVP | 开发中 | 2026-05-05*
+## 四、身份选择页（v6.0 优化）
+
+**从泡泡来的用户：**
+- URL: `/duo-match?brainholeId=xxx&from=bubble`
+- 顶部显示预选brainhole卡片（金色边框）
+- 标题改为"确认身份，即刻对撞"
+- 副标题改为"话题已选好，选一个身份就开始"
+- 按钮改为"确认身份，开始匹配 →"
+
+**普通入口：**
+- URL: `/duo-match`
+- 保持原有设计
+
+---
+
+## 五、数据库设计
+
+**无需Schema变更**，v6.0复用已有模型：
+- `Brainhole.matchCount` / `reactionCount` — 已有字段
+- `MatchRequest.brainholeId` — 已有字段
+- `MatchRequest.identity` — 已有字段
+
+**新增查询模式：**
+```typescript
+// 统计brainhole参与人数
+prisma.matchRequest.groupBy({ by: ['brainholeId'], _count: true })
+prisma.reaction.groupBy({ by: ['brainholeId'], _count: true })
+
+// 同分类匹配
+prisma.matchRequest.findMany({
+  where: { brainhole: { category: userBrainhole.category } }
+})
+
+// 已有人参与的brainhole
+prisma.brainhole.findMany({
+  where: {
+    status: "approved",
+    OR: [
+      { reactionCount: { gt: 0 } },
+      { collectionCount: { gt: 0 } },
+    ],
+  },
+  orderBy: { hotScore: "desc" },
+})
+```
+
+---
+
+## 六、文件变更清单
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `src/server/match-engine.ts` | 重写 | 四级降级策略匹配引擎 |
+| `src/app/api/match/route.ts` | 修改 | 返回strategy + brainholeTitle |
+| `src/app/api/brainholes/bubble/route.ts` | 修改 | 增加参与人数统计 |
+| `src/components/bubble-cloud/types.ts` | 修改 | 增加matchCount/reactionCount/engagedCount |
+| `src/components/bubble-cloud/Bubble.tsx` | 重写 | 参与人数徽章 + "立即匹配"按钮 |
+| `src/components/bubble-cloud/BubbleCloud.tsx` | 修改 | onMatch回调 + engagedCount |
+| `src/app/duo-match/page.tsx` | 修改 | 支持from=bubble + 预选brainhole卡片 |
+| `src/app/duo-waiting/page.tsx` | 重写 | 四级策略进度可视化 |
+| `src/app/duo-timeout/page.tsx` | 修改 | 降级策略文案 |
+| `src/app/home/page.tsx` | 修改 | 模式文案 + 版本号 |
+
+---
+
+## 七、测试策略
+
+### 7.1 泡泡系统测试
+- [ ] Hover浮层显示"X人在线"
+- [ ] 参与人数徽章 >2人时显示
+- [ ] 点击"立即匹配"跳转duo-match?brainholeId=xxx
+- [ ] 点击泡泡本体跳转brainhole详情
+- [ ] Emergency fallback显示engagedCount
+
+### 7.2 匹配引擎测试
+- [ ] 同brainhole匹配 → strategy="same_brainhole"
+- [ ] 同分类匹配 → strategy="same_category"
+- [ ] 随机热门匹配 → strategy="random_engaged"
+- [ ] 无匹配 → strategy="waiting_for_any" + brainholeTitle
+- [ ] 匹配响应包含brainholeId和brainholeTitle
+
+### 7.3 等待页测试
+- [ ] 四级策略指示灯随时间变化
+- [ ] 策略进度条正确填充
+- [ ] 实时文案随策略阶段变化
+- [ ] 匹配成功显示对应策略文案
+- [ ] 超时后正确跳转超时页
+
+### 7.4 Build测试
+- [ ] 本地 `npm run build` 47/47通过
+- [ ] 静态资源curl 200
+- [ ] 首页/泡泡API/匹配API 200
+
+---
+
+## 八、部署检查清单
+
+- [ ] 本地 `npm run build` 47/47通过
+- [ ] `git commit` + `git push origin dev`
+- [ ] 服务器 `git reset --hard origin/dev`
+- [ ] `npm install && npx prisma generate`
+- [ ] `rm -rf .next && NODE_ENV=production npm run build`
+- [ ] `pm2 restart qunxiang-xinghuo && pm2 save`
+- [ ] curl 验证首页 `/home` 200
+- [ ] curl 验证静态JS/CSS 200
+- [ ] curl 验证泡泡API `/api/brainholes/bubble` 返回数据
+- [ ] curl 验证匹配API POST `/api/match` 返回strategy
+- [ ] 更新 `ProblemLog.md`
+- [ ] 更新 `IMPORTANT.md`
+
+---
+
+*文档版本：v6.0 泡泡脑洞版 | 开发完成 | 2026-05-02*

@@ -120,13 +120,16 @@ function DuoTimeoutContent() {
           className="text-center mb-8"
         >
           <p className="text-lg font-medium text-white/90 mb-2">
-            当前暂无真人
+            四级匹配策略已用尽
           </p>
           <p className="text-sm text-white/40">
+            已尝试：同话题→同类兴趣→热门话题→扩大搜索
+          </p>
+          <p className="text-sm text-white/40 mt-1">
             是否与刘看山一起探讨？
           </p>
           <p className="text-[10px] text-white/40 mt-3">
-            {isSecondRound ? '第 2 次匹配尝试（最后一次）' : '第 1 次匹配尝试'}
+            {isSecondRound ? '第 2 次匹配尝试（最后一次）' : '第 1 次匹配尝试'} · v6.0 智能匹配
           </p>
         </motion.div>
 
@@ -145,7 +148,7 @@ function DuoTimeoutContent() {
             {choice === 'ai' ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              '是，与刘看山对白'
+              '与刘看山对戏'
             )}
           </button>
 
@@ -158,7 +161,7 @@ function DuoTimeoutContent() {
               {choice === 'wait' ? (
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto" />
               ) : (
-                '否，继续等待'
+                '继续扩大搜索'
               )}
             </button>
           ) : (
@@ -170,7 +173,7 @@ function DuoTimeoutContent() {
               {choice === 'exit' ? (
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto" />
               ) : (
-                '否，返回首页'
+                '返回首页'
               )}
             </button>
           )}

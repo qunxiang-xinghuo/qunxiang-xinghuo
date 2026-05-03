@@ -7,7 +7,7 @@ import { findMatch } from "@/server/match-engine";
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[MatchAPI] ========== 收到匹配请求 ==========");
+    console.log("[MatchAPI v6.0] ========== 收到匹配请求 ==========");
     console.log("[MatchAPI] 请求方法:", request.method);
     console.log("[MatchAPI] 请求URL:", request.url);
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const validatedData = matchRequestSchema.parse(body);
     console.log("[MatchAPI] 数据验证通过 - identity:", validatedData.identity, "brainholeId:", validatedData.brainholeId, "mode:", validatedData.mode);
 
-    console.log("[MatchAPI] 正在调用 findMatch...");
+    console.log("[MatchAPI] 正在调用 findMatch v6.0...");
     const matchResult = await findMatch(userId, {
       brainholeId: validatedData.brainholeId,
       identity: validatedData.identity,
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (matchResult.matched) {
-      console.log("[MatchAPI] 匹配成功! matchId:", matchResult.matchId, "roomId:", matchResult.roomId, "roomType:", matchResult.roomType);
+      console.log("[MatchAPI] 匹配成功! matchId:", matchResult.matchId, "roomId:", matchResult.roomId, "strategy:", matchResult.strategy, "brainhole:", matchResult.brainholeTitle);
       return NextResponse.json(apiResponse({
         matchId: matchResult.matchId,
         roomId: matchResult.roomId,
@@ -63,9 +63,13 @@ export async function POST(request: NextRequest) {
         matchedCount: matchResult.matchedCount,
         roomType: matchResult.roomType,
         status: "matched",
+        strategy: matchResult.strategy,
+        brainholeId: matchResult.brainholeId,
+        brainholeTitle: matchResult.brainholeTitle,
+        message: matchResult.message,
       }), { status: 201 });
     } else {
-      console.log("[MatchAPI] 匹配未完成，进入等待状态. matchId:", matchResult.matchId, "message:", matchResult.message);
+      console.log("[MatchAPI] 匹配未完成，进入等待状态. matchId:", matchResult.matchId, "strategy:", matchResult.strategy, "brainhole:", matchResult.brainholeTitle);
       if (matchResult.message === "MATCH_ALREADY_EXISTS") {
         return NextResponse.json(apiError("MATCH_ALREADY_EXISTS", "已有活跃匹配请求"), { status: 400 });
       }
@@ -75,6 +79,9 @@ export async function POST(request: NextRequest) {
         roomType: matchResult.roomType,
         status: "waiting",
         message: matchResult.message,
+        strategy: matchResult.strategy,
+        brainholeId: matchResult.brainholeId,
+        brainholeTitle: matchResult.brainholeTitle,
       }), { status: 202 });
     }
   } catch (error: any) {

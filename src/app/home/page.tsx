@@ -9,7 +9,7 @@ import LiuKanshanWelcome from '@/components/layout/LiuKanshanWelcome';
 
 const modes = [
   {
-    id: 'duo', title: '双人模式', subtitle: '即时对戏碰撞 · 1分钟匹配',
+    id: 'duo', title: '双人模式', subtitle: '点击泡泡即刻匹配 · 四级智能策略 · 15秒极速',
     icon: Users, available: true, core: true, path: '/duo-match',
   },
   {
@@ -17,8 +17,8 @@ const modes = [
     icon: Theater, available: true, path: '/multiplayer',
   },
   {
-    id: 'serial', title: '长期连载', subtitle: '故事连载 · 灵感沉淀归档',
-    icon: BookOpen, available: false, path: '/story-hall',
+    id: 'serial', title: '故事大厅', subtitle: '6种剧本模板 · 隐藏秘密 · 沉浸式剧本体验',
+    icon: BookOpen, available: true, path: '/story-hall',
   },
 ];
 
@@ -116,7 +116,7 @@ export default function HomePage() {
         </div>
 
         <div className="mt-4 mb-2 text-center">
-          <p className="text-[10px] text-slate-600">点击泡泡探索热门脑洞 · v5.8</p>
+          <p className="text-[10px] text-slate-600">点击泡泡一键匹配 · 四级智能降级 · v6.0</p>
         </div>
       </div>
     </div>

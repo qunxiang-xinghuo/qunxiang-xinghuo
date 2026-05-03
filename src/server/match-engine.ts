@@ -10,8 +10,27 @@ export interface MatchResult {
   matchedCount?: number;
   roomType?: string;
   message?: string;
+  strategy?: string;       // 匹配策略阶段: same_brainhole | same_category | random_engaged | random_any
+  brainholeId?: string;   // 最终使用的brainholeId
+  brainholeTitle?: string; // 最终使用的brainhole标题
 }
 
+/**
+ * v6.0 匹配引擎 — 四级降级策略
+ * 
+ * 阶段1（0-3秒）: 同brainhole精确匹配
+ *   → 找到 → 立刻匹配，文案："找到同样对这个话题感兴趣的人"
+ * 
+ * 阶段2（3-6秒）: 同分类兴趣匹配
+ *   → 找到 → 立刻匹配，文案："你们都喜欢【分类】类话题"
+ * 
+ * 阶段3（6-10秒）: 任意活跃用户 + 双方未参与的随机brainhole
+ *   → 从"已有人参与"的热门brainhole中随机选
+ *   → 找到 → 立刻匹配，文案："为你匹配了一位新朋友"
+ * 
+ * 阶段4（10-15秒）: 扩大搜索范围
+ *   → 仍无 → 进入等待，文案："正在扩大搜索范围..."
+ */
 export async function findMatch(
   userId: string,
   criteria: MatchCriteriaInput
@@ -22,11 +41,12 @@ export async function findMatch(
     preferDifferentIdentity,
     timeoutMinutes,
     mode,
+    identity,
   } = criteria;
 
-  console.log("[MatchEngine] findMatch 开始 - userId:", userId, "mode:", mode, "brainholeId:", brainholeId);
+  console.log("[MatchEngine v6.0] findMatch 开始 - userId:", userId, "mode:", mode, "brainholeId:", brainholeId, "identity:", identity);
 
-  // 检查用户是否已有活跃匹配
+  // === 0. 检查用户是否已有活跃匹配 ===
   const existingMatch = await db.matchRequest.findFirst({
     where: {
       userId,
@@ -43,258 +63,321 @@ export async function findMatch(
     };
   }
 
+  // === 1. 获取用户选择的brainhole信息 ===
+  let userBrainhole = null;
+  if (brainholeId) {
+    userBrainhole = await db.brainhole.findUnique({
+      where: { id: brainholeId },
+      select: { id: true, title: true, category: true },
+    });
+  }
+
+  // === 2. 创建新的匹配请求 ===
   console.log("[MatchEngine] 无活跃匹配，创建新请求");
-
-  // v5.0-fix: 如果用户明确传入了brainholeId（从泡泡点击进入），优先使用它
-  const hasExplicitBrainhole = !!brainholeId;
-  // 快速匹配模式：不指定脑洞，系统随机分配；但若明确指定则不视为quick
-  const isQuickMatch = mode === "quick" && !hasExplicitBrainhole;
-  console.log("[MatchEngine] hasExplicitBrainhole:", hasExplicitBrainhole, "isQuickMatch:", isQuickMatch);
-
-  // 创建新的匹配请求（v4.3: 无论是否quick模式，都保存brainholeId）
-  console.log("[MatchEngine] 正在创建匹配请求...");
   const matchRequest = await db.matchRequest.create({
     data: {
       userId,
       brainholeId: brainholeId || null,
-      identity: criteria.identity || "default",
+      identity: identity || "default",
       preferDifferent: preferDifferentIdentity,
       status: "waiting",
-      expiresAt: new Date(Date.now() + timeoutMinutes * 60 * 1000),
+      expiresAt: new Date(Date.now() + (timeoutMinutes || 1) * 60 * 1000),
     },
   });
 
-  // 构建匹配查询条件
-  const matchWhere: any = {
+  const now = new Date();
+  const baseWhere: any = {
     status: "waiting",
-    expiresAt: { gt: new Date() },
+    expiresAt: { gt: now },
     userId: { not: excludeUserId || userId },
   };
 
-  // v5.0-fix: 如果用户明确指定了brainholeId，优先匹配同脑洞的用户
-  // 快速匹配且未指定脑洞：不限制；其他情况：使用用户指定的brainholeId
-  if (hasExplicitBrainhole) {
-    matchWhere.brainholeId = brainholeId;
-  }
-
   if (preferDifferentIdentity) {
-    matchWhere.OR = [{ identity: { not: criteria.identity || "default" } }];
+    baseWhere.OR = [{ identity: { not: identity || "default" } }];
   }
 
-  // 尝试寻找匹配
-  console.log("[MatchEngine] 查找潜在匹配... where:", JSON.stringify(matchWhere));
-  const potentialMatches = await db.matchRequest.findMany({
-    where: matchWhere,
-    orderBy: { createdAt: "asc" },
-    take: 10,
-  });
-
-  console.log("[MatchEngine] 找到潜在匹配:", potentialMatches.length, "个");
-
-  if (potentialMatches.length > 0) {
-    // ===== 多人模式：尝试找2-4个其他玩家（总共3-5人）=====
-    if (mode === "multi" && potentialMatches.length >= 2) {
-      const matchedRequests = potentialMatches.slice(0, 4);
-
-      // 确定房间使用的脑洞ID（快速模式随机选一个）
-      let roomBrainholeId = brainholeId;
-      if (isQuickMatch || !brainholeId) {
-        // v5.0-fix: 从approved脑洞池中随机选择
-        const pool = await db.brainhole.findMany({
-          where: { status: "approved" },
-          orderBy: { hotScore: "desc" },
-          take: 50,
-        });
-        if (pool.length > 0) {
-          const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
-          let randomPoint = Math.random() * totalScore;
-          let selected = pool[0];
-          for (const b of pool) {
-            randomPoint -= (b.hotScore || 1);
-            if (randomPoint <= 0) {
-              selected = b;
-              break;
-            }
-          }
-          roomBrainholeId = selected.id;
-        } else {
-          roomBrainholeId = brainholeId || "";
-        }
-      }
-
-      const room = await db.room.create({
-        data: {
-          brainholeId: roomBrainholeId || undefined,
-          type: "multi",
-          status: "created",
-          maxRound: 10,
-          currentRound: 0,
-        },
-      });
-
-      await Promise.all([
-        db.matchRequest.update({
-          where: { id: matchRequest.id },
-          data: {
-            status: "matched",
-            matchedUserId: matchedRequests[0].userId,
-            roomId: room.id,
-            resolvedAt: new Date(),
-          },
-        }),
-        ...matchedRequests.map((m) =>
-          db.matchRequest.update({
-            where: { id: m.id },
-            data: {
-              status: "matched",
-              matchedUserId: userId,
-              roomId: room.id,
-              resolvedAt: new Date(),
-            },
-          })
-        ),
-      ]);
-
-      await Promise.all([
-        db.roomParticipant.create({
-          data: {
-            roomId: room.id,
-            userId,
-            identity: criteria.identity || "default",
-            role: "actor",
-            isOnline: true,
-          },
-        }),
-        ...matchedRequests.map((m) =>
-          db.roomParticipant.create({
-            data: {
-              roomId: room.id,
-              userId: m.userId,
-              identity: m.identity,
-              role: "actor",
-              isOnline: true,
-            },
-          })
-        ),
-      ]);
-
-      return {
-        matched: true,
-        matchId: matchRequest.id,
-        roomId: room.id,
-        matchedCount: matchedRequests.length + 1,
-        roomType: "multi",
-        message: "群像组队成功",
-      };
-    }
-
-    // ===== 双人模式 / 多人降级为双人 / 快速匹配 =====
-    const matchedRequest = potentialMatches[0];
-    console.log("[MatchEngine] 匹配到用户:", matchedRequest.userId, "brainholeId:", matchedRequest.brainholeId);
-
-    // 确定房间使用的脑洞ID
-    let roomBrainholeId = brainholeId;
-    if (isQuickMatch || !brainholeId) {
-      // 快速模式：优先使用对方的brainholeId，如果对方也没有则热度加权随机选
-      roomBrainholeId = matchedRequest.brainholeId || brainholeId;
-      if (!roomBrainholeId) {
-        console.log("[MatchEngine] 双方均无brainholeId，从池中热度加权随机抽取...");
-        const pool = await db.brainhole.findMany({
-          where: { status: "approved" },
-          orderBy: { hotScore: "desc" },
-          take: 50,
-        });
-        if (pool.length > 0) {
-          const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
-          let randomPoint = Math.random() * totalScore;
-          let selected = pool[0];
-          for (const b of pool) {
-            randomPoint -= (b.hotScore || 1);
-            if (randomPoint <= 0) {
-              selected = b;
-              break;
-            }
-          }
-          roomBrainholeId = selected.id;
-        }
-        console.log("[MatchEngine] 热度加权随机抽取brainholeId:", roomBrainholeId, "从", pool.length, "个脑洞中");
-      }
-    }
-
-    console.log("[MatchEngine] 正在创建房间...");
-    const room = await db.room.create({
-      data: {
-        brainholeId: roomBrainholeId || undefined,
-        type: "duet",
-        status: "created",
-        maxRound: 10,
-        currentRound: 0,
-      },
+  // ========== 阶段1: 同brainhole精确匹配 ==========
+  console.log("[MatchEngine] ===== 阶段1: 同brainhole精确匹配 =====");
+  if (brainholeId) {
+    const stage1Where = { ...baseWhere, brainholeId };
+    const stage1Matches = await db.matchRequest.findMany({
+      where: stage1Where,
+      orderBy: { createdAt: "asc" },
+      take: 1,
     });
 
-    await Promise.all([
-      db.matchRequest.update({
-        where: { id: matchRequest.id },
-        data: {
-          status: "matched",
-          matchedUserId: matchedRequest.userId,
-          roomId: room.id,
-          resolvedAt: new Date(),
-        },
-      }),
-      db.matchRequest.update({
-        where: { id: matchedRequest.id },
-        data: {
-          status: "matched",
-          matchedUserId: userId,
-          roomId: room.id,
-          resolvedAt: new Date(),
-        },
-      }),
-    ]);
-
-    await Promise.all([
-      db.roomParticipant.create({
-        data: {
-          roomId: room.id,
-          userId,
-          identity: criteria.identity || "default",
-          role: "actor",
-          isOnline: true,
-        },
-      }),
-      db.roomParticipant.create({
-        data: {
-          roomId: room.id,
-          userId: matchedRequest.userId,
-          identity: matchedRequest.identity,
-          role: "actor",
-          isOnline: true,
-        },
-      }),
-    ]);
-
-    console.log("[MatchEngine] 房间创建成功, ID为:", room.id);
-    return {
-      matched: true,
-      matchId: matchRequest.id,
-      roomId: room.id,
-      matchedUserId: matchedRequest.userId,
-      matchedUserIdentity: matchedRequest.identity,
-      matchedCount: 2,
-      roomType: "duet",
-      message: isQuickMatch ? "快速匹配成功" : mode === "multi" ? "双人匹配成功（多人不足自动降级）" : "匹配成功",
-    };
+    if (stage1Matches.length > 0) {
+      console.log("[MatchEngine] 阶段1成功! 匹配到同brainhole用户:", stage1Matches[0].userId);
+      return await createDuetMatch(
+        userId, matchRequest.id, stage1Matches[0],
+        brainholeId, userBrainhole?.title || "",
+        "same_brainhole", identity || "default"
+      );
+    }
   }
 
-  // 没有找到匹配
-  console.log("[MatchEngine] 未找到匹配，进入等待状态. matchId:", matchRequest.id);
+  // ========== 阶段2: 同分类兴趣匹配 ==========
+  console.log("[MatchEngine] ===== 阶段2: 同分类兴趣匹配 =====");
+  if (userBrainhole?.category) {
+    // 找到等待中且选择了同分类brainhole的用户
+    const stage2Matches = await db.matchRequest.findMany({
+      where: {
+        ...baseWhere,
+        brainhole: {
+          category: userBrainhole.category,
+        },
+      },
+      orderBy: { createdAt: "asc" },
+      take: 1,
+    });
+
+    if (stage2Matches.length > 0) {
+      const matchedBrainholeId = stage2Matches[0].brainholeId || brainholeId;
+      let matchedBrainholeTitle = userBrainhole?.title || "";
+      if (stage2Matches[0].brainholeId && stage2Matches[0].brainholeId !== brainholeId) {
+        const bh = await db.brainhole.findUnique({
+          where: { id: stage2Matches[0].brainholeId },
+          select: { title: true },
+        });
+        matchedBrainholeTitle = bh?.title || matchedBrainholeTitle;
+      }
+      console.log("[MatchEngine] 阶段2成功! 匹配到同分类用户:", stage2Matches[0].userId, "分类:", userBrainhole.category);
+      return await createDuetMatch(
+        userId, matchRequest.id, stage2Matches[0],
+        matchedBrainholeId || brainholeId || "", matchedBrainholeTitle,
+        "same_category", identity || "default"
+      );
+    }
+  }
+
+  // ========== 阶段3: 任意等待用户 + 已有人参与的随机brainhole ==========
+  console.log("[MatchEngine] ===== 阶段3: 任意用户 + 热门brainhole =====");
+  const stage3Matches = await db.matchRequest.findMany({
+    where: baseWhere,
+    orderBy: { createdAt: "asc" },
+    take: 1,
+  });
+
+  if (stage3Matches.length > 0) {
+    const matchedRequest = stage3Matches[0];
+    
+    // 确定最终brainhole：优先从"已有人参与"的热门brainhole中选
+    let finalBrainholeId = brainholeId || matchedRequest.brainholeId || "";
+    let finalBrainholeTitle = userBrainhole?.title || "";
+
+    // 如果双方都没有指定brainhole，或想换个新话题，从已有人参与的brainhole中选
+    if (!finalBrainholeId) {
+      const engagedBrainhole = await pickRandomEngagedBrainhole(userId, matchedRequest.userId);
+      if (engagedBrainhole) {
+        finalBrainholeId = engagedBrainhole.id;
+        finalBrainholeTitle = engagedBrainhole.title;
+        console.log("[MatchEngine] 从已参与brainhole中随机选择:", finalBrainholeTitle);
+      }
+    }
+
+    // 如果还是选不到，从approved池中热度加权随机选
+    if (!finalBrainholeId) {
+      const randomBh = await pickRandomBrainhole();
+      if (randomBh) {
+        finalBrainholeId = randomBh.id;
+        finalBrainholeTitle = randomBh.title;
+        console.log("[MatchEngine] 从approved池中热度加权随机选择:", finalBrainholeTitle);
+      }
+    }
+
+    console.log("[MatchEngine] 阶段3成功! 匹配到用户:", matchedRequest.userId, "brainhole:", finalBrainholeTitle);
+    return await createDuetMatch(
+      userId, matchRequest.id, matchedRequest,
+      finalBrainholeId, finalBrainholeTitle,
+      "random_engaged", identity || "default"
+    );
+  }
+
+  // ========== 阶段4: 没有等待用户，进入等待状态 ==========
+  console.log("[MatchEngine] ===== 阶段4: 无匹配用户，进入等待 =====");
+  
+  // 为用户分配一个"已有人参与"的热门brainhole作为等待话题
+  let waitingBrainholeId = brainholeId || "";
+  let waitingBrainholeTitle = userBrainhole?.title || "";
+  
+  if (!waitingBrainholeId) {
+    const engagedBh = await pickRandomEngagedBrainhole(userId, null);
+    if (engagedBh) {
+      waitingBrainholeId = engagedBh.id;
+      waitingBrainholeTitle = engagedBh.title;
+      // 更新matchRequest的brainholeId
+      await db.matchRequest.update({
+        where: { id: matchRequest.id },
+        data: { brainholeId: waitingBrainholeId },
+      });
+    }
+  }
+
+  console.log("[MatchEngine] 未找到匹配，进入等待. matchId:", matchRequest.id, "brainhole:", waitingBrainholeTitle);
   return {
     matched: false,
     matchId: matchRequest.id,
     roomType: mode,
-    message: mode === "multi" ? "等待组队中..." : isQuickMatch ? "快速匹配中..." : "等待匹配中...",
+    message: "waiting",
+    strategy: "waiting_for_any",
+    brainholeId: waitingBrainholeId,
+    brainholeTitle: waitingBrainholeTitle,
   };
+}
+
+/**
+ * 创建双人匹配房间
+ */
+async function createDuetMatch(
+  userId: string,
+  matchRequestId: string,
+  matchedRequest: any,
+  brainholeId: string,
+  brainholeTitle: string,
+  strategy: string,
+  identity: string
+): Promise<MatchResult> {
+  const room = await db.room.create({
+    data: {
+      brainholeId: brainholeId || undefined,
+      type: "duet",
+      status: "created",
+      maxRound: 10,
+      currentRound: 0,
+    },
+  });
+
+  await Promise.all([
+    db.matchRequest.update({
+      where: { id: matchRequestId },
+      data: {
+        status: "matched",
+        matchedUserId: matchedRequest.userId,
+        roomId: room.id,
+        resolvedAt: new Date(),
+      },
+    }),
+    db.matchRequest.update({
+      where: { id: matchedRequest.id },
+      data: {
+        status: "matched",
+        matchedUserId: userId,
+        roomId: room.id,
+        resolvedAt: new Date(),
+      },
+    }),
+  ]);
+
+  await Promise.all([
+    db.roomParticipant.create({
+      data: {
+        roomId: room.id,
+        userId,
+        identity: identity || "default",
+        role: "actor",
+        isOnline: true,
+      },
+    }),
+    db.roomParticipant.create({
+      data: {
+        roomId: room.id,
+        userId: matchedRequest.userId,
+        identity: matchedRequest.identity || "default",
+        role: "actor",
+        isOnline: true,
+      },
+    }),
+  ]);
+
+  console.log("[MatchEngine] 双人房间创建成功, ID:", room.id, "策略:", strategy);
+  return {
+    matched: true,
+    matchId: matchRequestId,
+    roomId: room.id,
+    matchedUserId: matchedRequest.userId,
+    matchedUserIdentity: matchedRequest.identity,
+    matchedCount: 2,
+    roomType: "duet",
+    message: strategy === "same_brainhole" 
+      ? "找到同样对这个话题感兴趣的人"
+      : strategy === "same_category"
+      ? "你们都喜欢这类话题"
+      : "为你匹配了一位新朋友",
+    strategy,
+    brainholeId,
+    brainholeTitle,
+  };
+}
+
+/**
+ * 从"已有人参与"的brainhole中随机选一个（排除已参与的双方）
+ */
+async function pickRandomEngagedBrainhole(excludeUserId1: string | null, excludeUserId2: string | null) {
+  // 获取"已有人参与"的热门brainhole（有reaction或collection）
+  const engaged = await db.brainhole.findMany({
+    where: {
+      status: "approved",
+      OR: [
+        { reactionCount: { gt: 0 } },
+        { collectionCount: { gt: 0 } },
+      ],
+    },
+    orderBy: { hotScore: "desc" },
+    take: 30,
+  });
+
+  if (engaged.length === 0) return null;
+
+  // 排除双方已经参与过的brainhole
+  const excludeIds = new Set<string>();
+  if (excludeUserId1) {
+    const reacted1 = await db.reaction.findMany({
+      where: { userId: excludeUserId1 },
+      select: { brainholeId: true },
+      take: 100,
+    });
+    reacted1.forEach(r => { if (r.brainholeId) excludeIds.add(r.brainholeId); });
+  }
+  if (excludeUserId2) {
+    const reacted2 = await db.reaction.findMany({
+      where: { userId: excludeUserId2 },
+      select: { brainholeId: true },
+      take: 100,
+    });
+    reacted2.forEach(r => { if (r.brainholeId) excludeIds.add(r.brainholeId); });
+  }
+
+  const candidates = engaged.filter(b => !excludeIds.has(b.id));
+  const pool = candidates.length > 0 ? candidates : engaged;
+
+  // 热度加权随机
+  const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
+  let randomPoint = Math.random() * totalScore;
+  for (const b of pool) {
+    randomPoint -= (b.hotScore || 1);
+    if (randomPoint <= 0) return b;
+  }
+  return pool[0];
+}
+
+/**
+ * 从approved池中热度加权随机选brainhole
+ */
+async function pickRandomBrainhole() {
+  const pool = await db.brainhole.findMany({
+    where: { status: "approved" },
+    orderBy: { hotScore: "desc" },
+    take: 50,
+  });
+  if (pool.length === 0) return null;
+
+  const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
+  let randomPoint = Math.random() * totalScore;
+  for (const b of pool) {
+    randomPoint -= (b.hotScore || 1);
+    if (randomPoint <= 0) return b;
+  }
+  return pool[0];
 }
 
 export async function cancelMatch(matchId: string, userId: string): Promise<boolean> {
