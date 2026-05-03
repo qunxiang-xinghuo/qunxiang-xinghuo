@@ -3,8 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Sparkles, Eye, EyeOff, LogIn, Flame } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Flame } from 'lucide-react';
 import { signIn } from 'next-auth/react';
+
+// v6.0 装饰性透明泡泡配置
+const DECORATIVE_BUBBLES = [
+  { size: 44, left: '72%', delay: 0, duration: 9, sway: 14 },
+  { size: 28, left: '85%', delay: 1.5, duration: 11, sway: 10 },
+  { size: 56, left: '68%', delay: 3, duration: 13, sway: 18 },
+  { size: 22, left: '90%', delay: 0.8, duration: 10, sway: 8 },
+  { size: 36, left: '78%', delay: 4.2, duration: 12, sway: 12 },
+  { size: 48, left: '64%', delay: 2.1, duration: 14, sway: 16 },
+  { size: 20, left: '94%', delay: 5.5, duration: 9, sway: 6 },
+];
 
 export default function LoginForm() {
   const router = useRouter();
@@ -64,14 +75,81 @@ export default function LoginForm() {
 
   return (
     <div className="flex flex-col h-full page-gradient relative overflow-hidden">
-      {/* 装饰背景 */}
+      {/* ====== 装饰背景光斑 ====== */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#e2b04a]/10 blur-xl" />
-        <div className="absolute top-32 right-6 w-20 h-20 rounded-full bg-[#74b9ff]/10 blur-xl" />
-        <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#e2b04a]/5 blur-lg" />
+        <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#e2b04a]/8 blur-xl" />
+        <div className="absolute top-32 right-6 w-20 h-20 rounded-full bg-[#74b9ff]/8 blur-xl" />
+        <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#e2b04a]/4 blur-lg" />
       </div>
 
-      {/* v6.0: 项目简介 */}
+      {/* ====== 右下角装饰性透明泡泡 ====== */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {DECORATIVE_BUBBLES.map((b, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: b.size,
+              height: b.size,
+              left: b.left,
+              bottom: -b.size,
+              background: `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18), rgba(255,255,255,0.04) 55%, rgba(255,255,255,0.01) 100%)`,
+              border: '1px solid rgba(255,255,255,0.12)',
+              boxShadow: `
+                inset 0 1px 2px rgba(255,255,255,0.25),
+                inset 0 -1px 1px rgba(255,255,255,0.05),
+                0 2px 8px rgba(255,255,255,0.06)
+              `,
+              backdropFilter: 'blur(1.5px)',
+            }}
+            animate={{
+              y: [0, -(window?.innerHeight || 800) - b.size * 2],
+              x: [0, b.sway, -b.sway * 0.6, b.sway * 0.8, 0],
+            }}
+            transition={{
+              y: {
+                duration: b.duration,
+                repeat: Infinity,
+                ease: 'linear',
+                delay: b.delay,
+              },
+              x: {
+                duration: b.duration * 0.6,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: b.delay,
+              },
+            }}
+          >
+            {/* 高光点 */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                width: b.size * 0.22,
+                height: b.size * 0.16,
+                top: b.size * 0.14,
+                left: b.size * 0.16,
+                background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 60%, transparent 100%)',
+                transform: 'rotate(-30deg)',
+              }}
+            />
+            {/* 底部微折射 */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                width: b.size * 0.35,
+                height: b.size * 0.12,
+                bottom: b.size * 0.1,
+                right: b.size * 0.15,
+                background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.15) 0%, transparent 80%)',
+                transform: 'rotate(15deg)',
+              }}
+            />
+          </motion.div>
+        ))}
+      </div>
+
+      {/* ====== 项目简介 ====== */}
       <div className="pt-16 pb-6 px-6 text-center relative z-10">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
@@ -83,8 +161,7 @@ export default function LoginForm() {
           <h1 className="text-3xl font-bold tracking-wider text-white/90">群像·星火</h1>
           <Flame className="w-5 h-5 text-[#e2b04a]/60" />
         </motion.div>
-        
-        {/* v6.0 新增项目简介 */}
+
         <motion.p
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -103,7 +180,7 @@ export default function LoginForm() {
         </motion.p>
       </div>
 
-      {/* 登录表单 */}
+      {/* ====== 登录表单 ====== */}
       <motion.form
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -182,7 +259,7 @@ export default function LoginForm() {
         </div>
       </motion.form>
 
-      <div className="px-6 pb-6 text-center">
+      <div className="px-6 pb-6 text-center relative z-10">
         <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策 · v6.0</p>
       </div>
     </div>

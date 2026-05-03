@@ -505,3 +505,32 @@ Build 47/47通过，部署成功。
 
 ---
 
+
+## v6.0-login-fix 登录页美化——移除新手提示+装饰性透明泡泡 (2026-05-03)
+
+### 变更内容
+
+1. **移除新手提示泡泡**
+   - 登录页不存在引用 LiuKanshanWelcome / LiuKanshanFloat 的代码
+   - 这两个组件已无人引用，属于历史遗留死代码，保留不删除以防未来复用
+
+2. **添加装饰性透明泡泡**
+   - 位置：页面右下角区域 (`absolute inset-0 overflow-hidden pointer-events-none`)
+   - 数量：7个泡泡，直径20px~56px随机分布
+   - 质感：真实肥皂泡效果
+     - `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18), rgba(255,255,255,0.04) 55%, transparent)`
+     - 微弱白色border `rgba(255,255,255,0.12)`
+     - 高光点：左上角椭圆白点，模拟光源反射
+     - 底部微折射：右下角椭圆淡白点
+     - 无鲜艳五彩颜色，整体晶莹剔透
+   - 动画：
+     - Y轴：缓慢上升到底部消失，duration 9s~14s，循环无限
+     - X轴：轻微左右摇摆，sway 6px~18px，easeInOut
+     - 每个泡泡不同delay（0~5.5s），错开上升节奏
+   - 技术：framer-motion `animate` + CSS `backdrop-filter: blur(1.5px)`
+
+### 构建结果
+- Build: 47/47 路由全部通过
+
+---
+
