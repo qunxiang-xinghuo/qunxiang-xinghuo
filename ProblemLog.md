@@ -1,5 +1,70 @@
 # 问题记录与修复日志
 
+## v6.0-fix2 泡泡彻底修复——稳定id持久化+点击直接匹配+收藏页 (2026-05-02)
+
+### 根因诊断：为什么点击泡泡显示"脑洞不存在"
+
+**三层根因链：**
+```
+泡泡API生成临时id: ds-${Date.now()}-${index}
+  → upsert到数据库（每次请求id不同，数据库积累大量重复记录）
+  → 用户点击泡泡跳转 /brainhole/${临时id}
+  → brainhole详情页用 useBrainhole hook 调用 /api/brainholes
+  → /api/brainholes 返回数据库中的记录（但临时id不在列表中，因为hook只加载一次）
+  → getBrainholeById(临时id) 返回 undefined
+  → 页面显示"脑洞不存在"
+```
+
+**根因1（直接）：** 泡泡API用 `Date.now()` 生成临时id，每次请求都不同，导致数据库中同一标题有多条重复记录
+**根因2（深层）：** brainhole详情页依赖 `useBrainhole` hook 的本地缓存，不是直接API查询
+**根因3（设计）：** 泡泡点击跳转详情页，路径太长，且详情页不是必要的
+
+### 修复方案
+
+**1. 泡泡API——稳定id持久化**
+- fallback数据使用预定义稳定id：`fb-medical-001`、`fb-workplace-001` 等
+- 知乎热榜/DeepSeek/搜索生成的数据，先查询数据库是否已有同标题记录
+  - 有 → 返回已有记录的稳定id
+  - 无 → `prisma.create()` 生成cuid()稳定id
+- 查询时排除旧临时id：`NOT { id: { startsWith: "zh-hot-" } }`
+
+**2. 泡泡点击——直接匹配**
+- 点击泡泡不再跳转 `/brainhole/${id}`（详情页路径废弃）
+- 点击直接进入 `duo-match?brainholeId=xxx&from=bubble`
+- Hover浮层只显示「匹配」按钮，不再有「详情」按钮
+
+**3. 泡泡视觉效果——真实泡泡**
+- 增加高光层：`radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25) 0%, transparent 50%)`
+- 增加底部折射：`radial-gradient(ellipse, rgba(255,255,255,0.12) 0%, transparent 70%)`
+- 移除参与人数徽章（用户不需要数字）
+
+**4. 素材库——增加「我的收藏」标签页**
+- 新增第三个标签页：「我的收藏」（Heart图标）
+- 调用 `/api/brainholes/collected` 获取收藏列表
+- 点击收藏的脑洞直接进入匹配流程
+
+**5. 匹配引擎——从已参与脑洞匹配**
+- 优先匹配选择了「已参与brainhole」的等待用户
+- 「已参与」定义：有matchRequest/reaction/collection记录的brainhole
+- 兜底：任意等待用户 + 随机已参与brainhole
+
+### 文件变更
+- `src/app/api/brainholes/bubble/route.ts`：稳定id持久化 + 排除旧临时id
+- `src/components/bubble-cloud/Bubble.tsx`：真实泡泡质感 + 移除badge
+- `src/components/bubble-cloud/BubbleCloud.tsx`：点击直接匹配
+- `src/components/bubble-cloud/types.ts`：移除engagedCount
+- `src/server/match-engine.ts`：从已参与脑洞匹配
+- `src/app/library/page.tsx`：增加「我的收藏」标签页
+
+### 验证
+- Build：47/47 ✅
+- 泡泡API返回稳定cuid：`cmolmtf9n002g9bb2tikii71e` ✅
+- 静态JS：200 ✅
+- 首页：200 ✅
+- PM2：online ✅
+
+---
+
 ## v6.0 泡泡脑洞版——四级智能匹配+社交信号+一键匹配 (2026-05-02)
 
 ### 50年产品经理 + 美术经理 + 技术经理视角重设计
