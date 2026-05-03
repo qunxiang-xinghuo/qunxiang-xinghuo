@@ -49,9 +49,6 @@ export default function BubbleCloud({ limit = 20 }: BubbleCloudProps) {
           category: b.category || 'general',
           difficulty: b.difficulty || 'medium',
           source: b.source || 'fallback',
-          matchCount: b.matchCount || 0,
-          reactionCount: b.reactionCount || 0,
-          engagedCount: b.engagedCount || Math.max(1, Math.floor((b.hotScore || 50) / 15)),
         }));
         setBubbles(list);
       } else {
@@ -66,16 +63,9 @@ export default function BubbleCloud({ limit = 20 }: BubbleCloudProps) {
     }
   }, [limit]);
 
-  // v6.0: 点击泡泡 → 进入脑洞详情页
+  // v6.0: 点击泡泡 → 直接进入双人匹配流程（不再跳转brainhole详情页）
   const handleBubbleClick = useCallback((bubble: BubbleItem) => {
-    window.location.href = `/brainhole/${bubble.id}`;
-  }, []);
-
-  // v6.0: 点击"立即匹配" → 直接进入双人匹配流程（带brainholeId）
-  const handleBubbleMatch = useCallback((bubble: BubbleItem) => {
-    // 保存选择的brainhole到localStorage
     localStorage.setItem('xh_duo_brainhole', bubble.id);
-    // 直接跳转到身份选择页，预选好brainhole
     router.push(`/duo-match?brainholeId=${bubble.id}&from=bubble`);
   }, [router]);
 
@@ -110,7 +100,6 @@ export default function BubbleCloud({ limit = 20 }: BubbleCloudProps) {
             item={bubble}
             index={index}
             onClick={() => handleBubbleClick(bubble)}
-            onMatch={() => handleBubbleMatch(bubble)}
             bgColor={CATEGORY_COLORS[bubble.category] || CATEGORY_COLORS.general}
             borderColor={CATEGORY_BORDER[bubble.category] || CATEGORY_BORDER.general}
           />
@@ -122,17 +111,17 @@ export default function BubbleCloud({ limit = 20 }: BubbleCloudProps) {
 
 function generateEmergencyFallback(): BubbleItem[] {
   return [
-    { id: 'em-1', title: '急诊室里的道德困境', scenario: '凌晨2点，急诊科医生面对两个病人...', hotScore: 85, category: 'medical', difficulty: 'hard', source: 'fallback', engagedCount: 12 },
-    { id: 'em-2', title: '裁员名单上的秘密', scenario: 'HR总监发现裁员名单上有自己最好的朋友', hotScore: 78, category: 'workplace', difficulty: 'medium', source: 'fallback', engagedCount: 8 },
-    { id: 'em-3', title: '学区房背后的交易', scenario: '夫妻假离婚，丈夫却有了新的恋情', hotScore: 72, category: 'life', difficulty: 'medium', source: 'fallback', engagedCount: 6 },
-    { id: 'em-4', title: '网红医生的真实面', scenario: '医学大V承诺免费治疗，却做不到', hotScore: 68, category: 'medical', difficulty: 'medium', source: 'fallback', engagedCount: 5 },
-    { id: 'em-5', title: '拆迁办的最后一户', scenario: '老人在等40年前失散的亲人', hotScore: 65, category: 'life', difficulty: 'easy', source: 'fallback', engagedCount: 4 },
-    { id: 'em-6', title: '老师与学生的秘密', scenario: '最优秀的学生在深夜送外卖', hotScore: 62, category: 'education', difficulty: 'medium', source: 'fallback', engagedCount: 4 },
-    { id: 'em-7', title: '外卖骑手的双重身份', scenario: '救人的骑手是医学院肄业生', hotScore: 60, category: 'medical', difficulty: 'easy', source: 'fallback', engagedCount: 3 },
-    { id: 'em-8', title: '法庭上的亲情审判', scenario: '律师发现当事人是被拐的亲妹妹', hotScore: 58, category: 'legal', difficulty: 'hard', source: 'fallback', engagedCount: 3 },
-    { id: 'em-9', title: '程序员与AI的对赌', scenario: '让AI出错才能保住所有人工作', hotScore: 55, category: 'tech', difficulty: 'medium', source: 'fallback', engagedCount: 3 },
-    { id: 'em-10', title: '幼儿园里的真相', scenario: '园长调查体罚，发现意外关联', hotScore: 52, category: 'education', difficulty: 'medium', source: 'fallback', engagedCount: 2 },
-    { id: 'em-11', title: '消防员的选择', scenario: '高楼火灾，只能先救一边', hotScore: 50, category: 'emergency', difficulty: 'hard', source: 'fallback', engagedCount: 2 },
-    { id: 'em-12', title: '心理咨询师的两难', scenario: '来访者丈夫是自己挚友', hotScore: 48, category: 'medical', difficulty: 'hard', source: 'fallback', engagedCount: 2 },
+    { id: 'fb-em-1', title: '急诊室里的道德困境', scenario: '凌晨2点，急诊科医生面对两个病人...', hotScore: 85, category: 'medical', difficulty: 'hard', source: 'fallback' },
+    { id: 'fb-em-2', title: '裁员名单上的秘密', scenario: 'HR总监发现裁员名单上有自己最好的朋友', hotScore: 78, category: 'workplace', difficulty: 'medium', source: 'fallback' },
+    { id: 'fb-em-3', title: '学区房背后的交易', scenario: '夫妻假离婚，丈夫却有了新的恋情', hotScore: 72, category: 'life', difficulty: 'medium', source: 'fallback' },
+    { id: 'fb-em-4', title: '网红医生的真实面', scenario: '医学大V承诺免费治疗，却做不到', hotScore: 68, category: 'medical', difficulty: 'medium', source: 'fallback' },
+    { id: 'fb-em-5', title: '拆迁办的最后一户', scenario: '老人在等40年前失散的亲人', hotScore: 65, category: 'life', difficulty: 'easy', source: 'fallback' },
+    { id: 'fb-em-6', title: '老师与学生的秘密', scenario: '最优秀的学生在深夜送外卖', hotScore: 62, category: 'education', difficulty: 'medium', source: 'fallback' },
+    { id: 'fb-em-7', title: '外卖骑手的双重身份', scenario: '救人的骑手是医学院肄业生', hotScore: 60, category: 'medical', difficulty: 'easy', source: 'fallback' },
+    { id: 'fb-em-8', title: '法庭上的亲情审判', scenario: '律师发现当事人是被拐的亲妹妹', hotScore: 58, category: 'legal', difficulty: 'hard', source: 'fallback' },
+    { id: 'fb-em-9', title: '程序员与AI的对赌', scenario: '让AI出错才能保住所有人工作', hotScore: 55, category: 'tech', difficulty: 'medium', source: 'fallback' },
+    { id: 'fb-em-10', title: '幼儿园里的真相', scenario: '园长调查体罚，发现意外关联', hotScore: 52, category: 'education', difficulty: 'medium', source: 'fallback' },
+    { id: 'fb-em-11', title: '消防员的选择', scenario: '高楼火灾，只能先救一边', hotScore: 50, category: 'emergency', difficulty: 'hard', source: 'fallback' },
+    { id: 'fb-em-12', title: '心理咨询师的两难', scenario: '来访者丈夫是自己挚友', hotScore: 48, category: 'medical', difficulty: 'hard', source: 'fallback' },
   ];
 }
