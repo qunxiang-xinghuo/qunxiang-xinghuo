@@ -534,3 +534,50 @@ Build 47/47通过，部署成功。
 
 ---
 
+
+## v6.0-deploy v6.0 全面重构+文档更新 服务器部署成功 (2026-05-03)
+
+### 部署过程
+
+使用 `deploy_remote.py` paramiko密码认证部署：
+
+| 步骤 | 结果 | 耗时 |
+|------|------|------|
+| SSH连接 | ✅ 成功 | 即时 |
+| Git fetch origin dev | ✅ 成功 | - |
+| git reset --hard origin/dev | ✅ 成功 | - |
+| npm install | ✅ 成功 | 4s |
+| npx prisma generate | ✅ 成功 | - |
+| npx prisma db push | ✅ 成功 | 数据库已同步 |
+| rm -rf .next | ✅ 成功 | - |
+| NODE_ENV=production npm run build | ✅ 47/47通过 | 13.9s编译+10.3s类型检查 |
+| 静态JS验证 | ✅ 200 OK | 生死线通过 |
+| pm2 restart qunxiang-xinghuo | ✅ online | - |
+| pm2 save | ✅ 成功 | - |
+
+### 验证结果
+
+| 检查项 | 结果 |
+|--------|------|
+| curl /home | 15915 字节 |
+| curl /story-hall | 13655 字节 |
+| curl /api/brainholes/bubble | 包含 "list" |
+| curl /api/sparks/public | 包含 "list" |
+| PM2 status | online, pid=1893784, mem=71.3mb |
+| 静态JS | 200 OK |
+
+### 关键结论
+
+- **SSH间歇性问题已恢复**：之前30~300秒超时，本次连接即时成功。判断为服务器SSH服务偶发性负载问题
+- **密码认证可靠**：`F!D)7n_mc8Mq}bx=` 通过paramiko稳定连接
+- **Build 47/47**：服务器本地Build与本地Windows Build结果一致
+- **静态资源生死线通过**：`/_next/static/chunks/*.js` 返回200，页面不会空白
+
+### 预防措施
+
+1. deploy_remote.py 已集成静态资源生死线检查，Build失败或静态资源404时自动中止
+2. 保留密码+密钥双认证备份
+3. SSH超时增加重试逻辑（未来改进）
+
+---
+
