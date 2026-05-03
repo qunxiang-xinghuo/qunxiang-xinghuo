@@ -25,7 +25,8 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[#0c0c0e]/90 backdrop-blur-xl safe-area-pb">
-      <div className="flex items-center justify-around h-14">
+      {/* v6.0-fix: 最外层容器添加 max-width + 居中，确保导航栏宽度适配移动端 */}
+      <div className="max-w-[480px] mx-auto w-full flex items-center justify-around h-14">
         {navItems.map((item) => {
           const isActive = activeItem.key === item.key;
           const Icon = item.icon;

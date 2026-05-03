@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, Flame, Zap, Users, Sparkles, ChevronRight,
+  TrendingUp, Flame, Zap, Users, Sparkles, ChevronRight, Bot, BookOpen, MessageCircle,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -26,13 +26,11 @@ export default function HomePage() {
   useEffect(() => {
     async function init() {
       try {
-        // 获取今日最热 TOP3
         const res = await fetch('/api/brainholes/bubble?limit=10');
         const data = await res.json();
         if (data.data?.list) {
           setTop3(data.data.list.slice(0, 3));
         }
-        // 获取最新火花片段
         const sparkRes = await fetch('/api/sparks/public?limit=6');
         const sparkData = await sparkRes.json();
         setSparks(sparkData.data?.list || []);
@@ -45,42 +43,43 @@ export default function HomePage() {
     init();
   }, []);
 
+  // v6.0: 四大模式重新命名
   const modes = [
     {
+      key: 'ai',
+      title: '人机模式',
+      desc: '与刘看山一对一对话',
+      icon: Bot,
+      color: 'from-[#00b894]/20 to-emerald-500/20',
+      iconColor: 'text-[#00b894]',
+      path: '/solo-match',
+    },
+    {
       key: 'duo',
-      title: '双人模式',
+      title: '双人对白',
       desc: '与陌生人配对，即兴对话',
-      icon: Users,
+      icon: MessageCircle,
       color: 'from-[#e2b04a]/20 to-orange-500/20',
       iconColor: 'text-[#e2b04a]',
       path: '/duo-match',
     },
     {
-      key: 'story',
-      title: '故事大厅',
+      key: 'multi',
+      title: '多人模式',
       desc: '多人共创故事',
-      icon: Zap,
+      icon: Users,
       color: 'from-[#74b9ff]/20 to-blue-500/20',
       iconColor: 'text-[#74b9ff]',
       path: '/story-hall',
     },
     {
-      key: 'random',
-      title: '随机匹配',
-      desc: '一键开始，无需选择',
-      icon: Sparkles,
+      key: 'serial',
+      title: '长期连载',
+      desc: '连载故事，持续更新',
+      icon: BookOpen,
       color: 'from-[#a29bfe]/20 to-purple-500/20',
       iconColor: 'text-[#a29bfe]',
-      path: '/duo-match?random=true',
-    },
-    {
-      key: 'solo',
-      title: 'AI 对练',
-      desc: '与刘看山一对一对话',
-      icon: Flame,
-      color: 'from-[#00b894]/20 to-emerald-500/20',
-      iconColor: 'text-[#00b894]',
-      path: '/solo-match',
+      path: '/story-hall?tab=serial',
     },
   ];
 
