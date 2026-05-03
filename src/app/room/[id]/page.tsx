@@ -2,20 +2,19 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import TopBar from '@/components/layout/TopBar';
-import ChatRoom from '@/components/room/ChatRoom';
-import { Message } from '@/components/room/MessageBubble';
+import { Send, Sparkles, ArrowLeft } from 'lucide-react';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/hooks/useAuth';
-import { Flame, Eye, Sparkles, Bookmark, XCircle, Users, Bot } from 'lucide-react';
 
-const aiPrompts = [
-  '如果是你，会怎么处理这个冲突？',
-  '从这个角色的视角，事情为什么会发展到这一步？',
-  '你觉得对方心里可能在想什么？',
-  '如果这是一个电影场景，下一句台词应该是什么？',
-];
+interface Message {
+  id: string;
+  userId: string;
+  content: string;
+  timestamp: string;
+  identity?: string;
+}
 
+// v6.0: 极简版对白室
 export default function RoomPage() {
   const params = useParams();
   const router = useRouter();
@@ -28,24 +27,26 @@ export default function RoomPage() {
     name: savedIdentity,
     identity: { type: 'custom' as const, label: savedIdentity },
   } : null);
-  const { isConnected, joinRoom, leaveRoom, sendMessage, markSpark, on, off } = useSocket();
+  const { isConnected, joinRoom, leaveRoom, sendMessage, on, off } = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedPromptIndex, setSelectedPromptIndex] = useState(0);
-  const [sparkCount, setSparkCount] = useState(0);
-  const [partnerTyping, setPartnerTyping] = useState(false);
-  const [viewerCount, setViewerCount] = useState(12);
+  const [inputValue, setInputValue] = useState('');
+  const [aiPrompts, setAiPrompts] = useState<string[]>([]);
   const [brainholeTitle, setBrainholeTitle] = useState('');
-  const [brainholeScenario, setBrainholeScenario] = useState('');
-  const [partnerIdentity, setPartnerIdentity] = useState({ type: 'recommended' as const, label: '对方' });
   const [myIdentity, setMyIdentity] = useState('我');
   const [isAiRoom, setIsAiRoom] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSavingAsset, setIsSavingAsset] = useState(false);
-  const [assetSaved, setAssetSaved] = useState(false);
-  const assetSavedRef = useRef(false);
+  const [partnerTyping, setPartnerTyping] = useState(false);
   const isProcessingAI = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // 滚动到底部
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // 加载房间信息
   useEffect(() => {
     const guestId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
     const localIdentity = typeof window !== 'undefined' ? localStorage.getItem('xh_duo_identity') : null;
@@ -56,37 +57,19 @@ export default function RoomPage() {
           const room = res.data;
           if (room.brainhole) {
             setBrainholeTitle(room.brainhole.title);
-            setBrainholeScenario(room.brainhole.scenario || '');
           }
-          const aiRoom = room.type === 'ai_duet';
-          setIsAiRoom(aiRoom);
-          let myIdentityLabel = localIdentity || '我';
-          let partnerIdentityLabel = aiRoom ? '刘看山' : '对方';
-          if (room.participants && Array.isArray(room.participants)) {
-            let me = room.participants.find((p: any) => p.userId === user?.id);
-            if (!me && room.participants.length > 0) {
-              me = room.participants.find((p: any) => p.userId !== 'liu_kanshan_ai');
-            }
-            const partner = room.participants.find((p: any) => p.userId !== (me?.userId || user?.id));
-            if (me) { myIdentityLabel = me.identity || localIdentity || '我'; setMyIdentity(myIdentityLabel); }
-            else if (localIdentity) setMyIdentity(localIdentity);
-            if (partner) {
-              partnerIdentityLabel = partner.identity || (aiRoom ? '刘看山' : '对方');
-              setPartnerIdentity({ type: 'recommended', label: partnerIdentityLabel });
-            } else if (aiRoom) setPartnerIdentity({ type: 'recommended', label: '刘看山' });
-          } else if (localIdentity) setMyIdentity(localIdentity);
+          setIsAiRoom(room.type === 'ai_duet');
+          if (localIdentity) setMyIdentity(localIdentity);
 
           if (room.messages && Array.isArray(room.messages)) {
-            const myId = user?.id;
-            const effectiveIdentity = myIdentityLabel;
-            const historyMessages: Message[] = room.messages.map((m: any) => ({
-              id: m.id, userId: m.senderId === myId ? 'me' : 'partner',
+            const history: Message[] = room.messages.map((m: any) => ({
+              id: m.id,
+              userId: m.senderId,
               content: m.content,
               timestamp: new Date(m.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-              isSparked: m.isSpark, sparkCount: m.isSpark ? 1 : 0,
-              identity: m.identity || (m.senderId === myId ? effectiveIdentity : partnerIdentityLabel),
+              identity: m.identity,
             }));
-            setMessages(historyMessages);
+            setMessages(history);
           }
         }
       })
@@ -94,225 +77,250 @@ export default function RoomPage() {
       .finally(() => setIsLoading(false));
   }, [roomId, user?.id]);
 
+  // v6.0: AI 动态催化问题（30秒推送一次）
   useEffect(() => {
-    const interval = setInterval(() => {
-      setViewerCount((prev) => {
-        const change = Math.floor(Math.random() * 5) - 2;
-        return Math.max(3, prev + change);
-      });
-    }, 8000);
+    if (!brainholeTitle) return;
+    // 初始加载
+    loadAiPrompts();
+    // 每30秒刷新
+    const interval = setInterval(loadAiPrompts, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [brainholeTitle, messages]);
 
+  async function loadAiPrompts() {
+    try {
+      const lastMessages = messages.slice(-6).map(m => ({
+        role: m.userId === user?.id ? 'user' : 'assistant',
+        content: m.content,
+      }));
+      const res = await fetch('/api/ai/catalyst', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: brainholeTitle,
+          messages: lastMessages,
+          identity: myIdentity,
+        }),
+      });
+      const data = await res.json();
+      if (data.data?.prompts) {
+        setAiPrompts(data.data.prompts);
+      }
+    } catch (e) {
+      console.error('AI催化加载失败:', e);
+    }
+  }
+
+  // AI 回复
   const generateAIReply = useCallback(async (userMessage: string) => {
     if (isProcessingAI.current) return;
     isProcessingAI.current = true;
     setPartnerTyping(true);
     try {
       const historyMessages = messages.slice(-10).map((msg) => ({
-        role: msg.userId === 'me' ? ('user' as const) : ('assistant' as const),
+        role: msg.userId === user?.id ? ('user' as const) : ('assistant' as const),
         content: msg.content,
       }));
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...historyMessages, { role: 'user', content: userMessage }], topic: brainholeTitle || '一个有趣的话题' }),
+        body: JSON.stringify({
+          messages: [...historyMessages, { role: 'user', content: userMessage }],
+          topic: brainholeTitle || '一个有趣的话题',
+        }),
       });
       const result = await res.json();
-      const delay = 800 + Math.random() * 1500;
+      const delay = 800 + Math.random() * 1200;
       await new Promise((resolve) => setTimeout(resolve, delay));
       const aiMsg: Message = {
-        id: `ai-${Date.now()}`, userId: 'partner',
-        content: result.data?.content || '（刘看山静静地听你说完，眼神里满是理解）',
+        id: `ai-${Date.now()}`,
+        userId: 'liu_kanshan_ai',
+        content: result.data?.content || '嗯，我能感受到你话里的分量。愿意多说说吗？',
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-        isSparked: false, sparkCount: 0, identity: '刘看山',
+        identity: '刘看山',
       };
       setMessages((prev) => [...prev, aiMsg]);
-    } catch (err) {
-      const fallbackMsg: Message = {
-        id: `ai-${Date.now()}`, userId: 'partner',
-        content: '嗯，我能感受到你话里的分量。愿意多说说吗？',
-        timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-        isSparked: false, sparkCount: 0, identity: '刘看山',
-      };
-      setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
       setPartnerTyping(false);
       isProcessingAI.current = false;
     }
-  }, [brainholeTitle, messages]);
+  }, [brainholeTitle, messages, user?.id]);
 
+  // WebSocket
   useEffect(() => {
     if (!user || !roomId) return;
-    const identity = myIdentity || user.identity?.label || '匿名用户';
+    const identity = myIdentity || user.identity?.label || '匿名';
     joinRoom(roomId, user.id || 'guest', identity);
 
     const handleNewMessage = (data: { message: { senderId: string; content: string; createdAt: string; identity?: string } }) => {
       const msg: Message = {
         id: `msg-${Date.now()}`,
-        userId: data.message.senderId === user.id ? 'me' : 'partner',
+        userId: data.message.senderId,
         content: data.message.content,
         timestamp: new Date(data.message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-        isSparked: false, sparkCount: 0,
-        identity: data.message.identity || (data.message.senderId === user.id ? myIdentity : partnerIdentity.label),
+        identity: data.message.identity,
       };
       setMessages((prev) => [...prev, msg]);
-    };
-    const handleSparkMarked = (data: { messageId: string }) => {
-      setMessages((prev) => prev.map((m) => m.id === data.messageId ? { ...m, isSparked: true, sparkCount: m.sparkCount + 1 } : m));
-      setSparkCount((prev) => prev + 1);
     };
     const handleTyping = () => { setPartnerTyping(true); setTimeout(() => setPartnerTyping(false), 2000); };
 
     on('new-message', handleNewMessage);
-    on('spark-marked', handleSparkMarked);
     on('user-typing', handleTyping);
 
     return () => {
       off('new-message', handleNewMessage);
-      off('spark-marked', handleSparkMarked);
       off('user-typing', handleTyping);
       leaveRoom(roomId, user.id || 'guest');
     };
-  }, [user, roomId, myIdentity, partnerIdentity, joinRoom, leaveRoom, on, off]);
+  }, [user, roomId, myIdentity, joinRoom, leaveRoom, on, off]);
 
-  const handleSendMessage = useCallback(async (content: string) => {
+  const handleSend = useCallback(async () => {
+    if (!inputValue.trim()) return;
+    const content = inputValue.trim();
+    setInputValue('');
+    if (inputRef.current) inputRef.current.style.height = 'auto';
+
     const msg: Message = {
-      id: `msg-${Date.now()}`, userId: 'me', content,
+      id: `msg-${Date.now()}`,
+      userId: user?.id || 'me',
+      content,
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      isSparked: false, sparkCount: 0, identity: myIdentity,
+      identity: myIdentity,
     };
     setMessages((prev) => [...prev, msg]);
     sendMessage(roomId, { id: msg.id, senderId: user?.id || 'me', content, createdAt: new Date().toISOString() });
     if (isAiRoom) generateAIReply(content);
-  }, [roomId, user, myIdentity, isAiRoom, sendMessage, generateAIReply]);
+  }, [roomId, user, myIdentity, isAiRoom, inputValue, sendMessage, generateAIReply]);
 
-  const handleSparkMessage = useCallback((messageId: string) => {
-    markSpark(roomId, messageId, user?.id || 'me');
-  }, [roomId, user, markSpark]);
-
-  const saveAssetInternal = useCallback(async () => {
-    if (!roomId || assetSavedRef.current) return false;
-    setIsSavingAsset(true);
-    try {
-      const res = await fetch('/api/assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roomId }) });
-      const result = await res.json();
-      if (result.success) { setAssetSaved(true); assetSavedRef.current = true; return true; }
-    } catch (err) { console.error('Save asset failed:', err); }
-    finally { setIsSavingAsset(false); }
-    return false;
-  }, [roomId]);
-
-  const handleSaveAsset = useCallback(async () => { await saveAssetInternal(); }, [saveAssetInternal]);
-  const handleEndChat = useCallback(async () => { await saveAssetInternal(); router.push('/library'); }, [saveAssetInternal, router]);
-
-  useEffect(() => {
-    return () => {
-      if (roomId && !assetSavedRef.current) {
-        try { fetch('/api/assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roomId }), keepalive: true }).catch(() => {}); }
-        catch {}
-      }
-    };
-  }, [roomId]);
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px';
+  };
 
   if (isLoading) {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient">
-        <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-gold rounded-full animate-spin mb-4" />
-        <p className="text-sm text-slate-500">正在加载对白室...</p>
+        <div className="w-8 h-8 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin mb-4" />
+        <p className="text-sm text-white/30">正在加载对白室...</p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full page-gradient">
-      <TopBar title="对白实验室" showBack onBack={() => router.back()} />
-
-      {/* 脑洞信息区 */}
-      <div className="shrink-0 px-4 py-3 bg-gradient-to-r from-xh-gold/8 to-orange-500/5 border-b border-xh-gold/15">
-        <div className="flex items-start gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-xh-gold/15 flex items-center justify-center shrink-0 border border-xh-gold/20">
-            <Sparkles className="w-4 h-4 text-xh-gold" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-bold text-xh-gold truncate">{brainholeTitle || '对白实验室'}</h3>
-            {brainholeScenario && (
-              <p className="text-[11px] text-xh-gold/50 mt-0.5 line-clamp-2">{brainholeScenario}</p>
-            )}
-          </div>
+      {/* v6.0: 极简顶部标题 */}
+      <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
+        <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
+          <ArrowLeft className="w-4 h-4 text-white/50" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-sm font-semibold text-white/90 truncate">{brainholeTitle || '对白室'}</h1>
         </div>
+        {isConnected ? (
+          <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            在线
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-[10px] text-amber-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            连接中
+          </span>
+        )}
       </div>
 
-      {/* 状态栏 */}
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-800/30 border-b border-slate-700/20 shrink-0">
-        <div className="flex items-center gap-2.5">
-          {/* 连接状态 */}
-          {isConnected ? (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {isAiRoom ? (
-                <span className="flex items-center gap-1"><Bot className="w-3 h-3" />AI 对话</span>
-              ) : (
-                <span className="flex items-center gap-1"><Users className="w-3 h-3" />实时连接</span>
-              )}
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] text-amber-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              连接中...
-            </span>
-          )}
-
-          {/* 保存按钮 */}
-          <button
-            onClick={handleSaveAsset}
-            disabled={isSavingAsset || assetSaved}
-            className={`flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full transition-colors ${
-              assetSaved ? 'bg-emerald-500/12 text-emerald-400 border border-emerald-500/20' : 'bg-slate-700/30 text-slate-500 hover:bg-slate-700/50 border border-slate-600/20'
-            }`}
-          >
-            <Bookmark className={`w-3 h-3 ${assetSaved ? 'fill-current' : ''}`} />
-            {isSavingAsset ? '保存中' : assetSaved ? '已保存' : '存素材'}
-          </button>
-
-          {/* 结束按钮 */}
-          <button
-            onClick={handleEndChat}
-            className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/15 transition-colors border border-red-500/20"
-          >
-            <XCircle className="w-3 h-3" />
-            结束
-          </button>
-        </div>
-
-        {/* 围观人数 */}
-        <div className="flex items-center gap-1 text-[10px] text-slate-600">
-          <Eye className="w-3 h-3" />
-          <span>{viewerCount}</span>
-        </div>
-      </div>
-
-      {/* 对方输入中 */}
-      {partnerTyping && (
-        <div className="bg-slate-800/20 px-4 py-1.5 text-center shrink-0">
-          <p className="text-[10px] text-slate-500 animate-pulse flex items-center justify-center gap-1.5">
-            <span className="w-1 h-1 rounded-full bg-xh-gold" />
-            {partnerIdentity.label}正在输入...
-          </p>
+      {/* v6.0: AI 催化区（30秒刷新） */}
+      {aiPrompts.length > 0 && (
+        <div className="shrink-0 px-4 py-2 border-b border-white/5">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Sparkles className="w-3 h-3 text-[#e2b04a]/60" />
+            <span className="text-[10px] text-white/30">AI 催化</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {aiPrompts.map((prompt, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setInputValue(prompt);
+                  inputRef.current?.focus();
+                }}
+                className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#e2b04a]/8 border border-[#e2b04a]/15 text-[11px] text-[#e2b04a]/80 hover:bg-[#e2b04a]/15 transition-colors whitespace-nowrap"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="flex-1 min-h-0">
-        <ChatRoom
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          onSparkMessage={handleSparkMessage}
-          aiPrompts={aiPrompts}
-          selectedPromptIndex={selectedPromptIndex}
-          onSelectPrompt={setSelectedPromptIndex}
-          sparkCount={sparkCount}
-          partnerIdentity={partnerIdentity}
-        />
+      {/* 消息列表 */}
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-3">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Sparkles className="w-8 h-8 text-white/10 mb-3" />
+            <p className="text-sm text-white/30">对白室已就绪</p>
+            <p className="text-xs text-white/20 mt-1">写下你的第一句话</p>
+          </div>
+        )}
+        {messages.map((msg) => {
+          const isMe = msg.userId === user?.id || msg.userId === 'me';
+          return (
+            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl ${
+                isMe
+                  ? 'bg-[#e2b04a]/15 border border-[#e2b04a]/20 text-white/90 rounded-br-md'
+                  : 'bg-white/[0.05] border border-white/5 text-white/80 rounded-bl-md'
+              }`}>
+                {!isMe && msg.identity && (
+                  <p className="text-[10px] text-white/30 mb-0.5">{msg.identity}</p>
+                )}
+                <p className="text-sm leading-relaxed">{msg.content}</p>
+                <p className={`text-[10px] mt-1 ${isMe ? 'text-[#e2b04a]/30' : 'text-white/20'}`}>
+                  {msg.timestamp}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+        {partnerTyping && (
+          <div className="flex justify-start">
+            <div className="px-3.5 py-2.5 rounded-2xl bg-white/[0.05] border border-white/5 rounded-bl-md">
+              <div className="flex gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* 输入框 */}
+      <div className="shrink-0 p-3 border-t border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
+        <div className="flex items-end gap-2">
+          <div className="flex-1 bg-white/[0.05] rounded-2xl border border-white/10 px-4 py-2.5 focus-within:border-[#e2b04a]/30 transition-colors">
+            <textarea
+              ref={inputRef}
+              value={inputValue}
+              onChange={handleInputChange}
+              placeholder="写下你的反应..."
+              rows={1}
+              className="w-full bg-transparent text-sm text-white/90 placeholder-white/20 resize-none focus:outline-none max-h-24 caret-[#e2b04a]"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+              }}
+            />
+          </div>
+          <button
+            onClick={handleSend}
+            disabled={!inputValue.trim()}
+            className="p-3 rounded-full transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 hover:bg-[#e2b04a]/25 active:scale-95"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
