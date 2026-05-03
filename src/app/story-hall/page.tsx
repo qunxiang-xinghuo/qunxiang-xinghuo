@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Zap, Clock, Users, Plus, ChevronRight, Sparkles, Flame,
+  Zap, Users, Plus, Sparkles, Flame, BookOpen, PenLine,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -19,24 +19,22 @@ interface Story {
   secret: string;
   createdAt: string;
   creatorName?: string;
+  episodeCount?: number;
 }
 
-export default function StoryHallPage() {
+function StoryHallContent() {
   const router = useRouter();
-  const [tab, setTab] = useState<'match' | 'mine' | 'others'>('match');
+  const searchParams = useSearchParams();
+  const urlTab = searchParams.get('tab');
+  const [tab, setTab] = useState<'match' | 'mine' | 'others' | 'serial'>(
+    (urlTab === 'serial' ? 'serial' : 'match') as any
+  );
   const [stories, setStories] = useState<Story[]>([]);
   const [myStories, setMyStories] = useState<Story[]>([]);
+  const [serialStories, setSerialStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState('');
 
   useEffect(() => {
-    const raw = localStorage.getItem('xh_user');
-    if (raw) {
-      try {
-        const u = JSON.parse(raw);
-        setUserId(u.id || '');
-      } catch {}
-    }
     loadStories();
   }, []);
 
@@ -47,12 +45,17 @@ export default function StoryHallPage() {
       const data = await res.json();
       const all = data.data?.stories || [];
       setStories(all);
-      
+
       const raw = localStorage.getItem('xh_user');
       const u = raw ? JSON.parse(raw) : null;
       if (u) {
         setMyStories(all.filter((s: Story) => s.creatorName === u.name));
       }
+
+      // 长期连载：状态为 ongoing 或 episodeCount > 1 的故事
+      setSerialStories(all.filter((s: Story) =>
+        s.status === 'ongoing' || (s.episodeCount && s.episodeCount > 1)
+      ));
     } catch (e) {
       console.error('故事大厅加载失败:', e);
     } finally {
@@ -104,16 +107,17 @@ export default function StoryHallPage() {
         )}
 
         {/* Tab 切换 */}
-        <div className="flex gap-4 mb-4 border-b border-white/5 pb-3">
+        <div className="flex gap-3 mb-4 border-b border-white/5 pb-3 overflow-x-auto no-scrollbar">
           {[
             { key: 'match', label: '快速匹配' },
+            { key: 'serial', label: '长期连载' },
             { key: 'mine', label: '我发起的' },
             { key: 'others', label: '其他人的' },
           ].map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key as any)}
-              className={`text-sm font-medium transition-colors pb-1 border-b-2 ${
+              className={`text-sm font-medium transition-colors pb-1 border-b-2 whitespace-nowrap ${
                 tab === t.key
                   ? 'text-[#e2b04a] border-[#e2b04a]'
                   : 'text-white/30 border-transparent hover:text-white/50'
@@ -141,6 +145,18 @@ export default function StoryHallPage() {
                 ))}
               </>
             )}
+            {tab === 'serial' && (
+              serialStories.length === 0 ? (
+                <EmptyState icon={BookOpen} text="暂无连载中的故事" subtext="发起一个故事，让它成为连载" />
+              ) : (
+                <>
+                  <p className="text-xs text-white/25 mb-3">这些故事正在持续更新中，随时可以加入</p>
+                  {serialStories.map((story, idx) => (
+                    <StoryCard key={story.id} story={story} idx={idx} genreColors={genreColors} genreNames={genreNames} onClick={() => router.push(`/story/room/${story.id}`)} />
+                  ))}
+                </>
+              )
+            )}
             {tab === 'mine' && (
               myStories.length === 0 ? (
                 <EmptyState icon={Sparkles} text="你还没有发起过故事" subtext="点击下方按钮发起第一个故事" />
@@ -165,6 +181,18 @@ export default function StoryHallPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function StoryHallPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col min-h-full page-gradient items-center justify-center">
+        <div className="w-8 h-8 border-2 border-white/10 border-t-[#e2b04a] rounded-full animate-spin" />
+      </div>
+    }>
+      <StoryHallContent />
+    </Suspense>
   );
 }
 
@@ -201,6 +229,12 @@ function StoryCard({ story, idx, genreColors, genreNames, onClick }: {
             <Flame className="w-3 h-3 text-[#e2b04a]/40" />
             {story.heat}
           </span>
+          {story.episodeCount && story.episodeCount > 1 && (
+            <span className="flex items-center gap-1 text-[#74b9ff]/50">
+              <PenLine className="w-3 h-3" />
+              第{story.episodeCount}话
+            </span>
+          )}
         </div>
       </div>
     </motion.div>
