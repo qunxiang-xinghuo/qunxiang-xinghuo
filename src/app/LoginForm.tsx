@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Sparkles, Eye, EyeOff, LogIn } from 'lucide-react';
+import { Sparkles, Eye, EyeOff, LogIn, Flame } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 export default function LoginForm() {
@@ -16,16 +16,11 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // v4.2-fix: 注册成功后自动回填用户名和密码
   useEffect(() => {
     const autoUser = searchParams.get('username');
     const autoPass = searchParams.get('password');
-    if (autoUser) {
-      setUsername(autoUser);
-    }
-    if (autoPass) {
-      setPassword(autoPass);
-    }
+    if (autoUser) setUsername(autoUser);
+    if (autoPass) setPassword(autoPass);
   }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -49,7 +44,6 @@ export default function LoginForm() {
       if (result?.error) {
         setError('用户名或密码错误');
       } else {
-        // v4.9-fix: 登录成功 → 保存用户信息到 localStorage → 跳转
         const userData = {
           id: 'user-' + Date.now(),
           name: username.trim(),
@@ -70,32 +64,42 @@ export default function LoginForm() {
 
   return (
     <div className="flex flex-col h-full page-gradient relative overflow-hidden">
-      {/* 装饰泡泡背景 */}
+      {/* 装饰背景 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#e2b04a]/10 blur-xl" />
         <div className="absolute top-32 right-6 w-20 h-20 rounded-full bg-[#74b9ff]/10 blur-xl" />
         <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#e2b04a]/5 blur-lg" />
       </div>
 
-      {/* 顶部标题 */}
-      <div className="pt-20 pb-10 px-6 text-center relative z-10">
+      {/* v6.0: 项目简介 */}
+      <div className="pt-16 pb-6 px-6 text-center relative z-10">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
           className="flex items-center justify-center gap-2 mb-3"
         >
-          <Sparkles className="w-5 h-5 text-[#e2b04a]/60" />
+          <Flame className="w-5 h-5 text-[#e2b04a]/60" />
           <h1 className="text-3xl font-bold tracking-wider text-white/90">群像·星火</h1>
-          <Sparkles className="w-5 h-5 text-[#e2b04a]/60" />
+          <Flame className="w-5 h-5 text-[#e2b04a]/60" />
         </motion.div>
+        
+        {/* v6.0 新增项目简介 */}
         <motion.p
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-xs text-white/50"
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="text-sm text-white/60 leading-relaxed mb-2"
         >
-          每一个认真生活的人，都能成为故事的一部分
+          让真实发光，让思想变现
+        </motion.p>
+        <motion.p
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="text-xs text-white/40 leading-relaxed max-w-[280px] mx-auto"
+        >
+          在这里，你不再是别人故事的看客，<br />而是创造自己故事的主角
         </motion.p>
       </div>
 
@@ -103,12 +107,11 @@ export default function LoginForm() {
       <motion.form
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.4 }}
         onSubmit={handleLogin}
         className="flex-1 px-6 relative z-10"
       >
         <div className="space-y-4">
-          {/* 用户名 */}
           <div>
             <label className="block text-xs text-white/40 mb-1.5 ml-1">用户名</label>
             <input
@@ -121,7 +124,6 @@ export default function LoginForm() {
             />
           </div>
 
-          {/* 密码 */}
           <div>
             <label className="block text-xs text-white/40 mb-1.5 ml-1">密码</label>
             <div className="relative">
@@ -143,7 +145,6 @@ export default function LoginForm() {
             </div>
           </div>
 
-          {/* 错误提示 */}
           {error && (
             <motion.p
               initial={{ opacity: 0 }}
@@ -154,7 +155,6 @@ export default function LoginForm() {
             </motion.p>
           )}
 
-          {/* 登录按钮 */}
           <button
             type="submit"
             disabled={loading}
@@ -171,7 +171,6 @@ export default function LoginForm() {
           </button>
         </div>
 
-        {/* 底部注册入口 */}
         <div className="mt-8 text-center">
           <button
             type="button"
@@ -183,9 +182,8 @@ export default function LoginForm() {
         </div>
       </motion.form>
 
-      {/* 底部装饰 */}
       <div className="px-6 pb-6 text-center">
-        <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策</p>
+        <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策 · v6.0</p>
       </div>
     </div>
   );

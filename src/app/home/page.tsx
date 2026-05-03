@@ -1,123 +1,189 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Users, Theater, BookOpen, ArrowRight, Flame, Zap, MessageSquare, Crown, Vote } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import BubbleCloud from '@/components/bubble-cloud/BubbleCloud';
-import LiuKanshanWelcome from '@/components/layout/LiuKanshanWelcome';
+import { motion } from 'framer-motion';
+import {
+  TrendingUp, Flame, Zap, Users, Sparkles, ChevronRight,
+} from 'lucide-react';
+import PageHeader from '@/components/layout/PageHeader';
 
-const modes = [
-  {
-    id: 'duo', title: '双人模式', subtitle: '点击泡泡即刻匹配 · 四级智能策略 · 15秒极速',
-    icon: Users, available: true, core: true, path: '/duo-match',
-  },
-  {
-    id: 'multi', title: '多人组队', subtitle: '群像共创 · 认领角色书写故事',
-    icon: Theater, available: true, path: '/multiplayer',
-  },
-  {
-    id: 'serial', title: '故事大厅', subtitle: '6种剧本模板 · 隐藏秘密 · 沉浸式剧本体验',
-    icon: BookOpen, available: true, path: '/story-hall',
-  },
-];
+interface Brainhole {
+  id: string;
+  title: string;
+  category: string;
+  hotScore: number;
+  heat?: number;
+  scene: string;
+}
 
 export default function HomePage() {
   const router = useRouter();
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [top3, setTop3] = useState<Brainhole[]>([]);
+  const [sparks, setSparks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const seen = localStorage.getItem('xh_welcome_seen');
-    if (seen) setShowWelcome(false);
+    async function init() {
+      try {
+        // 获取今日最热 TOP3
+        const res = await fetch('/api/brainholes/bubble?limit=10');
+        const data = await res.json();
+        if (data.data?.list) {
+          setTop3(data.data.list.slice(0, 3));
+        }
+        // 获取最新火花片段
+        const sparkRes = await fetch('/api/sparks/public?limit=6');
+        const sparkData = await sparkRes.json();
+        setSparks(sparkData.data?.list || []);
+      } catch (e) {
+        console.error('首页加载失败:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    init();
   }, []);
 
-  const dismissWelcome = () => {
-    localStorage.setItem('xh_welcome_seen', '1');
-    setShowWelcome(false);
-  };
+  const modes = [
+    {
+      key: 'duo',
+      title: '双人模式',
+      desc: '与陌生人配对，即兴对话',
+      icon: Users,
+      color: 'from-[#e2b04a]/20 to-orange-500/20',
+      iconColor: 'text-[#e2b04a]',
+      path: '/duo-match',
+    },
+    {
+      key: 'story',
+      title: '故事大厅',
+      desc: '多人共创故事',
+      icon: Zap,
+      color: 'from-[#74b9ff]/20 to-blue-500/20',
+      iconColor: 'text-[#74b9ff]',
+      path: '/story-hall',
+    },
+    {
+      key: 'random',
+      title: '随机匹配',
+      desc: '一键开始，无需选择',
+      icon: Sparkles,
+      color: 'from-[#a29bfe]/20 to-purple-500/20',
+      iconColor: 'text-[#a29bfe]',
+      path: '/duo-match?random=true',
+    },
+    {
+      key: 'solo',
+      title: 'AI 对练',
+      desc: '与刘看山一对一对话',
+      icon: Flame,
+      color: 'from-[#00b894]/20 to-emerald-500/20',
+      iconColor: 'text-[#00b894]',
+      path: '/solo-match',
+    },
+  ];
 
   return (
-    <div className="flex flex-col h-full relative overflow-hidden page-gradient">
-      <LiuKanshanWelcome show={showWelcome} onDismiss={dismissWelcome} />
+    <div className="flex flex-col min-h-full page-gradient">
+      <PageHeader title="发现" subtitle="今日灵感" />
 
-      {/* 顶部标题区 */}
-      <div className="shrink-0 pt-5 pb-2 px-5">
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center gap-3 mb-2"
-        >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-xh-gold to-orange-500 flex items-center justify-center shadow-lg shadow-xh-gold/20">
-            <Flame className="w-5 h-5 text-white" />
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
+        {/* 今日最热 TOP3 */}
+        <section className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="w-4 h-4 text-[#e2b04a]" />
+            <h2 className="text-sm font-semibold text-white/90">今日最热</h2>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-100 leading-tight">群像·星火</h1>
-            <p className="text-[11px] text-slate-500 mt-0.5">每一个认真生活的人，都能成为故事的一部分</p>
-          </div>
-        </motion.div>
-        <div className="h-px bg-gradient-to-r from-transparent via-xh-gold/30 to-transparent mt-2" />
-      </div>
-
-      {/* 泡泡墙区域 - 自适应高度 */}
-      <div className="shrink-0 relative">
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0a0e1a] to-transparent z-10 pointer-events-none" />
-        <BubbleCloud limit={20} />
-      </div>
-
-      {/* 模式入口卡片 */}
-      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-3">
-        <div className="flex items-center gap-2 mb-3 px-1">
-          <div className="w-1 h-4 rounded-full bg-xh-gold" />
-          <span className="text-sm font-semibold text-slate-300">选择模式</span>
-        </div>
-        <div className="flex flex-col gap-3">
-          {modes.map((mode, index) => {
-            const Icon = mode.icon;
-            return (
-              <motion.button
-                key={mode.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-                whileTap={mode.available ? { scale: 0.96 } : {}}
-                onClick={() => mode.available && router.push(mode.path)}
-                className={`group relative flex items-center gap-4 p-4 rounded-2xl text-left press-feedback overflow-hidden ${
-                  mode.available ? 'card-elevated cursor-pointer' : 'bg-slate-800/20 border border-slate-700/10 opacity-50 cursor-not-allowed'
-                }`}
-              >
-                {mode.core && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-xh-gold to-orange-500 rounded-l-2xl" />
-                )}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
-                  mode.core ? 'bg-gradient-to-br from-xh-gold/20 to-orange-500/10 border border-xh-gold/20 shadow-lg shadow-xh-gold/10'
-                    : mode.available ? 'bg-slate-700/30 border border-slate-600/20' : 'bg-slate-700/20 border border-slate-600/10'
-                }`}>
-                  <Icon size={22} className={mode.available ? (mode.core ? 'text-xh-gold' : 'text-slate-400') : 'text-slate-600'} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-100">{mode.title}</span>
-                    {mode.core && (
-                      <span className="text-[10px] bg-xh-gold/15 text-xh-gold px-2 py-0.5 rounded-full border border-xh-gold/25 font-medium">核心</span>
-                    )}
-                    {!mode.available && (
-                      <span className="text-[10px] bg-slate-700/50 text-slate-500 px-2 py-0.5 rounded-full">即将开放</span>
-                    )}
+          {loading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {top3.map((item, idx) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  onClick={() => router.push(`/duo-match?brainholeId=${item.id}`)}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                    idx === 0 ? 'bg-[#e2b04a]/20 text-[#e2b04a]' :
+                    idx === 1 ? 'bg-white/10 text-white/70' :
+                    'bg-[#74b9ff]/10 text-[#74b9ff]'
+                  }`}>
+                    {idx + 1}
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{mode.subtitle}</p>
-                </div>
-                <ArrowRight size={18} className={`shrink-0 transition-all duration-300 ${
-                  mode.available ? 'text-slate-600 group-hover:text-xh-gold group-hover:translate-x-1' : 'text-slate-700'
-                }`} />
-              </motion.button>
-            );
-          })}
-        </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white/90 font-medium truncate">{item.title}</p>
+                    <p className="text-[11px] text-white/40 truncate mt-0.5">{item.scene || item.category}</p>
+                  </div>
+                  <Flame className="w-3.5 h-3.5 text-[#e2b04a]/60" />
+                  <span className="text-[11px] text-white/30 flex-shrink-0">{item.heat || item.hotScore || 0}</span>
+                  <ChevronRight className="w-4 h-4 text-white/20" />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </section>
 
-        <div className="mt-4 mb-2 text-center">
-          <p className="text-[10px] text-slate-600">点击泡泡一键匹配 · 四级智能降级 · v6.0</p>
-        </div>
+        {/* 火花展示 */}
+        {sparks.length > 0 && (
+          <section className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#74b9ff]" />
+                <h2 className="text-sm font-semibold text-white/90">最新火花</h2>
+              </div>
+              <button onClick={() => router.push('/library')} className="text-[11px] text-white/30 hover:text-[#e2b04a] transition-colors">
+                查看更多
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {sparks.slice(0, 4).map((spark, idx) => (
+                <motion.div
+                  key={spark.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.08 }}
+                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5"
+                >
+                  <p className="text-xs text-white/70 leading-relaxed line-clamp-3">{spark.content}</p>
+                  <p className="text-[10px] text-white/25 mt-2 truncate">{spark.identity || '匿名用户'}</p>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 四大模式入口 */}
+        <section className="mb-4">
+          <h2 className="text-sm font-semibold text-white/90 mb-3">选择模式</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {modes.map((mode, idx) => {
+              const Icon = mode.icon;
+              return (
+                <motion.button
+                  key={mode.key}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + idx * 0.08 }}
+                  onClick={() => router.push(mode.path)}
+                  className={`relative overflow-hidden p-4 rounded-xl bg-gradient-to-br ${mode.color} border border-white/5 text-left active:scale-[0.96] transition-all group`}
+                >
+                  <Icon className={`w-5 h-5 ${mode.iconColor} mb-2`} />
+                  <p className="text-sm font-semibold text-white/90">{mode.title}</p>
+                  <p className="text-[11px] text-white/40 mt-0.5">{mode.desc}</p>
+                </motion.button>
+              );
+            })}
+          </div>
+        </section>
       </div>
     </div>
   );

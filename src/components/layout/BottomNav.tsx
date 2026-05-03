@@ -2,67 +2,62 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Compass, BookOpen, ScrollText, User } from 'lucide-react';
+import { Compass, Flame, BookOpen, User } from 'lucide-react';
 
 const navItems = [
-  { path: '/home', label: '发现', icon: Compass },
-  { path: '/library', label: '素材库', icon: BookOpen },
-  { path: '/story-hall', label: '故事', icon: ScrollText },
-  { path: '/profile', label: '我的', icon: User },
+  { key: 'home', label: '发现', icon: Compass, path: '/home' },
+  { key: 'sparks', label: '火花', icon: Flame, path: '/library' },
+  { key: 'story', label: '故事', icon: BookOpen, path: '/story-hall' },
+  { key: 'profile', label: '我的', icon: User, path: '/profile' },
 ];
-
-const HIDDEN_PATHS = ['/', '/register'];
 
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (HIDDEN_PATHS.includes(pathname)) {
-    return null;
-  }
+  // 隐藏底部导航的页面
+  const hideNavPaths = ['/login', '/register', '/welcome', '/onboarding'];
+  if (hideNavPaths.some((p) => pathname?.startsWith(p))) return null;
+  // 房间、匹配等页面也隐藏
+  if (pathname?.startsWith('/room/') || pathname?.startsWith('/duo') || pathname?.startsWith('/story/room/')) return null;
+
+  const activeItem = navItems.find((item) => pathname === item.path || pathname?.startsWith(item.path + '/')) || navItems[0];
 
   return (
-    <div className="border-t border-slate-700/30 bg-slate-900/95 backdrop-blur-xl px-2 z-50 shrink-0 safe-area-pb">
-      <div className="flex items-center justify-around py-1.5">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[#0c0c0e]/90 backdrop-blur-xl safe-area-pb">
+      <div className="flex items-center justify-around h-14">
         {navItems.map((item) => {
-          const isActive = pathname === item.path;
+          const isActive = activeItem.key === item.key;
           const Icon = item.icon;
           return (
-            <motion.button
-              key={item.path}
-              whileTap={{ scale: 0.88 }}
+            <button
+              key={item.key}
               onClick={() => router.push(item.path)}
-              className="flex flex-col items-center justify-center gap-1 transition-colors min-h-12 min-w-14 py-1.5 px-3 relative"
+              className="flex flex-col items-center justify-center w-16 h-full relative"
             >
-              <motion.div
-                animate={isActive ? { y: [0, -3, 0] } : {}}
-                transition={{ duration: 0.4 }}
-                className={`p-1.5 rounded-xl transition-all duration-200 ${
-                  isActive
-                    ? 'bg-xh-gold/15 text-xh-gold'
-                    : 'text-slate-500 hover:text-slate-300'
+              {isActive && (
+                <motion.div
+                  layoutId="bottomNavIndicator"
+                  className="absolute -top-0.5 w-8 h-0.5 bg-[#e2b04a] rounded-full"
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                />
+              )}
+              <Icon
+                className={`w-5 h-5 mb-0.5 transition-colors ${
+                  isActive ? 'text-[#e2b04a]' : 'text-white/30'
                 }`}
-              >
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.5} />
-              </motion.div>
+              />
               <span
-                className={`text-xs transition-colors duration-200 ${
-                  isActive ? 'text-xh-gold font-semibold' : 'text-slate-500 hover:text-slate-300'
+                className={`text-[10px] transition-colors ${
+                  isActive ? 'text-[#e2b04a] font-medium' : 'text-white/30'
                 }`}
               >
                 {item.label}
               </span>
-              {isActive && (
-                <motion.div
-                  layoutId="bottom-nav-indicator"
-                  className="absolute -bottom-0.5 w-5 h-0.5 rounded-full bg-xh-gold"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
-            </motion.button>
+            </button>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }
