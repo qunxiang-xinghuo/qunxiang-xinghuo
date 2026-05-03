@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import TopBar from '@/components/layout/TopBar';
-import { BookOpen, Globe, MessageSquare, Sparkles, Eye, Lock, Unlock, ChevronRight, Trash2 } from 'lucide-react';
+import { BookOpen, Globe, Heart, MessageSquare, Sparkles, Eye, Lock, Unlock, ChevronRight, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
@@ -18,9 +18,20 @@ interface AssetItem {
   user?: { name: string | null; username: string | null } | null;
 }
 
+interface CollectedBrainhole {
+  id: string;
+  title: string;
+  scenario: string;
+  hotScore: number;
+  category: string;
+  source: string;
+  collectedAt: string;
+}
+
 const tabs = [
   { id: 'mine', label: '我的素材', icon: BookOpen },
   { id: 'public', label: '广场素材', icon: Globe },
+  { id: 'collected', label: '我的收藏', icon: Heart },
 ];
 
 export default function LibraryPage() {
@@ -28,7 +39,9 @@ export default function LibraryPage() {
   const [activeTab, setActiveTab] = useState('mine');
   const [myAssets, setMyAssets] = useState<AssetItem[]>([]);
   const [publicAssets, setPublicAssets] = useState<AssetItem[]>([]);
+  const [collectedBrainholes, setCollectedBrainholes] = useState<CollectedBrainhole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCollected, setLoadingCollected] = useState(false);
 
   useEffect(() => {
     // 加载我的素材
@@ -53,6 +66,30 @@ export default function LibraryPage() {
       .catch(console.error);
   }, []);
 
+  // v6.0: 加载收藏的脑洞
+  useEffect(() => {
+    if (activeTab === 'collected') {
+      setLoadingCollected(true);
+      fetch('/api/brainholes/collected')
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success && res.data?.items) {
+            setCollectedBrainholes(res.data.items.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              scenario: item.scenario || '',
+              hotScore: item.hotScore || 50,
+              category: item.category || 'general',
+              source: item.source || 'user',
+              collectedAt: item.collectedAt || item.createdAt,
+            })));
+          }
+        })
+        .catch(console.error)
+        .finally(() => setLoadingCollected(false));
+    }
+  }, [activeTab]);
+
   const togglePublic = async (assetId: string, current: boolean) => {
     try {
       const res = await fetch(`/api/assets/${assetId}/public`, {
@@ -64,7 +101,6 @@ export default function LibraryPage() {
         setMyAssets((prev) =>
           prev.map((a) => (a.id === assetId ? { ...a, isPublic: !current } : a))
         );
-        // v5.0-fix: 公开状态变更后，重新加载广场素材
         const publicRes = await fetch('/api/assets/public');
         const publicResult = await publicRes.json();
         if (publicResult.success && publicResult.data?.assets) {
@@ -76,16 +112,12 @@ export default function LibraryPage() {
     }
   };
 
-  // v5.0: 删除素材
   const handleDelete = async (assetId: string) => {
     if (!confirm('确定要删除这个素材吗？删除后无法恢复。')) return;
     try {
-      const res = await fetch(`/api/assets/${assetId}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(`/api/assets/${assetId}`, { method: 'DELETE' });
       if (res.ok) {
         setMyAssets((prev) => prev.filter((a) => a.id !== assetId));
-        // 同时从广场素材中移除
         setPublicAssets((prev) => prev.filter((a) => a.id !== assetId));
       } else {
         alert('删除失败，请稍后重试');
@@ -94,6 +126,31 @@ export default function LibraryPage() {
       console.error('Delete asset failed:', err);
       alert('删除失败，请检查网络');
     }
+  };
+
+  const handleCollectedClick = (brainhole: CollectedBrainhole) => {
+    // v6.0: 点击收藏的脑洞 → 直接进入匹配流程
+    localStorage.setItem('xh_duo_brainhole', brainhole.id);
+    router.push(`/duo-match?brainholeId=${brainhole.id}&from=bubble`);
+  };
+
+  const categoryLabel = (cat: string) => {
+    const map: Record<string, string> = {
+      medical: '医疗', legal: '法律', workplace: '职场', life: '生活',
+      education: '教育', tech: '技术', emergency: '紧急', general: '综合',
+      zhihu_hot: '知乎', zhihu_search: '知乎', deepseek: 'AI', fallback: '精选',
+    };
+    return map[cat] || cat;
+  };
+
+  const categoryColor = (cat: string) => {
+    const map: Record<string, string> = {
+      medical: 'text-red-400', legal: 'text-blue-400', workplace: 'text-orange-400',
+      life: 'text-emerald-400', education: 'text-purple-400', tech: 'text-cyan-400',
+      emergency: 'text-amber-400', general: 'text-slate-400',
+      zhihu_hot: 'text-blue-400', zhihu_search: 'text-blue-400', deepseek: 'text-indigo-400',
+    };
+    return map[cat] || 'text-slate-400';
   };
 
   return (
@@ -122,7 +179,8 @@ export default function LibraryPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">
-        {activeTab === 'mine' ? (
+        {/* 我的素材 */}
+        {activeTab === 'mine' && (
           <>
             {loading ? (
               <div className="flex items-center justify-center py-12">
@@ -198,7 +256,10 @@ export default function LibraryPage() {
               </div>
             )}
           </>
-        ) : (
+        )}
+
+        {/* 广场素材 */}
+        {activeTab === 'public' && (
           <>
             {publicAssets.length === 0 ? (
               <motion.div
@@ -242,6 +303,63 @@ export default function LibraryPage() {
                         <Sparkles size={10} className="text-xh-gold" />
                         {asset.sparkCount} 火花
                       </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* v6.0: 我的收藏 */}
+        {activeTab === 'collected' && (
+          <>
+            {loadingCollected ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              </div>
+            ) : collectedBrainholes.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-12 bg-slate-800/40 rounded-xl border border-slate-700/20"
+              >
+                <Heart className="w-10 h-10 text-white/10 mx-auto mb-2" />
+                <p className="text-slate-500 text-xs">还没有收藏任何脑洞</p>
+                <p className="text-slate-600 text-[10px] mt-1">点击泡泡即可收藏感兴趣的话题</p>
+              </motion.div>
+            ) : (
+              <div className="space-y-3">
+                {collectedBrainholes.map((brainhole, index) => (
+                  <motion.div
+                    key={brainhole.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => handleCollectedClick(brainhole)}
+                    className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/20 hover:border-slate-600/20 hover:bg-white/[0.05] transition-all press-feedback cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full bg-slate-700/30 ${categoryColor(brainhole.category)}`}>
+                            {categoryLabel(brainhole.category)}
+                          </span>
+                          <span className="text-[10px] text-slate-600">
+                            {new Date(brainhole.collectedAt).toLocaleDateString('zh-CN')}
+                          </span>
+                        </div>
+                        <h4 className="text-sm text-slate-100 font-medium">{brainhole.title}</h4>
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{brainhole.scenario}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-600 shrink-0 mt-6" />
+                    </div>
+                    <div className="flex items-center gap-4 mt-3 text-[10px] text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Sparkles size={10} className="text-xh-gold" />
+                        热度 {brainhole.hotScore}
+                      </span>
+                      <span className="text-xh-gold/60">点击即可匹配</span>
                     </div>
                   </motion.div>
                 ))}
