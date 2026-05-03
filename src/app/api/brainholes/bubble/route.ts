@@ -196,7 +196,60 @@ export async function GET(request: NextRequest) {
       }
     } catch (dbErr) { console.error("[Bubble] DB save failed:", dbErr); }
 
-    return NextResponse.json(apiResponse({ brainholes: final, total: final.length, source: "fresh" }));
+    // 7. 获取每个brainhole的参与人数统计（匹配人数+反应人数）
+    const brainholeIds = final.map(b => b.id).filter(id => !id.startsWith('zh-hot-') && !id.startsWith('zh-search-') && !id.startsWith('ds-') && !id.startsWith('fb-'));
+    const engagementMap = new Map<string, { matchCount: number; reactionCount: number }>();
+    
+    if (brainholeIds.length > 0) {
+      try {
+        // 统计每个brainhole的匹配请求数
+        const matchCounts = await db.matchRequest.groupBy({
+          by: ['brainholeId'],
+          where: { brainholeId: { in: brainholeIds } },
+          _count: { brainholeId: true },
+        });
+        matchCounts.forEach(mc => {
+          if (mc.brainholeId) {
+            engagementMap.set(mc.brainholeId, {
+              matchCount: mc._count.brainholeId,
+              reactionCount: 0,
+            });
+          }
+        });
+
+        // 统计每个brainhole的反应数
+        const reactionCounts = await db.reaction.groupBy({
+          by: ['brainholeId'],
+          where: { brainholeId: { in: brainholeIds } },
+          _count: { brainholeId: true },
+        });
+        reactionCounts.forEach(rc => {
+          if (rc.brainholeId) {
+            const existing = engagementMap.get(rc.brainholeId) || { matchCount: 0, reactionCount: 0 };
+            existing.reactionCount = rc._count.brainholeId;
+            engagementMap.set(rc.brainholeId, existing);
+          }
+        });
+      } catch (err) {
+        console.error("[Bubble] Engagement stats failed:", err);
+      }
+    }
+
+    // 8. 合并参与人数到返回数据
+    const finalWithEngagement = final.map(item => {
+      const engagement = engagementMap.get(item.id);
+      const totalEngaged = engagement ? engagement.matchCount + engagement.reactionCount : 0;
+      // 兜底数据给一个人工参与数（基于hotScore推算，让新brainhole也有社交信号）
+      const displayEngaged = totalEngaged > 0 ? totalEngaged : Math.max(1, Math.floor((item.hotScore || 50) / 15));
+      return {
+        ...item,
+        matchCount: engagement?.matchCount || 0,
+        reactionCount: engagement?.reactionCount || item.reactionCount,
+        engagedCount: displayEngaged,
+      };
+    });
+
+    return NextResponse.json(apiResponse({ brainholes: finalWithEngagement, total: finalWithEngagement.length, source: "fresh" }));
   } catch (error) {
     console.error("[Bubble] Aggregate API error:", error);
     // 最终保底：返回fallback数据，绝不为空

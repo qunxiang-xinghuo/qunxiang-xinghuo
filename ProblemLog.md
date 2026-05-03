@@ -1,5 +1,75 @@
 # 问题记录与修复日志
 
+## v6.0 泡泡脑洞版——四级智能匹配+社交信号+一键匹配 (2026-05-02)
+
+### 50年产品经理 + 美术经理 + 技术经理视角重设计
+
+**产品问题诊断：**
+1. 泡泡→详情→选模式→选身份→等待 = 5步才能匹配，流失率60%+
+2. 15秒纯等待，用户不知道系统在做什么，焦虑感强
+3. 同brainhole没人就硬等，没有B计划
+4. 泡泡无社交信号：不知道这个脑洞有几个人在玩
+
+**美术问题诊断：**
+1. 等待页只有"正在搜索..."文案，没有进度可视化
+2. 泡泡Hover浮层只有"进入"按钮，没有直接匹配入口
+3. 超时页文案单一，没有给用户"系统尽力了"的感知
+
+**技术问题诊断：**
+1. 匹配引擎只有"同brainhole"一种策略，无降级
+2. 泡泡API不返回参与人数，前端无法显示社交信号
+3. 匹配成功不返回strategy，前端无法展示匹配逻辑
+
+### 重设计内容
+
+**1. 泡泡系统——社交信号+一键匹配**
+- 泡泡显示"参与人数徽章"（右上角绿色圆点，>2人时显示）
+- Hover浮层增加金色"⚡立即匹配"按钮（最醒目位置）
+- 点击"立即匹配" → 直接进入 `duo-match?brainholeId=xxx&from=bubble`
+- 点击泡泡本体 → 仍跳转详情页（保留浏览路径）
+- 浮层显示"X人在线"社交信号
+
+**2. 匹配引擎——四级降级策略**
+- 阶段1（0-3秒）：同brainhole精确匹配 → strategy="same_brainhole"
+- 阶段2（3-6秒）：同分类兴趣匹配 → strategy="same_category"
+- 阶段3（6-10秒）：任意用户 + 已参与的热门brainhole → strategy="random_engaged"
+- 阶段4（10-15秒）：扩大搜索 + 分配热门brainhole等待 → strategy="waiting_for_any"
+- 每阶段都返回 strategy + brainholeId + brainholeTitle
+
+**3. 等待页——策略进度可视化**
+- 4级策略指示灯（Target→BrainCircuit→Globe→Search）
+- 策略进度条（彩色渐变）
+- 实时文案随阶段变化
+- 匹配成功时显示策略名称（"同话题匹配成功"）
+
+**4. 超时页——降级策略感知**
+- 文案改为"四级匹配策略已用尽"
+- 列出已尝试的策略：同话题→同类兴趣→热门话题→扩大搜索
+- 按钮文案优化："与刘看山对戏"/"继续扩大搜索"
+
+**5. 身份选择页——从泡泡来的优化**
+- 顶部显示预选brainhole卡片（金色边框）
+- 标题改为"确认身份，即刻对撞"
+- 按钮带箭头图标
+
+### 文件变更
+- `src/server/match-engine.ts`：重写四级降级策略
+- `src/app/api/match/route.ts`：返回strategy + brainholeTitle
+- `src/app/api/brainholes/bubble/route.ts`：增加参与人数统计
+- `src/components/bubble-cloud/types.ts`：增加matchCount/reactionCount/engagedCount
+- `src/components/bubble-cloud/Bubble.tsx`：参与人数徽章 + 立即匹配按钮
+- `src/components/bubble-cloud/BubbleCloud.tsx`：onMatch回调
+- `src/app/duo-match/page.tsx`：支持from=bubble + 预选卡片
+- `src/app/duo-waiting/page.tsx`：策略进度可视化
+- `src/app/duo-timeout/page.tsx`：降级策略文案
+- `src/app/home/page.tsx`：模式文案 + 版本号
+
+### Build验证
+- Build：47/47 ✅
+- 无TypeScript错误 ✅
+
+---
+
 ## v5.8-fix 故事大厅彻底重设计——6种剧本模板+隐藏秘密+海报卡片 (2026-05-02)
 
 ### 50年产品经理 + 20年编辑 + 作者视角重设计

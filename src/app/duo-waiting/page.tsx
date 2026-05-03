@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radar, Zap, Clock, Sparkles, User, Radio } from 'lucide-react';
+import { Radar, Zap, Clock, Sparkles, User, Radio, BrainCircuit, Target, Globe, Search } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
 
-const MATCH_TIMEOUT = 15; // 延长至15秒
+const MATCH_TIMEOUT = 15;
 const POLL_INTERVAL = 2000;
 const MATCH_DELAY = 800;
 
@@ -18,6 +18,14 @@ interface BrainholeInfo {
 }
 
 type MatchStatus = 'matching' | 'matched' | 'ai' | 'exiting';
+
+// v6.0: 四级匹配策略
+const MATCH_STRATEGIES = [
+  { key: 'same_brainhole', label: '同话题匹配', icon: Target, desc: '寻找同样对这个话题感兴趣的人', time: '0-3秒' },
+  { key: 'same_category', label: '同类兴趣', icon: BrainCircuit, desc: '寻找喜欢同类话题的人', time: '3-6秒' },
+  { key: 'random_engaged', label: '热门话题', icon: Globe, desc: '从热门参与话题中匹配', time: '6-10秒' },
+  { key: 'waiting_for_any', label: '扩大搜索', icon: Search, desc: '正在扩大搜索范围', time: '10-15秒' },
+];
 
 function DuoWaitingContent() {
   const router = useRouter();
@@ -32,6 +40,10 @@ function DuoWaitingContent() {
   const [matchId, setMatchId] = useState<string | null>(null);
   const [matchError, setMatchError] = useState<string>('');
   const [pulseActive, setPulseActive] = useState(true);
+  
+  // v6.0: 匹配策略状态
+  const [currentStrategy, setCurrentStrategy] = useState(0);
+  const [strategyMessage, setStrategyMessage] = useState('正在搜索同话题的对撞人...');
 
   const identityRef = useRef<string>('');
   const brainholeIdRef = useRef<string | undefined>(undefined);
@@ -51,6 +63,11 @@ function DuoWaitingContent() {
         if (data.status === 'matched' && data.roomId) {
           setStatus('matched');
           setPulseActive(false);
+          // v6.0: 根据策略显示不同文案
+          const strategyLabel = data.strategy === 'same_brainhole' ? '同话题匹配成功' 
+            : data.strategy === 'same_category' ? '同类兴趣匹配成功'
+            : '新朋友匹配成功';
+          setStrategyMessage(strategyLabel);
           setTimeout(() => router.push(`/room/${data.roomId}`), 1500);
           return true;
         }
@@ -65,6 +82,18 @@ function DuoWaitingContent() {
     identityRef.current = savedIdentity;
     const savedBrainhole = localStorage.getItem('xh_duo_brainhole');
     brainholeIdRef.current = urlBrainholeId || savedBrainhole || undefined;
+
+    // 如果有brainholeId，获取信息
+    if (brainholeIdRef.current) {
+      fetch(`/api/brainholes/${brainholeIdRef.current}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.data) {
+            setBrainholeInfo({ id: res.data.id, title: res.data.title, scenario: res.data.scenario });
+          }
+        })
+        .catch(() => {});
+    }
 
     const matchTimer = setTimeout(async () => {
       try {
@@ -82,6 +111,20 @@ function DuoWaitingContent() {
           const mid = result.data.matchId;
           setMatchId(mid);
           localStorage.setItem('xh_duo_match_id', mid);
+          // v6.0: 如果已经匹配成功（阶段1/2/3直接命中）
+          if (result.data.status === 'matched' && result.data.roomId) {
+            setStatus('matched');
+            setPulseActive(false);
+            setMatchData(result.data);
+            const strategyLabel = result.data.strategy === 'same_brainhole' ? '同话题匹配成功' 
+              : result.data.strategy === 'same_category' ? '同类兴趣匹配成功'
+              : '新朋友匹配成功';
+            setStrategyMessage(strategyLabel);
+            if (result.data.brainholeTitle && !brainholeInfo) {
+              setBrainholeInfo({ id: result.data.brainholeId || '', title: result.data.brainholeTitle, scenario: '' });
+            }
+            setTimeout(() => router.push(`/room/${result.data.roomId}`), 1500);
+          }
         } else {
           setMatchError(result.message || '匹配请求未成功');
         }
@@ -92,10 +135,26 @@ function DuoWaitingContent() {
     return () => clearTimeout(matchTimer);
   }, [router, urlBrainholeId]);
 
+  // v6.0: 倒计时 + 策略阶段更新
   useEffect(() => {
     const timer = setInterval(() => {
       setElapsedTime((prev) => {
         const next = prev + 1;
+        // 更新策略阶段
+        if (next <= 3) {
+          setCurrentStrategy(0);
+          setStrategyMessage('正在搜索同话题的对撞人...');
+        } else if (next <= 6) {
+          setCurrentStrategy(1);
+          setStrategyMessage('同话题暂无匹配，正在寻找同类兴趣...');
+        } else if (next <= 10) {
+          setCurrentStrategy(2);
+          setStrategyMessage('正在从热门参与话题中为你匹配...');
+        } else {
+          setCurrentStrategy(3);
+          setStrategyMessage('正在扩大搜索范围...');
+        }
+        
         if (next >= MATCH_TIMEOUT) {
           clearInterval(timer);
           const params = new URLSearchParams();
@@ -126,7 +185,7 @@ function DuoWaitingContent() {
     <div className="flex flex-col h-full page-gradient">
       <TopBar title="寻找对撞人" showBack onBack={() => router.back()} />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
+      <div className="flex-1 flex flex-col items-center justify-center px-5 relative">
         {/* 雷达扫描背景 */}
         {pulseActive && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -148,7 +207,7 @@ function DuoWaitingContent() {
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 200 }}
-          className="relative z-10 mb-8"
+          className="relative z-10 mb-6"
         >
           <div className="relative">
             <LiuKanshanAvatar size="lg" animate emotion={status === 'matched' ? 'happy' : 'thinking'} />
@@ -173,7 +232,7 @@ function DuoWaitingContent() {
               {brainholeInfo && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                  className="mb-5 mx-auto max-w-xs card-elevated p-3"
+                  className="mb-4 mx-auto max-w-xs card-elevated p-3"
                 >
                   <div className="flex items-center gap-1.5 mb-1">
                     <Sparkles className="w-3 h-3 text-xh-gold" />
@@ -183,12 +242,47 @@ function DuoWaitingContent() {
                 </motion.div>
               )}
 
+              {/* v6.0: 四级匹配策略进度 */}
+              <div className="mb-4 mx-auto max-w-xs">
+                <div className="flex items-center justify-between mb-2">
+                  {MATCH_STRATEGIES.map((s, idx) => {
+                    const Icon = s.icon;
+                    const isActive = idx === currentStrategy;
+                    const isCompleted = idx < currentStrategy;
+                    return (
+                      <div key={s.key} className="flex flex-col items-center gap-1">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 ${
+                          isActive ? 'bg-xh-gold/20 border border-xh-gold/40 shadow-lg shadow-xh-gold/10' 
+                            : isCompleted ? 'bg-emerald-500/15 border border-emerald-500/30' 
+                            : 'bg-slate-800/40 border border-slate-700/20'
+                        }`}>
+                          <Icon className={`w-3.5 h-3.5 transition-colors ${
+                            isActive ? 'text-xh-gold' : isCompleted ? 'text-emerald-400' : 'text-slate-600'
+                          }`} />
+                        </div>
+                        <span className={`text-[9px] transition-colors ${
+                          isActive ? 'text-xh-gold font-medium' : isCompleted ? 'text-emerald-400' : 'text-slate-600'
+                        }`}>{s.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* 策略进度条 */}
+                <div className="w-full h-1.5 bg-slate-800/50 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-xh-gold to-orange-400"
+                    style={{ width: `${((currentStrategy + 1) / MATCH_STRATEGIES.length) * 100}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </div>
+
               {/* 主文案 */}
-              <div className="mb-5">
+              <div className="mb-4">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Radar className="w-4 h-4 text-xh-gold animate-pulse" />
                   <p className="text-base font-medium text-slate-100">
-                    正在搜索同频对撞人{dots}
+                    {strategyMessage}{dots}
                   </p>
                 </div>
                 <p className="text-xs text-slate-500">
@@ -207,7 +301,7 @@ function DuoWaitingContent() {
                   />
                 </div>
                 <p className="text-[10px] text-slate-600 mt-1.5">
-                  优先真人匹配 · 超时可选AI对话
+                  四级匹配策略 · 超时可选AI对话
                 </p>
               </div>
 
@@ -256,8 +350,8 @@ function DuoWaitingContent() {
               >
                 <User className="w-8 h-8 text-emerald-400" />
               </motion.div>
-              <p className="text-lg font-bold text-emerald-400 mb-2">匹配成功！</p>
-              <p className="text-xs text-slate-500">找到一位对撞人，正在进入对白室...</p>
+              <p className="text-lg font-bold text-emerald-400 mb-2">{strategyMessage}！</p>
+              <p className="text-xs text-slate-500">正在进入对白室...</p>
               <div className="w-48 h-1 bg-slate-700/30 rounded-full overflow-hidden mt-4 mx-auto">
                 <motion.div
                   className="h-full bg-emerald-400 rounded-full"
@@ -279,6 +373,8 @@ function DuoWaitingContent() {
           </span>
           <span>|</span>
           <span>第 {urlRound} 次匹配</span>
+          <span>|</span>
+          <span className="text-xh-gold/60">v6.0 四级匹配</span>
         </div>
       </div>
     </div>
