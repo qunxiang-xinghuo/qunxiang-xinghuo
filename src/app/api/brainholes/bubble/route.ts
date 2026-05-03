@@ -210,9 +210,20 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20", 10), 1), 30);
     const refresh = searchParams.get("refresh") === "true";
 
-    // 1. 优先从数据库获取已有的approved brainhole（稳定id）
+    // 1. 优先从数据库获取已有的approved brainhole（排除旧临时id格式）
     const dbBrainholes = await db.brainhole.findMany({
-      where: { status: "approved" },
+      where: {
+        status: "approved",
+        NOT: {
+          OR: [
+            { id: { startsWith: "zh-hot-" } },
+            { id: { startsWith: "zh-search-" } },
+            { id: { startsWith: "ds-" } },
+            { id: { startsWith: "fb-" } },
+            { id: { startsWith: "temp-" } },
+          ],
+        },
+      },
       orderBy: { hotScore: "desc" },
       take: 50,
     });
@@ -258,9 +269,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(apiResponse({ brainholes: final, total: final.length, source: "fresh" }));
   } catch (error) {
     console.error("[Bubble] Aggregate API error:", error);
-    // 最终保底：返回数据库中已有的稳定数据
+    // 最终保底：返回数据库中已有的稳定数据（排除旧临时id）
     const dbFallback = await db.brainhole.findMany({
-      where: { status: "approved" },
+      where: {
+        status: "approved",
+        NOT: {
+          OR: [
+            { id: { startsWith: "zh-hot-" } },
+            { id: { startsWith: "zh-search-" } },
+            { id: { startsWith: "ds-" } },
+            { id: { startsWith: "fb-" } },
+            { id: { startsWith: "temp-" } },
+          ],
+        },
+      },
       orderBy: { hotScore: "desc" },
       take: 20,
     });
