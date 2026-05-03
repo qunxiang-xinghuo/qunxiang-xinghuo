@@ -11,6 +11,7 @@
 | IP | `81.70.59.228` |
 | 系统 | 腾讯云 OpenCloudOS 9.4 |
 | 用户 | `root` |
+| 密码 | `F!D)7n_mc8Mq}bx=` |
 | SSH端口 | `22` |
 | 部署路径 | `/www/wwwroot/qunxiang-xinghuo` |
 | PM2进程名 | `qunxiang-xinghuo` |
@@ -20,6 +21,7 @@
 
 ```bash
 cd /www/wwwroot/qunxiang-xinghuo \
+  && git fetch origin dev \
   && git reset --hard origin/dev \
   && git clean -fd \
   && npm install \
@@ -32,7 +34,11 @@ cd /www/wwwroot/qunxiang-xinghuo \
 
 > 含 Prisma schema 变更时必须执行 `npx prisma db push`！
 
-**本地paramiko部署脚本**：`deploy_remote.py`（Python + paramiko）
+**本地paramiko部署脚本**：`deploy_remote.py`（Python + paramiko，密码认证）
+
+```bash
+python deploy_remote.py
+```
 
 ## 三、Git仓库
 
@@ -64,13 +70,19 @@ DATABASE_URL="file:./dev.db"
 - **解决**：Python脚本中 `sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')`
 - **教训**：跨平台部署脚本必须处理编码问题
 
-### 问题3：SSH密钥认证失败
-- **现象**：`id_ed25519` 公钥被服务器拒绝，回退到密码认证
+### 问题3：SSH密钥认证失败 → 回退密码认证
+- **现象**：`id_ed25519` 公钥被服务器拒绝，paramiko报错 `AuthenticationException`
 - **根因**：服务器上 `~/.ssh/authorized_keys` 可能未包含本地公钥，或sshd配置变更
-- **解决**：使用密码通过paramiko连接
-- **教训**：保留密码作为备用认证方式
+- **解决**：`deploy_remote.py` 使用密码 `F!D)7n_mc8Mq}bx=` 通过paramiko.connect()
+- **教训**：密钥和密码双备份，脚本优先尝试密钥、fallback到密码
 
-### 问题4：页面空白（v5.3最严重bug，v5.5复发）
+### 问题4：SSH连接超时（2026-05-03间歇性）
+- **现象**：ping正常(20ms)，端口22通，但SSH握手卡住30~300秒超时
+- **根因**：服务器SSH服务间歇性无响应（可能是连接数打满或sshd进程异常）
+- **解决**：等待数分钟后重试；或通过宝塔面板Web终端执行命令
+- **教训**：SSH不是100%可靠，必须保留宝塔面板作为备用通道
+
+### 问题5：页面空白（v5.3最严重bug，v5.5复发）
 - **现象**：部署后访问线上页面显示空白/只有loading spinner
 - **根因1（直接原因）**：App Router + 自定义server.ts组合下，Next.js `handle()` 无法正确serve生产build的静态资源（`/_next/static/chunks/*`），所有JS/CSS返回404
 - **根因2（深层原因）**：`output: 'standalone'` 模式下，standalone/server.js也未自动包含static文件；`server.ts` + `tsx` 在生产模式下静态文件服务失效
@@ -107,11 +119,12 @@ DATABASE_URL="file:./dev.db"
 
 | 文档 | 实际路径 | 说明 |
 |------|---------|------|
-| **TDD v5.0** | `docs/qunxiangxinhuo-TDD-v5.0.md` | 产品需求文档（用户反馈的找不到的文件） |
+| **TDD v6.0** | `docs/qunxiangxinhuo-TDD-v6.0.md` | v6.0全面重构需求文档（当前版本） |
+| TDD v5.0 | `docs/qunxiangxinhuo-TDD-v5.0.md` | 泡泡脑洞+四级匹配（历史版本） |
 | TDD v4.5 | `TDD-v4.5-泡泡脑洞系统.md` | 泡泡系统技术细节 |
 | TDD v1.0~v4.3 | `docs/qunxiangxinhuo-TDD-v*.md` | 历史版本 |
 
-> 用户找不到TDD5.0？它在 `docs/` 子目录里，不在根目录。
+> 用户找不到TDD？它在 `docs/` 子目录里，不在根目录。
 
 ## 九、刘看山形象资源
 
@@ -119,124 +132,54 @@ DATABASE_URL="file:./dev.db"
 |------|------|------|
 | 官方图片 | `public/liukanshan.jpg` | 所有页面共用 |
 | 组件 | `src/components/layout/LiuKanshanAvatar.tsx` | 等待页/超时页/故事页 |
-| 浮动按钮 | `src/components/layout/LiuKanshanFloat.tsx` | 首页右下角浮动 |
-| 欢迎弹窗 | `src/components/layout/LiuKanshanWelcome.tsx` | 首页新用户引导 |
+| 浮动按钮 | `src/components/layout/LiuKanshanFloat.tsx` | 首页右下角浮动（当前未引用） |
+| 欢迎弹窗 | `src/components/layout/LiuKanshanWelcome.tsx` | 首页新用户引导（当前未引用） |
 
 ## 十、关键路由速查
 
 | 功能 | 路由 |
 |------|------|
-| 首页（泡泡+模式入口） | `/home` |
+| 登录页 | `/` (根路径) |
+| 发现页（TOP3+火花+模式入口） | `/home` |
+| 火花页（公开火花墙） | `/library` |
+| 故事大厅 | `/story-hall` |
+| 我的页 | `/profile` |
 | 双人模式匹配 | `/duo-match` |
-| 故事大厅广场 | `/story-hall` |
-| 故事详情+角色认领 | `/story-hall/[storyId]` |
-| 多人对白室 | `/story-hall/[storyId]/room` |
+| 双人等待页 | `/duo-waiting` |
 | 双人/AI对白室 | `/room/[id]` |
-| 素材库 | `/library` |
-| 个人中心 | `/profile` |
 | 知乎热搜 | `/zhihu-search` |
 | 知乎直答 | `/zhihu-zhida` |
 
----
+## 十一、v6.0 全面重构速查
 
-> 最后更新：2026-05-02 v6.0-fix2 泡泡彻底修复——稳定id持久化+点击直接匹配+真实泡泡质感+收藏页 部署完成 ✅
+### 11.1 11项需求清单
+| # | 需求 | 状态 |
+|---|------|------|
+| 1 | 登录页增加项目简介 | ✅ |
+| 2 | 发现页：取消泡泡→TOP3排行榜+火花展示+4模式入口 | ✅ |
+| 3 | 底部导航改为4Tab | ✅ |
+| 4 | 火花页（原素材库）→公开火花墙 | ✅ |
+| 5 | 故事页：快速匹配/我发起的/其他人的 | ✅ |
+| 6 | 我的页：头像左上+名称放大 | ✅ |
+| 7 | 对白室极简化 | ✅ |
+| 8 | AI催化升级：DeepSeek+知乎直答双API | ✅ |
+| 9 | 双人匹配修复：15秒→刘看山AI | ✅ |
+| 10 | 脑洞降低门槛：日常场景50字以内 | ✅ |
+| 11 | 文档更新+本地自检+Git推送 | ✅ |
 
----
+### 11.2 新增API
+| API | 说明 |
+|-----|------|
+| `POST /api/ai/catalyst` | AI动态催化问题 |
+| `GET /api/sparks/public` | 公开火花墙 |
+| `GET /api/sparks/mine` | 我的火花 |
+| `GET /api/stories/mine` | 我的故事 |
 
-## 十一、v6.0 泡泡脑洞版速查
-
-### 四级智能匹配策略
-| 阶段 | 时间 | 策略 | 文案 |
-|------|------|------|------|
-| 阶段1 | 0-3秒 | 同brainhole精确匹配 | "找到同样对这个话题感兴趣的人" |
-| 阶段2 | 3-6秒 | 同分类兴趣匹配 | "你们都喜欢这类话题" |
-| 阶段3 | 6-10秒 | 随机热门brainhole | "为你匹配了一位新朋友" |
-| 阶段4 | 10-15秒 | 扩大搜索 | "正在扩大搜索范围..." |
-
-### 泡泡交互
-- **点击泡泡本体** → `/brainhole/${id}`（浏览详情）
-- **点击"立即匹配"** → `/duo-match?brainholeId=xxx&from=bubble`（一键匹配）
-- **参与人数徽章** → >2人时右上角显示绿色圆点
-
-### 匹配API响应
-```json
-{
-  "status": "matched|waiting",
-  "strategy": "same_brainhole|same_category|random_engaged|waiting_for_any",
-  "brainholeId": "xxx",
-  "brainholeTitle": "急诊室里的道德困境",
-  "message": "找到同样对这个话题感兴趣的人"
-}
-```
+### 11.3 登录页装饰泡泡
+- 7个透明泡泡，右下角缓慢上升
+- radial-gradient实现肥皂泡质感
+- framer-motion驱动，不同延迟错开
 
 ---
 
-## 十二、v5.8-fix 故事大厅重设计速查
-
-### 6种剧本模板
-| 模板 | 风格 | 预设角色 | 典型秘密 |
-|------|------|---------|---------|
-| 医疗急救 | 生死抉择、伦理困境 | 主刀医生、家属、医院主任 | 家属曾害过患者 |
-| 职场风云 | 利益博弈、站队 | CEO、HRD、CTO、基层员工 | CEO知道裁员名单 |
-| 悬疑密室 | 暴风雪山庄、反转 | 侦探、嫌疑人×5 | 死者是所有人的仇人 |
-| 爱情纠葛 | 三角关系、背叛 | 新郎、新娘、初恋 | 新郎杀了初恋的男友 |
-| 科幻末世 | 生存抉择、人性 | 舰长、科学家、普通人 | 只有舰长知道没有超光速 |
-| 家庭伦理 | 代际冲突、秘密 | 父亲、母亲、子女 | 父亲早就知道不是亲生的 |
-
-### 海报式卡片字段
-- `posterTitle`：大标题（最多10字）
-- `hook`：一句话钩子（吸引点击）
-- `setting`：一句话世界观设定
-- `status`：recruiting(招募中) / ongoing(进行中) / completed(已完成)
-- `type`：medical/workplace/mystery/romance/scifi/family
-- `hiddenSecrets`：每个角色的隐藏秘密
-- `coreMotivations`：每个角色的核心动机
-
-### 沉浸式详情页结构
-1. 剧目海报头部（渐变背景+状态badge+hook）
-2. 核心数据面板（角色数/已就位/对白数/创建日）
-3. 世界观卷轴（可展开）
-4. 核心冲突剧场
-5. 隐藏秘密区（Lock图标+悬疑文案）
-6. 演员表：人物小传卡片（人物弧光+核心动机+演绎要求+认领状态）
-7. 导演审核/启动故事/进入对白室按钮
-
-### 部署验证
-- Build：47/47 ✅
-- 线上：`http://81.70.59.228:3000/story-hall`
-- 新代码验证：CreateStoryModal=2, StoryDetail=3, StoryHall=8 ✅
-- 静态JS/CSS：200 ✅
-
----
-
-## 十二、v5.7 全面重设计速查
-
-### 泡泡系统（TDD v5.0完整实现）
-```
-前端: BubbleCloud.tsx → GET /api/brainholes/bubble?limit=20
-后端: src/app/api/brainholes/bubble/route.ts
-数据: { id, title, scenario, hotScore, category, difficulty, source }
-跳转: /brainhole/${id}
-Hover浮层: 分类标签 + 难度徽章 + 标题 + scenario摘要 + 热度分 + 进入按钮
-分类色: medical/legal/workplace/life/education/tech/emergency/general + zhihu_hot/zhihu_search/deepseek/fallback
-```
-
-### 双人模式流程
-```
-/duo-match → 身份选择（知乎/AI随机/自定义）
-  → /duo-waiting → POST /api/match → 轮询 GET /api/match/:id
-    → 匹配成功 → /room/:roomId（WebSocket实时对白）
-    → 超时 → /duo-timeout → 可选：AI对话/继续等待/返回首页
-```
-
-### 部署检查清单
-- [ ] 本地 `npm run build` 47/47通过
-- [ ] `git commit` + `git push origin dev`
-- [ ] SFTP上传关键文件（GitHub超时时）
-- [ ] 服务器 `rm -rf .next && NODE_ENV=production npm run build`
-- [ ] `pm2 restart qunxiang-xinghuo && pm2 save`
-- [ ] curl 验证首页 `/home` 200
-- [ ] curl 验证静态JS/CSS 200（查找实际存在的文件，非main-app.js）
-- [ ] curl 验证泡泡API `/api/brainholes/bubble` 返回数据
-- [ ] 更新 `ProblemLog.md`
-- [ ] 更新 `IMPORTANT.md`
+> 最后更新：2026-05-03 v6.0 全面重构+登录页美化 部署完成 ✅
