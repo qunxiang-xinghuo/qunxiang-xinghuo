@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp, Flame, Zap, Users, Sparkles, ChevronRight, Bot, BookOpen, MessageCircle,
+  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -20,7 +20,6 @@ interface Brainhole {
 export default function HomePage() {
   const router = useRouter();
   const [top3, setTop3] = useState<Brainhole[]>([]);
-  const [sparks, setSparks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
 
@@ -32,9 +31,6 @@ export default function HomePage() {
         if (data.data?.list) {
           setTop3(data.data.list.slice(0, 3));
         }
-        const sparkRes = await fetch('/api/sparks/public?limit=6');
-        const sparkData = await sparkRes.json();
-        setSparks(sparkData.data?.list || []);
       } catch (e) {
         console.error('首页加载失败:', e);
       } finally {
@@ -136,35 +132,6 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* 火花展示 */}
-        {sparks.length > 0 && (
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#74b9ff]" />
-                <h2 className="text-sm font-semibold text-white/90">最新火花</h2>
-              </div>
-              <button onClick={() => router.push('/library')} className="text-[11px] text-white/30 hover:text-[#e2b04a] transition-colors">
-                查看更多
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {sparks.slice(0, 4).map((spark, idx) => (
-                <motion.div
-                  key={spark.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.08 }}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5"
-                >
-                  <p className="text-xs text-white/70 leading-relaxed line-clamp-3">{spark.content}</p>
-                  <p className="text-[10px] text-white/25 mt-2 truncate">{spark.identity || '匿名用户'}</p>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* 四大模式入口 */}
         <section className="mb-4">
           <h2 className="text-sm font-semibold text-white/90 mb-3">选择模式</h2>
@@ -218,7 +185,7 @@ export default function HomePage() {
               className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-white/10 max-w-[280px] w-full text-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <Sparkles className="w-8 h-8 text-[#e2b04a]/60 mx-auto mb-3" />
+              <Flame className="w-8 h-8 text-[#e2b04a]/60 mx-auto mb-3" />
               <p className="text-base font-semibold text-white/90 mb-1">{showComingSoon}</p>
               <p className="text-sm text-white/40 mb-4">即将开放，敬请期待</p>
               <button

@@ -171,8 +171,8 @@ export default function SoloMatchPage() {
         </motion.div>
       </div>
 
-      {/* 底部开始按钮 */}
-      <div className="shrink-0 px-5 pb-6 pt-2 bg-gradient-to-t from-[#0a0e1a] to-transparent">
+      {/* 底部开始按钮 —— pb 已增大防止被固定导航栏遮挡 */}
+      <div className="shrink-0 px-5 pb-20 pt-2 bg-gradient-to-t from-[#0a0e1a] to-transparent">
         <button
           onClick={handleStart}
           disabled={creating || (mode === 'preset' && !selectedIdentity) || (mode === 'custom' && !customIdentity.trim())}

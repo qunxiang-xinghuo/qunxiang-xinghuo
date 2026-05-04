@@ -1,8 +1,7 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import MobileContainer from './MobileContainer';
 import BottomNav from './BottomNav';
 
@@ -13,14 +12,16 @@ interface AppShellProps {
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { status } = useSession();
+  const [mounted, setMounted] = useState(false);
 
-  // 全局认证守卫：未登录用户访问非公开页面 → 重定向到登录页
+  // 客户端挂载后检查登录状态（避免useSession导致hydration问题）
   useEffect(() => {
-    if (status === 'unauthenticated' && pathname && pathname !== '/') {
+    setMounted(true);
+    const raw = localStorage.getItem('xh_user');
+    if (!raw && pathname && pathname !== '/') {
       router.replace('/');
     }
-  }, [status, pathname, router]);
+  }, [pathname, router]);
 
   // pathname 未就绪时：显示基本布局（无导航栏，避免闪烁）
   if (!pathname) {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Flame, TrendingUp, Clock, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { Flame, TrendingUp, Clock, ChevronRight, Eye, EyeOff, Sparkles } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 
 interface Spark {
@@ -23,6 +23,7 @@ export default function SparksPage() {
   const router = useRouter();
   const [sparks, setSparks] = useState<Spark[]>([]);
   const [mySparks, setMySparks] = useState<Spark[]>([]);
+  const [latestSparks, setLatestSparks] = useState<Spark[]>([]);
   const [tab, setTab] = useState<'public' | 'mine'>('public');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -42,6 +43,11 @@ export default function SparksPage() {
         });
         const myData = await myRes.json();
         setMySparks(myData.data?.list || []);
+
+        // 最新火花（用于顶部展示）
+        const latestRes = await fetch('/api/sparks/public?limit=6');
+        const latestData = await latestRes.json();
+        setLatestSparks(latestData.data?.list || []);
       } catch (e) {
         console.error('火花页加载失败:', e);
       } finally {
@@ -93,6 +99,30 @@ export default function SparksPage() {
       <PageHeader title="火花" subtitle="灵感碰撞的瞬间" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
+        {/* 最新火花展示 */}
+        {latestSparks.length > 0 && (
+          <section className="mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-[#74b9ff]" />
+              <h2 className="text-sm font-semibold text-white/90">最新火花</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {latestSparks.slice(0, 4).map((spark, idx) => (
+                <motion.div
+                  key={spark.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.08 }}
+                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5"
+                >
+                  <p className="text-xs text-white/70 leading-relaxed line-clamp-3">{spark.content}</p>
+                  <p className="text-[10px] text-white/25 mt-2 truncate">{spark.identity || '匿名用户'}</p>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Tab 切换 */}
         <div className="flex gap-4 mb-4 border-b border-white/5 pb-3">
           <button
