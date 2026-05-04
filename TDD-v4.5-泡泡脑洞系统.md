@@ -570,7 +570,7 @@ motion.div (定位+入场动画)
 
 当前已配置：
 ```
-ZHIHU_API_KEY="xrUmjOP1pferLLYrQufOIrvlbT3tFvct"
+ZHIHU_API_KEY="*已脱敏，服务器.env中配置*"
 ```
 
 如需接入 DeepSeek AI，请添加：
@@ -676,8 +676,8 @@ DEEPSEEK_API_KEY="sk-your-deepseek-api-key-here"
 
 服务器 `.env` 已配置：
 ```
-DEEPSEEK_API_KEY="sk-181c8aa2e8f1469d9a60698f6d79d71d"
-ZHIHU_API_KEY="xrUmjOP1pferLLYrQufOIrvlbT3tFvct"
+DEEPSEEK_API_KEY="*已脱敏，服务器.env中配置*"
+ZHIHU_API_KEY="*已脱敏，服务器.env中配置*"
 ```
 
 配置后执行：`pm2 restart qunxiang-xinghuo`
