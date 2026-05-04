@@ -1,14 +1,37 @@
 # 问题记录与修复日志
 
-## v6.2-fix 首页导航栏 + 我的页面转圈修复 (2026-05-04)
+## v6.2-fix2 登录页导航栏彻底修复 + 全局认证守卫 (2026-05-04)
 
-### 问题1：首页（登录页）显示底部导航栏
+### 问题1：登录页底部导航栏删不掉
 
-- **根因**：`BottomNav` 依赖 `useSession()` 的 `status`，但初始状态是 `'loading'`（不是 `'unauthenticated'`），导致加载期间导航栏闪现；且 `/` 根路径不在 `hideNavPaths` 中
-- **修复**：
-  1. `hideNavPaths` 添加 `/`（精确匹配），确保首页无论登录状态都不显示导航栏
-  2. `status === 'loading'` 时也返回 null，避免未登录用户看到闪烁的导航栏
-  3. 调整判断顺序：先检查路径白名单，再检查 session 状态
+**三层根因链：**
+```
+layout.tsx 直接渲染 <BottomNav />（服务端组件包含客户端组件）
+  → BottomNav 使用 usePathname() 获取当前路径
+  → usePathname() 客户端初始渲染返回 null（hydration 期间）
+  → hideNavPaths.includes(null) = false
+  → 路径判断失效
+  → useSession() status 快速变为 'authenticated'（已登录用户有 cookie）
+  → BottomNav 渲染
+  → 登录页出现导航栏
+```
+
+**根因1（直接）**：`usePathname()` 初始返回 `null`，所有路径判断失效
+**根因2（深层）**：`layout.tsx` 直接包含 `<BottomNav />`，导致所有页面共享同一个导航栏实例，无法按页面精确控制
+**根因3（设计）**：没有全局认证守卫，未登录用户可以直接访问 `/home`、`/library`、`/story-hall` 等页面
+
+**修复方案：**
+1. **新建 `AppShell` 客户端组件**：统一管理 `MobileContainer` + 条件渲染 `BottomNav` + 认证守卫
+2. **`layout.tsx` 改为通过 `AppShell` 渲染 children**：不再直接包含 `BottomNav`
+3. **`AppShell` 中 `pathname === '/'` 时绝对不渲染 `BottomNav`**：无论登录状态如何，登录页无导航栏
+4. **`AppShell` 中 `pathname` 为 `null` 时不渲染 `BottomNav`**：避免 hydration 期间闪烁
+5. **`BottomNav` 增加 `!pathname` 保护 + 登录页判断提前到最前面**：双重保险
+6. **全局认证守卫**：`useEffect` 中检查 `status === 'unauthenticated' && pathname !== '/'`，自动 `router.replace('/')`
+
+**文件变更：**
+- `src/components/layout/AppShell.tsx`：新建，统一布局壳
+- `src/app/layout.tsx`：去掉 `<BottomNav />`，改用 `<AppShell>`
+- `src/components/layout/BottomNav.tsx`：增加 pathname null 保护
 
 ### 问题2：我的页面一直转圈（加载卡死）
 
