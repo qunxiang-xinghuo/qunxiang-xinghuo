@@ -2,7 +2,7 @@
 import urllib.request
 import json
 
-BASE = 'http://81.70.59.228'
+BASE = 'http://YOUR_SERVER_HOST'
 
 def get(path, params=None):
     url = BASE + path

@@ -4,18 +4,24 @@
 # =============================================================================
 
 # -------- Stage 1: 依赖安装 --------
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
+
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # 安装构建工具（better-sqlite3 需要编译原生模块）
 RUN apk add --no-cache python3 make g++
 
 COPY package.json package-lock.json ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN npm ci
 
 # -------- Stage 2: 构建 --------
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
+
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # 复制依赖
 COPY --from=deps /app/node_modules ./node_modules
@@ -27,27 +33,37 @@ RUN npx prisma generate
 # 构建应用
 RUN npm run build
 
-# -------- Stage 3: 运行 --------
-FROM node:20-alpine AS runner
+# -------- Stage 3: 生产依赖 --------
+FROM node:22-alpine AS prod-deps
+WORKDIR /app
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY package.json package-lock.json ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+RUN npm ci --omit=dev --ignore-scripts
+
+# -------- Stage 4: 运行 --------
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# 只复制必要的文件
+# 自定义 server.ts 需要 .next 构建结果、源码和运行时依赖
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
+COPY --from=builder --chown=nextjs:nodejs /app/src ./src
 COPY --from=builder --chown=nextjs:nodejs /app/server.ts ./
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
-
-# 安装生产依赖（用于 server.ts 运行）
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
@@ -56,4 +72,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-CMD ["node", "server.js"]
+CMD ["npm", "run", "start"]

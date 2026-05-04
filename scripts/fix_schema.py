@@ -8,7 +8,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-ssh.connect('81.70.59.228', username='root', password='F!D)7n_mc8Mq}bx=')
+ssh.connect('YOUR_SERVER_HOST', username='YOUR_SERVER_USER', password='YOUR_SERVER_PASSWORD')
 
 def run(cmd, timeout=60):
     print(f'\n>>> {cmd}')
@@ -25,23 +25,23 @@ def run(cmd, timeout=60):
 
 # 1. Check Prisma schema on server
 print('=== Checking server schema ===')
-run('cat /www/wwwroot/qunxiang-xinghuo/prisma/schema.prisma | grep -A 5 "hotScore"')
+run('cat /path/to/remote/project/prisma/schema.prisma | grep -A 5 "hotScore"')
 
 # 2. Run prisma db push
 print('\n=== Running prisma db push ===')
-run('cd /www/wwwroot/qunxiang-xinghuo && npx prisma db push --accept-data-loss', timeout=120)
+run('cd /path/to/remote/project && npx prisma db push --accept-data-loss', timeout=120)
 
 # 3. Rebuild
 print('\n=== Rebuilding ===')
-run('cd /www/wwwroot/qunxiang-xinghuo && npm run build', timeout=300)
+run('cd /path/to/remote/project && npm run build', timeout=300)
 
 # 4. Copy static
 print('\n=== Copying static ===')
-run('cd /www/wwwroot/qunxiang-xinghuo && cp -r .next/static .next/standalone/.next/')
+run('cd /path/to/remote/project && cp -r .next/static .next/standalone/.next/')
 
 # 5. Restart PM2
 print('\n=== Restarting PM2 ===')
-run('cd /www/wwwroot/qunxiang-xinghuo && pm2 restart qunxiang-xinghuo')
+run('cd /path/to/remote/project && pm2 restart qunxiang-xinghuo')
 
 ssh.close()
 print('\nDone!')

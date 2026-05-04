@@ -7,10 +7,10 @@ import time
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-HOST = "81.70.59.228"
-USER = "root"
-PASSWORD = "F!D)7n_mc8Mq}bx="
-DEPLOY_DIR = "/www/wwwroot/qunxiang-xinghuo"
+HOST = "YOUR_SERVER_HOST"
+USER = 'YOUR_SERVER_USER'
+PASSWORD = "YOUR_SERVER_PASSWORD"
+DEPLOY_DIR = "/path/to/remote/project"
 
 def ssh_cmd(client, cmd, timeout=60):
     print(f">>> {cmd}")
@@ -32,7 +32,7 @@ print("=" * 60)
 # 1. SFTP上传server.ts
 print("\n[1/6] SFTP上传server.ts...")
 sftp = client.open_sftp()
-sftp.put(r"C:\Users\Dell\qunxiang-xinghuo\server.ts", f"{DEPLOY_DIR}/server.ts")
+sftp.put(r"/path/to/local/project\server.ts", f"{DEPLOY_DIR}/server.ts")
 sftp.close()
 print("  -> 上传成功")
 
@@ -61,17 +61,17 @@ time.sleep(5)
 # 6. 验证（最关键！）
 print("\n[6/6] 验证静态资源...")
 print("\n--- 测试JS文件 ---")
-ssh_cmd(client, f"JS=$(ls {DEPLOY_DIR}/.next/static/chunks/*.js | head -1 | sed 's|{DEPLOY_DIR}/.next/static/chunks/||') && echo \"File: $JS\" && curl -sI http://81.70.59.228:3000/_next/static/chunks/$JS | head -3")
+ssh_cmd(client, f"JS=$(ls {DEPLOY_DIR}/.next/static/chunks/*.js | head -1 | sed 's|{DEPLOY_DIR}/.next/static/chunks/||') && echo \"File: $JS\" && curl -sI http://YOUR_SERVER_HOST:3000/_next/static/chunks/$JS | head -3")
 
 print("\n--- 测试CSS文件 ---")
-ssh_cmd(client, f"CSS=$(ls {DEPLOY_DIR}/.next/static/css/*.css 2>/dev/null | head -1 | sed 's|{DEPLOY_DIR}/.next/static/css/||') && if [ -n \"$CSS\" ]; then echo \"File: $CSS\" && curl -sI http://81.70.59.228:3000/_next/static/css/$CSS | head -3; else echo 'no css'; fi")
+ssh_cmd(client, f"CSS=$(ls {DEPLOY_DIR}/.next/static/css/*.css 2>/dev/null | head -1 | sed 's|{DEPLOY_DIR}/.next/static/css/||') && if [ -n \"$CSS\" ]; then echo \"File: $CSS\" && curl -sI http://YOUR_SERVER_HOST:3000/_next/static/css/$CSS | head -3; else echo 'no css'; fi")
 
 print("\n--- 测试页面内容 ---")
-ssh_cmd(client, "curl -s http://81.70.59.228:3000/home | grep -c 'slate' || echo 0")
-ssh_cmd(client, "curl -s http://81.70.59.228:3000/story-hall | grep -c 'slate' || echo 0")
+ssh_cmd(client, "curl -s http://YOUR_SERVER_HOST:3000/home | grep -c 'slate' || echo 0")
+ssh_cmd(client, "curl -s http://YOUR_SERVER_HOST:3000/story-hall | grep -c 'slate' || echo 0")
 
 print("\n--- 测试泡泡API ---")
-ssh_cmd(client, "curl -s http://81.70.59.228:3000/api/brainholes/bubble | grep -c 'success' || echo 0")
+ssh_cmd(client, "curl -s http://YOUR_SERVER_HOST:3000/api/brainholes/bubble | grep -c 'success' || echo 0")
 
 print("\n--- PM2状态 ---")
 ssh_cmd(client, "pm2 status qunxiang-xinghuo | grep 'qunxiang'")

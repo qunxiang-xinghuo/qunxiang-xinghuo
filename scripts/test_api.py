@@ -3,7 +3,7 @@
 import urllib.request
 import json
 
-BASE = 'http://81.70.59.228'
+BASE = 'http://YOUR_SERVER_HOST'
 
 # Test 1: POST /api/match without auth
 print('=== Test 1: POST /api/match (no auth) ===')

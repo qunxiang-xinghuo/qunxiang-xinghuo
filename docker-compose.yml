@@ -1,30 +1,43 @@
-version: '3.8'
-
 services:
   app:
+    image: xinghuo:slim
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
     container_name: xinghuo-app
+    init: true
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=file:/app/prisma/dev.db
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-nextauth-secret-key-here-change-in-production}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-      - NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3000}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      NODE_ENV: production
+      DATABASE_URL: file:/app/data/dev.db
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:${PORT:-3000}}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your-nextauth-secret-key-here-change-in-production}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:${PORT:-3000}}
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:${PORT:-3000}}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
     volumes:
-      # 数据库持久化：容器删除后数据不丢失
-      - ./prisma/dev.db:/app/prisma/dev.db
-      # 日志持久化
+      - app_data:/app/data
       - ./logs:/app/logs
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+
+volumes:
+  app_data:

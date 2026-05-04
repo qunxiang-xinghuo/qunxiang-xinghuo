@@ -6,9 +6,9 @@ import io
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-HOST = "81.70.59.228"
-USER = "root"
-PASSWORD = "F!D)7n_mc8Mq}bx="
+HOST = "YOUR_SERVER_HOST"
+USER = 'YOUR_SERVER_USER'
+PASSWORD = "YOUR_SERVER_PASSWORD"
 
 def ssh_cmd(client, cmd, timeout=30):
     stdin, stdout, stderr = client.exec_command(cmd, timeout=timeout)
@@ -40,29 +40,29 @@ def main():
 
     # 1. 基础连通
     print("\n【基础连通】")
-    results.append(check("首页HTTP状态", "curl -sI -o /dev/null -w '%{http_code}' http://81.70.59.228:3000/home", expect_code="200"))
-    results.append(check("故事大厅HTTP状态", "curl -sI -o /dev/null -w '%{http_code}' http://81.70.59.228:3000/story-hall", expect_code="200"))
+    results.append(check("首页HTTP状态", "curl -sI -o /dev/null -w '%{http_code}' http://YOUR_SERVER_HOST:3000/home", expect_code="200"))
+    results.append(check("故事大厅HTTP状态", "curl -sI -o /dev/null -w '%{http_code}' http://YOUR_SERVER_HOST:3000/story-hall", expect_code="200"))
 
     # 2. 静态资源
     print("\n【静态资源】")
-    results.append(check("chunks JS", "JS=$(ls /www/wwwroot/qunxiang-xinghuo/.next/static/chunks/*.js | head -1 | sed 's|.*/chunks/||') && curl -sI -o /dev/null -w '%{http_code}' http://81.70.59.228:3000/_next/static/chunks/$JS", expect_code="200"))
-    results.append(check("刘看山图片", "curl -sI -o /dev/null -w '%{http_code}' http://81.70.59.228:3000/liukanshan.jpg", expect_code="200"))
+    results.append(check("chunks JS", "JS=$(ls /path/to/remote/project/.next/static/chunks/*.js | head -1 | sed 's|.*/chunks/||') && curl -sI -o /dev/null -w '%{http_code}' http://YOUR_SERVER_HOST:3000/_next/static/chunks/$JS", expect_code="200"))
+    results.append(check("刘看山图片", "curl -sI -o /dev/null -w '%{http_code}' http://YOUR_SERVER_HOST:3000/liukanshan.jpg", expect_code="200"))
 
     # 3. 页面内容
     print("\n【页面内容】")
-    results.append(check("首页含bubble", "curl -s http://81.70.59.228:3000/home | grep -c 'bubble' || echo 0", expect_contains="1"))
-    results.append(check("首页含刘看山", "curl -s http://81.70.59.228:3000/home | grep -c 'liukanshan' || echo 0", expect_contains="1"))
-    results.append(check("故事大厅页面", "curl -s http://81.70.59.228:3000/story-hall | grep -c '群像共创' || echo 0", expect_contains="1"))
+    results.append(check("首页含bubble", "curl -s http://YOUR_SERVER_HOST:3000/home | grep -c 'bubble' || echo 0", expect_contains="1"))
+    results.append(check("首页含刘看山", "curl -s http://YOUR_SERVER_HOST:3000/home | grep -c 'liukanshan' || echo 0", expect_contains="1"))
+    results.append(check("故事大厅页面", "curl -s http://YOUR_SERVER_HOST:3000/story-hall | grep -c '群像共创' || echo 0", expect_contains="1"))
 
     # 4. API
     print("\n【API接口】")
-    results.append(check("故事列表API", "curl -s http://81.70.59.228:3000/api/stories | grep -c 'success' || echo 0", expect_contains="1"))
-    results.append(check("泡泡API", "curl -s http://81.70.59.228:3000/api/brainholes/bubble | grep -c 'success' || echo 0", expect_contains="1"))
+    results.append(check("故事列表API", "curl -s http://YOUR_SERVER_HOST:3000/api/stories | grep -c 'success' || echo 0", expect_contains="1"))
+    results.append(check("泡泡API", "curl -s http://YOUR_SERVER_HOST:3000/api/brainholes/bubble | grep -c 'success' || echo 0", expect_contains="1"))
 
     # 5. 新API路由存在
     print("\n【v5.4新增API】")
-    results.append(check("审核API存在", "ls /www/wwwroot/qunxiang-xinghuo/src/app/api/stories/[storyId]/roles/[roleId]/review/route.ts | wc -l", expect_contains="1"))
-    results.append(check("启动API存在", "ls /www/wwwroot/qunxiang-xinghuo/src/app/api/stories/[storyId]/start/route.ts | wc -l", expect_contains="1"))
+    results.append(check("审核API存在", "ls /path/to/remote/project/src/app/api/stories/[storyId]/roles/[roleId]/review/route.ts | wc -l", expect_contains="1"))
+    results.append(check("启动API存在", "ls /path/to/remote/project/src/app/api/stories/[storyId]/start/route.ts | wc -l", expect_contains="1"))
 
     # 6. PM2状态
     print("\n【PM2状态】")
@@ -70,7 +70,7 @@ def main():
 
     # 7. Build信息
     print("\n【Build信息】")
-    results.append(check("BUILD_ID", "cat /www/wwwroot/qunxiang-xinghuo/.next/BUILD_ID | wc -c", expect_contains="22"))
+    results.append(check("BUILD_ID", "cat /path/to/remote/project/.next/BUILD_ID | wc -c", expect_contains="22"))
 
     print("\n" + "=" * 60)
     passed = sum(results)

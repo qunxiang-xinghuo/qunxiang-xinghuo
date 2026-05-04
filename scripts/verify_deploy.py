@@ -3,13 +3,13 @@ import paramiko
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-ssh.connect('81.70.59.228', username='root', password='F!D)7n_mc8Mq}bx=')
+ssh.connect('YOUR_SERVER_HOST', username='YOUR_SERVER_USER', password='YOUR_SERVER_PASSWORD')
 
 commands = [
-    ('Brainholes count', 'cd /www/wwwroot/qunxiang-xinghuo && sqlite3 prisma/dev.db "SELECT COUNT(*) FROM Brainhole;"'),
-    ('MatchRequests count', 'cd /www/wwwroot/qunxiang-xinghuo && sqlite3 prisma/dev.db "SELECT COUNT(*) FROM MatchRequest;"'),
-    ('MatchRequest status', 'cd /www/wwwroot/qunxiang-xinghuo && sqlite3 prisma/dev.db "SELECT status, COUNT(*) FROM MatchRequest GROUP BY status;"'),
-    ('Rooms count', 'cd /www/wwwroot/qunxiang-xinghuo && sqlite3 prisma/dev.db "SELECT COUNT(*) FROM Room;"'),
+    ('Brainholes count', 'cd /path/to/remote/project && sqlite3 prisma/dev.db "SELECT COUNT(*) FROM Brainhole;"'),
+    ('MatchRequests count', 'cd /path/to/remote/project && sqlite3 prisma/dev.db "SELECT COUNT(*) FROM MatchRequest;"'),
+    ('MatchRequest status', 'cd /path/to/remote/project && sqlite3 prisma/dev.db "SELECT status, COUNT(*) FROM MatchRequest GROUP BY status;"'),
+    ('Rooms count', 'cd /path/to/remote/project && sqlite3 prisma/dev.db "SELECT COUNT(*) FROM Room;"'),
 ]
 
 for label, cmd in commands:
