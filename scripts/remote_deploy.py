@@ -9,11 +9,11 @@ import os
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-HOST = "81.70.59.228"
+HOST = "YOUR_SERVER_HOST"
 PORT = 22
-USERNAME = "root"
-PASSWORD = "F!D)7n_mc8Mq}bx="
-REMOTE_DIR = "/www/wwwroot/qunxiang-xinghuo"
+USERNAME = 'YOUR_SERVER_USER'
+PASSWORD = "YOUR_SERVER_PASSWORD"
+REMOTE_DIR = "/path/to/remote/project"
 
 FILES_TO_UPLOAD = [
     ("src/server/match-engine.ts", "src/server/match-engine.ts"),

@@ -5,8 +5,8 @@ import paramiko, sys, io, os
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-HOST, PORT, USER, PASS = "81.70.59.228", 22, "root", "F!D)7n_mc8Mq}bx="
-REMOTE = "/www/wwwroot/qunxiang-xinghuo"
+HOST, PORT, USER, PASS = "YOUR_SERVER_HOST", 22, 'YOUR_SERVER_USER', "YOUR_SERVER_PASSWORD"
+REMOTE = "/path/to/remote/project"
 
 FILES = [
     ("src/app/page.tsx", "src/app/page.tsx"),

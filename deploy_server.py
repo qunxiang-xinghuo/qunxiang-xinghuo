@@ -4,7 +4,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('81.70.59.228', username='root', password='F!D)7n_mc8Mq}bx=', timeout=20)
+client.connect('YOUR_SERVER_HOST', username='YOUR_SERVER_USER', password='YOUR_SERVER_PASSWORD', timeout=20)
 
 print('=== 杀掉旧build进程 ===')
 client.exec_command("pkill -f 'npm run build' || true")
@@ -12,14 +12,14 @@ client.exec_command("pkill -f 'next build' || true")
 time.sleep(1)
 
 print('=== 清理 .next ===')
-stdin, stdout, stderr = client.exec_command('cd /www/wwwroot/qunxiang-xinghuo && rm -rf .next')
+stdin, stdout, stderr = client.exec_command('cd /path/to/remote/project && rm -rf .next')
 print(stdout.read().decode().strip())
 print(stderr.read().decode().strip())
 
 print('=== 开始 build（可能需要5-10分钟）===')
 # 使用nohup让build在后台运行
 stdin, stdout, stderr = client.exec_command(
-    "cd /www/wwwroot/qunxiang-xinghuo && export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && NODE_ENV=production npm run build > /tmp/xh_build.log 2>&1 && echo 'BUILD_SUCCESS' || echo 'BUILD_FAILED'",
+    "cd /path/to/remote/project && export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && NODE_ENV=production npm run build > /tmp/xh_build.log 2>&1 && echo 'BUILD_SUCCESS' || echo 'BUILD_FAILED'",
     get_pty=True,
     timeout=600
 )
@@ -31,7 +31,7 @@ if err:
 
 if 'BUILD_SUCCESS' in out:
     print('=== Build 成功，重启 PM2 ===')
-    client.exec_command('cd /www/wwwroot/qunxiang-xinghuo && pm2 restart qunxiang-xinghuo && pm2 save')
+    client.exec_command('cd /path/to/remote/project && pm2 restart qunxiang-xinghuo && pm2 save')
     time.sleep(2)
     # 验证静态资源
     stdin, stdout, stderr = client.exec_command(

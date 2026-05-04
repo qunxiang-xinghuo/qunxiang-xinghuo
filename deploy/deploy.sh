@@ -21,13 +21,13 @@ NC='\033[0m'
 # 检查 Node.js
 if ! command -v node &> /dev/null; then
     echo -e "${RED}❌ Node.js 未安装${NC}"
-    echo "请在宝塔面板 → 软件商店 → 安装 Node.js 20.x"
+    echo "请在宝塔面板 → 软件商店 → 安装 Node.js 22.x"
     exit 1
 fi
 
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -lt 20 ]; then
-    echo -e "${YELLOW}⚠️ Node.js 版本过低: $(node -v)，建议升级到 20.x${NC}"
+if [ "$NODE_VERSION" -lt 22 ]; then
+    echo -e "${YELLOW}⚠️ Node.js 版本过低: $(node -v)，建议升级到 22.x${NC}"
 fi
 
 echo -e "${GREEN}✓ Node.js 版本: $(node -v)${NC}"
@@ -59,7 +59,7 @@ fi
 
 # 安装依赖
 echo "📦 安装依赖..."
-npm install
+npm ci
 
 # 生成 Prisma Client
 echo "🗄️ 生成 Prisma Client..."
@@ -80,6 +80,9 @@ fi
 echo "🔨 构建项目..."
 npm run build
 
+# 准备日志目录
+mkdir -p logs
+
 echo ""
 echo -e "${GREEN}✅ 构建完成！${NC}"
 echo ""
@@ -93,7 +96,7 @@ echo "  4. 端口: 3000"
 echo ""
 echo "【方式B：PM2 守护进程】"
 echo "  npm install -g pm2"
-echo "  pm2 start server.ts --interpreter tsx --name xinghuo"
+echo "  pm2 start ecosystem.config.js --only xinghuo"
 echo "  pm2 save"
 echo "  pm2 startup"
 echo ""

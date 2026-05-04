@@ -7,6 +7,7 @@ README.md
 *.md
 docs
 scripts
+deploy
 src/test
 src/__tests__
 .env
@@ -17,3 +18,7 @@ coverage
 .idea
 *.log
 logs/*.log
+*.py
+__pycache__
+.codex
+dev.db

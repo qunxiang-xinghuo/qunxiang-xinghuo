@@ -2,11 +2,11 @@ import paramiko, os, sys, io
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-HOST = "81.70.59.228"
-USER = "root"
-PASSWORD = "F!D)7n_mc8Mq}bx="
-DEPLOY_DIR = "/www/wwwroot/qunxiang-xinghuo"
-LOCAL_DIR = r"C:\Users\Dell\qunxiang-xinghuo"
+HOST = "YOUR_SERVER_HOST"
+USER = 'YOUR_SERVER_USER'
+PASSWORD = "YOUR_SERVER_PASSWORD"
+DEPLOY_DIR = "/path/to/remote/project"
+LOCAL_DIR = r"/path/to/local/project"
 
 FILES = [
     "src/app/globals.css",

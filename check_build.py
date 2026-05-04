@@ -4,7 +4,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('81.70.59.228', username='root', password='F!D)7n_mc8Mq}bx=', timeout=20)
+client.connect('YOUR_SERVER_HOST', username='YOUR_SERVER_USER', password='YOUR_SERVER_PASSWORD', timeout=20)
 
 stdin, stdout, stderr = client.exec_command('cat /tmp/xh_build.log')
 out = stdout.read().decode()

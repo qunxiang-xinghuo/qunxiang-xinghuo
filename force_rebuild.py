@@ -7,10 +7,10 @@ import time
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-HOST = "81.70.59.228"
-USER = "root"
-PASSWORD = "F!D)7n_mc8Mq}bx="
-DEPLOY_DIR = "/www/wwwroot/qunxiang-xinghuo"
+HOST = "YOUR_SERVER_HOST"
+USER = 'YOUR_SERVER_USER'
+PASSWORD = "YOUR_SERVER_PASSWORD"
+DEPLOY_DIR = "/path/to/remote/project"
 
 def ssh_cmd(client, cmd, timeout=300):
     print(f">>> {cmd}")
@@ -62,7 +62,7 @@ def main():
     ssh_cmd(client, "curl -s http://localhost:3000/story-hall | grep -c 'approved' || echo 0")
     ssh_cmd(client, "curl -s http://localhost:3000/story-hall | grep -c '待认领' || echo 0")
     ssh_cmd(client, "curl -s http://localhost:3000/story-hall | grep -c '审核中' || echo 0")
-    ssh_cmd(client, "JS=$(ls /www/wwwroot/qunxiang-xinghuo/.next/static/chunks/*.js | head -1 | sed 's|.*/chunks/||') && curl -sI -o /dev/null -w '%{http_code}' http://localhost:3000/_next/static/chunks/$JS")
+    ssh_cmd(client, "JS=$(ls /path/to/remote/project/.next/static/chunks/*.js | head -1 | sed 's|.*/chunks/||') && curl -sI -o /dev/null -w '%{http_code}' http://localhost:3000/_next/static/chunks/$JS")
 
     client.close()
     print("\n=== 完成 ===")

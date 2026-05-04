@@ -6,10 +6,10 @@ import io
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-HOST = "81.70.59.228"
-USER = "root"
-PASSWORD = "F!D)7n_mc8Mq}bx="
-DEPLOY_DIR = "/www/wwwroot/qunxiang-xinghuo"
+HOST = "YOUR_SERVER_HOST"
+USER = 'YOUR_SERVER_USER'
+PASSWORD = "YOUR_SERVER_PASSWORD"
+DEPLOY_DIR = "/path/to/remote/project"
 
 def ssh_cmd(client, cmd, timeout=30):
     print(f">>> {cmd}")
@@ -57,7 +57,7 @@ def main():
 
     # 8. 直接访问线上IP（绕过localhost）
     print("\n[8] 线上IP直接访问")
-    ssh_cmd(client, "curl -sI -o /dev/null -w '%{http_code}' http://81.70.59.228:3000/home && echo ''")
+    ssh_cmd(client, "curl -sI -o /dev/null -w '%{http_code}' http://YOUR_SERVER_HOST:3000/home && echo ''")
 
     client.close()
     print("\n=== 验证完成 ===")
