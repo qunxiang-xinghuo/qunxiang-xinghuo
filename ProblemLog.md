@@ -71,8 +71,9 @@
 
 - **现象**：`deploy_remote.py` SSH连接报错 `Authentication failed`
 - **根因**：宝塔面板密码已修改，SSH root密码同步变更
+- **根因2（2026-05-03再次确认）**：服务器 SSH 配置已改为**仅允许密钥认证**（`allowed types: ['publickey', 'gssapi-keyex', 'gssapi-with-mic']`），密码认证已被完全禁用
 - **解决**：
-  - 方式1：更新 `DEPLOY_PASSWORD` 环境变量为新密码，重新运行 `python deploy_remote.py`
+  - 方式1：使用正确的私钥文件（`skey-a2kdq0cd` 对应的 `.pem` 文件）进行 SSH 密钥认证
   - 方式2：通过宝塔面板Web终端手动执行部署命令
 - **手动部署命令**：
   ```bash
