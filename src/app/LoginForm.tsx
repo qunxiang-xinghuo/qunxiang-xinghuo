@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, LogIn, Flame } from 'lucide-react';
 import { signIn } from 'next-auth/react';
@@ -20,12 +21,20 @@ const DECORATIVE_BUBBLES = [
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { status } = useSession();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 已登录用户访问登录页，直接重定向到发现页
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/home');
+    }
+  }, [status, router]);
 
   useEffect(() => {
     const autoUser = searchParams.get('username');

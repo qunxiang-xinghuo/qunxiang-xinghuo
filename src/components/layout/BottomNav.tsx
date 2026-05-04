@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Compass, Flame, BookOpen, User } from 'lucide-react';
 
@@ -14,6 +15,10 @@ const navItems = [
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { status } = useSession();
+
+  // 未登录状态下不显示底部导航栏
+  if (status === 'unauthenticated') return null;
 
   // 隐藏底部导航的页面
   const hideNavPaths = ['/login', '/register', '/welcome', '/onboarding'];
