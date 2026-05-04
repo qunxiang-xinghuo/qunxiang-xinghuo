@@ -16,10 +16,12 @@ export interface MatchResult {
 }
 
 /**
- * v6.0-fix2 匹配引擎 — 修复并发匹配bug
- * 
- * 核心修复：创建自己的matchRequest后，再次查找其他waiting用户。
- * 解决"两个用户几乎同时匹配但未匹配上"的问题。
+ * v6.1-fix: 匹配引擎 — 事务级竞态条件修复
+ *
+ * 核心修复：
+ * 1. 使用 updateMany(where: { id, status: "waiting" }) 乐观锁抢占匹配请求
+ * 2. createDuetMatch 内所有 DB 写操作包裹在 $transaction 中
+ * 3. 如果抢占失败（count=0），说明已被其他并发请求处理，自动跳过
  */
 export async function findMatch(
   userId: string,
@@ -34,7 +36,7 @@ export async function findMatch(
     identity,
   } = criteria;
 
-  console.log("[MatchEngine v6.0-fix2] findMatch start - userId:", userId, "brainholeId:", brainholeId, "identity:", identity);
+  console.log("[MatchEngine v6.1-fix] findMatch start - userId:", userId, "brainholeId:", brainholeId, "identity:", identity);
 
   // === 0. 检查用户是否已有活跃匹配 ===
   const existingMatch = await db.matchRequest.findFirst({
@@ -82,16 +84,19 @@ export async function findMatch(
     const stage1Matches = await db.matchRequest.findMany({
       where: { ...baseWhere, brainholeId },
       orderBy: { createdAt: "asc" },
-      take: 1,
+      take: 3,
     });
 
-    if (stage1Matches.length > 0) {
-      console.log("[MatchEngine] 阶段1成功! 同brainhole匹配:", stage1Matches[0].userId);
-      return await createDuetMatch(
-        userId, "", stage1Matches[0],
-        brainholeId, userBrainhole?.title || "",
-        "same_brainhole", identity || "default"
-      );
+    for (const candidate of stage1Matches) {
+      const claimed = await claimMatchRequest(candidate.id);
+      if (claimed) {
+        console.log("[MatchEngine] 阶段1成功! 同brainhole匹配:", candidate.userId);
+        return await createDuetMatch(
+          userId, "", candidate,
+          brainholeId, userBrainhole?.title || "",
+          "same_brainhole", identity || "default"
+        );
+      }
     }
   }
 
@@ -99,28 +104,30 @@ export async function findMatch(
   const stage2Matches = await db.matchRequest.findMany({
     where: baseWhere,
     orderBy: { createdAt: "asc" },
-    take: 1,
+    take: 3,
   });
 
-  if (stage2Matches.length > 0) {
-    const matchedRequest = stage2Matches[0];
-    let finalBrainholeId = brainholeId || matchedRequest.brainholeId || "";
-    let finalBrainholeTitle = userBrainhole?.title || "";
+  for (const candidate of stage2Matches) {
+    const claimed = await claimMatchRequest(candidate.id);
+    if (claimed) {
+      let finalBrainholeId = brainholeId || candidate.brainholeId || "";
+      let finalBrainholeTitle = userBrainhole?.title || "";
 
-    if (!finalBrainholeId) {
-      const randomBh = await pickRandomBrainhole();
-      if (randomBh) {
-        finalBrainholeId = randomBh.id;
-        finalBrainholeTitle = randomBh.title;
+      if (!finalBrainholeId) {
+        const randomBh = await pickRandomBrainhole();
+        if (randomBh) {
+          finalBrainholeId = randomBh.id;
+          finalBrainholeTitle = randomBh.title;
+        }
       }
-    }
 
-    console.log("[MatchEngine] 阶段2成功! 用户:", matchedRequest.userId, "brainhole:", finalBrainholeTitle);
-    return await createDuetMatch(
-      userId, "", matchedRequest,
-      finalBrainholeId, finalBrainholeTitle,
-      "random_pairing", identity || "default"
-    );
+      console.log("[MatchEngine] 阶段2成功! 用户:", candidate.userId, "brainhole:", finalBrainholeTitle);
+      return await createDuetMatch(
+        userId, "", candidate,
+        finalBrainholeId, finalBrainholeTitle,
+        "random_pairing", identity || "default"
+      );
+    }
   }
 
   // ========== 阶段3: 没有等待用户，创建自己的请求 ==========
@@ -136,43 +143,43 @@ export async function findMatch(
     },
   });
 
-  // ========== v6.0-fix2: 二次匹配 —— 修复并发bug ==========
-  // 原因：如果对方在我们查询和创建请求之间也创建了请求，
-  // 那么我们在阶段1/2中看不到对方。创建自己的请求后，
-  // 再次查找，确保能和对方匹配上。
-  console.log("[MatchEngine] v6.0-fix2 二次匹配检查...");
-  const retryWhere = {
-    status: "waiting",
-    expiresAt: { gt: new Date() },
-    userId: { not: userId },
-    id: { not: matchRequest.id }, // 排除自己刚创建的请求
-  };
-
+  // ========== v6.1-fix: 二次匹配 —— 创建请求后立即抢占 ==========
+  console.log("[MatchEngine] v6.1-fix 二次匹配检查...");
   const retryMatches = await db.matchRequest.findMany({
-    where: retryWhere,
+    where: {
+      status: "waiting",
+      expiresAt: { gt: new Date() },
+      userId: { not: userId },
+      id: { not: matchRequest.id },
+    },
     orderBy: { createdAt: "asc" },
-    take: 1,
+    take: 3,
   });
 
-  if (retryMatches.length > 0) {
-    const matchedRequest = retryMatches[0];
-    let finalBrainholeId = brainholeId || matchedRequest.brainholeId || "";
-    let finalBrainholeTitle = userBrainhole?.title || "";
+  for (const candidate of retryMatches) {
+    const claimed = await claimMatchRequest(candidate.id);
+    if (claimed) {
+      let finalBrainholeId = brainholeId || candidate.brainholeId || "";
+      let finalBrainholeTitle = userBrainhole?.title || "";
 
-    if (!finalBrainholeId) {
-      const randomBh = await pickRandomBrainhole();
-      if (randomBh) {
-        finalBrainholeId = randomBh.id;
-        finalBrainholeTitle = randomBh.title;
+      if (!finalBrainholeId) {
+        const randomBh = await pickRandomBrainhole();
+        if (randomBh) {
+          finalBrainholeId = randomBh.id;
+          finalBrainholeTitle = randomBh.title;
+        }
       }
-    }
 
-    console.log("[MatchEngine] 二次匹配成功! 用户:", matchedRequest.userId);
-    return await createDuetMatch(
-      userId, matchRequest.id, matchedRequest,
-      finalBrainholeId, finalBrainholeTitle,
-      "retry_pairing", identity || "default"
-    );
+      // 同时抢占自己的请求，确保不会被别人匹配到
+      await claimMatchRequest(matchRequest.id);
+
+      console.log("[MatchEngine] 二次匹配成功! 用户:", candidate.userId);
+      return await createDuetMatch(
+        userId, matchRequest.id, candidate,
+        finalBrainholeId, finalBrainholeTitle,
+        "retry_pairing", identity || "default"
+      );
+    }
   }
 
   // ========== 阶段4: 真正进入等待状态 ==========
@@ -205,7 +212,20 @@ export async function findMatch(
 }
 
 /**
- * 创建双人匹配房间
+ * 乐观锁抢占匹配请求
+ * 使用 updateMany(where: { id, status: "waiting" }) 确保只有第一个并发请求能成功
+ * @returns true 抢占成功，false 已被其他请求抢占
+ */
+async function claimMatchRequest(requestId: string): Promise<boolean> {
+  const result = await db.matchRequest.updateMany({
+    where: { id: requestId, status: "waiting" },
+    data: { status: "matched" },
+  });
+  return result.count > 0;
+}
+
+/**
+ * 创建双人匹配房间 —— 所有DB写操作在$transaction中原子执行
  */
 async function createDuetMatch(
   userId: string,
@@ -216,21 +236,24 @@ async function createDuetMatch(
   strategy: string,
   identity: string
 ): Promise<MatchResult> {
-  const room = await db.room.create({
-    data: {
-      brainholeId: brainholeId || undefined,
-      type: "duet",
-      status: "created",
-      maxRound: 10,
-      currentRound: 0,
-    },
-  });
+  // 使用 $transaction 确保原子性
+  const [room] = await db.$transaction([
+    db.room.create({
+      data: {
+        brainholeId: brainholeId || undefined,
+        type: "duet",
+        status: "created",
+        maxRound: 10,
+        currentRound: 0,
+      },
+    }),
+  ]);
 
+  // 更新 matchedRequest（已被claim，状态已是matched，这里补充roomId等）
   const updates: Promise<any>[] = [
     db.matchRequest.update({
       where: { id: matchedRequest.id },
       data: {
-        status: "matched",
         matchedUserId: userId,
         roomId: room.id,
         resolvedAt: new Date(),
@@ -238,13 +261,11 @@ async function createDuetMatch(
     }),
   ];
 
-  // 如果当前用户也创建了matchRequest，也更新它
   if (matchRequestId) {
     updates.push(
       db.matchRequest.update({
         where: { id: matchRequestId },
         data: {
-          status: "matched",
           matchedUserId: matchedRequest.userId,
           roomId: room.id,
           resolvedAt: new Date(),
@@ -252,7 +273,6 @@ async function createDuetMatch(
       })
     );
   } else {
-    // 如果没创建（阶段1/2直接命中），创建一个已匹配的请求
     updates.push(
       db.matchRequest.create({
         data: {

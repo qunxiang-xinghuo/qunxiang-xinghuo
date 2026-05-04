@@ -12,9 +12,13 @@ export async function POST(request: NextRequest) {
     console.log("[MatchAPI] 请求URL:", request.url);
 
     const session = await getServerSession(authOptions);
-    // v4.4-fix: 支持guest用户
+    // v6.1-fix: 支持guest用户，但不再自动生成guest ID（必须由客户端提供）
     const guestId = request.headers.get("x-guest-id");
-    const userId = session?.user?.id || guestId || `guest-${Date.now()}`;
+    const userId = session?.user?.id || guestId;
+    if (!userId) {
+      console.error("[MatchAPI] 缺少用户身份：未登录且无 x-guest-id header");
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录或提供用户ID"), { status: 401 });
+    }
     console.log("[MatchAPI] userId:", userId, "session存在:", !!session, "guestId:", guestId);
 
     let body;

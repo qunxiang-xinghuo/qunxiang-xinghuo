@@ -22,7 +22,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
     }
 
-    const { brainholeId, identity } = body;
+    const { brainholeId, identity, agents: agentConfigs } = body;
+
+    // v6.1: 多Agent协作支持
+    const agents = Array.isArray(agentConfigs) && agentConfigs.length > 0
+      ? agentConfigs
+      : [{ name: '刘看山', persona: 'catalyst' }];
 
     if (!identity) {
       console.error("[AI Room API] 缺少identity参数");
@@ -47,20 +52,23 @@ export async function POST(request: NextRequest) {
       // 继续尝试，也许用户已存在
     }
 
-    // v4.7-fix: 确保AI用户记录在User表中存在
-    try {
-      await db.user.upsert({
-        where: { id: "liu_kanshan_ai" },
-        update: {},
-        create: {
-          id: "liu_kanshan_ai",
-          name: "刘看山",
-          email: "liu_kanshan_ai@system.local",
-        },
-      });
-      console.log("[AI Room API] AI用户记录已确认: liu_kanshan_ai");
-    } catch (aiUserErr: any) {
-      console.error("[AI Room API] AI用户记录创建失败:", aiUserErr.message);
+    // v6.1: 确保所有AI Agent用户记录在User表中存在
+    for (const agent of agents) {
+      const agentUserId = `agent_${agent.persona}`;
+      try {
+        await db.user.upsert({
+          where: { id: agentUserId },
+          update: {},
+          create: {
+            id: agentUserId,
+            name: agent.name,
+            email: `${agentUserId}@system.local`,
+          },
+        });
+        console.log("[AI Room API] AI Agent用户记录已确认:", agentUserId);
+      } catch (aiUserErr: any) {
+        console.error("[AI Room API] AI Agent用户记录创建失败:", aiUserErr.message);
+      }
     }
 
     // 如果没有指定脑洞，随机抽取一个
@@ -137,27 +145,30 @@ export async function POST(request: NextRequest) {
     });
     console.log("[AI Room API] 用户参与者添加成功");
 
-    // 添加AI参与者（刘看山）
-    console.log("[AI Room API] 添加AI参与者...");
-    await db.roomParticipant.create({
-      data: {
-        roomId: room.id,
-        userId: "liu_kanshan_ai",
-        identity: "刘看山",
-        role: "actor",
-        isOnline: true,
-      },
-    });
-    console.log("[AI Room API] AI参与者添加成功");
+    // v6.1: 添加AI Agent参与者
+    console.log("[AI Room API] 添加AI Agent参与者...");
+    for (const agent of agents) {
+      await db.roomParticipant.create({
+        data: {
+          roomId: room.id,
+          userId: `agent_${agent.persona}`,
+          identity: agent.name,
+          role: "ai_agent",
+          isOnline: true,
+        },
+      });
+      console.log("[AI Room API] AI Agent添加成功:", agent.name, `agent_${agent.persona}`);
+    }
 
-    // v4.8-fix: 更自然的欢迎消息
+    // v6.1: 第一个Agent的欢迎消息
     console.log("[AI Room API] 添加欢迎消息...");
+    const welcomeAgent = agents[0];
     await db.roomMessage.create({
       data: {
         roomId: room.id,
-        senderId: "liu_kanshan_ai",
+        senderId: `agent_${welcomeAgent.persona}`,
         content: `"${brainholeTitle}"...这个话题我正好有点想法。你先说，我听着。`,
-        identity: "刘看山",
+        identity: welcomeAgent.name,
         isAiPrompt: false,
       },
     });
@@ -171,6 +182,7 @@ export async function POST(request: NextRequest) {
       brainholeScenario,
       brainholeId: finalBrainholeId,
       userId,
+      agents,
     }), { status: 201 });
   } catch (error: any) {
     console.error("[AI Room API] ========== 创建AI房间失败 ==========");

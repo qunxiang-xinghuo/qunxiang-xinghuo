@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Settings, Flame, BookOpen, ChevronRight, LogOut, Zap, Sparkles,
+  Settings, Flame, BookOpen, ChevronRight, LogOut, Zap, Sparkles, Coins,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import Image from 'next/image';
@@ -52,6 +52,12 @@ export default function ProfilePage() {
   }
 
   const menuItems = [
+    {
+      icon: Coins,
+      label: '我的收益',
+      desc: '盐粒收益明细',
+      path: '/earnings',
+    },
     {
       icon: Flame,
       label: '我的火花',

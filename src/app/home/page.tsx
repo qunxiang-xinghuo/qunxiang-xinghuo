@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, Flame, Zap, Users, Sparkles, ChevronRight, Bot, BookOpen, MessageCircle,
 } from 'lucide-react';
@@ -22,6 +22,7 @@ export default function HomePage() {
   const [top3, setTop3] = useState<Brainhole[]>([]);
   const [sparks, setSparks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -43,7 +44,7 @@ export default function HomePage() {
     init();
   }, []);
 
-  // v6.0: 四大模式重新命名
+  // v6.1: 四大模式，长期连载和多人模式标记为 comingSoon
   const modes = [
     {
       key: 'ai',
@@ -53,6 +54,7 @@ export default function HomePage() {
       color: 'from-[#00b894]/20 to-emerald-500/20',
       iconColor: 'text-[#00b894]',
       path: '/solo-match',
+      comingSoon: false,
     },
     {
       key: 'duo',
@@ -62,15 +64,17 @@ export default function HomePage() {
       color: 'from-[#e2b04a]/20 to-orange-500/20',
       iconColor: 'text-[#e2b04a]',
       path: '/duo-match',
+      comingSoon: false,
     },
     {
       key: 'multi',
-      title: '多人模式',
+      title: '多人组队',
       desc: '多人共创故事',
       icon: Users,
       color: 'from-[#74b9ff]/20 to-blue-500/20',
       iconColor: 'text-[#74b9ff]',
       path: '/story-hall',
+      comingSoon: true,
     },
     {
       key: 'serial',
@@ -80,6 +84,7 @@ export default function HomePage() {
       color: 'from-[#a29bfe]/20 to-purple-500/20',
       iconColor: 'text-[#a29bfe]',
       path: '/story-hall?tab=serial',
+      comingSoon: true,
     },
   ];
 
@@ -172,9 +177,20 @@ export default function HomePage() {
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + idx * 0.08 }}
-                  onClick={() => router.push(mode.path)}
+                  onClick={() => {
+                    if (mode.comingSoon) {
+                      setShowComingSoon(mode.title);
+                    } else {
+                      router.push(mode.path);
+                    }
+                  }}
                   className={`relative overflow-hidden p-4 rounded-xl bg-gradient-to-br ${mode.color} border border-white/5 text-left active:scale-[0.96] transition-all group`}
                 >
+                  {mode.comingSoon && (
+                    <span className="absolute top-2 right-2 text-[9px] bg-white/10 text-white/40 px-1.5 py-0.5 rounded-full">
+                      即将上线
+                    </span>
+                  )}
                   <Icon className={`w-5 h-5 ${mode.iconColor} mb-2`} />
                   <p className="text-sm font-semibold text-white/90">{mode.title}</p>
                   <p className="text-[11px] text-white/40 mt-0.5">{mode.desc}</p>
@@ -184,6 +200,37 @@ export default function HomePage() {
           </div>
         </section>
       </div>
+
+      {/* Coming Soon 弹层 */}
+      <AnimatePresence>
+        {showComingSoon && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowComingSoon(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-white/10 max-w-[280px] w-full text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Sparkles className="w-8 h-8 text-[#e2b04a]/60 mx-auto mb-3" />
+              <p className="text-base font-semibold text-white/90 mb-1">{showComingSoon}</p>
+              <p className="text-sm text-white/40 mb-4">即将开放，敬请期待</p>
+              <button
+                onClick={() => setShowComingSoon(null)}
+                className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/20"
+              >
+                知道了
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

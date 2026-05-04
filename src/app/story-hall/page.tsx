@@ -212,10 +212,15 @@ function StoryCard({ story, idx, genreColors, genreNames, onClick }: {
     >
       <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${genreColors[story.genre] || genreColors.drama} rounded-bl-3xl opacity-30`} />
       <div className="relative">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/50 border border-white/5">
             {genreNames[story.genre] || '其他'}
           </span>
+          {(story.status === 'ongoing' || (story.episodeCount && story.episodeCount > 1)) && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#e2b04a]/10 text-[#e2b04a]/70 border border-[#e2b04a]/20">
+              连载中
+            </span>
+          )}
           <span className="text-[10px] text-white/25">{story.creatorName || '匿名'}</span>
         </div>
         <h3 className="text-sm font-semibold text-white/90 mb-1">{story.title}</h3>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiResponse, apiError } from "@/lib/utils";
 import { zhidaChat } from "@/lib/zhihu-dev-api";
+import { getPersona } from "@/lib/ai/personas";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -65,13 +66,14 @@ const LIUKANSHAN_SYSTEM_PROMPT = `你是刘看山，一只生活在北极的北�
  *
  * Body: {
  *   messages: [{role: "user", content: "..."}, {role: "assistant", content: "..."}],
- *   topic: "话题标题"
+ *   topic: "话题标题",
+ *   persona: "catalyst" | "creative" | "healer" | "mediator"  (可选，默认 catalyst)
  * }
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, topic } = body;
+    const { messages, topic, persona: personaKey } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -80,7 +82,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const systemPrompt = LIUKANSHAN_SYSTEM_PROMPT.replace("{topic}", topic || "一个有趣的话题");
+    // v6.1: 支持多角色切换
+    const persona = getPersona(personaKey);
+    const systemPrompt = persona.systemPrompt.replace("{topic}", topic || "一个有趣的话题");
+    console.log("[AI Chat] 使用角色:", persona.name, "key:", personaKey || "catalyst");
     console.log("[AI Chat] 收到请求, topic:", topic, "history长度:", messages.length);
 
     // ==================== DeepSeek API ====================

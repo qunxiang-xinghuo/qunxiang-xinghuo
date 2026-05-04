@@ -19,8 +19,11 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
+    const guestId = request.headers.get("x-guest-id");
+    const userId = session?.user?.id || guestId;
+
+    if (!userId) {
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录或提供guest-id"), { status: 401 });
     }
 
     const body = await request.json();
@@ -46,12 +49,11 @@ export async function POST(
       return NextResponse.json(apiError("ROOM_CLOSED", "房间已关闭"), { status: 400 });
     }
 
-    // 检查用户是否是房间参与者
+    // v6.1-fix: 检查用户是否是房间参与者（支持guest）
     const participant = await db.roomParticipant.findFirst({
       where: {
         roomId,
-        userId: session.user.id,
-        isOnline: true,
+        userId,
       },
     });
 
@@ -59,8 +61,14 @@ export async function POST(
       return NextResponse.json(apiError("NOT_PARTICIPANT", "不是房间参与者"), { status: 403 });
     }
 
+    // v6.1-fix: 如果participant离线但socket刚连接，允许发送（socket-handler已更新isOnline）
+    // 如果participant role是spectator，拒绝发送
+    if (participant.role === "spectator") {
+      return NextResponse.json(apiError("SPECTATOR_CANNOT_SEND", "观众不能发送消息"), { status: 403 });
+    }
+
     // 发送消息
-    const message = await sendMessage(roomId, session.user.id, content, identity, {
+    const message = await sendMessage(roomId, userId, content, identity, {
       roleCharacter,
     });
 
