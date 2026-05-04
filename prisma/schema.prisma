@@ -359,9 +359,12 @@ model Asset {
   brainholeId  String?
   title        String
   summary      String?
+  content      String?  // v6.0: 精彩对白片段内容
+  identity     String?  // v6.0: 作者身份标签
   messageCount Int      @default(0)
   sparkCount   Int      @default(0)
   isPublic     Boolean  @default(false)
+  hotScore     Int      @default(0)  // v6.0: 热度值
   createdAt    DateTime @default(now())
 
   user      User       @relation(fields: [userId], references: [id])
@@ -370,6 +373,7 @@ model Asset {
 
   @@index([userId, createdAt])
   @@index([isPublic, createdAt])
+  @@index([hotScore, createdAt])
 }
 
 

@@ -1,16 +1,36 @@
 #!/usr/bin/env python3
-"""v6.0 生产环境一键部署脚本（paramiko SSH密码认证）"""
+"""v6.0 生产环境一键部署脚本（paramiko SSH密码认证）
+
+使用方法:
+    方式1: 设置环境变量
+        set DEPLOY_PASSWORD=你的密码
+        python deploy_remote.py
+    
+    方式2: 运行时手动输入密码
+        python deploy_remote.py
+        > 请输入服务器密码: 
+"""
 import paramiko
 import sys
 import io
 import time
+import os
+import getpass
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 HOST = "81.70.59.228"
 USER = "root"
-PASSWORD = "F!D)7n_mc8Mq}bx="
 DEPLOY_DIR = "/www/wwwroot/qunxiang-xinghuo"
+
+
+def get_password():
+    """从环境变量或交互式输入获取密码"""
+    password = os.environ.get("DEPLOY_PASSWORD")
+    if password:
+        return password
+    # 交互式输入（隐藏回显）
+    return getpass.getpass("> 请输入服务器密码: ")
 
 
 def ssh_cmd(client, cmd, timeout=300):
@@ -43,6 +63,8 @@ def verify_static_js(client):
 
 
 def main():
+    password = get_password()
+
     print("=" * 60)
     print("群像·星火 v6.0 生产环境部署")
     print(f"服务器: {HOST}")
@@ -54,7 +76,7 @@ def main():
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
-        client.connect(HOST, username=USER, password=PASSWORD, timeout=30, banner_timeout=30)
+        client.connect(HOST, username=USER, password=password, timeout=30, banner_timeout=30)
         print("[✓] SSH连接成功")
     except Exception as e:
         print(f"[✗] SSH连接失败: {e}")

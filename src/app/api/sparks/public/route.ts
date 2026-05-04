@@ -4,7 +4,7 @@ import { apiResponse } from "@/lib/utils";
 
 /**
  * GET /api/sparks/public
- * 公开火花墙（RoomMessage中 isSpark=true 的记录），按时间倒序
+ * 公开火花墙（Asset中 isPublic=true 的记录），按热度降序
  * Query: ?limit=50
  */
 export async function GET(request: NextRequest) {
@@ -12,27 +12,26 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 100);
 
-    const messages = await prisma.roomMessage.findMany({
-      where: { isSpark: true },
-      orderBy: { createdAt: "desc" },
+    const assets = await prisma.asset.findMany({
+      where: { isPublic: true },
+      orderBy: [{ hotScore: "desc" }, { createdAt: "desc" }],
       take: limit,
       include: {
-        room: {
-          select: {
-            brainhole: { select: { title: true } },
-          },
-        },
+        brainhole: { select: { title: true } },
+        room: { select: { id: true } },
       },
     });
 
-    const list = messages.map((m) => ({
-      id: m.id,
-      content: m.content,
-      heat: 0, // RoomMessage没有heat字段
-      createdAt: m.createdAt.toISOString(),
-      identity: m.identity || "匿名",
-      brainholeTitle: m.room?.brainhole?.title || "",
-      messageId: m.id,
+    const list = assets.map((a) => ({
+      id: a.id,
+      content: a.content || a.summary || "",
+      title: a.title,
+      hotScore: a.hotScore || 0,
+      createdAt: a.createdAt.toISOString(),
+      identity: a.identity || "匿名",
+      brainholeTitle: a.brainhole?.title || a.title || "",
+      sparkCount: a.sparkCount || 0,
+      messageCount: a.messageCount || 0,
     }));
 
     return NextResponse.json(apiResponse({ list }));

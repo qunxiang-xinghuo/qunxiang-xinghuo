@@ -1,6 +1,7 @@
 # 🔐 群像·星火 重要信息记录
 
 > 原则：每次100% context前，关键信息必须记录在此。犯过的问题不再犯。
+> ⚠️ **服务器密码和API密钥已脱敏**，本地查看请询问管理员。
 
 ---
 
@@ -11,7 +12,7 @@
 | IP | `81.70.59.228` |
 | 系统 | 腾讯云 OpenCloudOS 9.4 |
 | 用户 | `root` |
-| 密码 | `F!D)7n_mc8Mq}bx=` |
+| 密码 | *已脱敏，询问管理员* |
 | SSH端口 | `22` |
 | 部署路径 | `/www/wwwroot/qunxiang-xinghuo` |
 | PM2进程名 | `qunxiang-xinghuo` |
@@ -37,6 +38,11 @@ cd /www/wwwroot/qunxiang-xinghuo \
 **本地paramiko部署脚本**：`deploy_remote.py`（Python + paramiko，密码认证）
 
 ```bash
+# 方式1：设置环境变量
+set DEPLOY_PASSWORD=你的密码
+python deploy_remote.py
+
+# 方式2：运行时输入（隐藏回显）
 python deploy_remote.py
 ```
 
@@ -51,10 +57,12 @@ python deploy_remote.py
 ## 四、环境变量（服务器 `.env`）
 
 ```
-DEEPSEEK_API_KEY="sk-181c8aa2e8f1469d9a60698f6d79d71d"
-ZHIHU_API_KEY="xrUmjOP1pferLLYrQufOIrvlbT3tFvct"
+DEEPSEEK_API_KEY="*已脱敏，服务器.env中配置*"
+ZHIHU_API_KEY="*已脱敏，服务器.env中配置*"
 DATABASE_URL="file:./dev.db"
 ```
+
+> API密钥只在服务器 `.env` 中配置，本地开发请自行申请或使用测试key。
 
 ## 五、已知部署问题与解决方案
 
@@ -73,7 +81,7 @@ DATABASE_URL="file:./dev.db"
 ### 问题3：SSH密钥认证失败 → 回退密码认证
 - **现象**：`id_ed25519` 公钥被服务器拒绝，paramiko报错 `AuthenticationException`
 - **根因**：服务器上 `~/.ssh/authorized_keys` 可能未包含本地公钥，或sshd配置变更
-- **解决**：`deploy_remote.py` 使用密码 `F!D)7n_mc8Mq}bx=` 通过paramiko.connect()
+- **解决**：`deploy_remote.py` 使用密码认证通过paramiko.connect()
 - **教训**：密钥和密码双备份，脚本优先尝试密钥、fallback到密码
 
 ### 问题4：SSH连接超时（2026-05-03间歇性）
