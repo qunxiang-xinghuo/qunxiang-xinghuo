@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Providers from './providers';
-import MobileContainer from '@/components/layout/MobileContainer';
-import BottomNav from '@/components/layout/BottomNav';
+import AppShell from '@/components/layout/AppShell';
 
 export const metadata: Metadata = {
   title: '群像·星火',
@@ -18,12 +17,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className="font-sans">
         <Providers>
-          <div className="h-full w-full max-w-md sm:max-w-lg mx-auto bg-xh-primary relative overflow-hidden flex flex-col">
-            <MobileContainer className="flex-1 min-h-0 overflow-hidden">
-              {children}
-            </MobileContainer>
-            <BottomNav />
-          </div>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>
