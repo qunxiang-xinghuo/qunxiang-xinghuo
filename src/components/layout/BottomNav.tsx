@@ -17,14 +17,17 @@ export default function BottomNav() {
   const router = useRouter();
   const { status } = useSession();
 
-  // 未登录状态下不显示底部导航栏
-  if (status === 'unauthenticated') return null;
-
-  // 隐藏底部导航的页面
-  const hideNavPaths = ['/login', '/register', '/welcome', '/onboarding'];
-  if (hideNavPaths.some((p) => pathname?.startsWith(p))) return null;
+  // 隐藏底部导航的页面（包括首页/登录页根路径）
+  const hideNavPaths = ['/', '/login', '/register', '/welcome', '/onboarding'];
+  if (pathname && hideNavPaths.includes(pathname)) return null;
   // 房间、匹配等页面也隐藏
   if (pathname?.startsWith('/room/') || pathname?.startsWith('/duo') || pathname?.startsWith('/story/room/')) return null;
+
+  // Session加载中时不显示（避免未登录用户看到闪烁的导航栏）
+  if (status === 'loading') return null;
+
+  // 未登录状态下不显示底部导航栏
+  if (status === 'unauthenticated') return null;
 
   const activeItem = navItems.find((item) => pathname === item.path || pathname?.startsWith(item.path + '/')) || navItems[0];
 

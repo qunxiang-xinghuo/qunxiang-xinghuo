@@ -1,5 +1,26 @@
 # 问题记录与修复日志
 
+## v6.2-fix 首页导航栏 + 我的页面转圈修复 (2026-05-04)
+
+### 问题1：首页（登录页）显示底部导航栏
+
+- **根因**：`BottomNav` 依赖 `useSession()` 的 `status`，但初始状态是 `'loading'`（不是 `'unauthenticated'`），导致加载期间导航栏闪现；且 `/` 根路径不在 `hideNavPaths` 中
+- **修复**：
+  1. `hideNavPaths` 添加 `/`（精确匹配），确保首页无论登录状态都不显示导航栏
+  2. `status === 'loading'` 时也返回 null，避免未登录用户看到闪烁的导航栏
+  3. 调整判断顺序：先检查路径白名单，再检查 session 状态
+
+### 问题2：我的页面一直转圈（加载卡死）
+
+- **根因**：`profile/page.tsx` 中 `user` 初始为 `null`，`useEffect` 仅在 `localStorage.getItem('xh_user')` 存在时才 `setUser`。当用户未登录时，`user` 永远是 `null`，`if (!user)` 永远返回 loading spinner
+- **修复**：
+  1. 新增 `pageLoading` state，区分"正在初始化"和"未登录"
+  2. 当 `xh_user` 不存在时，`setUser(null)` + `setPageLoading(false)`，显示"请先登录"UI（含去登录按钮）
+  3. API 请求增加 `AbortController` 10秒超时，超时或失败时显示"加载失败，请刷新重试"
+  4. `catch` 中解析 `AbortError` 显示友好提示
+
+---
+
 ## v6.2 邀请好友 + 个人疗愈私密模式 (2026-05-04)
 
 ### 部署问题：GitHub fetch 超时导致服务器未同步最新代码
