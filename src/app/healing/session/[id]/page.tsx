@@ -1,0 +1,267 @@
+'use client';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Send, Heart, Lock, ArrowLeft, Globe, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
+import TopBar from '@/components/layout/TopBar';
+import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
+
+interface Message {
+  id: string;
+  senderId: string;
+  content: string;
+  identity: string;
+  isAi: boolean;
+  createdAt: string;
+}
+
+export default function HealingSessionPage() {
+  const params = useParams();
+  const router = useRouter();
+  const sessionId = params.id as string;
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [sessionStatus, setSessionStatus] = useState<'active' | 'closed'>('active');
+  const [publishing, setPublishing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const savedUserId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
+  const stableUserId = savedUserId || 'guest';
+
+  // 加载消息
+  useEffect(() => {
+    if (!sessionId) return;
+    const guestId = localStorage.getItem('xh_user_id');
+    fetch(`/api/healing/${sessionId}/messages`, {
+      headers: guestId ? { 'x-guest-id': guestId } : {},
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          setMessages(res.data);
+        }
+      })
+      .catch((err) => console.error('[Healing] 加载消息失败:', err))
+      .finally(() => setIsLoading(false));
+  }, [sessionId]);
+
+  // 滚动到底部
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = useCallback(async () => {
+    const content = inputValue.trim();
+    if (!content || sending || sessionStatus === 'closed') return;
+
+    setSending(true);
+    const guestId = localStorage.getItem('xh_user_id');
+
+    // 乐观添加
+    const optimisticMsg: Message = {
+      id: `temp-${Date.now()}`,
+      senderId: stableUserId,
+      content,
+      identity: '我',
+      isAi: false,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setInputValue('');
+
+    try {
+      const res = await fetch(`/api/healing/${sessionId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
+        body: JSON.stringify({ content, identity: '我' }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        // 重新加载消息（获取AI回复）
+        const reloadRes = await fetch(`/api/healing/${sessionId}/messages`, {
+          headers: guestId ? { 'x-guest-id': guestId } : {},
+        });
+        const reloadResult = await reloadRes.json();
+        if (reloadResult.success && reloadResult.data) {
+          setMessages(reloadResult.data);
+        }
+      }
+    } catch (err) {
+      console.error('[Healing] 发送失败:', err);
+    } finally {
+      setSending(false);
+    }
+  }, [inputValue, sending, sessionId, sessionStatus, stableUserId]);
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      // 创建公开火花（简化版：调用sparks API或assets API）
+      const content = messages.filter((m) => !m.isAi).map((m) => m.content).join('\n\n');
+      if (!content) return;
+
+      const guestId = localStorage.getItem('xh_user_id');
+      await fetch('/api/assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
+        body: JSON.stringify({
+          title: '疗愈对话节选',
+          summary: content.slice(0, 200),
+          content: content.slice(0, 2000),
+          isPublic: true,
+        }),
+      });
+
+      alert('已公开至火花墙');
+    } catch (err) {
+      console.error('公开失败:', err);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const formatTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <div className="flex flex-col h-full page-gradient">
+      <TopBar title="个人疗愈" showBack onBack={() => router.back()} />
+
+      {/* 消息列表 */}
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-6 h-6 border-2 border-slate-700 border-t-rose-400 rounded-full animate-spin" />
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Heart className="w-8 h-8 text-white/10 mb-3" />
+            <p className="text-sm text-white/30">刘看山正在等待你</p>
+          </div>
+        ) : (
+          messages.map((msg) => {
+            const isMe = msg.senderId === stableUserId;
+            const isAi = msg.isAi;
+            return (
+              <div key={msg.id} className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                {/* 头像 */}
+                <div className="shrink-0">
+                  {isMe ? (
+                    <div className="w-8 h-8 rounded-full bg-slate-700/50 flex items-center justify-center">
+                      <span className="text-[10px] text-slate-400">我</span>
+                    </div>
+                  ) : isAi ? (
+                    <LiuKanshanAvatar size="sm" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center">
+                      <Heart className="w-4 h-4 text-rose-400" />
+                    </div>
+                  )}
+                </div>
+
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[70%] mx-2`}>
+                  {/* 姓名标签 */}
+                  <span className="text-[10px] text-white/25 mb-1 px-1">
+                    {msg.identity}
+                  </span>
+                  {/* 消息气泡 */}
+                  <div
+                    className={`relative px-3.5 py-2.5 rounded-2xl ${
+                      isMe
+                        ? 'bg-rose-500/15 border border-rose-500/20 text-white/90 rounded-br-md'
+                        : isAi
+                        ? 'bg-white/[0.05] border border-white/5 text-white/80 rounded-bl-md'
+                        : 'bg-white/[0.05] border border-white/5 text-white/80 rounded-bl-md'
+                    }`}
+                  >
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    <div className={`flex items-center gap-2 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <span className={`text-[10px] ${isMe ? 'text-rose-400/30' : 'text-white/20'}`}>
+                        {formatTime(msg.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* 底部操作区 */}
+      <div className="shrink-0 px-4 py-3 border-t border-white/5">
+        {sessionStatus === 'active' ? (
+          <div className="flex gap-2">
+            <textarea
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="想聊点什么..."
+              className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-rose-500/30 resize-none max-h-24"
+              rows={1}
+              disabled={sending}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!inputValue.trim() || sending}
+              className="shrink-0 w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 hover:bg-rose-500/30 disabled:opacity-30 transition-all"
+            >
+              {sending ? (
+                <div className="w-4 h-4 border-2 border-rose-400/30 border-t-rose-400 rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        ) : (
+          <div className="text-center py-2">
+            <p className="text-xs text-slate-600">会话已结束</p>
+          </div>
+        )}
+
+        {/* 结束会话 + 公开按钮 */}
+        {sessionStatus === 'active' && messages.length > 2 && (
+          <div className="flex items-center justify-between mt-2">
+            <button
+              onClick={() => setSessionStatus('closed')}
+              className="text-[10px] text-slate-600 hover:text-slate-500"
+            >
+              结束对话
+            </button>
+            <div className="flex items-center gap-2">
+              <Lock className="w-3 h-3 text-slate-700" />
+              <span className="text-[10px] text-slate-700">加密保护中</span>
+            </div>
+          </div>
+        )}
+
+        {sessionStatus === 'closed' && (
+          <div className="mt-2 space-y-2">
+            <p className="text-[10px] text-slate-600 text-center">对话已结束，你可以选择：</p>
+            <button
+              onClick={handlePublish}
+              disabled={publishing}
+              className="w-full py-2 rounded-lg bg-white/[0.03] border border-white/10 text-white/50 text-xs hover:bg-white/[0.06] flex items-center justify-center gap-2"
+            >
+              <Globe className="w-3 h-3" />
+              {publishing ? '处理中...' : '公开至火花墙'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

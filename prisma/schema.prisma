@@ -215,6 +215,7 @@ model Room {
   maxRound     Int?
   currentRound Int       @default(0)
   scene        String?
+  inviteCode   String?   @unique // v6.2: 邀请码（6位数字）
   createdAt    DateTime  @default(now())
   closedAt     DateTime?
 
@@ -228,6 +229,7 @@ model Room {
 
   @@index([status, type])
   @@index([brainholeId])
+  @@index([inviteCode])
 }
 
 model RoomParticipant {
@@ -328,6 +330,38 @@ model InspirationItem {
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([roomId])
+}
+
+// ==================== 个人疗愈 ====================
+
+model HealingSession {
+  id        String   @id @default(cuid())
+  userId    String
+  status    String   @default("active") // active | closed
+  title     String?
+  topic     String?  // 用户自由输入的话题/情绪标签
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  closedAt  DateTime?
+
+  messages HealingMessage[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model HealingMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  senderId  String   // userId or 'agent_healer'
+  content   String   // AES-256-GCM 加密后的密文（base64）
+  identity  String
+  isAi      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  session HealingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
 }
 
 // ==================== 故事草稿 ====================

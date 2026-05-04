@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { User, Sparkles, Edit3, Check, BrainCircuit, ArrowRight } from 'lucide-react';
+import { User, Sparkles, Edit3, Check, BrainCircuit, ArrowRight, DoorOpen } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 
 interface IdentityOption {
@@ -37,6 +37,10 @@ function DuoMatchContent() {
   const [customLabel, setCustomLabel] = useState('');
   const [aiGenerated, setAiGenerated] = useState('');
   const [brainholeInfo, setBrainholeInfo] = useState<{id: string; title: string; scenario: string} | null>(null);
+  const [showJoinInput, setShowJoinInput] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState('');
 
   // 获取知乎身份 + 预选的brainhole信息
   useEffect(() => {
@@ -91,6 +95,38 @@ function DuoMatchContent() {
     const params = new URLSearchParams();
     if (preselectedBrainholeId) params.set('brainholeId', preselectedBrainholeId);
     router.push(`/duo-waiting?${params.toString()}`);
+  };
+
+  const handleJoinRoom = async () => {
+    if (!joinCode || joinCode.length !== 6) {
+      setJoinError('请输入6位房间号');
+      return;
+    }
+    setJoining(true);
+    setJoinError('');
+    try {
+      const guestId = localStorage.getItem('xh_user_id');
+      const identity = selectedType === 'zhihu' ? (selectedZhihuId || '匿名用户') :
+        selectedType === 'ai' ? aiGenerated : (customLabel.trim() || '自定义角色');
+      const res = await fetch('/api/rooms/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
+        body: JSON.stringify({ inviteCode: joinCode.trim(), identity }),
+      });
+      const result = await res.json();
+      if (result.success && result.data?.roomId) {
+        const stableUserId = localStorage.getItem('xh_user_id') || `guest-${Date.now()}`;
+        localStorage.setItem('xh_user_id', stableUserId);
+        localStorage.setItem('xh_duo_identity', identity);
+        router.push(`/room/${result.data.roomId}`);
+      } else {
+        setJoinError(result.message || '加入房间失败');
+      }
+    } catch {
+      setJoinError('网络异常，请重试');
+    } finally {
+      setJoining(false);
+    }
   };
 
   return (
@@ -225,6 +261,54 @@ function DuoMatchContent() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* 加入房间区域 */}
+      <div className="shrink-0 px-6 py-3 border-t border-slate-700/15">
+        {!showJoinInput ? (
+          <button
+            onClick={() => setShowJoinInput(true)}
+            className="w-full py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white/50 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+          >
+            <DoorOpen className="w-4 h-4" />
+            加入房间
+          </button>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-2"
+          >
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={joinCode}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setJoinCode(val);
+                  setJoinError('');
+                }}
+                placeholder="输入6位房间号"
+                className="flex-1 bg-slate-700/30 border border-slate-600/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/50 text-center tracking-widest"
+                maxLength={6}
+              />
+              <button
+                onClick={handleJoinRoom}
+                disabled={joining || joinCode.length !== 6}
+                className="px-4 py-2.5 rounded-xl bg-xh-gold/15 border border-xh-gold/30 text-xh-gold text-sm font-medium hover:bg-xh-gold/25 disabled:opacity-40 transition-all"
+              >
+                {joining ? <div className="w-4 h-4 border-2 border-xh-gold/30 border-t-xh-gold rounded-full animate-spin" /> : '进入'}
+              </button>
+            </div>
+            {joinError && <p className="text-[11px] text-red-400/70 text-center">{joinError}</p>}
+            <button
+              onClick={() => { setShowJoinInput(false); setJoinCode(''); setJoinError(''); }}
+              className="w-full text-[10px] text-slate-600 hover:text-slate-500"
+            >
+              取消，返回随机匹配
+            </button>
+          </motion.div>
+        )}
       </div>
 
       {/* 底部确认按钮 */}

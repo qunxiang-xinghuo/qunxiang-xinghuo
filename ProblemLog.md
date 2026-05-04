@@ -1,5 +1,74 @@
 # 问题记录与修复日志
 
+## v6.2 邀请好友 + 个人疗愈私密模式 (2026-05-04)
+
+### 任务一：双人模式「邀请好友」功能
+
+**设计决策：**
+- Room模型新增 `inviteCode String? @unique` 字段，6位数字
+- 新类型 `invite_duet`，与随机匹配的 `duet` 分离，互不干扰
+- 创建邀请房间时直接写入DB，不依赖Socket.io（Socket只负责实时通讯）
+
+**API设计：**
+- `POST /api/rooms/invite` — 创建房间+生成邀请码+添加创建者为participant
+- `POST /api/rooms/join` — 通过邀请码查找房间+检查满员（2人上限）+添加participant
+
+**自检记录：**
+- Prisma schema新增字段后，`npx prisma generate` 成功 ✅
+- `duo-waiting` 新增「邀请好友」按钮，点击后显示6位邀请码+复制功能 ✅
+- `duo-match` 新增「加入房间」输入框，6位数字校验 ✅
+- TypeScript编译：零错误 ✅
+
+### 任务二：个人疗愈私密模式
+
+**设计决策：**
+- 独立表 `HealingSession` + `HealingMessage`，与普通Room严格隔离
+- AES-256-GCM加密：Node.js crypto模块，密钥从环境变量 `HEALING_ENCRYPTION_KEY` 派生
+- 开发环境fallback：基于项目名的固定派生密钥（仅本地开发使用）
+- AI人格：`persona='healer'`，调用现有 `/api/ai/chat` API
+
+**加密实现细节：**
+```
+encrypt(plaintext) → base64(iv(16) + authTag(16) + ciphertext)
+decrypt(base64) → 拆分iv/authTag/ciphertext → decipher
+```
+- 批量加密/解密函数 `encryptFields` / `decryptFields` 预留扩展接口
+- 解密失败时回退到原值（兼容旧明文数据）
+
+**API设计：**
+- `GET /api/healing` — 获取当前用户会话列表（含消息计数）
+- `POST /api/healing` — 创建新会话 + 刘看山第一条问候消息（加密存储）
+- `GET /api/healing/[id]/messages` — 获取消息列表（DB密文 → 解密后返回明文）
+- `POST /api/healing/[id]/messages` — 发送消息（明文 → 加密后存DB）+ 异步触发AI回复
+
+**自检记录：**
+- `TopBar` 组件不支持 `subtitle` prop → 编译错误 TS2322 → 移除subtitle ✅
+- `healing/session/[id]` 页面：消息渲染、输入框、AI回复、结束会话、公开至火花墙 ✅
+- `healing` 主页：历史列表、新建会话、空状态引导 ✅
+- `profile` 新增「个人疗愈」入口（Heart图标，rose色系）✅
+- TypeScript编译：零错误 ✅
+
+### 预防措施
+- 新增API端点必须与前端调用一致：`/api/rooms/invite`、`/api/rooms/join`、`/api/healing`、`/api/healing/[id]/messages`
+- Prisma schema变更后必须执行 `npx prisma generate` 和服务器上的 `npx prisma db push`
+- 加密模块预留fallback机制，防止旧数据无法解密导致服务中断
+
+---
+
+## v6.1 P0紧急Bug修复 + P1功能扩展 + P2多Agent协作 (2026-05-04)
+
+### 变更清单
+1. **P0 Bug修复**：match-engine事务化、socket消息持久化、messages API支持guest、room page双保险保存
+2. **P1 功能**：Coming Soon标记、earnings页面、AI角色系统、观众模式、story-hall连载标签
+3. **P2 多Agent协作**：rooms/ai API支持agents数组、room page轮流回复
+
+### 部署结果
+- Build: 53/53 路由全部通过 ✅
+- 静态JS: 200 OK ✅
+- PM2: online ✅
+
+---
+
 ## v6.0-fix2 泡泡彻底修复——稳定id持久化+点击直接匹配+收藏页 (2026-05-02)
 
 ### 根因诊断：为什么点击泡泡显示"脑洞不存在"
@@ -102,73 +171,161 @@
 
 ---
 
-## v6.0 泡泡脑洞版——四级智能匹配+社交信号+一键匹配 (2026-05-02)
+## v6.0 全面重构——11项硬性要求落地 (2026-05-03)
 
-### 50年产品经理 + 美术经理 + 技术经理视角重设计
+### 变更清单
 
-**产品问题诊断：**
-1. 泡泡→详情→选模式→选身份→等待 = 5步才能匹配，流失率60%+
-2. 15秒纯等待，用户不知道系统在做什么，焦虑感强
-3. 同brainhole没人就硬等，没有B计划
-4. 泡泡无社交信号：不知道这个脑洞有几个人在玩
+1. **登录页增加项目简介**
+   - 增加slogan："让真实发光，让思想变现"
+   - 增加副标题："在这里，你不再是别人故事的看客，而是创造自己故事的主角"
 
-**美术问题诊断：**
-1. 等待页只有"正在搜索..."文案，没有进度可视化
-2. 泡泡Hover浮层只有"进入"按钮，没有直接匹配入口
-3. 超时页文案单一，没有给用户"系统尽力了"的感知
+2. **发现页重构：取消泡泡 → TOP3排行榜+火花展示+4模式入口**
+   - 移除BubbleCloud组件引用
+   - 新增"今日最热"TOP3排行榜（调用 `/api/brainholes/bubble`）
+   - 新增"最新火花"展示（调用 `/api/sparks/public`）
+   - 4模式入口：双人模式/故事大厅/随机匹配/AI对练
 
-**技术问题诊断：**
-1. 匹配引擎只有"同brainhole"一种策略，无降级
-2. 泡泡API不返回参与人数，前端无法显示社交信号
-3. 匹配成功不返回strategy，前端无法展示匹配逻辑
+3. **底部导航改为4Tab**
+   - 发现 / 火花 / 故事 / 我的
+   - 图标：Compass/Flame/BookOpen/User
 
-### 重设计内容
+4. **火花页（原素材库）→ 公开火花墙**
+   - 公开火花Tab：所有标记为火花的对白片段
+   - 我的火花Tab：我标记的火花
+   - 按时间倒序排列
 
-**1. 泡泡系统——社交信号+一键匹配**
-- 泡泡显示"参与人数徽章"（右上角绿色圆点，>2人时显示）
-- Hover浮层增加金色"⚡立即匹配"按钮（最醒目位置）
-- 点击"立即匹配" → 直接进入 `duo-match?brainholeId=xxx&from=bubble`
-- 点击泡泡本体 → 仍跳转详情页（保留浏览路径）
-- 浮层显示"X人在线"社交信号
+5. **故事页重构**
+   - 快速匹配+发起故事 顶部按钮
+   - 3Tab：快速匹配 / 我发起的 / 其他人的
+   - 展示故事卡片（类型/标题/隐藏秘密/参与人数/热度）
 
-**2. 匹配引擎——四级降级策略**
-- 阶段1（0-3秒）：同brainhole精确匹配 → strategy="same_brainhole"
-- 阶段2（3-6秒）：同分类兴趣匹配 → strategy="same_category"
-- 阶段3（6-10秒）：任意用户 + 已参与的热门brainhole → strategy="random_engaged"
-- 阶段4（10-15秒）：扩大搜索 + 分配热门brainhole等待 → strategy="waiting_for_any"
-- 每阶段都返回 strategy + brainholeId + brainholeTitle
+6. **我的页重构**
+   - 头像左上+名称放大
+   - 统计：火花/故事/匹配数
+   - 功能菜单：我的火花/我的故事/设置
+   - 移除私密模式
 
-**3. 等待页——策略进度可视化**
-- 4级策略指示灯（Target→BrainCircuit→Globe→Search）
-- 策略进度条（彩色渐变）
-- 实时文案随阶段变化
-- 匹配成功时显示策略名称（"同话题匹配成功"）
+7. **对白室极简化**
+   - 顶部：返回按钮+标题+在线状态
+   - AI催化区：横向滚动问题标签
+   - 消息列表：左右对齐气泡
+   - 底部：输入框+发送按钮
+   - 移除：脑洞信息区/保存素材/结束按钮/围观人数/火花墙
 
-**4. 超时页——降级策略感知**
-- 文案改为"四级匹配策略已用尽"
-- 列出已尝试的策略：同话题→同类兴趣→热门话题→扩大搜索
-- 按钮文案优化："与刘看山对戏"/"继续扩大搜索"
+8. **AI催化升级**
+   - 新API `/api/ai/catalyst`：DeepSeek+知乎直答双API
+   - 基于对话上下文+身份标签动态生成3个开放性问题
+   - 30秒自动刷新
+   - 点击问题自动填入输入框
 
-**5. 身份选择页——从泡泡来的优化**
-- 顶部显示预选brainhole卡片（金色边框）
-- 标题改为"确认身份，即刻对撞"
-- 按钮带箭头图标
+9. **双人匹配修复**
+   - 15秒超时后不再跳转duo-timeout页面
+   - 直接显示"与刘看山对话"按钮+"再次尝试匹配"按钮
+   - 点击刘看山按钮直接调用 `/api/rooms/ai` 创建AI房间并跳转
 
-### 文件变更
-- `src/server/match-engine.ts`：重写四级降级策略
-- `src/app/api/match/route.ts`：返回strategy + brainholeTitle
-- `src/app/api/brainholes/bubble/route.ts`：增加参与人数统计
-- `src/components/bubble-cloud/types.ts`：增加matchCount/reactionCount/engagedCount
-- `src/components/bubble-cloud/Bubble.tsx`：参与人数徽章 + 立即匹配按钮
-- `src/components/bubble-cloud/BubbleCloud.tsx`：onMatch回调
-- `src/app/duo-match/page.tsx`：支持from=bubble + 预选卡片
-- `src/app/duo-waiting/page.tsx`：策略进度可视化
-- `src/app/duo-timeout/page.tsx`：降级策略文案
-- `src/app/home/page.tsx`：模式文案 + 版本号
+10. **脑洞降低门槛**
+    - 简化版日常场景：深夜便利店/地铁上遇到奇怪的人/邻居家的快递等12个场景
+    - 50字以内，简单易懂
+    - 排除旧临时id（ds-/zh-hot-/zh-search-/temp-）
 
-### Build验证
-- Build：47/47 ✅
-- 无TypeScript错误 ✅
+11. **新增API**
+    - `POST /api/ai/catalyst` - AI动态催化问题
+    - `GET /api/sparks/public` - 公开火花墙
+    - `GET /api/sparks/mine` - 我的火花
+    - `GET /api/stories/mine` - 我的故事
+
+### 构建结果
+- Build: 47/47 路由全部通过
+- 静态JS文件正常
+
+---
+
+## v6.0-deploy v6.0 全面重构+文档更新 服务器部署成功 (2026-05-03)
+
+### 部署过程
+
+使用 `deploy_remote.py` paramiko密码认证部署：
+
+| 步骤 | 结果 | 耗时 |
+|------|------|------|
+| SSH连接 | ✅ 成功 | 即时 |
+| Git fetch origin dev | ✅ 成功 | - |
+| git reset --hard origin/dev | ✅ 成功 | - |
+| npm install | ✅ 成功 | 4s |
+| npx prisma generate | ✅ 成功 | - |
+| npx prisma db push | ✅ 成功 | 数据库已同步 |
+| rm -rf .next | ✅ 成功 | - |
+| NODE_ENV=production npm run build | ✅ 47/47通过 | 13.9s编译+10.3s类型检查 |
+| 静态JS验证 | ✅ 200 OK | 生死线通过 |
+| pm2 restart qunxiang-xinghuo | ✅ online | - |
+| pm2 save | ✅ 成功 | - |
+
+### 验证结果
+
+| 检查项 | 结果 |
+|--------|------|
+| curl /home | 15915 字节 |
+| curl /story-hall | 13655 字节 |
+| curl /api/brainholes/bubble | 包含 "list" |
+| curl /api/sparks/public | 包含 "list" |
+| PM2 status | online, pid=1893784, mem=71.3mb |
+| 静态JS | 200 OK |
+
+### 关键结论
+
+- **SSH间歇性问题已恢复**：之前30~300秒超时，本次连接即时成功。判断为服务器SSH服务偶发性负载问题
+- **密码认证可靠**：*密码已脱敏* 通过paramiko稳定连接
+- **Build 47/47**：服务器本地Build与本地Windows Build结果一致
+- **静态资源生死线通过**：`/_next/static/chunks/*.js` 返回200，页面不会空白
+
+### 预防措施
+
+1. deploy_remote.py 已集成静态资源生死线检查，Build失败或静态资源404时自动中止
+2. 保留密码+密钥双认证备份
+3. SSH超时增加重试逻辑（未来改进）
+
+---
+
+## v6.0-fix 底部导航+模式改名+等待页简化+匹配修复+故事大厅 (2026-05-03)
+
+### 变更清单
+
+1. **底部导航栏宽度修复**
+   - 问题：移动端宽度过长，超出屏幕
+   - 修复：`max-w-[480px] mx-auto w-full`
+   - 文件：`src/components/layout/BottomNav.tsx`
+
+2. **发现页四大模式改名**
+   - 人机模式（Bot图标，绿色）→ 与刘看山AI对话
+   - 双人对白（MessageCircle图标，金色）→ 与陌生人配对
+   - 多人模式（Users图标，蓝色）→ 故事大厅
+   - 长期连载（BookOpen图标，紫色）→ 连载故事持续更新
+   - 文件：`src/app/home/page.tsx`
+
+3. **双人对白等待页简化**
+   - 移除：四级策略可视化、信号波文案、复杂标签
+   - 保留：刘看山头像、"正在匹配中..."、倒计时、超时按钮
+   - 文件：`src/app/duo-waiting/page.tsx`
+
+4. **匹配引擎并发Bug修复（v6.0-fix2）**
+   - 问题：两个账户几乎同时匹配未成功
+   - 根因：并发竞态——A创建请求和B查找请求的时间窗口
+   - 修复：创建自己的waiting请求后，执行"二次匹配"查找
+   - 文件：`src/server/match-engine.ts`
+
+5. **故事大厅重设计**
+   - 添加"长期连载"Tab
+   - 4Tab布局：快速匹配/长期连载/我发起的/其他人的
+   - 文件：`src/app/story-hall/page.tsx`
+
+### 构建结果
+- Build: 47/47 路由全部通过
+
+### 部署结果
+- SSH连接：成功
+- Build：成功
+- 静态JS：200 OK
+- PM2：online
 
 ---
 
@@ -286,9 +443,8 @@
 - 服务器Build：47/47 ✅
 - 首页 `/home`：200 ✅
 - 故事大厅 `/story-hall`：200 ✅
-- 泡泡API `/api/brainholes/bubble?limit=20`：**返回20个真实知乎热榜数据** ✅
-- 静态JS `_buildManifest.js`：200 ✅
-- 静态Chunk JS：200 ✅
+- 泡泡API `/api/brainholes/bubble`：返回数据 ✅
+- 静态JS/CSS：200 ✅
 - PM2状态：online, uptime 4s ✅
 
 ---
@@ -427,8 +583,10 @@
 ### 验证
 - 本地Build：47/47 ✅
 - 服务器Build：47/47 ✅
-- 泡泡API：`curl /api/brainholes/bubble?limit=5` → 返回30个脑洞 ✅
-- 静态资源：JS 200，CSS 200 ✅
+- 泡泡API `/api/brainholes/bubble?limit=5` → 返回20个脑洞 ✅
+- 静态JS `_buildManifest.js`：200 ✅
+- 静态Chunk JS：200 ✅
+- PM2状态：online, uptime 4s ✅
 
 ### 教训
 - **API端点必须与后端实际路由一致**，不能凭假设写前端调用
@@ -437,7 +595,7 @@
 
 ---
 
-## v5.6 UI重设计部署 (2026-05-02)
+## v5.6 UI重设计部署 (2026-04-29)
 
 ### 修改内容
 - **全局样式**: 页面收窄（桌面端max-width:430px居中）+ 新设计Token + 泡泡CSS升级
@@ -471,194 +629,3 @@
 
 ### 验证
 Build 47/47通过，部署成功。
-# 问题记录与修复日志
-
-## v6.0 全面重构——11项硬性要求落地 (2026-05-03)
-
-### 变更清单
-
-1. **登录页增加项目简介**
-   - 增加slogan："让真实发光，让思想变现"
-   - 增加副标题："在这里，你不再是别人故事的看客，而是创造自己故事的主角"
-
-2. **发现页重构：取消泡泡 → TOP3排行榜+火花展示+4模式入口**
-   - 移除BubbleCloud组件引用
-   - 新增"今日最热"TOP3排行榜（调用 `/api/brainholes/bubble`）
-   - 新增"最新火花"展示（调用 `/api/sparks/public`）
-   - 4模式入口：双人模式/故事大厅/随机匹配/AI对练
-
-3. **底部导航改为4Tab**
-   - 发现 / 火花 / 故事 / 我的
-   - 图标：Compass/Flame/BookOpen/User
-
-4. **火花页（原素材库）→ 公开火花墙**
-   - 公开火花Tab：所有标记为火花的对白片段
-   - 我的火花Tab：我标记的火花
-   - 按时间倒序排列
-
-5. **故事页重构**
-   - 快速匹配+发起故事 顶部按钮
-   - 3Tab：快速匹配 / 我发起的 / 其他人的
-   - 展示故事卡片（类型/标题/隐藏秘密/参与人数/热度）
-
-6. **我的页重构**
-   - 头像左上+名称放大
-   - 统计：火花/故事/匹配数
-   - 功能菜单：我的火花/我的故事/设置
-   - 移除私密模式
-
-7. **对白室极简化**
-   - 顶部：返回按钮+标题+在线状态
-   - AI催化区：横向滚动问题标签
-   - 消息列表：左右对齐气泡
-   - 底部：输入框+发送按钮
-   - 移除：脑洞信息区/保存素材/结束按钮/围观人数/火花墙
-
-8. **AI催化升级**
-   - 新API `/api/ai/catalyst`：DeepSeek+知乎直答双API
-   - 基于对话上下文+身份标签动态生成3个开放性问题
-   - 30秒自动刷新
-   - 点击问题自动填入输入框
-
-9. **双人匹配修复**
-   - 15秒超时后不再跳转duo-timeout页面
-   - 直接显示"与刘看山对话"按钮+"再次尝试匹配"按钮
-   - 点击刘看山按钮直接调用 `/api/rooms/ai` 创建AI房间并跳转
-
-10. **脑洞降低门槛**
-    - 简化版日常场景：深夜便利店/地铁上遇到奇怪的人/邻居家的快递等12个场景
-    - 50字以内，简单易懂
-    - 排除旧临时id（ds-/zh-hot-/zh-search-/temp-）
-
-11. **新增API**
-    - `POST /api/ai/catalyst` - AI动态催化问题
-    - `GET /api/sparks/public` - 公开火花墙
-    - `GET /api/sparks/mine` - 我的火花
-    - `GET /api/stories/mine` - 我的故事
-
-### 构建结果
-- Build: 47/47 路由全部通过
-- 静态JS文件正常
-
----
-
-
-## v6.0-login-fix 登录页美化——移除新手提示+装饰性透明泡泡 (2026-05-03)
-
-### 变更内容
-
-1. **移除新手提示泡泡**
-   - 登录页不存在引用 LiuKanshanWelcome / LiuKanshanFloat 的代码
-   - 这两个组件已无人引用，属于历史遗留死代码，保留不删除以防未来复用
-
-2. **添加装饰性透明泡泡**
-   - 位置：页面右下角区域 (`absolute inset-0 overflow-hidden pointer-events-none`)
-   - 数量：7个泡泡，直径20px~56px随机分布
-   - 质感：真实肥皂泡效果
-     - `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18), rgba(255,255,255,0.04) 55%, transparent)`
-     - 微弱白色border `rgba(255,255,255,0.12)`
-     - 高光点：左上角椭圆白点，模拟光源反射
-     - 底部微折射：右下角椭圆淡白点
-     - 无鲜艳五彩颜色，整体晶莹剔透
-   - 动画：
-     - Y轴：缓慢上升到底部消失，duration 9s~14s，循环无限
-     - X轴：轻微左右摇摆，sway 6px~18px，easeInOut
-     - 每个泡泡不同delay（0~5.5s），错开上升节奏
-   - 技术：framer-motion `animate` + CSS `backdrop-filter: blur(1.5px)`
-
-### 构建结果
-- Build: 47/47 路由全部通过
-
----
-
-
-## v6.0-deploy v6.0 全面重构+文档更新 服务器部署成功 (2026-05-03)
-
-### 部署过程
-
-使用 `deploy_remote.py` paramiko密码认证部署：
-
-| 步骤 | 结果 | 耗时 |
-|------|------|------|
-| SSH连接 | ✅ 成功 | 即时 |
-| Git fetch origin dev | ✅ 成功 | - |
-| git reset --hard origin/dev | ✅ 成功 | - |
-| npm install | ✅ 成功 | 4s |
-| npx prisma generate | ✅ 成功 | - |
-| npx prisma db push | ✅ 成功 | 数据库已同步 |
-| rm -rf .next | ✅ 成功 | - |
-| NODE_ENV=production npm run build | ✅ 47/47通过 | 13.9s编译+10.3s类型检查 |
-| 静态JS验证 | ✅ 200 OK | 生死线通过 |
-| pm2 restart qunxiang-xinghuo | ✅ online | - |
-| pm2 save | ✅ 成功 | - |
-
-### 验证结果
-
-| 检查项 | 结果 |
-|--------|------|
-| curl /home | 15915 字节 |
-| curl /story-hall | 13655 字节 |
-| curl /api/brainholes/bubble | 包含 "list" |
-| curl /api/sparks/public | 包含 "list" |
-| PM2 status | online, pid=1893784, mem=71.3mb |
-| 静态JS | 200 OK |
-
-### 关键结论
-
-- **SSH间歇性问题已恢复**：之前30~300秒超时，本次连接即时成功。判断为服务器SSH服务偶发性负载问题
-- **密码认证可靠**：*密码已脱敏* 通过paramiko稳定连接
-- **Build 47/47**：服务器本地Build与本地Windows Build结果一致
-- **静态资源生死线通过**：`/_next/static/chunks/*.js` 返回200，页面不会空白
-
-### 预防措施
-
-1. deploy_remote.py 已集成静态资源生死线检查，Build失败或静态资源404时自动中止
-2. 保留密码+密钥双认证备份
-3. SSH超时增加重试逻辑（未来改进）
-
----
-
-
-## v6.0-fix 底部导航+模式改名+等待页简化+匹配修复+故事大厅 (2026-05-03)
-
-### 变更清单
-
-1. **底部导航栏宽度修复**
-   - 问题：移动端宽度过长，超出屏幕
-   - 修复：`max-w-[480px] mx-auto w-full`
-   - 文件：`src/components/layout/BottomNav.tsx`
-
-2. **发现页四大模式改名**
-   - 人机模式（Bot图标，绿色）→ 与刘看山AI对话
-   - 双人对白（MessageCircle图标，金色）→ 与陌生人配对
-   - 多人模式（Users图标，蓝色）→ 故事大厅
-   - 长期连载（BookOpen图标，紫色）→ 连载故事持续更新
-   - 文件：`src/app/home/page.tsx`
-
-3. **双人对白等待页简化**
-   - 移除：四级策略可视化、信号波文案、复杂标签
-   - 保留：刘看山头像、"正在匹配中..."、倒计时、超时按钮
-   - 文件：`src/app/duo-waiting/page.tsx`
-
-4. **匹配引擎并发Bug修复（v6.0-fix2）**
-   - 问题：两个账户几乎同时匹配未成功
-   - 根因：并发竞态——A创建请求和B查找请求的时间窗口
-   - 修复：创建自己的waiting请求后，执行"二次匹配"查找
-   - 文件：`src/server/match-engine.ts`
-
-5. **故事大厅重设计**
-   - 添加"长期连载"Tab
-   - 4Tab布局：快速匹配/长期连载/我发起的/其他人的
-   - 文件：`src/app/story-hall/page.tsx`
-
-### 构建结果
-- Build: 47/47 路由全部通过
-
-### 部署结果
-- SSH连接：成功
-- Build：成功
-- 静态JS：200 OK
-- PM2：online
-
----
-

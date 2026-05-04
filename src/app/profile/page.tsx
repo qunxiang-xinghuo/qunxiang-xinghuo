@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Settings, Flame, BookOpen, ChevronRight, LogOut, Zap, Sparkles, Coins,
+  Settings, Flame, BookOpen, ChevronRight, LogOut, Zap, Sparkles, Coins, Heart,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import Image from 'next/image';
@@ -57,6 +57,12 @@ export default function ProfilePage() {
       label: '我的收益',
       desc: '盐粒收益明细',
       path: '/earnings',
+    },
+    {
+      icon: Heart,
+      label: '个人疗愈',
+      desc: '私密对话空间',
+      path: '/healing',
     },
     {
       icon: Flame,
@@ -161,7 +167,7 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        <p className="text-center text-[10px] text-white/10 pb-4">群像·星火 v6.0</p>
+        <p className="text-center text-[10px] text-white/10 pb-4">群像·星火 v6.2</p>
       </div>
     </div>
   );
