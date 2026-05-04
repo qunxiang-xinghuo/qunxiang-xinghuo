@@ -2,6 +2,21 @@
 
 ## v6.2 邀请好友 + 个人疗愈私密模式 (2026-05-04)
 
+### 部署问题：GitHub fetch 超时导致服务器未同步最新代码
+
+- **现象**：`deploy_remote.py` 执行时 `git fetch origin dev` 失败：`Failure when receiving data from the peer`
+- **根因**：服务器到 GitHub 的 HTTPS 连接间歇性不稳定
+- **根因2**：服务器无法直接 SSH 到 `fqunxiang.x404.online:2222`（无对应私钥）
+- **解决**：
+  1. 本地 `git bundle create v6.2.bundle dev` 生成代码包
+  2. `scp` 上传 bundle 到服务器
+  3. 服务器 `git fetch v6.2.bundle dev:bundle-dev && git reset --hard bundle-dev`
+  4. `npx prisma db push --accept-data-loss` 同步 schema（Room.inviteCode unique约束需要）
+- **教训**：
+  - GitHub 不可靠时必须保留备用同步通道（bundle/SFTP）
+  - `prisma db push --accept-data-loss` 用于开发环境 schema 强制同步
+  - 部署脚本应增加 fetch 失败检测和自动 fallback
+
 ### 任务一：双人模式「邀请好友」功能
 
 **设计决策：**
