@@ -72,9 +72,16 @@
 - **现象**：`deploy_remote.py` SSH连接报错 `Authentication failed`
 - **根因**：宝塔面板密码已修改，SSH root密码同步变更
 - **根因2（2026-05-03再次确认）**：服务器 SSH 配置已改为**仅允许密钥认证**（`allowed types: ['publickey', 'gssapi-keyex', 'gssapi-with-mic']`），密码认证已被完全禁用
+- **根因3（2026-05-03最终确认）**：私钥文件 `qunxiang.pem` 在项目根目录下，之前搜索范围未覆盖
 - **解决**：
-  - 方式1：使用正确的私钥文件（`skey-a2kdq0cd` 对应的 `.pem` 文件）进行 SSH 密钥认证
-  - 方式2：通过宝塔面板Web终端手动执行部署命令
+  - 使用 `qunxiang.pem`（`skey-a2kdq0cd` 对应的私钥文件）进行 SSH 密钥认证
+  - `deploy_remote.py` 已更新：优先加载项目目录下的 `.pem` 私钥文件
+- **部署结果（2026-05-04 19:50）**：
+  - SSH密钥认证：成功 ✅
+  - Build：51/51 路由全部通过 ✅
+  - 静态JS：200 OK ✅
+  - PM2：online ✅
+  - 所有API验证通过 ✅
 - **手动部署命令**：
   ```bash
   cd /www/wwwroot/qunxiang-xinghuo \

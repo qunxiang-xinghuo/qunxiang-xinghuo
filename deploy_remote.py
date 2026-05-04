@@ -30,19 +30,27 @@ DEPLOY_DIR = "/www/wwwroot/qunxiang-xinghuo"
 
 def load_private_key():
     """尝试加载本地SSH私钥"""
+    # 项目目录下的腾讯云密钥（优先）
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_keys = [
+        os.path.join(script_dir, "qunxiang.pem"),
+    ]
+    # 系统默认密钥
     home = os.path.expanduser("~")
-    key_paths = [
+    system_keys = [
         os.path.join(home, ".ssh", "id_ed25519"),
         os.path.join(home, ".ssh", "id_rsa"),
     ]
-    for path in key_paths:
+
+    for path in project_keys + system_keys:
         if os.path.exists(path):
             try:
+                # 尝试 rsa
+                if path.endswith(".pem") or path.endswith("_rsa"):
+                    return paramiko.RSAKey.from_private_key_file(path)
                 # 尝试 ed25519
                 if path.endswith("ed25519"):
                     return paramiko.Ed25519Key.from_private_key_file(path)
-                # 尝试 rsa
-                return paramiko.RSAKey.from_private_key_file(path)
             except Exception as e:
                 print(f"[密钥] 加载 {path} 失败: {e}")
     return None
