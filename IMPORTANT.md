@@ -50,9 +50,25 @@ python deploy_remote.py
 
 | 项目 | 值 |
 |------|-----|
-| 远程 | `github.com:qunxiang-xinghuo/qunxiang-xinghuo` |
+| **主远程（GitHub）** | `github.com:qunxiang-xinghuo/qunxiang-xinghuo` → `origin` |
+| **副远程（自建）** | `fqunxiang.x404.online:2222/qunxiang/qunxiang-xinghuo` → `fqunxiang` |
 | 当前分支 | `dev` |
 | 本地路径 | `C:\Users\Dell\qunxiang-xinghuo` |
+
+### 双远程同步流程（铁律）
+每次推送到 GitHub 时必须同时推送到 `fqunxiang`：
+```bash
+# 方式1：依次推送
+git push origin dev && git push fqunxiang dev
+
+# 方式2：一次性推送到所有远程（需Git 2.30+）
+git push --all origin && git push --all fqunxiang
+```
+
+**若两远程分叉**：
+1. `git fetch fqunxiang dev`
+2. `git merge fqunxiang/dev`（解决冲突）
+3. `git push origin dev && git push fqunxiang dev`
 
 ## 四、环境变量（服务器 `.env`）
 
