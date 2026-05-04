@@ -276,8 +276,12 @@ if (retryMatches.length > 0) {
 | API | 方法 | 说明 |
 |-----|------|------|
 | `/api/ai/catalyst` | POST | AI动态催化问题（DeepSeek+知乎双API） |
-| `/api/sparks/public` | GET | 公开火花墙（按时间倒序） |
+| `/api/ai/chat` | POST | 刘看山AI对话（DeepSeek优先+知乎fallback） |
+| `/api/rooms/ai` | POST | 创建AI对白房间（人机模式入口） |
+| `/api/sparks/public` | GET | 公开火花墙（按hotScore热度降序） |
 | `/api/sparks/mine` | GET | 我的火花片段 |
+| `/api/sparks/:id/visibility` | PUT | 切换火花公开/私密状态 |
+| `/api/assets` | GET/POST | 查询/创建对白资产（默认isPublic=false） |
 | `/api/stories/mine` | GET | 我参与的故事 |
 
 ---
@@ -339,4 +343,88 @@ if (retryMatches.length > 0) {
 
 ---
 
-> 最后更新：2026-05-03 v6.0 全面重构——底部导航+模式改名+等待页简化+匹配修复+故事大厅 已部署 ✅
+## 十一、人机模式（/solo-match）
+
+### 11.1 入口
+发现页 → 「人机模式」卡片 → `/solo-match`
+
+### 11.2 页面结构
+- **刘看山介绍区**：头像+人设（好奇心重的北极狐，喜欢问"为什么"）
+- **身份选择**：三种模式
+  - 预设身份（便利店常客/末班乘客/外卖骑手/深夜加班族）
+  - AI随机分配
+  - 自定义输入
+- **开始按钮**：创建AI房间 → 跳转 `/room/[id]`
+
+### 11.3 技术实现
+- `POST /api/rooms/ai` 创建 `type: "ai_duet"` 房间
+- 热度加权随机抽取脑洞（从hotScore最高的50个中按权重随机）
+- 自动添加刘看山AI参与者（userId: `liu_kanshan_ai`）
+- 返回 welcome 消息作为对话开场
+
+---
+
+## 十二、火花墙系统（/library）
+
+### 12.1 公共火花墙
+- **入口**：底部导航「火花」Tab → 公开火花
+- **排序**：按 `hotScore` 降序（而非时间倒序）
+- **数据源**：`GET /api/sparks/public?limit=50`
+- **字段**：内容预览、脑洞标题、作者身份、日期、热度值
+
+### 12.2 我的火花
+- **入口**：底部导航「火花」Tab → 我的火花 / 我的页 → 我的火花
+- **显示**：个人所有对白资产（Asset），含公开/私密状态
+- **公开/私密切换**：每条火花右侧开关按钮
+  - `PUT /api/sparks/:id/visibility` — 只能修改自己的Asset
+  - 设为公开后同步进入公共火花墙
+
+### 12.3 对白结束自动保存
+- 对白室底部「结束对白」按钮
+- `POST /api/assets` — 从room创建Asset
+- **默认私密**：`isPublic: false`
+- **热度计算**：`hotScore = sparkCount * 10 + messageCount`
+
+---
+
+## 十三、对白室升级（/room/[id]）
+
+### 13.1 微信式聊天界面
+- **头像**：左侧显示刘看山头像（`/liukanshan.jpg`），右侧显示"我"
+- **消息气泡**：左对齐（对方）/右对齐（我），圆角区分
+- **姓名标签**：每条消息上方显示身份名称
+- **时间戳**：每条消息底部显示发送时间
+
+### 13.2 脑洞信息显示
+- 顶部标题栏显示当前脑洞标题
+- 标题下方显示脑洞场景描述（scenario）
+
+### 13.3 火花标记
+- 每条对方消息下方显示「火花」按钮
+- 点击后 `POST /api/rooms/:roomId/spark` 标记
+- 已标记的消息显示金色「火花」标签
+
+### 13.4 结束对白
+- 输入区上方「结束对白」按钮
+- 点击后自动保存为个人火花（默认私密）
+- 保存成功后跳转 `/library`
+
+---
+
+## 十四、数据库Schema变更
+
+### Asset模型新增字段
+```prisma
+model Asset {
+  // ...原有字段...
+  content      String?  // v6.0: 精彩对白片段内容预览
+  identity     String?  // v6.0: 作者身份标签
+  hotScore     Int      @default(0)  // v6.0: 热度值，用于公开火花墙排序
+  isPublic     Boolean  @default(false)
+  // ...
+}
+```
+
+---
+
+> 最后更新：2026-05-03 v6.0 全面重构——底部导航+模式改名+等待页简化+匹配修复+故事大厅+人机模式+火花墙 已部署 ✅
