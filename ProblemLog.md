@@ -65,6 +65,35 @@
 
 ---
 
+## 2026-05-03 密码变更与部署失败
+
+### 问题：paramiko自动部署脚本连接失败
+
+- **现象**：`deploy_remote.py` SSH连接报错 `Authentication failed`
+- **根因**：宝塔面板密码已修改，SSH root密码同步变更
+- **解决**：
+  - 方式1：更新 `DEPLOY_PASSWORD` 环境变量为新密码，重新运行 `python deploy_remote.py`
+  - 方式2：通过宝塔面板Web终端手动执行部署命令
+- **手动部署命令**：
+  ```bash
+  cd /www/wwwroot/qunxiang-xinghuo \
+    && git fetch origin dev \
+    && git reset --hard origin/dev \
+    && git clean -fd \
+    && npm install \
+    && npx prisma generate \
+    && npx prisma db push \
+    && NODE_ENV=production npm run build \
+    && pm2 restart qunxiang-xinghuo \
+    && pm2 save
+  ```
+- **教训**：
+  - 密码变更后必须同步更新本地环境变量
+  - `deploy_remote.py` 已脱敏（从环境变量读取），不会泄露新密码
+  - 保留宝塔面板Web终端作为备用部署通道
+
+---
+
 ## v6.0 泡泡脑洞版——四级智能匹配+社交信号+一键匹配 (2026-05-02)
 
 ### 50年产品经理 + 美术经理 + 技术经理视角重设计
