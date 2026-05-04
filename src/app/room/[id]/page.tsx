@@ -29,8 +29,14 @@ export default function RoomPage() {
   const router = useRouter();
   const roomId = params.id as string;
   const { user: authUser } = useAuth();
-  const savedIdentity = typeof window !== 'undefined' ? localStorage.getItem('xh_duo_identity') : null;
-  const savedUserId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
+  const [savedIdentity, setSavedIdentity] = useState<string | null>(null);
+  const [savedUserId, setSavedUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSavedIdentity(localStorage.getItem('xh_duo_identity'));
+    setSavedUserId(localStorage.getItem('xh_user_id'));
+  }, []);
+
   // v6.1-fix: 使用稳定的 savedUserId，不生成新的 guest ID
   const stableUserId = savedUserId || (savedIdentity ? 'guest-local' : null);
   const user = authUser || (savedIdentity ? {

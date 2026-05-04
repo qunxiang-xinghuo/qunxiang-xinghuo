@@ -30,8 +30,12 @@ export default function HealingSessionPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const savedUserId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
-  const stableUserId = savedUserId || 'guest';
+  const [stableUserId, setStableUserId] = useState('guest');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('xh_user_id');
+    if (saved) setStableUserId(saved);
+  }, []);
 
   // 加载消息
   useEffect(() => {

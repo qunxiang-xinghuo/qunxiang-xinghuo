@@ -31,10 +31,12 @@ export default function SparksPage() {
   useEffect(() => {
     async function init() {
       try {
-        // 公开火花墙（按热度排序）
+        // 公开火花墙（按热度排序）— 一次请求，多处使用
         const res = await fetch('/api/sparks/public?limit=50');
         const data = await res.json();
-        setSparks(data.data?.list || []);
+        const list = data.data?.list || [];
+        setSparks(list);
+        setLatestSparks(list.slice(0, 6));
 
         // 我的火花
         const guestId = localStorage.getItem('xh_user_id');
@@ -43,11 +45,6 @@ export default function SparksPage() {
         });
         const myData = await myRes.json();
         setMySparks(myData.data?.list || []);
-
-        // 最新火花（用于顶部展示）
-        const latestRes = await fetch('/api/sparks/public?limit=6');
-        const latestData = await latestRes.json();
-        setLatestSparks(latestData.data?.list || []);
       } catch (e) {
         console.error('火花页加载失败:', e);
       } finally {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, LogIn, Flame } from 'lucide-react';
@@ -20,7 +20,7 @@ const DECORATIVE_BUBBLES = [
 
 export default function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+
   const { status } = useSession();
 
   const [username, setUsername] = useState('');
@@ -28,6 +28,11 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [windowHeight, setWindowHeight] = useState(800);
+
+  useEffect(() => {
+    setWindowHeight(window.innerHeight);
+  }, []);
 
   // 已登录用户访问登录页，直接重定向到发现页
   useEffect(() => {
@@ -37,11 +42,12 @@ export default function LoginForm() {
   }, [status, router]);
 
   useEffect(() => {
-    const autoUser = searchParams.get('username');
-    const autoPass = searchParams.get('password');
+    const params = new URLSearchParams(window.location.search);
+    const autoUser = params.get('username');
+    const autoPass = params.get('password');
     if (autoUser) setUsername(autoUser);
     if (autoPass) setPassword(autoPass);
-  }, [searchParams]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +118,7 @@ export default function LoginForm() {
               backdropFilter: 'blur(1.5px)',
             }}
             animate={{
-              y: [0, -(window?.innerHeight || 800) - b.size * 2],
+              y: [0, -windowHeight - b.size * 2],
               x: [0, b.sway, -b.sway * 0.6, b.sway * 0.8, 0],
             }}
             transition={{
