@@ -29,9 +29,11 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [windowHeight, setWindowHeight] = useState(800);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setWindowHeight(window.innerHeight);
+    setMounted(true);
   }, []);
 
   // 已登录用户访问登录页，直接重定向到发现页
@@ -167,7 +169,7 @@ export default function LoginForm() {
       {/* ====== 项目简介 ====== */}
       <div className="pt-16 pb-6 px-6 text-center relative z-10">
         <motion.div
-          initial={{ y: -20, opacity: 0 }}
+          initial={mounted ? { y: -20, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
           className="flex items-center justify-center gap-2 mb-3"
@@ -178,7 +180,7 @@ export default function LoginForm() {
         </motion.div>
 
         <motion.p
-          initial={{ y: 10, opacity: 0 }}
+          initial={mounted ? { y: 10, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.15 }}
           className="text-sm text-white/60 leading-relaxed mb-2"
@@ -186,7 +188,7 @@ export default function LoginForm() {
           让真实发光，让思想变现
         </motion.p>
         <motion.p
-          initial={{ y: 10, opacity: 0 }}
+          initial={mounted ? { y: 10, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.25 }}
           className="text-xs text-white/40 leading-relaxed max-w-[280px] mx-auto"
@@ -197,7 +199,7 @@ export default function LoginForm() {
 
       {/* ====== 登录表单 ====== */}
       <motion.form
-        initial={{ opacity: 0, y: 20 }}
+        initial={mounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         onSubmit={handleLogin}
@@ -239,7 +241,7 @@ export default function LoginForm() {
 
           {error && (
             <motion.p
-              initial={{ opacity: 0 }}
+              initial={mounted ? { opacity: 0 } : false}
               animate={{ opacity: 1 }}
               className="text-xs text-red-400 text-center"
             >

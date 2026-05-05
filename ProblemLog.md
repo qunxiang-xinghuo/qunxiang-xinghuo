@@ -2,31 +2,46 @@
 
 ## v6.2-fix4 全面质量保障——SSR修复+性能优化+代码规范 (2026-05-05)
 
-### 问题1：登录页 SSR 空白/消失（复发根因）
+### 问题1：登录页 SSR 空白/消失（复发根因——最终根因：framer-motion initial opacity:0 + MobileContainer）
 
-**现象**：`curl /` 中 `animate-spin` 出现1次，`登录` 出现0次，`BAILOUT_TO_CLIENT_SIDE_RENDERING` 出现1次
+**现象**：部署后用户反馈"登录页面消失了"——页面加载后内容不可见/空白
 
-**三层根因链（v6.2-fix2 修复不彻底）**：
+**五层根因链（从表象到本质）**：
 ```
-AppShell 移除 useSession（✅ 已完成）
-  → 但 LoginForm 仍使用 useSearchParams()（❌ 未修复）
-  → useSearchParams() 在 SSR 期间触发 bailout
-  → page.tsx 的 Suspense fallback（spinner）成为唯一 SSR 输出
-  → LoginForm 完全不参与 SSR
-  → 用户看到空白/转圈
+用户看到空白页面
+  → SSR HTML 包含完整内容（<form>、<input>都存在）
+  → 但所有内容 style="opacity:0;transform:translateY(...)"
+  → framer-motion 将 initial={{ opacity: 0 }} 写入 SSR HTML
+  → MobileContainer 包裹所有页面，initial={{ opacity: 0, y: 10 }}
+  → LoginForm 也有多处 initial={{ opacity: 0 }}
+  → 客户端 JS 加载前，内容完全透明不可见
+  → 如果 JS 加载慢/出错，用户永远看到空白
 ```
 
-**根因1（直接）**：`LoginForm.tsx` 使用 `useSearchParams()` 读取 URL 参数
-**根因2（深层）**：`LoginForm.tsx` 中 `motion.div` 的 `animate` 属性直接引用 `window?.innerHeight`，SSR 期间 `window` 不存在导致 `ReferenceError`
-**根因3（修复遗漏）**：v6.2-fix2 只修复了 AppShell 的 `useSession`，没检查 LoginForm 的 `useSearchParams`
+**根因1（表象）**：页面加载后内容不可见
+**根因2（直接）**：SSR 输出中所有 motion 元素都有 `style="opacity:0"`
+**根因3（深层）**：`MobileContainer` 组件（包裹所有页面）`initial={{ opacity: 0, y: 10 }}`
+**根因4（深层）**：`LoginForm` 中多处 `motion.div/motion.p/motion.form` 使用 `initial={{ opacity: 0 }}`
+**根因5（历史遗留）**：v6.2-fix2/fix3 修复了 `useSession`/`useSearchParams` 问题，但没意识到 framer-motion 的 `initial` 才是导致"消失"的真正原因
+
+**自检失败原因**：之前只检查了 `<form>` 和 `<input>` 是否存在，没检查内容是否可见（`opacity:0` 会让内容存在但不可见）
 
 **修复方案：**
-1. **移除 `useSearchParams`**：改用 `window.location.search` 在 `useEffect` 中读取 URL 参数
-2. **移除 `window` 直接引用**：将 `window.innerHeight` 改为 `useState` + `useEffect` 模式
-3. **验证**：编译后检查 `.next/server/app/index.html`，确认包含 `<form>` 和 `<input>` 标签
+1. **MobileContainer**：添加 `mounted` state，`initial={mounted ? { opacity: 0, y: 10 } : false}`
+2. **LoginForm**：所有 `motion` 组件改为 `initial={mounted ? ... : false}`
+3. **page.tsx**：从 `'use client'` + `Suspense` 改为纯服务端组件
+4. **LoginForm**：移除 `useSearchParams`，改用 `window.location.search`（`useEffect` 内）
+5. **LoginForm**：`window.innerHeight` 改为 `useState` + `useEffect`
+
+**验证铁律（新增）**：
+- 检查 SSR HTML 是否包含 `<form>` ✅
+- **新增**：检查 body 中是否没有 `opacity:0` ✅
+- **新增**：检查 `animate-spin` 是否不在 body 中 ✅
 
 **文件变更：**
-- `src/app/LoginForm.tsx`：移除 `useSearchParams` import，改用 `window.location.search`；`windowHeight` 改为 state
+- `src/components/layout/MobileContainer.tsx`：添加 `mounted` state，条件 `initial`
+- `src/app/LoginForm.tsx`：所有 motion 组件条件 `initial`；移除 `useSearchParams`；`windowHeight` 改为 state
+- `src/app/page.tsx`：从 `'use client'` + `Suspense` 改为服务端组件
 
 ---
 
