@@ -84,6 +84,12 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json(apiResponse(updated));
   } catch (error: any) {
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
+    }
+    if (error.code === 'P2002') {
+      return NextResponse.json(apiError("USERNAME_EXISTS", "用户名已存在，请重新输入"), { status: 409 });
+    }
     console.error("[Update Profile API] Error:", error);
     return NextResponse.json(apiError("SERVER_ERROR", "服务器错误"), { status: 500 });
   }

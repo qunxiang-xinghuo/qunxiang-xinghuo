@@ -133,44 +133,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
+    }
     const validatedData = brainholeCreateSchema.parse(body);
 
-    // 创建脑洞
-    const brainhole = await db.brainhole.create({
-      data: {
-        title: validatedData.title,
-        scenario: validatedData.scenario,
-        contextTime: validatedData.contextTime,
-        contextLocation: validatedData.contextLocation,
-        contextCharacters: validatedData.contextCharacters,
-        difficulty: validatedData.difficulty,
-        authorId: userId,
-        status: "pending",
-        source: "user",
-      },
-    });
-
-    // 创建标签关联
-    if (validatedData.tags && validatedData.tags.length > 0) {
-      // 首先确保标签存在
-      const tagPromises = validatedData.tags.map(async (tagName) => {
-        const tag = await db.tag.upsert({
-          where: { name: tagName },
-          update: {},
-          create: { name: tagName },
-        });
-
-        await db.brainholeTag.create({
-          data: {
-            brainholeId: brainhole.id,
-            tagId: tag.id,
-          },
-        });
+    // v7.0-test8: 使用事务包裹脑洞创建和标签关联
+    const brainhole = await db.$transaction(async (tx) => {
+      const created = await tx.brainhole.create({
+        data: {
+          title: validatedData.title,
+          scenario: validatedData.scenario,
+          contextTime: validatedData.contextTime,
+          contextLocation: validatedData.contextLocation,
+          contextCharacters: validatedData.contextCharacters,
+          difficulty: validatedData.difficulty,
+          authorId: userId,
+          status: "pending",
+          source: "user",
+        },
       });
 
-      await Promise.all(tagPromises);
-    }
+      if (validatedData.tags && validatedData.tags.length > 0) {
+        for (const tagName of validatedData.tags) {
+          const tag = await tx.tag.upsert({
+            where: { name: tagName },
+            update: {},
+            create: { name: tagName },
+          });
+
+          await tx.brainholeTag.create({
+            data: {
+              brainholeId: created.id,
+              tagId: tag.id,
+            },
+          });
+        }
+      }
+
+      return created;
+    });
 
     return NextResponse.json(apiResponse(brainhole), { status: 201 });
   } catch (error) {
