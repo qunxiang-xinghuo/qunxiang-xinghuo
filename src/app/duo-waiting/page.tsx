@@ -41,6 +41,8 @@ function DuoWaitingContent() {
   const identityRef = useRef<string>('');
   const brainholeIdRef = useRef<string | undefined>(undefined);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const navTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const copiedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const pollMatchStatus = useCallback(async (currentMatchId: string) => {
     if (!currentMatchId || status !== 'matching') return false;
@@ -56,7 +58,7 @@ function DuoWaitingContent() {
         if (data.room?.brainhole) setBrainholeInfo(data.room.brainhole);
         if (data.status === 'matched' && data.roomId) {
           setStatus('matched');
-          setTimeout(() => router.push(`/room/${data.roomId}`), 1500);
+          navTimeoutRef.current = setTimeout(() => router.push(`/room/${data.roomId}`), 1500);
           return true;
         }
       }
@@ -94,7 +96,8 @@ function DuoWaitingContent() {
     if (inviteCode) {
       navigator.clipboard.writeText(inviteCode).then(() => {
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+        copiedTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
       }).catch(() => {});
     }
   };
@@ -125,6 +128,14 @@ function DuoWaitingContent() {
       setCreatingAiRoom(false);
     }
   }, [router]);
+
+  // 清理所有timeout
+  useEffect(() => {
+    return () => {
+      if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current);
+      if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+    };
+  }, []);
 
   // 初始化匹配
   useEffect(() => {
@@ -166,7 +177,7 @@ function DuoWaitingContent() {
             if (result.data.brainholeTitle && !brainholeInfo) {
               setBrainholeInfo({ id: result.data.brainholeId || '', title: result.data.brainholeTitle, scenario: '' });
             }
-            setTimeout(() => router.push(`/room/${result.data.roomId}`), 1500);
+            navTimeoutRef.current = setTimeout(() => router.push(`/room/${result.data.roomId}`), 1500);
           }
         } else {
           setMatchError(result.message || '匹配请求未成功');
