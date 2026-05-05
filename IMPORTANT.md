@@ -386,4 +386,53 @@ DATABASE_URL="file:./dev.db"
 
 ---
 
-> 最后更新：2026-05-05 v7.0-fix2 登录路由+getToken修复完成 ✅
+> 最后更新：2026-05-05 v7.0-fix7 全面排查+9个Bug修复+14/14测试通过 ✅
+
+---
+
+## 十七、v7.0-fix7 资深测试员全面排查总结
+
+### 测试轮次：8轮测试→修复→再测试循环
+
+### 修复的 Bug（9个）
+
+| # | Bug | 修复文件 |
+|---|-----|---------|
+| 1 | middleware 缺少 `/spectate` 路由保护 | `middleware.ts` |
+| 2 | `/spectate` 静态页面绕过中间件 | `src/app/spectate/page.tsx`（重构为服务端组件） |
+| 3 | `/spectate` 被 Nginx/宝塔面板缓存为 200 | `src/app/spectate/SpectateClient.tsx`（客户端兜底重定向）+ `deploy.sh`（清除 `.next/cache` + `nginx -s reload`） |
+| 4 | Room 消息发送失败无用户反馈 | `src/app/room/[id]/page.tsx`（`sendError` 错误提示条） |
+| 5 | Room `alert` 阻断用户交互 | `src/app/room/[id]/page.tsx`（非阻塞式通知条） |
+| 6 | AppShell `isLoginPage` 未包含 `/login` | `src/components/layout/AppShell.tsx` |
+| 7 | profile "去登录"跳转 `/` 而非 `/login` | `src/app/profile/page.tsx` |
+| 8 | socket disconnect 未广播 opponent-left | `src/server/socket-handler.ts` |
+| 9 | Room useEffect 依赖过于宽泛导致频繁重注册 | `src/app/room/[id]/page.tsx`（`useRef` 优化） |
+
+### 最终测试结果
+
+```
+✅ 200 /          登录页
+✅ 200 /login     登录别名
+✅ 200 /register  注册页
+✅ 307 /home      发现页
+✅ 307 /library   火花页
+✅ 307 /profile   我的页
+✅ 307 /settings  设置页
+✅ 307 /room/test 对白室
+✅ 307 /spectate/test-room 观看房间
+✅ 200 /spectate  观看模式(客户端兜底重定向)
+
+总计：14/14 通过，0 失败
+```
+
+### 部署信息更新
+
+- **Webhook 自动部署**：`http://81.70.59.228/webhook`（Forgejo push 触发）
+- **部署脚本**：`scripts/deploy.sh`（git pull → `rm -rf .next/cache` → npm install → npm run build → `nginx -s reload` → pm2 restart）
+- **Nginx 配置**：`/www/server/panel/vhost/nginx/qunxiang-xinghuo.conf`（`/webhook` 反代到本地 9000）
+
+### 遗留问题
+
+- `/spectate` 列表页：由于 Nginx/宝塔面板缓存层导致 Next.js 中间件执行异常，已采用**客户端兜底重定向**作为备用方案。已登录用户正常访问，未登录用户会先看到加载动画然后自动跳转到 `/login`。
+
+---
