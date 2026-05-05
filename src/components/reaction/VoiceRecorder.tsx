@@ -16,7 +16,6 @@ export default function VoiceRecorder({ onResult, onClose }: VoiceRecorderProps)
   React.useEffect(() => {
     const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognitionCtor) {
-      alert('您的浏览器不支持语音输入');
       onClose();
       return;
     }

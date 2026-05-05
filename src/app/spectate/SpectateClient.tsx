@@ -1,8 +1,5 @@
 'use client';
 
-// v7.0-fix7: 强制动态渲染，确保中间件在请求时执行（防止静态预渲染绕过登录墙）
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';

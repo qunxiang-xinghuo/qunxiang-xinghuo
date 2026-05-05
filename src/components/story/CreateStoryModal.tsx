@@ -112,6 +112,7 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
   const [roles, setRoles] = useState<RoleInput[]>([]);
   const [minActors, setMinActors] = useState(2);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const selectTemplate = (t: StoryTemplate) => {
     setSelectedTemplate(t);
@@ -131,14 +132,15 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
 
   const handleSubmit = async () => {
     if (!title.trim() || !worldview.trim() || !conflict.trim()) {
-      alert('请填写完整的故事信息');
+      setError('请填写完整的故事信息');
       return;
     }
     const validRoles = roles.filter((r) => r.name.trim());
-    if (validRoles.length === 0) { alert('至少需要一个角色'); return; }
-    if (minActors > validRoles.length) { alert('最少启动人数不能大于角色总数'); return; }
+    if (validRoles.length === 0) { setError('至少需要一个角色'); return; }
+    if (minActors > validRoles.length) { setError('最少启动人数不能大于角色总数'); return; }
 
     setLoading(true);
+    setError('');
     try {
       const res = await fetch('/api/stories', {
         method: 'POST',
@@ -153,8 +155,8 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
       });
       const result = await res.json();
       if (result.success) { onCreated(); onClose(); }
-      else { alert(result.error?.message || '创建失败'); }
-    } catch { alert('网络错误'); }
+      else { setError(result.error?.message || '创建失败'); }
+    } catch { setError('网络错误'); }
     finally { setLoading(false); }
   };
 
@@ -165,6 +167,13 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
         <motion.div className="relative w-full max-w-md bg-[#0f1525] rounded-t-3xl sm:rounded-3xl overflow-hidden border border-slate-700/20 shadow-2xl max-h-[90vh] flex flex-col"
           initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
+
+          {/* 错误提示 */}
+          {error && (
+            <div className="shrink-0 px-5 py-2 bg-red-500/10 border-b border-red-500/20">
+              <p className="text-xs text-red-400 text-center">{error}</p>
+            </div>
+          )}
 
           {/* 头部 */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700/15 shrink-0">

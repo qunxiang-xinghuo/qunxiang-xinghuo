@@ -61,7 +61,7 @@ export default function RegisterPage() {
       if (result.success) {
         // v7.0: 注册成功后跳转登录页，需要手动登录
         console.log('[Register] 注册成功，跳转登录页...');
-        router.push(`/?username=${encodeURIComponent(username.trim())}`);
+        router.push(`/login?username=${encodeURIComponent(username.trim())}`);
       } else {
         // v6.3-auth-fix: 清晰显示 API 返回的错误信息
         setError(result.message || '注册失败，请稍后重试');

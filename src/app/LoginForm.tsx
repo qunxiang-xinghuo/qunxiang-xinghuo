@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, LogIn, Flame } from 'lucide-react';
@@ -20,6 +20,7 @@ const DECORATIVE_BUBBLES = [
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { status } = useSession();
 
@@ -46,12 +47,11 @@ export default function LoginForm() {
   // LoginForm 不做额外重定向，避免与 handleLogin 中的 router.push 冲突（v7.0-fix5）
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const autoUser = params.get('username');
-    const autoPass = params.get('password');
+    const autoUser = searchParams.get('username');
+    const autoPass = searchParams.get('password');
     if (autoUser) setUsername(autoUser);
     if (autoPass) setPassword(autoPass);
-  }, []);
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +59,7 @@ export default function LoginForm() {
 
     if (!username.trim() || !password.trim()) {
       setError('请输入用户名和密码');
+      setLoading(false);
       return;
     }
 

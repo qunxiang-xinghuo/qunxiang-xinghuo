@@ -5,11 +5,13 @@ import { useState, useRef, useCallback } from 'react';
 export function useVoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [error, setError] = useState('');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const startRecording = useCallback(() => {
+    setError('');
     if (typeof window === 'undefined' || !(window.SpeechRecognition || window.webkitSpeechRecognition)) {
-      alert('您的浏览器不支持语音输入功能');
+      setError('您的浏览器不支持语音输入功能');
       return;
     }
 
@@ -56,6 +58,7 @@ export function useVoiceRecorder() {
   return {
     isRecording,
     transcript,
+    error,
     startRecording,
     stopRecording,
     resetTranscript,

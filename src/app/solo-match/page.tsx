@@ -20,6 +20,7 @@ export default function SoloMatchPage() {
   const [customIdentity, setCustomIdentity] = useState('');
   const [mode, setMode] = useState<'preset' | 'random' | 'custom'>('preset');
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem('xh_duo_identity');
@@ -57,11 +58,11 @@ export default function SoloMatchPage() {
         }
         router.push(`/room/${result.data.roomId}`);
       } else {
-        alert('创建房间失败，请重试');
+        setError('创建房间失败，请重试');
         setCreating(false);
       }
     } catch (err) {
-      alert('网络异常，请重试');
+      setError('网络异常，请重试');
       setCreating(false);
     }
   };
@@ -170,6 +171,13 @@ export default function SoloMatchPage() {
           )}
         </motion.div>
       </div>
+
+      {/* 错误提示 */}
+      {error && (
+        <div className="shrink-0 px-5 pt-2">
+          <p className="text-xs text-red-400 text-center bg-red-500/10 rounded-lg py-2">{error}</p>
+        </div>
+      )}
 
       {/* 底部开始按钮 —— pb 已增大防止被固定导航栏遮挡 */}
       <div className="shrink-0 px-5 pb-20 pt-2 bg-gradient-to-t from-[#0a0e1a] to-transparent">

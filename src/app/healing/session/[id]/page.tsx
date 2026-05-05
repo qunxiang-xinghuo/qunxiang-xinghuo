@@ -27,6 +27,7 @@ export default function HealingSessionPage() {
   const [sending, setSending] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<'active' | 'closed'>('active');
   const [publishing, setPublishing] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -121,9 +122,12 @@ export default function HealingSessionPage() {
         }),
       });
 
-      alert('已公开至火花墙');
+      setToast({ type: 'success', message: '已公开至火花墙' });
+      setTimeout(() => setToast(null), 3000);
     } catch (err) {
       console.error('公开失败:', err);
+      setToast({ type: 'error', message: '公开失败，请重试' });
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setPublishing(false);
     }
@@ -136,6 +140,15 @@ export default function HealingSessionPage() {
   return (
     <div className="flex flex-col h-full page-gradient">
       <TopBar title="个人疗愈" showBack onBack={() => router.back()} />
+
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-sm font-medium z-50 ${
+          toast.type === 'success' ? 'bg-emerald-500/90 text-white' : 'bg-red-500/90 text-white'
+        }`}>
+          {toast.message}
+        </div>
+      )}
 
       {/* 消息列表 */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-4">

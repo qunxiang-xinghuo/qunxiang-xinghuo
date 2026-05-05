@@ -1,5 +1,15 @@
+import { Suspense } from 'react';
 import LoginForm from './LoginForm';
 
 export default function RootLoginPage() {
-  return <LoginForm />;
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col h-full items-center justify-center page-gradient">
+        <div className="w-8 h-8 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin mb-4" />
+        <p className="text-sm text-white/30">加载中...</p>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  );
 }

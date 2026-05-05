@@ -71,8 +71,9 @@ export default function EarningsPage() {
             </div>
           </div>
           <button
-            onClick={() => alert('提现功能即将开放')}
-            className="w-full mt-4 py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/20 hover:bg-[#e2b04a]/20 transition-colors flex items-center justify-center gap-2"
+            onClick={() => { /* 提现功能即将开放 */ }}
+            disabled
+            className="w-full mt-4 py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/20 hover:bg-[#e2b04a]/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
           >
             <Wallet className="w-4 h-4" />
             提现
