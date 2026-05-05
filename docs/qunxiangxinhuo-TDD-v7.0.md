@@ -39,6 +39,25 @@
 | v7.0-fix5 | 2026-05-05 | P0登录Bug：cookie session化+退出硬刷新+登录导航冲突修复 |
 | v7.0-fix6 | 2026-05-05 | 系统性修复 getServerSession → getToken（42个API路由） |
 | **v7.0-fix7** | **2026-05-05** | **/login路由+消息去重+结束逻辑+脑洞显示+webhook自动部署** |
+| v7.0-test1 | 2026-04-29 | 修复LoginForm空输入loading未重置+移除12个阻塞式alert+register跳转统一+Suspense边界 |
+| v7.0-test2 | 2026-04-29 | sparks/public参数校验+feedback/JSON.parse防护+brainhole异步提交错误处理 |
+| v7.0-test3 | 2026-04-29 | story-hall修复13个空catch+JSON.parse防护+组件卸载setState防护 |
+| v7.0-test4 | 2026-04-29 | rooms/join/invite错误安全访问+brainholes区分ZodError/SyntaxError+library并行化查询 |
+| v7.0-test5 | 2026-04-29 | library/multiplayer/roadshow/story/zhihu-search添加framer-motion mounted控制+卸载setState |
+| v7.0-test6 | 2026-04-29 | useBrainhole和useReaction添加卸载setState防护+error安全访问 |
+| v7.0-test7 | 2026-04-29 | zhihu-zhida卸载setState+match/page.tsx类型安全 |
+| v7.0-test8 | 2026-04-29 | brainholes事务包裹+profile SyntaxError/P2002并发防护 |
+| v7.0-test9 | 2026-04-29 | duo/multi-waiting清理5处setTimeout内存泄漏+story-hall网络错误区分 |
+| v7.0-test10 | 2026-04-29 | 4个API路由添加UUID格式校验 |
+| v7.0-test11 | 2026-04-29 | match guestId修复+avatar目录创建+sparks并发竞态+P2002防护+framer-motion+setTimeout泄漏+卸载setState |
+| v7.0-test12 | 2026-04-29 | AI聊天apiError参数修复+healing历史排序+reactions事务+match-engine原子性+语音录制cleanup+hooks res.ok |
+| v7.0-test13 | 2026-04-29 | zhihu写操作身份验证+healing publishing死锁修复 |
+| v7.0-test14 | 2026-04-29 | room setTimeout泄漏+generateAIReply catch+solo/duo-match framer-motion及fetch防护 |
+| v7.0-test15 | 2026-04-29 | rooms/ai Zod验证+rooms/join竞态消除+rooms/invite邀请码P2002重试+healing会话限制 |
+| v7.0-test16 | 2026-04-29 | spectate identity验证+settings/healing framer-motion及错误处理 |
+| v7.0-test17 | 2026-04-29 | 外部API超时控制(DeepSeek/知乎直答 15s)+ai/catalyst致命错误返回500 |
+| v7.0-test18 | 2026-04-29 | 组件framer-motion SSR防护(BubbleCloud/ModeDock/ZhihuHotBubbles)+useAuth卸载防护 |
+| v7.0-test19 | 2026-04-29 | register/library/profile/roadshow framer-motion SSR防护 |
 
 ---
 
