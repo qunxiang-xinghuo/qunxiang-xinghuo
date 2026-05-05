@@ -174,7 +174,8 @@ export async function getHotList(
  */
 export async function zhidaChat(
   messages: ZhihuZhidaMessage[],
-  model: "zhida-fast-1p5" | "zhida-thinking-1p5" | "zhida-agent" = "zhida-thinking-1p5"
+  model: "zhida-fast-1p5" | "zhida-thinking-1p5" | "zhida-agent" = "zhida-thinking-1p5",
+  signal?: AbortSignal
 ): Promise<ZhihuZhidaResponse> {
   const headers = buildAuthHeaders();
   const body = {
@@ -187,6 +188,7 @@ export async function zhidaChat(
     method: "POST",
     headers,
     body: JSON.stringify(body),
+    signal,
   });
 
   if (!res.ok) {

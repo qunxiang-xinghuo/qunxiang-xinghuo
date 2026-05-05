@@ -106,6 +106,8 @@ export async function POST(
 
     // 调用AI API
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       const aiRes = await fetch(`${request.nextUrl.origin}/api/ai/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,7 +116,9 @@ export async function POST(
           topic: healingSession.topic || "个人疗愈对话",
           persona: "healer",
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       const aiResult = await aiRes.json();
       const aiContent = aiResult.data?.content || "嗯，我能感受到你话里的分量。愿意多说说吗？";
 

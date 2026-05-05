@@ -101,6 +101,8 @@ export async function POST(request: NextRequest) {
         ];
         console.log("[AI Chat] 调用 DeepSeek API...");
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -113,7 +115,9 @@ export async function POST(request: NextRequest) {
             temperature: 0.85,
             max_tokens: 200,
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         if (res.ok) {
           const result = await res.json();
@@ -146,7 +150,11 @@ export async function POST(request: NextRequest) {
       ];
       console.log("[AI Chat] 调用 知乎直答 API...");
 
-      const zhidaResult = await zhidaChat(zhidaMessages, "zhida-thinking-1p5");
+      // v7.0-test17: 知乎直答添加15秒超时
+      const zhidaController = new AbortController();
+      const zhidaTimeout = setTimeout(() => zhidaController.abort(), 15000);
+      const zhidaResult = await zhidaChat(zhidaMessages, "zhida-thinking-1p5", zhidaController.signal);
+      clearTimeout(zhidaTimeout);
       zhidaContent = zhidaResult.choices?.[0]?.message?.content || "";
       zhidaOk = !!zhidaContent;
       console.log("[AI Chat] 知乎直答 成功, 内容长度:", zhidaContent.length);
