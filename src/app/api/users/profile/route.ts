@@ -47,9 +47,16 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    // 先获取当前用户名，用于更新 Asset 记录
+    const currentUser = await db.user.findUnique({
+      where: { id: userId },
+      select: { username: true, name: true },
+    });
+    const oldName = currentUser?.name || currentUser?.username || '';
+
     const updated = await db.user.update({
       where: { id: userId },
-      data: { username },
+      data: { username, name: username },
       select: {
         id: true,
         name: true,
@@ -60,6 +67,20 @@ export async function PATCH(req: NextRequest) {
         sparkCount: true,
       },
     });
+
+    // 同步更新该用户所有 Asset 记录中的 identity 字段
+    if (oldName && oldName !== username) {
+      try {
+        await db.asset.updateMany({
+          where: { userId, identity: oldName },
+          data: { identity: username },
+        });
+        console.log(`[Update Profile] 已同步更新 Asset identity: ${oldName} → ${username}`);
+      } catch (e) {
+        console.error('[Update Profile] 更新 Asset identity 失败:', e);
+        // 不影响主流程，只记录日志
+      }
+    }
 
     return NextResponse.json(apiResponse(updated));
   } catch (error: any) {

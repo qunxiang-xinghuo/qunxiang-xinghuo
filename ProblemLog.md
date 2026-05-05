@@ -452,4 +452,77 @@ model AssetLike {
 
 ---
 
+## v7.0 完整版 — 根据修改后 TDD 7.0 重构 (2026-05-05)
+
+### 需求变更点
+
+1. **火花墙UI重构**：顶部"最新火花"2x2网格 → 移除，改为纯 Tab 切换（最新火花/最热火花）
+2. **修改用户名同步**：修改用户名后需同步更新历次火花记录里的 identity 字段
+3. **发现页确认**：四个模式入口（人机/双人/多人即将开放/观看）
+
+### 第1轮自检
+
+| 检查项 | 结果 | 说明 |
+|--------|------|------|
+| 火花墙 Tab 切换 | ✅ | 最新火花/最热火花两个Tab，默认最新 |
+| 点赞 Flame 图标 | ✅ | 已点赞红色实心，未点赞灰色空心 |
+| 不能给自己点赞 | ✅ | 自己的火花只显示热度数字 |
+| 个人火花页面 | ✅ | `/profile/sparks` 独立页面，有公开/私密切换 |
+| 发现页四个模式 | ✅ | 人机/双人/多人(即将开放)/观看 |
+| 登录流程 | ✅ | middleware + AppShell + BottomNav 三层守卫 |
+
+**发现问题1**：settings/page.tsx 修改用户名成功后未同步更新 localStorage
+- **修复**：saveUsername 成功后同步更新 localStorage.xh_user 的 name 和 username
+
+**发现问题2**：api/users/profile 只更新 username，未更新 name 和 Asset.identity
+- **修复**：API 中同时更新 `name: username`，并查询旧 name 同步更新 Asset 表的 identity 字段
+
+### 第2轮自检
+
+| 检查项 | 结果 | 说明 |
+|--------|------|------|
+| library guestId SSR | ⚠️ | 组件顶层直接访问 localStorage |
+| profile/sparks guestId | ⚠️ | 同样问题 |
+
+**发现问题3**：`typeof window !== 'undefined'` 在 App Router 客户端组件中仍可能导致 hydration 不一致
+- **修复**：`library/page.tsx` 和 `profile/sparks/page.tsx` 中 guestId 改为 `useState` + `useEffect`
+
+### 第3轮自检
+
+| 检查项 | 结果 | 说明 |
+|--------|------|------|
+| 构建测试 | ✅ | 65/65 路由通过 |
+| 火花墙 Tab 样式 | ✅ | 居中排列，选中高亮 |
+| 空状态文案 | ✅ | 最新/最热各自有对应提示 |
+| 点击跳转详情 | ✅ | 点击内容区域跳转 room 页面 |
+
+### 第4轮自检（最终确认）
+
+| 检查项 | 结果 | 说明 |
+|--------|------|------|
+| 登录页无导航栏 | ✅ | BottomNav pathname === '/' return null |
+| 未登录强制跳转 | ✅ | middleware 重定向到 / |
+| 已登录跳发现页 | ✅ | middleware 重定向到 /home |
+| 火花墙公开 only | ✅ | library 无个人火花Tab |
+| 个人火花在【我的】 | ✅ | `/profile/sparks` 入口 |
+| 头像上传 | ✅ | capture="environment" 支持拍照 |
+| 用户名唯一性 | ✅ | API 排除当前用户检查 |
+| 旧密码验证 | ✅ | PUT /api/users/password bcrypt.compare |
+| 修改密码哈希 | ✅ | bcrypt.hash(10) |
+
+### 编译结果：65/65 路由全部通过 ✅（含 Middleware）
+
+### 文件变更
+
+| 文件 | 变更 |
+|------|------|
+| `src/app/library/page.tsx` | 移除顶部网格，改为 Tab 切换；guestId 改为 useState |
+| `src/app/profile/sparks/page.tsx` | guestId 改为 useState |
+| `src/app/settings/page.tsx` | 修改用户名成功后同步更新 localStorage |
+| `src/app/api/users/profile/route.ts` | 同步更新 User.name 和 Asset.identity |
+| `docs/qunxiangxinhuo-TDD-v7.0.md` | 按修改后需求重写 |
+| `IMPORTANT.md` | 新增 v7.0 规范章节 |
+
+---
+
 > **铁律**：每次100% context前，先读 IMPORTANT.md，记录所有 bug 根因+解决+预防措施，犯过的问题不再犯。

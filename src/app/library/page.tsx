@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Flame, TrendingUp, Clock, ChevronRight, Sparkles,
+  Flame, TrendingUp, Clock, ChevronRight,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -23,42 +23,36 @@ interface Spark {
   isMySpark: boolean;
 }
 
-type SortType = 'latest' | 'hottest';
+type TabType = 'latest' | 'hottest';
 
 export default function SparksPage() {
   const router = useRouter();
   const [sparks, setSparks] = useState<Spark[]>([]);
-  const [latestSparks, setLatestSparks] = useState<Spark[]>([]);
-  const [sort, setSort] = useState<SortType>('latest');
+  const [tab, setTab] = useState<TabType>('latest');
   const [loading, setLoading] = useState(true);
   const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
+  const [guestId, setGuestId] = useState<string | null>(null);
 
-  const guestId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
+  useEffect(() => {
+    setGuestId(localStorage.getItem('xh_user_id'));
+  }, []);
 
   // 加载公开火花墙数据
   const loadSparks = useCallback(async () => {
     setLoading(true);
     try {
-      // 公开火花墙（支持排序）
-      const res = await fetch(`/api/sparks/public?limit=50&sort=${sort}`, {
-        headers: guestId ? { 'x-guest-id': guestId } : {},
+      const gid = guestId || localStorage.getItem('xh_user_id');
+      const res = await fetch(`/api/sparks/public?limit=50&sort=${tab}`, {
+        headers: gid ? { 'x-guest-id': gid } : {},
       });
       const data = await res.json();
-      const list = data.data?.list || [];
-      setSparks(list);
-
-      // 最新火花展示（始终取最新的4条，不受排序影响）
-      const latestRes = await fetch('/api/sparks/public?limit=6&sort=latest', {
-        headers: guestId ? { 'x-guest-id': guestId } : {},
-      });
-      const latestData = await latestRes.json();
-      setLatestSparks(latestData.data?.list?.slice(0, 4) || []);
+      setSparks(data.data?.list || []);
     } catch (e) {
       console.error('火花页加载失败:', e);
     } finally {
       setLoading(false);
     }
-  }, [sort, guestId]);
+  }, [tab, guestId]);
 
   useEffect(() => {
     loadSparks();
@@ -75,7 +69,7 @@ export default function SparksPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(guestId ? { 'x-guest-id': guestId } : {}),
+          ...(localStorage.getItem('xh_user_id') ? { 'x-guest-id': localStorage.getItem('xh_user_id')! } : {}),
         },
       });
       const result = await res.json();
@@ -84,17 +78,7 @@ export default function SparksPage() {
         const newLiked = result.data?.liked;
         const newHotScore = result.data?.hotScore ?? spark.hotScore;
 
-        // 更新公开火花列表
         setSparks((prev) =>
-          prev.map((s) =>
-            s.id === spark.id
-              ? { ...s, likedByMe: newLiked, hotScore: newHotScore }
-              : s
-          )
-        );
-
-        // 同步更新最新火花展示
-        setLatestSparks((prev) =>
           prev.map((s) =>
             s.id === spark.id
               ? { ...s, likedByMe: newLiked, hotScore: newHotScore }
@@ -121,64 +105,30 @@ export default function SparksPage() {
       <PageHeader title="火花" subtitle="灵感碰撞的瞬间" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* 最新火花展示 */}
-        {latestSparks.length > 0 && (
-          <section className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-[#74b9ff]" />
-              <h2 className="text-sm font-semibold text-white/90">最新火花</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {latestSparks.map((spark, idx) => (
-                <motion.div
-                  key={spark.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.08 }}
-                  onClick={() => handleSparkClick(spark)}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5 cursor-pointer hover:bg-white/[0.06] transition-colors"
-                >
-                  <p className="text-xs text-white/70 leading-relaxed line-clamp-3">{spark.content}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-[10px] text-white/25 truncate">{spark.identity || '匿名用户'}</p>
-                    <div className="flex items-center gap-1">
-                      <Flame className="w-3 h-3 text-[#e2b04a]/40" />
-                      <span className="text-[10px] text-white/25">{spark.hotScore || 0}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* 排序切换 + 标题 */}
-        <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-          <h2 className="text-sm font-medium text-white/90">公开火花</h2>
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => setSort('latest')}
-              className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-colors ${
-                sort === 'latest'
-                  ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25'
-                  : 'bg-white/[0.03] text-white/30 border border-white/5 hover:text-white/50'
-              }`}
-            >
-              <Clock className="w-3 h-3" />
-              最新
-            </button>
-            <button
-              onClick={() => setSort('hottest')}
-              className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-colors ${
-                sort === 'hottest'
-                  ? 'bg-[#ff6b6b]/15 text-[#ff6b6b] border border-[#ff6b6b]/25'
-                  : 'bg-white/[0.03] text-white/30 border border-white/5 hover:text-white/50'
-              }`}
-            >
-              <TrendingUp className="w-3 h-3" />
-              最热
-            </button>
-          </div>
+        {/* Tab 切换：最新火花 / 最热火花 */}
+        <div className="flex items-center justify-center gap-2 mb-5">
+          <button
+            onClick={() => setTab('latest')}
+            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full transition-all ${
+              tab === 'latest'
+                ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 font-medium'
+                : 'bg-white/[0.03] text-white/30 border border-white/5 hover:text-white/50'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            最新火花
+          </button>
+          <button
+            onClick={() => setTab('hottest')}
+            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full transition-all ${
+              tab === 'hottest'
+                ? 'bg-[#ff6b6b]/15 text-[#ff6b6b] border border-[#ff6b6b]/25 font-medium'
+                : 'bg-white/[0.03] text-white/30 border border-white/5 hover:text-white/50'
+            }`}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            最热火花
+          </button>
         </div>
 
         {loading ? (
@@ -192,8 +142,12 @@ export default function SparksPage() {
             {sparks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Flame className="w-10 h-10 text-white/10 mb-3" />
-                <p className="text-sm text-white/30">还没有公开火花</p>
-                <p className="text-xs text-white/20 mt-1">去对白中点击「火花」标记你的灵感</p>
+                <p className="text-sm text-white/30">
+                  {tab === 'latest' ? '还没有最新火花' : '还没有最热火花'}
+                </p>
+                <p className="text-xs text-white/20 mt-1">
+                  {tab === 'latest' ? '去对白中点击「火花」标记你的灵感' : '给喜欢的火花点赞，让它登上热榜'}
+                </p>
               </div>
             ) : (
               sparks.map((spark, idx) => (

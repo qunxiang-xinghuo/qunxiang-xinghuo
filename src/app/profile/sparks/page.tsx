@@ -30,15 +30,19 @@ export default function MySparksPage() {
   const [sort, setSort] = useState<SortType>('latest');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [guestId, setGuestId] = useState<string | null>(null);
 
-  const guestId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
+  useEffect(() => {
+    setGuestId(localStorage.getItem('xh_user_id'));
+  }, []);
 
   // 加载我的火花
   const loadSparks = useCallback(async () => {
     setLoading(true);
     try {
+      const gid = guestId || localStorage.getItem('xh_user_id');
       const res = await fetch(`/api/sparks/mine?sort=${sort}`, {
-        headers: guestId ? { 'x-guest-id': guestId } : {},
+        headers: gid ? { 'x-guest-id': gid } : {},
       });
       const data = await res.json();
       setSparks(data.data?.list || []);
@@ -62,7 +66,7 @@ export default function MySparksPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...(guestId ? { 'x-guest-id': guestId } : {}),
+          ...(localStorage.getItem('xh_user_id') ? { 'x-guest-id': localStorage.getItem('xh_user_id')! } : {}),
         },
         body: JSON.stringify({ isPublic: !spark.isPublic }),
       });

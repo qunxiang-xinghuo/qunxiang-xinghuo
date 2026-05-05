@@ -164,7 +164,18 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setUser((prev) => prev ? { ...prev, username: usernameValue.trim() } : null);
+        const newName = usernameValue.trim();
+        setUser((prev) => prev ? { ...prev, name: newName, username: newName } : null);
+        // 同步更新 localStorage
+        const raw = localStorage.getItem('xh_user');
+        if (raw) {
+          try {
+            const saved = JSON.parse(raw);
+            saved.name = newName;
+            saved.username = newName;
+            localStorage.setItem('xh_user', JSON.stringify(saved));
+          } catch { /* ignore */ }
+        }
         setToast({ type: 'success', message: '用户名修改成功' });
         setShowUsernameModal(false);
       } else {

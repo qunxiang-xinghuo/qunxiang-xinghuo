@@ -308,11 +308,12 @@ DATABASE_URL="file:./dev.db"
 | 公开火花墙 | `/library` Tab | `/library` 单一页面 |
 | 个人火花 | `/library` Tab "我的火花" | `/profile/sparks` 独立页面 |
 | 点赞图标 | Heart（心形） | Flame（火花） |
+| 排序UI | 排序按钮 | Tab 切换（最新火花/最热火花）|
 
 ### 16.2 路由变更
 | 页面 | 路径 | 说明 |
 |------|------|------|
-| 公开火花墙 | `/library` | 展示所有公开火花，双重排序 |
+| 公开火花墙 | `/library` | 展示所有公开火花，Tab切换排序 |
 | 我的火花 | `/profile/sparks` | 管理个人火花，支持排序+公开/私密切换 |
 
 ### 16.3 点赞图标铁律
@@ -327,7 +328,12 @@ DATABASE_URL="file:./dev.db"
 - 支持最新/最热排序
 - 点击跳转到房间详情
 
-### 16.5 Middleware 更新
+### 16.5 修改用户名同步规范
+- 修改用户名时同步更新 `User.name` + `User.username`
+- 同步更新该用户所有 `Asset` 记录的 `identity` 字段
+- 前端修改成功后同步更新 `localStorage.xh_user`
+
+### 16.6 Middleware 更新
 - 新增 `/profile/sparks` 到 matcher 列表
 - 保持所有其他路由不变
 
