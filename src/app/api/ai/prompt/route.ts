@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { apiResponse, apiError } from "@/lib/utils";
 import { getAIPrompt } from "@/lib/ai";
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 

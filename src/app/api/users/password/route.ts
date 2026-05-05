@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
@@ -12,11 +11,16 @@ const passwordSchema = z.object({
   confirmPassword: z.string().min(6).max(100),
 });
 
+/**
+ * PUT /api/users/password
+ * 修改密码
+ * v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
+ */
 export async function PUT(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const guestId = req.headers.get("x-guest-id");
-    const userId = session?.user?.id || guestId;
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
 
     if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });

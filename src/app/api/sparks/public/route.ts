@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { db as prisma } from "@/lib/db";
 import { apiResponse } from "@/lib/utils";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 /**
  * GET /api/sparks/public
@@ -11,6 +10,7 @@ import { authOptions } from "@/lib/auth";
  * sort=latest: 按发布时间降序（默认）
  * sort=hottest: 按热度值降序
  */
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
       : [{ createdAt: "desc" as const }];
 
     // 获取当前用户ID（用于判断 likedByMe）
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id;
+        const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
     const effectiveUserId = userId || guestId;
 

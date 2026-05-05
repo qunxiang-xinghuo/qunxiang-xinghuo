@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { checkMatchStatus, cancelMatch } from "@/server/match-engine";
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ matchId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     // v4.4-fix: 支持guest用户
     const guestId = request.headers.get("x-guest-id");
-    const userId = session?.user?.id || guestId;
 
     const { matchId } = await params;
     const match = await checkMatchStatus(matchId, userId || matchId);
@@ -56,10 +56,10 @@ export async function DELETE(
   { params }: { params: Promise<{ matchId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     // v4.4-fix: 支持guest用户
     const guestId = request.headers.get("x-guest-id");
-    const userId = session?.user?.id || guestId;
 
     const { matchId } = await params;
     const success = await cancelMatch(matchId, userId || matchId);

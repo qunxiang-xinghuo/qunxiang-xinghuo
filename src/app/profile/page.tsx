@@ -177,13 +177,21 @@ export default function ProfilePage() {
         <div className="mt-8 pb-6">
           <button
             onClick={async () => {
-              await signOut({ redirect: false });
+              // v7.0-fix6: 先清除所有本地数据，再调用 signOut，最后硬刷新
+              // 顺序：localStorage → signOut(清除HTTPOnly cookie) → 硬刷新
               localStorage.removeItem('xh_user');
               localStorage.removeItem('xh_identity');
               localStorage.removeItem('xh_user_id');
-              // v7.0-fix5: 使用硬刷新替代 router.push + router.refresh
-              // 彻底重置所有客户端状态，避免 next-auth 状态残留导致需点击两次登录
-              window.location.href = '/';
+              sessionStorage.clear();
+
+              try {
+                await signOut({ redirect: false });
+              } catch (e) {
+                console.error('[Logout] signOut 失败:', e);
+              }
+
+              // 使用 replace 避免历史记录残留，确保彻底回到登录页
+              window.location.replace('/');
             }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-500/20 text-red-400/60 text-sm hover:bg-red-500/5 transition-colors"
           >

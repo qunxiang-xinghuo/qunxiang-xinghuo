@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 
@@ -8,11 +7,15 @@ function generateInviteCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
-    const userId = session?.user?.id || guestId || `guest-${Date.now()}`;
+    if (!userId) {
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
+    }
 
     const body = await request.json().catch(() => ({}));
     const { identity, brainholeId } = body;

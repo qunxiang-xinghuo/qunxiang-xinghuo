@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import multer from "multer";
@@ -42,11 +41,16 @@ class FakeRequest extends Readable {
  * POST /api/users/avatar
  * 使用 Multer 处理文件上传，保存到 public/avatars/
  */
+/**
+ * POST /api/users/avatar
+ * 使用 Multer 处理文件上传，保存到 public/avatars/
+ * v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
+ */
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const guestId = req.headers.get("x-guest-id");
-    const userId = session?.user?.id || guestId;
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
 
     if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });

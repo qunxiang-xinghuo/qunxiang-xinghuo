@@ -76,7 +76,7 @@ export default function LoginForm() {
         redirect: false,
       });
 
-      if (result?.error) {
+      if (result?.error || !result?.ok) {
         setError('用户名或密码错误');
         return;
       }
@@ -103,15 +103,10 @@ export default function LoginForm() {
         localStorage.setItem('xh_user_id', meData.data.id);
         console.log('[Login] 用户数据已同步到 localStorage:', realUser.id);
       } else {
-        console.warn('[Login] /api/users/me 获取失败，使用基本数据');
-        const fallbackUser = {
-          id: 'user-' + Date.now(),
-          name: username.trim(),
-          identity: { type: 'real' as const, label: username.trim() },
-          level: 1,
-          sparkCount: 0,
-        };
-        localStorage.setItem('xh_user', JSON.stringify(fallbackUser));
+        // v7.0-fix6: /api/users/me 获取失败时不跳转，显示错误
+        console.error('[Login] /api/users/me 获取失败:', meData);
+        setError('登录验证失败，请稍后重试');
+        return;
       }
 
       router.push('/home');

@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { db as prisma } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 /**
  * PUT /api/sparks/:id/visibility
  * 更新火花的公开/私密状态
  * Body: { isPublic: boolean }
  */
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id;
+        const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
     const effectiveUserId = userId || guestId;
 

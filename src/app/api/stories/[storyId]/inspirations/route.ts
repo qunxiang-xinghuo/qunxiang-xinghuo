@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 
 // GET /api/stories/[storyId]/inspirations - 获取灵感库
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ storyId: string }> }
@@ -29,8 +29,8 @@ export async function POST(
 ) {
   try {
     const { storyId } = await params;
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id || `guest-${Date.now()}`;
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
 
     let body;
     try {

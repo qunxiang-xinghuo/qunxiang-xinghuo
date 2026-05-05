@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { brainholeQuerySchema } from "@/lib/validators/brainhole";
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const [collections, total] = await Promise.all([
       db.brainholeCollection.findMany({
-        where: { userId: session.user.id },
+        where: { userId },
         include: {
           brainhole: {
             include: {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
         take: limit,
       }),
       db.brainholeCollection.count({
-        where: { userId: session.user.id },
+        where: { userId },
       }),
     ]);
 

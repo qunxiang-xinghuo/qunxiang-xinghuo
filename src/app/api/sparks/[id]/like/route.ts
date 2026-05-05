@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db as prisma } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 
 /**
  * POST /api/sparks/:id/like
@@ -11,6 +10,7 @@ import { authOptions } from "@/lib/auth";
  * 1. 不能给自己的火花点赞
  * 2. 已点赞则取消点赞，未点赞则点赞
  * 3. 同步更新 Asset.hotScore
+ * v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
  */
 export async function POST(
   request: NextRequest,
@@ -18,8 +18,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id;
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
     const effectiveUserId = userId || guestId;
 

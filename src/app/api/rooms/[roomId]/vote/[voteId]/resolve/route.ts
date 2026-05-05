@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -10,13 +9,15 @@ const resolveVoteSchema = z.object({
   moveToInspiration: z.array(z.number().int().min(0, "无效的选项索引")).default([]),
 });
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ roomId: string; voteId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
@@ -56,7 +57,7 @@ export async function POST(
       return NextResponse.json(apiError("ROOM_NOT_FOUND", "房间不存在"), { status: 404 });
     }
 
-    if (room.directorId !== session.user.id) {
+    if (room.directorId !== userId) {
       return NextResponse.json(apiError("NOT_DIRECTOR", "不是房间导演"), { status: 403 });
     }
 
@@ -95,7 +96,7 @@ export async function POST(
           roomId,
           content: option.text,
           voteId,
-          addedBy: session.user.id,
+          addedBy: userId,
         },
       });
     }
