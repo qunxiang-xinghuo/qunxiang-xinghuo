@@ -593,4 +593,47 @@ model AssetLike {
 
 ---
 
+## v7.0-fix2 /login路由 + getToken修复用户信息读取 (2026-05-05)
+
+### 问题1：登录页只有 `/` 路径，没有 `/login`
+
+**现象**：用户访问网站时 URL 显示 `3000/` 而不是 `3000/login`
+
+**修复**：新建 `/login` 页面，复用 LoginForm 组件。`/login` 和 `/` 都显示登录页。
+
+### 问题2：我的页面显示的用户名不是登录的用户名
+
+**现象**：用户登录后，"我的"页面显示的用户名不正确
+
+**根因链**：
+```
+用户登录成功
+  → next-auth 设置 JWT cookie
+  → 访问 /api/users/me
+  → API 使用 getServerSession(authOptions)
+  → App Router 中 getServerSession 无法正确读取 cookie
+  → session 为 null
+  → userId 回退到 guestId（可能不匹配）
+  → 返回的用户数据不正确或 401
+```
+
+**根因**：Next.js App Router 的 API Route Handler 中，`getServerSession()` 无法正确读取 NextAuth JWT cookie，导致 session 获取失败
+
+**修复方案**：`/api/users/me` 改用 `getToken({ req, secret })` 直接从请求中读取 JWT token
+
+### 相关修改
+
+| 文件 | 变更 |
+|------|------|
+| `src/app/login/page.tsx` | **新增** — 登录页 `/login` |
+| `src/app/api/users/me/route.ts` | `getServerSession` → `getToken` |
+| `middleware.ts` | `/login` 加入 PUBLIC_PATHS 和 matcher |
+| `src/lib/auth.ts` | `pages.signIn: "/login"` |
+| `src/components/layout/AppShell.tsx` | PUBLIC_PAGES 加入 `/login` |
+| `src/app/profile/page.tsx` | 退出登录跳转 `/login` |
+
+### 编译结果：66/66 路由全部通过 ✅（含 Middleware）
+
+---
+
 > **铁律**：每次100% context前，先读 IMPORTANT.md，记录所有 bug 根因+解决+预防措施，犯过的问题不再犯。

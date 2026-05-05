@@ -345,10 +345,23 @@ DATABASE_URL="file:./dev.db"
 - profile/sparks 等子页面标题使用 `flex-1 text-center pr-10` 保持绝对居中
 - TopBar 组件使用左-中-右三等分布局确保标题绝对居中
 
-### 16.8 Middleware 更新
-- 新增 `/profile/sparks` 到 matcher 列表
+### 16.8 登录页路由规范
+- `/` 根路径显示登录页（首页）
+- `/login` 也显示登录页（复用 LoginForm）
+- 两个路径都加入 PUBLIC_PATHS 和 middleware matcher
+- `auth.ts` 中 `pages.signIn` 指向 `/login`
+- 退出登录后跳转 `/login`
+
+### 16.9 App Router getServerSession 铁律
+- **App Router 中禁止使用 `getServerSession()`**
+- API Route Handler 中必须使用 `getToken({ req, secret })` 读取 JWT
+- `getServerSession` 在 App Router 中无法正确读取 cookie，导致 session 为 null
+- 所有需要获取当前用户ID的 API，统一使用 `getToken`
+
+### 16.10 Middleware 更新
+- 新增 `/profile/sparks` 和 `/login` 到 matcher 列表
 - 保持所有其他路由不变
 
 ---
 
-> 最后更新：2026-05-05 v7.0 完整版完成 ✅
+> 最后更新：2026-05-05 v7.0-fix2 登录路由+getToken修复完成 ✅
