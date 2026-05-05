@@ -86,7 +86,7 @@ export default function RegisterPage() {
       {/* 顶部 */}
       <div className="pt-6 px-4 flex items-center gap-3 relative z-10">
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/login')}
           className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 text-white/60" />
@@ -205,7 +205,7 @@ export default function RegisterPage() {
         <div className="mt-8 text-center">
           <button
             type="button"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/login')}
             className="text-sm text-white/40 hover:text-[#e2b04a] transition-colors"
           >
             已有账号？<span className="text-[#e2b04a]/80 hover:text-[#e2b04a]">去登录</span>

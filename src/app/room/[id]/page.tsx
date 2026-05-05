@@ -44,7 +44,7 @@ export default function RoomPage() {
     name: savedIdentity,
     identity: { type: 'custom' as const, label: savedIdentity },
   } : null);
-  const { isConnected, joinRoom, leaveRoom, sendMessage, sendLike, on, off } = useSocket();
+  const { isConnected, joinRoom, leaveRoom, sendMessage, sendLike, on, off, removeAllListeners } = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -201,14 +201,22 @@ export default function RoomPage() {
     const identity = myIdentity || user.identity?.label || '匿名';
     joinRoom(roomId, stableUserId || 'guest', identity);
 
+    // v7.0-fix7: 先清理所有旧监听器，防止重复注册导致消息重复显示
+    removeAllListeners('new-message');
+    removeAllListeners('user-typing');
+    removeAllListeners('new-like');
+    removeAllListeners('room-viewer-count');
+    removeAllListeners('opponent-left');
+
     // v6.1-fix: 新增去重逻辑 + 支持多种广播格式
+    // v7.0-fix7: 额外过滤自己发送的消息（已通过乐观更新添加）
     const handleNewMessage = (data: any) => {
       const raw = data.message || data;
       const msgId = raw.id || `msg-${Date.now()}`;
       const senderId = raw.senderId || raw.userId;
-      const content = raw.content;
-      const createdAt = raw.createdAt;
-      const identity = raw.identity;
+
+      // 忽略自己发送的消息（已通过乐观更新添加）
+      if (senderId === stableUserId || senderId === user?.id) return;
 
       setMessages((prev) => {
         // 去重：消息ID已存在则忽略
@@ -216,9 +224,9 @@ export default function RoomPage() {
         const msg: Message = {
           id: msgId,
           userId: senderId,
-          content,
-          timestamp: new Date(createdAt || Date.now()).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          identity,
+          content: raw.content,
+          timestamp: new Date(raw.createdAt || Date.now()).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          identity: raw.identity,
         };
         return [...prev, msg];
       });
@@ -231,19 +239,29 @@ export default function RoomPage() {
       if (data.roomId === roomId) setViewerCount(data.count);
     };
 
+    // v7.0-fix7: 监听对方离开事件
+    const handleOpponentLeft = (data: { userId: string; roomId: string }) => {
+      if (data.roomId === roomId) {
+        alert('对方已结束对白');
+        router.push('/home');
+      }
+    };
+
     on('new-message', handleNewMessage);
     on('user-typing', handleTyping);
     on('new-like', handleNewLike);
     on('room-viewer-count', handleViewerCount);
+    on('opponent-left', handleOpponentLeft);
 
     return () => {
       off('new-message', handleNewMessage);
       off('user-typing', handleTyping);
       off('new-like', handleNewLike);
       off('room-viewer-count', handleViewerCount);
+      off('opponent-left', handleOpponentLeft);
       leaveRoom(roomId, stableUserId || 'guest');
     };
-  }, [user, roomId, myIdentity, joinRoom, leaveRoom, on, off]);
+  }, [user, roomId, myIdentity, joinRoom, leaveRoom, on, off, removeAllListeners, router]);
 
   const handleSend = useCallback(async () => {
     if (!inputValue.trim()) return;
@@ -307,10 +325,14 @@ export default function RoomPage() {
   }, [roomId]);
 
   // 结束对白并保存
+  // v7.0-fix7: 先发送 leave-room 事件通知对方，再保存 asset
   const handleEndChat = useCallback(async () => {
     if (savingAsset || assetSaved) return;
     setSavingAsset(true);
     try {
+      // v7.0-fix7: 先通知对方已离开
+      leaveRoom(roomId, stableUserId || 'guest');
+
       const guestId = localStorage.getItem('xh_user_id');
       const res = await fetch('/api/assets', {
         method: 'POST',
@@ -330,7 +352,7 @@ export default function RoomPage() {
     } finally {
       setSavingAsset(false);
     }
-  }, [roomId, savingAsset, assetSaved, router]);
+  }, [roomId, savingAsset, assetSaved, router, leaveRoom]);
 
   // 获取用户头像组件
   const UserAvatar = ({ isMe }: { isMe: boolean }) => (
@@ -365,9 +387,10 @@ export default function RoomPage() {
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-white/90 truncate">{brainholeTitle || '对白室'}</h1>
+            {/* v7.0-fix7: 脑洞标题加大、加粗、金色、完整显示 */}
+            <h1 className="text-xl font-bold text-[#e2b04a] break-words leading-tight">{brainholeTitle || '对白室'}</h1>
             {brainholeScenario && (
-              <p className="text-[11px] text-white/30 truncate mt-0.5">{brainholeScenario}</p>
+              <p className="text-sm text-[#e2b04a]/70 break-words mt-1 leading-relaxed">{brainholeScenario}</p>
             )}
           </div>
           <div className="flex items-center gap-3">

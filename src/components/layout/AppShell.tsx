@@ -11,7 +11,7 @@ interface AppShellProps {
 }
 
 // 公开页面：不需要登录即可访问
-const PUBLIC_PAGES = ['/', '/register'];
+const PUBLIC_PAGES = ['/', '/login', '/register'];
 
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
@@ -49,8 +49,8 @@ export default function AppShell({ children }: AppShellProps) {
 
       // 未登录用户访问非公开页面 → 重定向到登录页
       if (!isPublicPage) {
-        console.log('[AppShell] 未登录用户访问', pathname, '→ /');
-        router.replace('/');
+        console.log('[AppShell] 未登录用户访问', pathname, '→ /login');
+        router.replace('/login');
         return;
       }
     }

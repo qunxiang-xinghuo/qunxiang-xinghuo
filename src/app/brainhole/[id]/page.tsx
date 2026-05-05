@@ -127,7 +127,7 @@ export default function BrainholeDetailPage() {
               继续探索下一个脑洞
             </button>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/login')}
               className="w-full flex items-center justify-center gap-2 bg-gray-800 text-gray-400 py-4 rounded-xl font-medium hover:text-white hover:bg-gray-700 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

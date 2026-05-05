@@ -13,7 +13,7 @@ import { getToken } from 'next-auth/jwt';
  */
 
 // 公开路由：不需要登录即可访问
-const PUBLIC_PATHS = ['/', '/register'];
+const PUBLIC_PATHS = ['/', '/login', '/register'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -34,8 +34,8 @@ export async function middleware(request: NextRequest) {
 
   // 未登录用户访问非公开页面 → 重定向到登录页
   if (!isLoggedIn && !PUBLIC_PATHS.includes(pathname)) {
-    console.log('[Middleware] 未登录用户访问', pathname, '→ 重定向到 /');
-    return NextResponse.redirect(new URL('/', request.url));
+    console.log('[Middleware] 未登录用户访问', pathname, '→ 重定向到 /login');
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
@@ -46,6 +46,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/',
+    '/login',
     '/register',
     '/home',
     '/library/:path*',

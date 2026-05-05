@@ -1611,3 +1611,120 @@ pb-1 border-b-2 text-[#e2b04a] border-[#e2b04a]
 ---
 
 > **铁律**：每次100% context前，先读 IMPORTANT.md，记录所有 bug 根因+解决+预防措施，犯过的问题不再犯。
+
+
+---
+
+## v7.0-fix6 P0登录/退出/用户信息修改/火花点赞系统性修复 (2026-04-29)
+
+### 问题1（P0）：登录后直接跳转发现页，验证流程无效
+
+**现象**：用户输入账号密码点击登录后，没有正常验证就直接跳转到发现页
+
+**根因链**：
+```
+用户点击登录
+  → handleLogin 执行 signIn('credentials', ...)
+  → signIn 成功返回
+  → fetch('/api/users/me') 可能因 getServerSession 失效返回 401
+  → meData.success 为 false
+  → 但代码继续执行 router.push('/home')
+  → 用户跳转到发现页，但用户数据不正确
+```
+
+**根因1**：`LoginForm.tsx` 中 `/api/users/me` 获取失败时仍执行 `router.push('/home')`
+**根因2**：`signIn` 返回的 `result` 可能为 null（网络错误），`result?.error` 判断不严谨
+
+**修复方案**：
+1. `LoginForm.tsx`：`result?.error || !result?.ok` 时才报错，`meData.success` 为 false 时不跳转
+2. 登录失败时恢复 loading 状态，显示错误信息
+
+### 问题2（P0）：退出登录后跳转到 home 而非登录页
+
+**现象**：用户点击"退出登录"后，页面跳转到了 `/home` 而不是 `/`
+
+**根因链**：
+```
+用户点击退出
+  → signOut({ redirect: false }) 执行
+  → 在某些环境下 App Router + next-auth v4 的 signOut 可能无法正确清除 HTTPOnly cookie
+  → window.location.href = '/' 导航到根路径
+  → middleware 检查 cookie → cookie 仍存在 → 重定向到 /home
+```
+
+**根因**：`signOut` 在 App Router 中清除 HTTPOnly cookie 可能不完全可靠
+
+**修复方案**：
+1. `profile/page.tsx`：先清除 localStorage/sessionStorage，再 `signOut`，最后 `window.location.replace('/')`
+2. 添加 try/catch 包裹 `signOut`，失败时也强制跳转
+3. 使用 `replace` 而非 `href` 避免历史记录残留
+
+### 问题3（P0）："我的"页面无法修改用户名/密码/头像
+
+**现象**：用户在设置页面修改用户名、密码、头像后，操作无响应或返回错误
+
+**根因链**：
+```
+用户点击保存
+  → 前端发送 PATCH /api/users/profile
+  → API 内部调用 getServerSession(authOptions)
+  → App Router 中 getServerSession 无法正确读取 JWT cookie
+  → session 始终为 null
+  → userId 为 null
+  → 返回 401 UNAUTHORIZED
+```
+
+**根因**：`src/app/api/users/profile/route.ts`、`password/route.ts`、`avatar/route.ts` 全部使用 `getServerSession`
+
+**修复方案**：
+1. 所有用户信息修改 API 改用 `getToken({ req, secret })`
+2. `/api/users/me` 清理冗余的 `getServerSession` 调用
+
+### 问题4（P0）：火花点赞功能失效
+
+**现象**：用户点击火花点赞按钮无响应
+
+**根因**：`src/app/api/sparks/[id]/like/route.ts` 使用 `getServerSession`，导致无法获取用户ID
+
+**修复方案**：改用 `getToken` 获取用户ID
+
+### 问题5（系统性）：43个API路由全部使用 getServerSession
+
+**根因**：早期开发时使用 `getServerSession`，未意识到 App Router 中其不可靠
+
+**修复方案**：
+1. 批量替换 43 个 API 路由中的 `getServerSession(authOptions)` → `getToken({ req, secret })`
+2. 统一 userId 获取模式：`(token?.id as string | undefined) || (token?.sub as string | undefined)`
+3. 处理 `req` vs `request` 参数名差异
+4. 处理多 HTTP 方法文件中的重复声明问题
+
+### 文件变更
+
+| 文件 | 变更 |
+|------|------|
+| `src/app/LoginForm.tsx` | signIn 结果校验增强；/api/users/me 失败时不跳转 |
+| `src/app/profile/page.tsx` | 退出逻辑改为先清 localStorage → signOut → window.location.replace('/') |
+| `src/app/api/users/profile/route.ts` | getServerSession → getToken |
+| `src/app/api/users/password/route.ts` | getServerSession → getToken |
+| `src/app/api/users/avatar/route.ts` | getServerSession → getToken |
+| `src/app/api/users/me/route.ts` | 移除冗余 getServerSession |
+| `src/app/api/sparks/[id]/like/route.ts` | getServerSession → getToken |
+| `src/app/api/**/route.ts` (43个) | 全部改用 getToken |
+
+### 4轮自检结果
+
+| 轮次 | 检查项 | 结果 |
+|------|--------|------|
+| 第1轮 | 核心API改用getToken | ✅ 通过 |
+| 第2轮 | LoginForm/Profile退出逻辑修复 | ✅ 通过 |
+| 第3轮 | 43个API批量修复+类型错误修复 | ✅ 通过 |
+| 第4轮 | TypeScript编译零错误 + Next.js构建65/65 | ✅ 通过 |
+
+### 编译结果：65/65 路由全部通过 ✅（含 Middleware）
+
+### 预防措施
+
+1. **App Router getServerSession 禁令**：所有 API Route Handler 禁止使用 `getServerSession`，统一使用 `getToken`
+2. **登录验证完整性**：`signIn` 返回后必须检查 `result?.error || !result?.ok`，`/api/users/me` 失败时必须阻断跳转
+3. **退出登录可靠性**：先清本地数据 → `signOut` → `window.location.replace('/')`，不使用 `router.push` + `router.refresh()`
+4. **批量修改脚本化**：大规模 API 修改使用 Python 脚本+子agent协作，避免遗漏

@@ -126,6 +126,7 @@ export function registerSocketHandlers(io: SocketIOServer): void {
     })
 
     // 离开房间 —— v6.2-fix6: 同上，静默更新 viewer count
+    // v7.0-fix7: 向对方广播 opponent-left 事件
     socket.on('leave-room', async ({ roomId, userId }: LeaveRoomData) => {
       socket.leave(roomId)
       joinedRooms.delete(roomId)
@@ -143,6 +144,9 @@ export function registerSocketHandlers(io: SocketIOServer): void {
       } catch (err: any) {
         console.error('[Socket] leave-room DB update failed:', err.message)
       }
+
+      // v7.0-fix7: 向房间内其他人广播对方已离开
+      socket.to(roomId).emit('opponent-left', { userId, roomId, timestamp: Date.now() })
 
       // v6.2-fix6: 静默广播房间在线人数
       await broadcastViewerCount(io, roomId)

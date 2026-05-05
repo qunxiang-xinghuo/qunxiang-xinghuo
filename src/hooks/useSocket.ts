@@ -82,6 +82,10 @@ export function useSocket() {
     socketRef.current?.off(event, handler as (data: unknown) => void)
   }, [])
 
+  const removeAllListeners = useCallback((event: string) => {
+    socketRef.current?.removeAllListeners(event)
+  }, [])
+
   return {
     socket: socketRef.current,
     isConnected,
@@ -93,5 +97,6 @@ export function useSocket() {
     sendLike,
     on,
     off,
+    removeAllListeners,
   }
 }
