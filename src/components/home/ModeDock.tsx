@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Users, Theater, Mountain, Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -60,7 +60,10 @@ const modes = [
 
 export default function ModeDock() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const handleModeClick = (mode: typeof modes[0]) => {
     if (!mode.available) {
@@ -97,7 +100,7 @@ export default function ModeDock() {
           return (
             <motion.button
               key={mode.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={mounted ? { opacity: 0, y: 20 } : false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.08 }}
               whileHover={mode.available ? { scale: 1.05, y: -2 } : {}}

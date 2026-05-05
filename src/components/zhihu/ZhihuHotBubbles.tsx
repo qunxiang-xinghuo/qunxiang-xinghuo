@@ -15,6 +15,9 @@ export default function ZhihuHotBubbles() {
   const [items, setItems] = useState<HotItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetch("/api/zhihu/hot-list?limit=10")
@@ -69,7 +72,7 @@ export default function ZhihuHotBubbles() {
             target="_blank"
             rel="noopener noreferrer"
             className="flex-shrink-0 group"
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={mounted ? { opacity: 0, scale: 0.9 } : false}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: idx * 0.05 }}
             whileHover={{ scale: 1.05 }}

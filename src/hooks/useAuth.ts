@@ -21,6 +21,8 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     // v6.3-auth-fix3: session 明确为未认证时，无条件清除本地残留数据
     if (sessionStatus === 'unauthenticated') {
       const savedUser = localStorage.getItem('xh_user');
@@ -33,8 +35,7 @@ export function useAuth() {
         localStorage.removeItem('xh_identity');
         localStorage.removeItem('xh_user_id');
       }
-      setUser(null);
-      setLoading(false);
+      if (isMounted) { setUser(null); setLoading(false); }
       return;
     }
 
@@ -51,9 +52,7 @@ export function useAuth() {
         level: session.user.level || 1,
         sparkCount: session.user.sparkCount || 0,
       };
-      setUser(authUser);
-      localStorage.setItem('xh_user', JSON.stringify(authUser));
-      setLoading(false);
+      if (isMounted) { setUser(authUser); localStorage.setItem('xh_user', JSON.stringify(authUser)); setLoading(false); }
       return;
     }
 
@@ -62,8 +61,8 @@ export function useAuth() {
       const savedUser = localStorage.getItem('xh_user');
       if (savedUser) {
         try {
-          setUser(JSON.parse(savedUser));
-          setLoading(false);
+          const parsed = JSON.parse(savedUser);
+          if (isMounted) { setUser(parsed); setLoading(false); }
           return;
         } catch {
           localStorage.removeItem('xh_user');
@@ -83,15 +82,15 @@ export function useAuth() {
           level: 1,
           sparkCount: 0,
         };
-        setUser(tempUser);
-        setLoading(false);
+        if (isMounted) { setUser(tempUser); setLoading(false); }
         return;
       } catch {
         localStorage.removeItem('xh_identity');
       }
     }
 
-    setLoading(false);
+    if (isMounted) setLoading(false);
+    return () => { isMounted = false; };
   }, [session, sessionStatus]);
 
   const saveIdentity = (identity: User['identity']) => {
