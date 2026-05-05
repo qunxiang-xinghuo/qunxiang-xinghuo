@@ -7,16 +7,80 @@ import {
   Settings, Flame, BookOpen, ChevronRight, LogOut, Zap, Sparkles, Coins, Heart,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
-import Image from 'next/image';
+
+interface UserData {
+  id: string;
+  name: string | null;
+  username: string | null;
+  email: string | null;
+  image: string | null;
+  level: number;
+}
+
+// 首字母彩色头像（默认头像）
+function DefaultAvatar({ name, size = 48 }: { name: string; size?: number }) {
+  const initial = name?.charAt(0)?.toUpperCase() || '?';
+  const colors = [
+    'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-green-500',
+    'bg-emerald-500', 'bg-teal-500', 'bg-cyan-500', 'bg-sky-500',
+    'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-purple-500',
+    'bg-fuchsia-500', 'bg-pink-500', 'bg-rose-500',
+  ];
+  const colorIndex = name?.charCodeAt(0) % colors.length || 0;
+  const bgColor = colors[colorIndex];
+
+  return (
+    <div
+      className={`${bgColor} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}
+      style={{ width: size, height: size, fontSize: size * 0.4 }}
+    >
+      {initial}
+    </div>
+  );
+}
+
+// 用户头像组件
+function UserAvatar({ user, size = 48 }: { user: UserData | null; size?: number }) {
+  if (!user) return <DefaultAvatar name="?" size={size} />;
+  if (user.image && user.image.startsWith('data:image/')) {
+    return (
+      <img
+        src={user.image}
+        alt={user.name || '头像'}
+        className="rounded-full object-cover flex-shrink-0"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return <DefaultAvatar name={user.name || user.username || '?'} size={size} />;
+}
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [stats, setStats] = useState({ sparks: 0, stories: 0, matches: 0 });
   const [pageLoading, setPageLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
+  // 从 API 加载最新用户信息
+  async function loadUserFromApi() {
+    try {
+      const guestId = localStorage.getItem('xh_user_id');
+      const res = await fetch('/api/users/me', {
+        headers: guestId ? { 'x-guest-id': guestId } : {},
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setUser(data.data);
+        localStorage.setItem('xh_user', JSON.stringify(data.data));
+      }
+    } catch (e) {
+      console.error('加载用户信息失败:', e);
+    }
+  }
+
   useEffect(() => {
+    // 先从 localStorage 读取显示
     const raw = localStorage.getItem('xh_user');
     if (raw) {
       try {
@@ -28,6 +92,9 @@ export default function ProfilePage() {
       }
     }
     setPageLoading(false);
+
+    // 然后从 API 刷新最新数据
+    loadUserFromApi();
 
     // 获取统计数据（带10秒超时）
     async function loadStats() {
@@ -85,36 +152,11 @@ export default function ProfilePage() {
   }
 
   const menuItems = [
-    {
-      icon: Coins,
-      label: '我的收益',
-      desc: '盐粒收益明细',
-      path: '/earnings',
-    },
-    {
-      icon: Heart,
-      label: '个人疗愈',
-      desc: '私密对话空间',
-      path: '/healing',
-    },
-    {
-      icon: Flame,
-      label: '我的火花',
-      desc: `${stats.sparks} 条灵感片段`,
-      path: '/library',
-    },
-    {
-      icon: BookOpen,
-      label: '我的故事',
-      desc: `${stats.stories} 个参与的故事`,
-      path: '/story-hall',
-    },
-    {
-      icon: Settings,
-      label: '设置',
-      desc: '账号与偏好',
-      path: '/settings',
-    },
+    { icon: Coins, label: '我的收益', desc: '盐粒收益明细', path: '/earnings' },
+    { icon: Heart, label: '个人疗愈', desc: '私密对话空间', path: '/healing' },
+    { icon: Flame, label: '我的火花', desc: `${stats.sparks} 条灵感片段`, path: '/library' },
+    { icon: BookOpen, label: '我的故事', desc: `${stats.stories} 个参与的故事`, path: '/story-hall' },
+    { icon: Settings, label: '设置', desc: '账号与偏好', path: '/settings' },
   ];
 
   return (
@@ -122,40 +164,44 @@ export default function ProfilePage() {
       <PageHeader title="我的" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* v6.0: 头像左上 + 名称放大 */}
+        {/* v6.2-fix5: 头像与昵称水平对齐 */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-start gap-4 mb-8"
+          className="flex items-center gap-3 mb-8"
         >
-          <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#e2b04a]/20 flex-shrink-0 bg-gradient-to-br from-[#e2b04a]/10 to-orange-500/10">
-            <Image
-              src="/liukanshan.jpg"
-              alt="头像"
-              fill
-              className="object-cover"
-              sizes="64px"
-            />
+          {/* 头像 48px 圆形 */}
+          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#e2b04a]/20 flex-shrink-0">
+            <UserAvatar user={user} size={48} />
           </div>
-          <div className="flex-1 min-w-0 pt-1">
-            <h2 className="text-xl font-bold text-white/90">{user.name}</h2>
-            <p className="text-xs text-white/30 mt-1">
-              等级 Lv.{user.level || 1} · {user.identity?.label || '普通用户'}
+
+          {/* 昵称和等级 */}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-bold text-white/90 truncate">{user.name || user.username || '用户'}</h2>
+            <p className="text-xs text-white/30 mt-0.5">
+              等级 Lv.{user.level || 1} · 普通用户
             </p>
-            <div className="flex items-center gap-4 mt-2">
-              <div className="text-center">
-                <p className="text-sm font-semibold text-white/80">{stats.sparks}</p>
-                <p className="text-[10px] text-white/25">火花</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-white/80">{stats.stories}</p>
-                <p className="text-[10px] text-white/25">故事</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-white/80">{stats.matches}</p>
-                <p className="text-[10px] text-white/25">匹配</p>
-              </div>
-            </div>
+          </div>
+        </motion.div>
+
+        {/* 统计数据 */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="flex items-center gap-6 mb-8 px-2"
+        >
+          <div className="text-center">
+            <p className="text-base font-semibold text-white/80">{stats.sparks}</p>
+            <p className="text-[10px] text-white/25">火花</p>
+          </div>
+          <div className="text-center">
+            <p className="text-base font-semibold text-white/80">{stats.stories}</p>
+            <p className="text-[10px] text-white/25">故事</p>
+          </div>
+          <div className="text-center">
+            <p className="text-base font-semibold text-white/80">{stats.matches}</p>
+            <p className="text-[10px] text-white/25">匹配</p>
           </div>
         </motion.div>
 
@@ -191,7 +237,8 @@ export default function ProfilePage() {
             onClick={() => {
               localStorage.removeItem('xh_user');
               localStorage.removeItem('xh_identity');
-              router.push('/login');
+              localStorage.removeItem('xh_user_id');
+              router.push('/');
             }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-500/20 text-red-400/60 text-sm hover:bg-red-500/5 transition-colors"
           >

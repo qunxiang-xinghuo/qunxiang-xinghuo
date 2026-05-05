@@ -161,6 +161,48 @@
 
 ---
 
+## v6.2-fix5 「我的」页面设置功能完整实现 + 头部布局重构 (2026-05-05)
+
+### 功能实现清单
+
+| # | 功能 | 实现 | 文件 |
+|---|------|------|------|
+| 1 | **修改头像** | `<input type="file" accept="image/*" capture="environment">` + FileReader base64 + POST `/api/users/avatar` | settings/page.tsx |
+| 2 | **修改昵称** | Inline edit：点击显示输入框，Enter/Esc/Blur 保存/取消，PUT `/api/users/profile` | settings/page.tsx |
+| 3 | **修改密码** | 旧密码+新密码+确认密码，bcrypt 哈希，PUT `/api/users/password` | settings/page.tsx |
+| 4 | **默认头像** | 首字母彩色头像组件，根据用户名首字母自动生成 | profile/page.tsx, settings/page.tsx |
+| 5 | **头部布局** | 头像48px圆形 + 昵称水平排列，间距12px | profile/page.tsx |
+| 6 | **数据刷新** | 从 `/api/users/me` 获取最新数据，同步更新 localStorage | profile/page.tsx, settings/page.tsx |
+
+### 后端 API（新增4个）
+
+| API | 方法 | 说明 |
+|-----|------|------|
+| `/api/users/me` | GET | 获取当前用户信息（支持 guestId header） |
+| `/api/users/profile` | PUT | 修改昵称（zod 校验，1-30字符） |
+| `/api/users/avatar` | POST | 上传头像（base64 数据，限制 5MB） |
+| `/api/users/password` | PUT | 修改密码（旧密码 bcrypt 校验 + 新密码 bcrypt hash(10)） |
+
+### 关键设计决策
+
+1. **头像存储**：base64 直接存数据库，不依赖服务器文件系统权限
+2. **昵称唯一性**：只修改 `name`（显示昵称），不修改 `username`（登录用户名）
+3. **密码安全**：bcrypt hash(10) 加密，旧密码必须 bcrypt.compare 验证通过
+4. **数据同步**：每次修改后同步更新 localStorage `xh_user`
+
+### 文件变更
+
+- **新增**：`src/app/settings/page.tsx`
+- **新增**：`src/app/api/users/me/route.ts`
+- **新增**：`src/app/api/users/profile/route.ts`
+- **新增**：`src/app/api/users/avatar/route.ts`
+- **新增**：`src/app/api/users/password/route.ts`
+- **修改**：`src/app/profile/page.tsx`
+
+### 编译结果：62/62 路由全部通过 ✅
+
+---
+
 ## v6.0 全面重构 (2026-05-03)
 
 ### 11项硬性要求落地

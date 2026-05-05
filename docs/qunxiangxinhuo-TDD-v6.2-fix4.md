@@ -3,35 +3,42 @@
 **项目名称：** 群像·星火  
 **版本：** v6.2-fix4（质量保障版 · 资深测试员全面自检）  
 **日期：** 2026年5月5日  
-**目标：** SSR修复、性能优化、代码规范、功能全面验证  
+**目标：** SSR彻底修复、性能优化、代码规范、功能全面验证  
 **状态：** 已开发完成，已部署 ✅
 
 ---
 
-## 一、v6.2-fix4 质量保障核心成果
+## 一、v6.2-fix4 核心修复成果
 
-### 1.1 SSR 修复（登录页空白问题彻底根治）
+### 1.1 登录页 SSR "消失" 问题彻底根治
 
-**问题历史：**
-- v6.2-fix2：AppShell 使用 `useSession()` → 触发 `BAILOUT_TO_CLIENT_SIDE_RENDERING`
-- v6.2-fix3：AppShell 移除 `useSession` → 但 LoginForm 仍使用 `useSearchParams()` → 问题复发
-- v6.2-fix4：LoginForm 移除 `useSearchParams` + 修复 `window` 引用 → **彻底根治**
+**问题现象**：部署后用户反馈"登录页面消失了"——页面加载后内容不可见/空白
+
+**五层根因链（从表象到本质）**：
+```
+用户看到空白页面
+  → SSR HTML 包含完整内容（<form>、<input>都存在）
+  → 但所有内容 style="opacity:0;transform:translateY(...)"
+  → framer-motion 将 initial={{ opacity: 0 }} 写入 SSR HTML
+  → MobileContainer 包裹所有页面，initial={{ opacity: 0, y: 10 }}
+  → LoginForm 也有多处 initial={{ opacity: 0 }}
+  → 客户端 JS 加载前，内容完全透明不可见
+  → 如果 JS 加载慢/出错，用户永远看到空白
+```
+
+**自检教训**：之前只检查了 `<form>` 和 `<input>` 是否存在，没检查内容是否可见（`opacity:0` 会让内容存在但不可见）。
 
 **修复措施：**
-1. `LoginForm.tsx`：移除 `useSearchParams`，改用 `window.location.search`（`useEffect` 内）
-2. `LoginForm.tsx`：`window.innerHeight` 改为 `useState` + `useEffect` 模式
-3. 验证：`.next/server/app/index.html` 包含 `<form>` + `<input>` + 按钮
+1. **MobileContainer**：添加 `mounted` state，SSR 期间 `initial=false`
+2. **LoginForm**：所有 `motion` 组件改为 `initial={mounted ? ... : false}`
+3. **page.tsx**：从 `'use client'` + `Suspense` 改为纯服务端组件
+4. **LoginForm**：移除 `useSearchParams`，改用 `window.location.search`（`useEffect` 内）
+5. **LoginForm**：`window.innerHeight` 改为 `useState` + `useEffect`
 
-### 1.2 代码规范修复（组件顶层浏览器 API 访问）
-
-**修复文件：**
-- `healing/session/[id]/page.tsx`：`localStorage.getItem` 移入 `useEffect`
-- `room/[id]/page.tsx`：`localStorage.getItem` 移入 `useEffect`
-
-### 1.3 性能优化（library 页面重复请求）
-
-**优化前**：连续调用两次 `/api/sparks/public`（`limit=50` + `limit=6`）
-**优化后**：只调用一次 `/api/sparks/public?limit=50`，`latestSparks = list.slice(0, 6)`
+**验证铁律**：
+- 检查 SSR HTML 是否包含 `<form>` ✅
+- 检查 body 中是否没有 `opacity:0` ✅
+- 检查 `animate-spin` 是否不在 body 中 ✅
 
 ---
 
@@ -50,29 +57,16 @@
 - v6.2-fix2：新建 `AppShell` 组件，`pathname === '/'` 绝对不渲染
 - v6.2-fix3：`AppShell` 移除 `useSession`，改用 `localStorage` 认证守卫
 
-**当前实现：**
-- `AppShell.tsx`：客户端组件，管理 `MobileContainer` + 条件渲染 `BottomNav`
-- `pathname === '/'` 时绝对不渲染 BottomNav
-- `pathname` 为 null 时不渲染（防hydration闪烁）
-- 认证守卫：`useEffect` 中检查 `localStorage.getItem('xh_user')`，未登录且非首页时重定向
-
 ### 2.2 发现页（/home）
 
-**v6.2-fix3 变更：**
-- **移除**："最新火花"区块（已迁移至 `/library`）
-- **保留**：
-  1. 今日最热 TOP3 排行榜
-  2. 四大模式入口（人机/双人/多人ComingSoon/连载ComingSoon）
+- 今日最热 TOP3 排行榜
+- 四大模式入口（人机/双人/多人ComingSoon/连载ComingSoon）
 
 ### 2.3 火花页（/library）
 
-**v6.2-fix3 变更：**
-- **新增**：顶部"最新火花"2×2网格展示（从 `/home` 迁移）
-- **公开火花**：按热度排序
-- **我的火花**：用户标记的火花，支持公开/私密切换
-
-**v6.2-fix4 优化：**
-- 合并重复 API 请求，只调用一次 `/api/sparks/public?limit=50`
+- 顶部"最新火花"2×2网格展示
+- 公开火花：按热度排序
+- 我的火花：支持公开/私密切换
 
 ### 2.4 故事页（/story-hall）
 
@@ -80,17 +74,9 @@
 
 ### 2.5 我的页（/profile）
 
-**v6.2-fix2 修复：**
-- `pageLoading` state 区分初始化与未登录状态
-- 未登录显示"请先登录" + 去登录按钮
+- `pageLoading` state 区分初始化与未登录
+- 未登录显示"请先登录"UI
 - API 请求带 `AbortController` 10秒超时
-
-**功能菜单：**
-- 我的收益 → /earnings
-- 个人疗愈 → /healing
-- 我的火花 → /library
-- 我的故事 → /story-hall
-- 设置
 
 ---
 
@@ -98,58 +84,37 @@
 
 ### 3.1 人机模式（/solo-match）
 
-**v6.2-fix3 修复：**
-- 底部"开始对话"按钮 `pb-6` → `pb-20`，防止被 `h-14` 导航栏遮挡
-
-**流程：**
-1. 选择身份（预设/随机/自定义）
-2. `POST /api/rooms/ai` 创建 `type: "ai_duet"` 房间
-3. 跳转 `/room/[id]` 与刘看山AI对话
+- 底部按钮 `pb-20`，防止被导航栏遮挡
+- 选择身份 → `POST /api/rooms/ai` → 跳转 `/room/[id]`
 
 ### 3.2 双人对白匹配
 
-**流程：**
 ```
-/duo-match（身份选择）
-  → /duo-waiting（15秒倒计时）
-    → 匹配成功 → /room/[id]（双人WebSocket对白）
-    → 15秒超时 → 显示"与刘看山对话"按钮
+/duo-match → /duo-waiting（15秒）
+  → 匹配成功 → /room/[id]
+  → 超时 → "与刘看山对话"按钮
 ```
-
-**v6.2 新增：邀请好友**
-- `POST /api/rooms/invite` — 创建房间+6位邀请码
-- `POST /api/rooms/join` — 通过邀请码加入房间
 
 ### 3.3 个人疗愈（/healing）
 
-**v6.2 新增：**
-- 独立表 `HealingSession` + `HealingMessage`
 - AES-256-GCM 加密存储
-- AI人格：`persona='healer'`
 - API：`GET/POST /api/healing`、`GET/POST /api/healing/[id]/messages`
-
-### 3.4 对白室（/room/[id]）
-
-**v6.2-fix4 修复：**
-- `room/[id]/page.tsx`：`localStorage` 读取移入 `useEffect`
 
 ---
 
 ## 四、部署检查清单（v6.2-fix4）
 
 - [x] 本地 `npm run build` 57/57通过
-- [x] 登录页 SSR 验证：`index.html` 包含 `<form>` + `<input>`
+- [x] 登录页 SSR 验证：body 中无 `opacity:0`
+- [x] 登录页 SSR 验证：包含 `<form>` + `<input>`
+- [x] 登录页 SSR 验证：无 `animate-spin`
 - [x] `git commit` + `git push origin dev` + `git push fqunxiang dev`
 - [x] 服务器 build 57/57通过
-- [x] curl验证首页 `/` 200
+- [x] curl验证 `/` 200
 - [x] curl验证 `/home` 200
 - [x] curl验证 `/library` 200
+- [x] curl验证 `/solo-match` 200
 - [x] curl验证静态JS/CSS 200
-- [x] curl验证泡泡API `/api/brainholes/bubble` 返回数据
-- [x] curl验证火花API `/api/sparks/public` 返回数据
-- [x] curl验证AI催化API `/api/ai/catalyst` 返回3个问题
-- [x] curl验证AI房间API `/api/rooms/ai` 创建成功
-- [x] curl验证匹配API `/api/match` 返回waiting
 - [x] PM2状态 online
 - [x] 更新 `ProblemLog.md`
 - [x] 更新 `docs/qunxiangxinhuo-TDD-v6.2-fix4.md`
@@ -158,59 +123,27 @@
 
 ## 五、Bug修复记录
 
-### v6.2-fix4
+### v6.2-fix4-final（登录页消失彻底修复）
+
 | # | 问题 | 根因 | 修复 | 文件 |
 |---|------|------|------|------|
-| 1 | 登录页SSR空白复发 | LoginForm使用useSearchParams+window引用 | 移除useSearchParams，windowHeight改用state | LoginForm.tsx |
-| 2 | 组件顶层访问localStorage | 最佳实践违规 | 移入useEffect | healing/session, room |
-| 3 | library重复API请求 | 两次调用sparks/public | 合并为一次请求 | library/page.tsx |
+| 1 | 登录页消失 | MobileContainer `initial={{opacity:0}}` 包裹所有页面 | SSR期间`initial=false` | MobileContainer.tsx |
+| 2 | 登录页消失 | LoginForm多处`initial={{opacity:0}}` | 条件`initial` | LoginForm.tsx |
+| 3 | 登录页SSR空白 | page.tsx是'use client'+Suspense | 改为服务端组件 | page.tsx |
+| 4 | 登录页SSR空白 | LoginForm使用useSearchParams | 移除，改用window.location.search | LoginForm.tsx |
+| 5 | 登录页SSR报错 | window?.innerHeight直接引用 | 改为useState+useEffect | LoginForm.tsx |
 
-### v6.2-fix3
-| # | 问题 | 修复 |
-|---|------|------|
-| 1 | 登录页SSR空白 | AppShell移除useSession |
-| 2 | 人机按钮遮挡 | solo-match pb-6→pb-20 |
-| 3 | 首页火花迁移 | home移除/library新增 |
-
-### v6.2-fix2
-| # | 问题 | 修复 |
-|---|------|------|
-| 1 | 登录页导航栏删不掉 | 新建AppShell组件 |
-| 2 | 我的页面一直转圈 | pageLoading state |
-
----
-
-## 六、自检报告
-
-### 6.1 代码规范检查（71个客户端组件）
+### 自检结论
 
 | 检查项 | 结果 |
 |--------|------|
 | useSearchParams包裹Suspense | ✅ 7个页面全部正确 |
 | window/document SSR安全 | ✅ 无ReferenceError风险 |
 | API路由完整性 | ✅ 58个路由全部正常 |
-
-### 6.2 功能测试
-
-| 功能 | 结果 |
-|------|------|
-| 登录页SSR | ✅ HTML包含表单 |
-| 首页/home | ✅ 200 |
-| 火花/library | ✅ 200 |
-| 人机/solo-match | ✅ 200 |
-| 双人/duo-match | ✅ 200 |
-| 故事/story-hall | ✅ 200 |
-| 我的/profile | ✅ 200 |
-| 疗愈/healing | ✅ 200 |
-| 收益/earnings | ✅ 200 |
-| 知乎/zhihu-search | ✅ 200 |
-| 火花API | ✅ 返回数据 |
-| 脑洞API | ✅ 返回数据 |
-| AI催化API | ✅ 返回3个问题 |
-| AI房间API | ✅ 创建成功 |
-| 匹配API | ✅ 返回waiting |
-| 静态资源 | ✅ 200 |
+| 登录页SSR（body无opacity:0） | ✅ 通过 |
+| 57/57 路由编译 | ✅ 通过 |
+| 服务器API测试 | ✅ 全部正常 |
 
 ---
 
-> 最后更新：2026-05-05 v6.2-fix4 全面质量保障——SSR修复+性能优化+代码规范+功能全面验证 已部署 ✅
+> 最后更新：2026-05-05 v6.2-fix4 登录页消失彻底修复——framer-motion initial opacity:0 根因根治 已部署 ✅
