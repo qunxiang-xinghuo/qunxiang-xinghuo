@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { encrypt } from "@/lib/crypto";
+import { z } from "zod";
 
 // GET: 获取当前用户的疗愈会话列表
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
@@ -51,8 +52,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
+    const createSessionSchema = z.object({
+      topic: z.string().max(500, "话题不能超过500字").optional(),
+    });
+
     const body = await request.json().catch(() => ({}));
-    const { topic } = body;
+    const validation = createSessionSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(apiError("VALIDATION_ERROR", validation.error.issues[0]?.message || "参数格式错误"), { status: 400 });
+    }
+    const { topic } = validation.data;
+
+    // v7.0-test15: 限制单个用户的活跃会话数量
+    const activeCount = await db.healingSession.count({
+      where: { userId, status: "active" },
+    });
+    if (activeCount >= 10) {
+      return NextResponse.json(apiError("LIMIT_EXCEEDED", "最多只能有10个进行中的疗愈会话"), { status: 429 });
+    }
 
     // 确保用户存在
     await db.user.upsert({

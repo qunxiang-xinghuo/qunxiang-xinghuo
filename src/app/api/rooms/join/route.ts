@@ -20,53 +20,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(apiError("BAD_REQUEST", "缺少邀请码或身份参数"), { status: 400 });
     }
 
-    // 查找房间
-    const room = await db.room.findUnique({
-      where: { inviteCode },
-      include: { participants: true },
+    // v7.0-test15: 使用事务包裹，消除并发竞态条件
+    const result = await db.$transaction(async (tx) => {
+      const room = await tx.room.findUnique({
+        where: { inviteCode },
+        include: { participants: true },
+      });
+
+      if (!room) return { error: "NOT_FOUND" as const };
+      if (room.status === "closed") return { error: "GONE" as const };
+
+      const actorCount = room.participants.filter((p) => p.role === "actor").length;
+      if (actorCount >= 2) return { error: "FULL" as const };
+
+      const alreadyIn = room.participants.some((p) => p.userId === userId);
+      if (alreadyIn) return { roomId: room.id, alreadyJoined: true };
+
+      await tx.user.upsert({
+        where: { id: userId },
+        update: { name: identity },
+        create: { id: userId, name: identity, email: `${userId}@guest.local` },
+      });
+
+      await tx.roomParticipant.create({
+        data: {
+          roomId: room.id,
+          userId,
+          identity,
+          role: "actor",
+          isOnline: true,
+        },
+      });
+
+      return { roomId: room.id, alreadyJoined: false };
     });
 
-    if (!room) {
+    if (result.error === "NOT_FOUND") {
       return NextResponse.json(apiError("NOT_FOUND", "房间不存在，请检查邀请码"), { status: 404 });
     }
-
-    if (room.status === "closed") {
+    if (result.error === "GONE") {
       return NextResponse.json(apiError("GONE", "房间已关闭"), { status: 410 });
     }
-
-    // 检查是否已满员（邀请房间最多2人）
-    const actorCount = room.participants.filter((p) => p.role === "actor").length;
-    if (actorCount >= 2) {
+    if (result.error === "FULL") {
       return NextResponse.json(apiError("FORBIDDEN", "房间已满员"), { status: 403 });
     }
 
-    // 检查是否已经在房间里
-    const alreadyIn = room.participants.some((p) => p.userId === userId);
-    if (alreadyIn) {
-      return NextResponse.json(apiResponse({ roomId: room.id, alreadyJoined: true }), { status: 200 });
-    }
-
-    // 确保用户存在
-    await db.user.upsert({
-      where: { id: userId },
-      update: { name: identity },
-      create: { id: userId, name: identity, email: `${userId}@guest.local` },
-    });
-
-    // 添加参与者
-    await db.roomParticipant.create({
-      data: {
-        roomId: room.id,
-        userId,
-        identity,
-        role: "actor",
-        isOnline: true,
-      },
-    });
-
     return NextResponse.json(apiResponse({
-      roomId: room.id,
-      alreadyJoined: false,
+      roomId: result.roomId,
+      alreadyJoined: result.alreadyJoined,
     }), { status: 200 });
   } catch (error: any) {
     console.error("[Join API] 错误:", error instanceof Error ? error.message : String(error));
