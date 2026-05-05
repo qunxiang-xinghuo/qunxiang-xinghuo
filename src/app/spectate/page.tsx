@@ -1,12 +1,19 @@
 // v7.0-fix7: 服务端入口，强制动态渲染确保中间件执行
-// 使用 headers() 确保 Next.js 无法在构建时静态生成此页面
+// 同时在服务端组件中检查登录状态，作为中间件的兜底
 export const dynamic = 'force-dynamic';
 
-import { headers } from 'next/headers';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import SpectateClient from './SpectateClient';
 
-export default function SpectatePage() {
-  // 强制动态渲染：headers() 只能在请求时调用
-  headers();
+export default async function SpectatePage() {
+  // 服务端检查登录状态：未登录直接重定向（双重保险）
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('next-auth.session-token');
+  
+  if (!sessionToken) {
+    redirect('/login');
+  }
+  
   return <SpectateClient />;
 }
