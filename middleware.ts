@@ -51,6 +51,7 @@ export const config = {
     '/library/:path*',
     '/story-hall/:path*',
     '/profile',
+    '/profile/sparks',
     '/settings',
     '/settings/:path*',
     '/solo-match',

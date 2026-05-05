@@ -147,7 +147,7 @@ export default function ProfilePage() {
   const menuItems = [
     { icon: Coins, label: '我的收益', desc: '盐粒收益明细', path: '/earnings' },
     { icon: Heart, label: '个人疗愈', desc: '私密对话空间', path: '/healing' },
-    { icon: Flame, label: '我的火花', desc: `${stats.sparks} 条灵感片段`, path: '/library' },
+    { icon: Flame, label: '我的火花', desc: `${stats.sparks} 条灵感片段`, path: '/profile/sparks' },
     { icon: BookOpen, label: '我的故事', desc: `${stats.stories} 个参与的故事`, path: '/story-hall' },
     { icon: Settings, label: '设置', desc: '账号与偏好', path: '/settings' },
   ];

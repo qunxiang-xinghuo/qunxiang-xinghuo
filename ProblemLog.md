@@ -425,4 +425,31 @@ model AssetLike {
 
 ---
 
+## v7.0 火花墙重构：个人火花移至【我的】+ 点赞图标统一 (2026-05-05)
+
+### 功能清单
+
+| # | 功能 | 文件 |
+|---|------|------|
+| 1 | **火花墙纯公开化** — 移除 library 页面"我的火花"Tab | `library/page.tsx` |
+| 2 | **新建我的火花页** — `/profile/sparks` 独立页面 | `profile/sparks/page.tsx`（新增） |
+| 3 | **个人火花排序** — 支持最新/最热排序 | `profile/sparks/page.tsx` |
+| 4 | **公开/私密切换** — 每条火花独立开关 | `profile/sparks/page.tsx` |
+| 5 | **点赞图标统一** — Heart → Flame（火花） | `library/page.tsx` |
+| 6 | **已点赞状态** — Flame 图标变红+实心 | `library/page.tsx` |
+| 7 | **路由更新** — profile 菜单"我的火花"指向 `/profile/sparks` | `profile/page.tsx` |
+| 8 | **Middleware 更新** — 新增 `/profile/sparks` 路径 | `middleware.ts` |
+
+### 设计决策
+
+1. **页面分离**：公开火花墙与个人火花管理分离，符合"关注点分离"原则
+   - `/library`：纯消费场景（浏览、点赞）
+   - `/profile/sparks`：纯管理场景（查看全部、切换公开状态）
+2. **图标统一**：所有与"火花"相关的图标统一使用 Flame，保持产品概念一致性
+3. **排序复用**：两个页面共用同一套排序逻辑（latest/hottest），减少用户学习成本
+
+### 编译结果：65/65 路由全部通过 ✅（含 Middleware）
+
+---
+
 > **铁律**：每次100% context前，先读 IMPORTANT.md，记录所有 bug 根因+解决+预防措施，犯过的问题不再犯。

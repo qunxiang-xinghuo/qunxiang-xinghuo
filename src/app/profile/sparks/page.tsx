@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Flame, TrendingUp, Clock, ChevronRight, Sparkles,
+  Flame, TrendingUp, Clock, ChevronLeft, ChevronRight,
+  Eye, EyeOff, ArrowLeft,
 } from 'lucide-react';
-import PageHeader from '@/components/layout/PageHeader';
 
 interface Spark {
   id: string;
@@ -19,42 +19,31 @@ interface Spark {
   sparkCount: number;
   messageCount: number;
   roomId: string | null;
-  likedByMe: boolean;
-  isMySpark: boolean;
+  isPublic: boolean;
 }
 
 type SortType = 'latest' | 'hottest';
 
-export default function SparksPage() {
+export default function MySparksPage() {
   const router = useRouter();
   const [sparks, setSparks] = useState<Spark[]>([]);
-  const [latestSparks, setLatestSparks] = useState<Spark[]>([]);
   const [sort, setSort] = useState<SortType>('latest');
   const [loading, setLoading] = useState(true);
-  const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const guestId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
 
-  // 加载公开火花墙数据
+  // 加载我的火花
   const loadSparks = useCallback(async () => {
     setLoading(true);
     try {
-      // 公开火花墙（支持排序）
-      const res = await fetch(`/api/sparks/public?limit=50&sort=${sort}`, {
+      const res = await fetch(`/api/sparks/mine?sort=${sort}`, {
         headers: guestId ? { 'x-guest-id': guestId } : {},
       });
       const data = await res.json();
-      const list = data.data?.list || [];
-      setSparks(list);
-
-      // 最新火花展示（始终取最新的4条，不受排序影响）
-      const latestRes = await fetch('/api/sparks/public?limit=6&sort=latest', {
-        headers: guestId ? { 'x-guest-id': guestId } : {},
-      });
-      const latestData = await latestRes.json();
-      setLatestSparks(latestData.data?.list?.slice(0, 4) || []);
+      setSparks(data.data?.list || []);
     } catch (e) {
-      console.error('火花页加载失败:', e);
+      console.error('我的火花加载失败:', e);
     } finally {
       setLoading(false);
     }
@@ -64,48 +53,29 @@ export default function SparksPage() {
     loadSparks();
   }, [loadSparks]);
 
-  // 点赞/取消点赞
-  const toggleLike = async (spark: Spark) => {
-    if (likeLoadingId === spark.id) return;
-    if (spark.isMySpark) return; // 不能给自己的火花点赞
-
-    setLikeLoadingId(spark.id);
+  // 切换公开/私密状态
+  const toggleVisibility = async (spark: Spark) => {
+    if (updatingId === spark.id) return;
+    setUpdatingId(spark.id);
     try {
-      const res = await fetch(`/api/sparks/${spark.id}/like`, {
-        method: 'POST',
+      const res = await fetch(`/api/sparks/${spark.id}/visibility`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(guestId ? { 'x-guest-id': guestId } : {}),
         },
+        body: JSON.stringify({ isPublic: !spark.isPublic }),
       });
       const result = await res.json();
-
       if (result.success) {
-        const newLiked = result.data?.liked;
-        const newHotScore = result.data?.hotScore ?? spark.hotScore;
-
-        // 更新公开火花列表
         setSparks((prev) =>
-          prev.map((s) =>
-            s.id === spark.id
-              ? { ...s, likedByMe: newLiked, hotScore: newHotScore }
-              : s
-          )
-        );
-
-        // 同步更新最新火花展示
-        setLatestSparks((prev) =>
-          prev.map((s) =>
-            s.id === spark.id
-              ? { ...s, likedByMe: newLiked, hotScore: newHotScore }
-              : s
-          )
+          prev.map((s) => (s.id === spark.id ? { ...s, isPublic: !spark.isPublic } : s))
         );
       }
     } catch (e) {
-      console.error('点赞失败:', e);
+      console.error('切换可见性失败:', e);
     } finally {
-      setLikeLoadingId(null);
+      setUpdatingId(null);
     }
   };
 
@@ -118,43 +88,20 @@ export default function SparksPage() {
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
-      <PageHeader title="火花" subtitle="灵感碰撞的瞬间" />
+      {/* 顶部导航 */}
+      <div className="shrink-0 px-4 pt-4 pb-2 flex items-center gap-3">
+        <button
+          onClick={() => router.push('/profile')}
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 text-white/50" />
+        </button>
+        <h1 className="text-lg font-bold text-white/90">我的火花</h1>
+      </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* 最新火花展示 */}
-        {latestSparks.length > 0 && (
-          <section className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-[#74b9ff]" />
-              <h2 className="text-sm font-semibold text-white/90">最新火花</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {latestSparks.map((spark, idx) => (
-                <motion.div
-                  key={spark.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.08 }}
-                  onClick={() => handleSparkClick(spark)}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5 cursor-pointer hover:bg-white/[0.06] transition-colors"
-                >
-                  <p className="text-xs text-white/70 leading-relaxed line-clamp-3">{spark.content}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-[10px] text-white/25 truncate">{spark.identity || '匿名用户'}</p>
-                    <div className="flex items-center gap-1">
-                      <Flame className="w-3 h-3 text-[#e2b04a]/40" />
-                      <span className="text-[10px] text-white/25">{spark.hotScore || 0}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* 排序切换 + 标题 */}
-        <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-          <h2 className="text-sm font-medium text-white/90">公开火花</h2>
+        {/* 排序切换 */}
+        <div className="flex items-center justify-end mb-4">
           <div className="flex gap-1.5">
             <button
               onClick={() => setSort('latest')}
@@ -192,8 +139,8 @@ export default function SparksPage() {
             {sparks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Flame className="w-10 h-10 text-white/10 mb-3" />
-                <p className="text-sm text-white/30">还没有公开火花</p>
-                <p className="text-xs text-white/20 mt-1">去对白中点击「火花」标记你的灵感</p>
+                <p className="text-sm text-white/30">还没有你的火花</p>
+                <p className="text-xs text-white/20 mt-1">在对白中点击「火花」标记你的灵感</p>
               </div>
             ) : (
               sparks.map((spark, idx) => (
@@ -226,33 +173,36 @@ export default function SparksPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {/* 点赞按钮 - 使用 Flame 图标 */}
-                      {spark.isMySpark ? (
-                        <span className="flex items-center gap-1 text-[11px] text-white/15">
-                          <Flame className="w-3.5 h-3.5" />
-                          {spark.hotScore || 0}
-                        </span>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleLike(spark);
-                          }}
-                          disabled={likeLoadingId === spark.id}
-                          className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-all active:scale-95 ${
-                            spark.likedByMe
-                              ? 'bg-[#ff6b6b]/15 text-[#ff6b6b] border border-[#ff6b6b]/25'
-                              : 'bg-white/[0.03] text-white/30 border border-white/5 hover:bg-white/[0.06] hover:text-white/50'
-                          }`}
-                        >
-                          {likeLoadingId === spark.id ? (
-                            <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Flame className={`w-3.5 h-3.5 ${spark.likedByMe ? 'fill-current' : ''}`} />
-                          )}
-                          {spark.hotScore || 0}
-                        </button>
-                      )}
+                      {/* 热度值 */}
+                      <span className="flex items-center gap-1 text-[11px] text-white/15">
+                        <Flame className="w-3.5 h-3.5" />
+                        {spark.hotScore || 0}
+                      </span>
+
+                      {/* 公开/私密切换开关 */}
+                      <button
+                        onClick={() => toggleVisibility(spark)}
+                        disabled={updatingId === spark.id}
+                        className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full transition-colors ${
+                          spark.isPublic
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-white/[0.05] text-white/30 border border-white/5'
+                        }`}
+                      >
+                        {updatingId === spark.id ? (
+                          <span className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin" />
+                        ) : spark.isPublic ? (
+                          <>
+                            <Eye className="w-3 h-3" />
+                            公开
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3 h-3" />
+                            私密
+                          </>
+                        )}
+                      </button>
 
                       {/* 详情箭头 */}
                       {spark.roomId && (
