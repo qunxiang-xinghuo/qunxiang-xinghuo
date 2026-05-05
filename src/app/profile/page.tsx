@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Settings, Flame, BookOpen, ChevronRight, LogOut, Zap, Sparkles, Coins, Heart,
+  Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins, Heart,
 } from 'lucide-react';
-import PageHeader from '@/components/layout/PageHeader';
 
 interface UserData {
   id: string;
@@ -42,7 +41,7 @@ function DefaultAvatar({ name, size = 48 }: { name: string; size?: number }) {
 // 用户头像组件
 function UserAvatar({ user, size = 48 }: { user: UserData | null; size?: number }) {
   if (!user) return <DefaultAvatar name="?" size={size} />;
-  if (user.image && user.image.startsWith('data:image/')) {
+  if (user.image) {
     return (
       <img
         src={user.image}
@@ -60,7 +59,6 @@ export default function ProfilePage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [stats, setStats] = useState({ sparks: 0, stories: 0, matches: 0 });
   const [pageLoading, setPageLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
 
   // 从 API 加载最新用户信息
   async function loadUserFromApi() {
@@ -96,7 +94,7 @@ export default function ProfilePage() {
     // 然后从 API 刷新最新数据
     loadUserFromApi();
 
-    // 获取统计数据（带10秒超时）
+    // 获取统计数据
     async function loadStats() {
       try {
         const controller = new AbortController();
@@ -114,11 +112,6 @@ export default function ProfilePage() {
           matches: parseInt(localStorage.getItem('xh_match_count') || '0'),
         });
       } catch (e: any) {
-        if (e.name === 'AbortError') {
-          setLoadError('请求超时，请刷新重试');
-        } else {
-          setLoadError('加载失败，请刷新重试');
-        }
         console.error('统计加载失败:', e);
       }
     }
@@ -159,28 +152,30 @@ export default function ProfilePage() {
     { icon: Settings, label: '设置', desc: '账号与偏好', path: '/settings' },
   ];
 
+  const displayName = user.name || user.username || '用户';
+
   return (
     <div className="flex flex-col min-h-full page-gradient">
-      <PageHeader title="我的" />
+      {/* 居中标题 */}
+      <div className="shrink-0 px-4 pt-4 pb-2 text-center">
+        <h1 className="text-lg font-bold text-white/90">我的</h1>
+      </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* v6.2-fix5: 头像与昵称水平对齐 */}
+        {/* v6.3: 用户信息整体居中，头像左+用户名右水平对齐 */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 mb-8"
+          className="flex justify-center mb-8"
         >
-          {/* 头像 48px 圆形 */}
-          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#e2b04a]/20 flex-shrink-0">
-            <UserAvatar user={user} size={48} />
-          </div>
+          <div className="flex items-center gap-3">
+            {/* 头像 48px 圆形 */}
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#e2b04a]/20 flex-shrink-0">
+              <UserAvatar user={user} size={48} />
+            </div>
 
-          {/* 昵称和等级 */}
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold text-white/90 truncate">{user.name || user.username || '用户'}</h2>
-            <p className="text-xs text-white/30 mt-0.5">
-              等级 Lv.{user.level || 1} · 普通用户
-            </p>
+            {/* 用户名（用户名就是昵称） */}
+            <h2 className="text-lg font-bold text-white/90">{displayName}</h2>
           </div>
         </motion.div>
 
@@ -189,7 +184,7 @@ export default function ProfilePage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="flex items-center gap-6 mb-8 px-2"
+          className="flex items-center justify-center gap-6 mb-8"
         >
           <div className="text-center">
             <p className="text-base font-semibold text-white/80">{stats.sparks}</p>
@@ -247,7 +242,7 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        <p className="text-center text-[10px] text-white/10 pb-4">群像·星火 v6.2</p>
+        <p className="text-center text-[10px] text-white/10 pb-4">群像·星火 v6.3</p>
       </div>
     </div>
   );

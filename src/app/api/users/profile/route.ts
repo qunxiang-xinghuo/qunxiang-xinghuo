@@ -6,10 +6,14 @@ import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
 
 const updateProfileSchema = z.object({
-  name: z.string().min(1).max(30),
+  username: z.string().min(1).max(30),
 });
 
-export async function PUT(req: NextRequest) {
+/**
+ * PATCH /api/users/profile
+ * 修改用户名（带唯一性检查）
+ */
+export async function PATCH(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const guestId = req.headers.get("x-guest-id");
@@ -23,18 +27,29 @@ export async function PUT(req: NextRequest) {
     const parsed = updateProfileSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(apiError("BAD_REQUEST", "昵称格式不正确（1-30个字符）"), { status: 400 });
+      return NextResponse.json(apiError("BAD_REQUEST", "用户名格式不正确（1-30个字符）"), { status: 400 });
     }
 
-    const { name } = parsed.data;
+    const { username } = parsed.data;
 
-    // 检查用户名是否已存在（如果修改的是 username 字段）
-    // 这里只修改 name（昵称），不修改 username（登录名）
-    // 昵称不需要全局唯一
+    // 唯一性检查：排除当前用户自己
+    const existing = await db.user.findFirst({
+      where: {
+        username,
+        id: { not: userId },
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        apiError("USERNAME_EXISTS", "用户名已存在，请重新输入"),
+        { status: 409 }
+      );
+    }
 
     const updated = await db.user.update({
       where: { id: userId },
-      data: { name },
+      data: { username },
       select: {
         id: true,
         name: true,

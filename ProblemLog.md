@@ -1,5 +1,53 @@
 # 问题记录与修复日志
 
+## v6.3-fix1 「我的」页面 + 「设置」页面全面重构 (2026-05-05)
+
+### 任务清单
+
+| # | 任务 | 状态 | 文件 |
+|---|------|------|------|
+| 1 | "我的"页面标题居中 | ✅ | profile/page.tsx |
+| 2 | 用户信息区域整体居中，头像左+用户名右，间距12px | ✅ | profile/page.tsx |
+| 3 | 设置页简化为列表形式（修改头像、修改用户名、修改密码） | ✅ | settings/page.tsx |
+| 4 | 用户名/密码修改各自独立弹窗 | ✅ | settings/page.tsx |
+| 5 | API `/api/users/profile` 改为 PATCH，支持 username 唯一性检查 | ✅ | api/users/profile/route.ts |
+| 6 | API `/api/users/avatar` 使用 Multer 处理文件上传 | ✅ | api/users/avatar/route.ts |
+| 7 | 安装 multer + @types/multer | ✅ | package.json |
+
+### 关键设计决策
+
+1. **头像存储**：从 base64 直存数据库 → Multer `memoryStorage` + 文件保存到 `public/avatars/`，数据库存储相对路径 `/avatars/{filename}`
+2. **用户名唯一性**：`PATCH /api/users/profile` 接收 `{ username }`，数据库 `username` 字段有 `@unique` 约束，修改前排除当前用户做唯一性检查
+3. **操作分离**：用户名修改和密码修改完全分离，各自独立入口、独立弹窗、独立 API
+4. **Multer 适配**：Next.js App Router 的 `NextRequest` 需通过 `arrayBuffer()` 读取原始 body，构造 `FakeRequest extends Readable` 供 multer 处理
+
+### 文件变更
+
+- **修改**：`src/app/profile/page.tsx` — 标题居中、用户信息整体居中
+- **修改**：`src/app/settings/page.tsx` — 简化为列表+独立弹窗
+- **修改**：`src/app/api/users/profile/route.ts` — PUT→PATCH，username 唯一性检查
+- **修改**：`src/app/api/users/avatar/route.ts` — 使用 Multer 处理 multipart 上传
+- **新增目录**：`public/avatars/` — 头像文件存储目录
+
+### 编译结果：64/64 路由全部通过 ✅
+
+---
+
+## v6.3 观看模式完整实现 (2026-05-05)
+
+### 功能实现
+
+| # | 功能 | 文件 |
+|---|------|------|
+| 1 | 发现页模式入口更新为四大模式 | home/page.tsx |
+| 2 | 新增 `/spectate` 公开房间列表页 | spectate/page.tsx |
+| 3 | 新增 `/spectate/[roomId]` 纯围观房间页 | spectate/[roomId]/page.tsx |
+| 4 | Socket.IO 移除文字广播，静默推送 viewer count | server/socket-handler.ts |
+| 5 | disconnect 自动标记 participant 离线 | server/socket-handler.ts |
+| 6 | room/[id] 新增 👁 在线人数显示 | room/[id]/page.tsx |
+
+---
+
 ## v6.2-fix4 全面质量保障——SSR修复+性能优化+代码规范 (2026-05-05)
 
 ### 问题1：登录页 SSR 空白/消失（复发根因——最终根因：framer-motion initial opacity:0 + MobileContainer）

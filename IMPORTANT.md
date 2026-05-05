@@ -168,6 +168,7 @@ DATABASE_URL="file:./dev.db"
 | 火花页（公开火花墙） | `/library` |
 | 故事大厅 | `/story-hall` |
 | 我的页 | `/profile` |
+| 设置页 | `/settings` |
 | 人机模式（刘看山AI） | `/solo-match` |
 | 双人对白匹配 | `/duo-match` |
 | 双人对白等待 | `/duo-waiting` |
@@ -209,6 +210,31 @@ DATABASE_URL="file:./dev.db"
 - radial-gradient实现肥皂泡质感
 - framer-motion驱动，不同延迟错开
 
+## 十二、v6.3-fix1 「我的」+「设置」重构纪律
+
+### 12.1 用户名修改接口规范
+| 项目 | 值 |
+|------|-----|
+| 接口 | `PATCH /api/users/profile` |
+| Body | `{ username: string }` |
+| 唯一性检查 | ✅ 排除当前用户，冲突返回 `USERNAME_EXISTS` |
+| 冲突提示 | "用户名已存在，请重新输入" |
+
+### 12.2 头像上传接口规范
+| 项目 | 值 |
+|------|-----|
+| 接口 | `POST /api/users/avatar` |
+| Content-Type | `multipart/form-data` |
+| 字段名 | `image` |
+| 处理 | Multer `memoryStorage`，限制 2MB |
+| 存储路径 | `public/avatars/{timestamp}-{random}{ext}` |
+| 数据库 | 存相对路径 `/avatars/{filename}` |
+
+### 12.3 操作分离铁律
+- 用户名修改 与 密码修改 **必须完全分离**
+- 各自独立入口、独立弹窗、独立 API
+- 不允许在同一个表单中混合两者
+
 ---
 
-> 最后更新：2026-05-03 v6.0 全面重构+登录页美化 部署完成 ✅
+> 最后更新：2026-05-05 v6.3-fix1 「我的」+「设置」重构完成 ✅
