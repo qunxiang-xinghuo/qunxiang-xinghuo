@@ -236,7 +236,7 @@ export default function ProfilePage() {
               localStorage.removeItem('xh_user');
               localStorage.removeItem('xh_identity');
               localStorage.removeItem('xh_user_id');
-              router.push('/');
+              router.push('/login');
               router.refresh();
             }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-500/20 text-red-400/60 text-sm hover:bg-red-500/5 transition-colors"

@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // v7.0-fix: App Router 中 getServerSession 不可靠，改用 getToken 读取 JWT
+    const token = await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
     const guestId = req.headers.get("x-guest-id");
-    const userId = session?.user?.id || guestId;
+    const userId = token?.id as string | undefined || guestId;
 
     if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });

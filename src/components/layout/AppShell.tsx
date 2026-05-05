@@ -11,7 +11,7 @@ interface AppShellProps {
 }
 
 // 公开页面：不需要登录即可访问
-const PUBLIC_PAGES = ['/', '/register'];
+const PUBLIC_PAGES = ['/', '/login', '/register'];
 
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
