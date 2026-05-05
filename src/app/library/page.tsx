@@ -32,6 +32,9 @@ export default function SparksPage() {
   const [loading, setLoading] = useState(true);
   const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
   const [guestId, setGuestId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     setGuestId(localStorage.getItem('xh_user_id'));
@@ -147,7 +150,7 @@ export default function SparksPage() {
               sparks.map((spark, idx) => (
                 <motion.div
                   key={spark.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={mounted ? { opacity: 0, y: 10 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   className="p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"

@@ -51,6 +51,9 @@ export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   // 从 API 加载最新用户信息
   async function loadUserFromApi() {
@@ -134,7 +137,7 @@ export default function ProfilePage() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
         {/* 用户信息：头像左+用户名右，左对齐 */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={mounted ? { opacity: 0, y: 10 } : false}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-4 mb-8 px-2"
         >
@@ -154,7 +157,7 @@ export default function ProfilePage() {
             return (
               <motion.button
                 key={item.label}
-                initial={{ opacity: 0, x: -10 }}
+                initial={mounted ? { opacity: 0, x: -10 } : false}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.05 + idx * 0.05 }}
                 onClick={() => router.push(item.path)}

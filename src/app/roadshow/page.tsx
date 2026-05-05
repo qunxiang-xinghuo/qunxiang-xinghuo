@@ -189,7 +189,7 @@ export default function RoadshowPage() {
       {/* Footer CTA */}
       <section className="px-6 py-16 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={mounted ? { opacity: 0, y: 20 } : false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >

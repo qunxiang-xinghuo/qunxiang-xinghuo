@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Sparkles, Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react';
@@ -15,6 +15,9 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +121,7 @@ export default function RegisterPage() {
 
       {/* 注册表单 */}
       <motion.form
-        initial={{ opacity: 0, y: 20 }}
+        initial={mounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         onSubmit={handleRegister}
@@ -176,7 +179,7 @@ export default function RegisterPage() {
           {/* 错误提示 */}
           {error && (
             <motion.p
-              initial={{ opacity: 0 }}
+              initial={mounted ? { opacity: 0 } : false}
               animate={{ opacity: 1 }}
               className="text-xs text-red-400 text-center"
             >
