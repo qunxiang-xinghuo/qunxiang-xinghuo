@@ -31,6 +31,7 @@ const mimeTypes: Record<string, string> = {
 
 app.prepare().then(() => {
   const server = createServer(async (req, res) => {
+    console.log('[Server] Request:', req.url, 'host=', req.headers.host)
     try {
       // v5.3-fix: 显式处理 _next/static 静态资源（App Router+自定义server兼容）
       if (req.url && req.url.startsWith('/_next/')) {
