@@ -383,4 +383,46 @@
 
 ---
 
+## v6.4 火花点赞互动 + 双重排序 (2026-05-05)
+
+### 功能清单
+
+| # | 功能 | 文件 |
+|---|------|------|
+| 1 | **火花点赞** — POST /api/sparks/:id/like | `api/sparks/[id]/like/route.ts` |
+| 2 | **不能给自己点赞** — 后端校验 asset.userId !== currentUserId | `api/sparks/[id]/like/route.ts` |
+| 3 | **热度 = 点赞数** — Asset.hotScore 随点赞增减 | `api/sparks/[id]/like/route.ts` |
+| 4 | **重复点赞防护** — 前端 likedByMe 状态 + 后端唯一索引 | `library/page.tsx` + `prisma schema` |
+| 5 | **最新火花排序** — 按 createdAt desc | `api/sparks/public/route.ts` |
+| 6 | **最热火花排序** — 按 hotScore desc | `api/sparks/public/route.ts` |
+| 7 | **默认最新** — 用户进入默认展示最新火花 | `library/page.tsx` |
+| 8 | **点赞按钮 UI** — Flame/Heart 图标 + 热度数字 | `library/page.tsx` |
+| 9 | **点击跳转详情** — 点击火花卡片跳转到 room 页面 | `library/page.tsx` |
+
+### 数据模型变更
+
+新增 `AssetLike` 模型：
+```prisma
+model AssetLike {
+  id        String   @id @default(cuid())
+  assetId   String
+  userId    String
+  createdAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  @@unique([assetId, userId])
+}
+```
+
+### API 设计
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `POST /api/sparks/:id/like` | 点赞/取消点赞 | 事务操作：创建/删除 AssetLike + 更新 Asset.hotScore |
+| `GET /api/sparks/public?sort=latest\|hottest` | 公开火花 | 支持排序，返回 likedByMe + isMySpark |
+| `GET /api/sparks/mine?sort=latest\|hottest` | 我的火花 | 支持排序 |
+
+### 编译结果：64/64 路由全部通过 ✅（含 Middleware）
+
+---
+
 > **铁律**：每次100% context前，先读 IMPORTANT.md，记录所有 bug 根因+解决+预防措施，犯过的问题不再犯。

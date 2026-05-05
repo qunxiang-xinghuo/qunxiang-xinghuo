@@ -276,6 +276,30 @@ DATABASE_URL="file:./dev.db"
 - `session === 'unauthenticated'` 时，**无条件**清除 `xh_user` + `xh_identity` + `xh_user_id`
 - 不判断数据是否存在，直接清除，防止任何形式的残留
 
+## 十五、v6.4 火花点赞规范
+
+### 15.1 点赞接口
+| 项目 | 值 |
+|------|-----|
+| 接口 | `POST /api/sparks/:id/like` |
+| 限制 | 不能给自己的火花点赞 |
+| 重复点赞 | 已点赞则取消，未点赞则点赞（toggle） |
+| 热度同步 | `Asset.hotScore` 随点赞 `increment`，取消 `decrement` |
+
+### 15.2 排序参数
+| 参数 | 说明 | 默认 |
+|------|------|------|
+| `sort=latest` | 按 `createdAt` 降序 | ✅ 默认 |
+| `sort=hottest` | 按 `hotScore` 降序 | |
+
+### 15.3 火花列表 API 返回字段
+| 字段 | 说明 |
+|------|------|
+| `hotScore` | 热度值（= 点赞数） |
+| `likedByMe` | 当前用户是否已点赞 |
+| `isMySpark` | 是否为当前用户的火花 |
+| `roomId` | 关联房间ID，点击可跳转 |
+
 ---
 
-> 最后更新：2026-05-05 v6.3-fix3 强制登录墙修复完成 ✅
+> 最后更新：2026-05-05 v6.4 火花点赞 + 双重排序完成 ✅

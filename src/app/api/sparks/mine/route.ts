@@ -6,7 +6,10 @@ import { authOptions } from "@/lib/auth";
 
 /**
  * GET /api/sparks/mine
- * 我的火花（个人所有对白记录，不分公开/私密）
+ * 我的火花（个人所有对白记录）
+ * Query: ?sort=latest|hottest
+ * sort=latest: 按发布时间降序（默认）
+ * sort=hottest: 按热度值降序
  */
 export async function GET(request: NextRequest) {
   try {
@@ -19,9 +22,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(apiResponse({ list: [] }));
     }
 
+    const { searchParams } = new URL(request.url);
+    const sort = searchParams.get("sort") || "latest"; // latest | hottest
+
+    const orderBy = sort === "hottest"
+      ? [{ hotScore: "desc" as const }, { createdAt: "desc" as const }]
+      : [{ createdAt: "desc" as const }];
+
     const assets = await prisma.asset.findMany({
       where: { userId: effectiveUserId },
-      orderBy: { createdAt: "desc" },
+      orderBy,
       take: 100,
       include: {
         brainhole: { select: { title: true } },
@@ -40,6 +50,9 @@ export async function GET(request: NextRequest) {
       isPublic: a.isPublic,
       sparkCount: a.sparkCount || 0,
       messageCount: a.messageCount || 0,
+      roomId: a.room?.id || null,
+      likedByMe: false, // 自己的火花，不允许点赞
+      isMySpark: true,
     }));
 
     return NextResponse.json(apiResponse({ list }));
