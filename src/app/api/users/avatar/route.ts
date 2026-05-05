@@ -49,8 +49,7 @@ class FakeRequest extends Readable {
 export async function POST(req: NextRequest) {
   try {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    const guestId = req.headers.get("x-guest-id");
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
 
     if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
@@ -81,7 +80,11 @@ export async function POST(req: NextRequest) {
     // 生成唯一文件名
     const ext = path.extname(fileInfo.originalname) || ".jpg";
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-    const filepath = path.join(process.cwd(), "public", "avatars", filename);
+    const avatarsDir = path.join(process.cwd(), "public", "avatars");
+    const filepath = path.join(avatarsDir, filename);
+
+    // v7.0-test11: 确保目录存在
+    await import('fs/promises').then(fs => fs.mkdir(avatarsDir, { recursive: true }));
 
     // 写入文件系统
     await writeFile(filepath, fileInfo.buffer);

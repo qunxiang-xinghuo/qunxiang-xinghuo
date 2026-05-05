@@ -16,7 +16,11 @@ export async function GET(
     const guestId = request.headers.get("x-guest-id");
 
     const { matchId } = await params;
-    const match = await checkMatchStatus(matchId, userId || matchId);
+    const effectiveUserId = userId || guestId;
+    if (!effectiveUserId) {
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
+    }
+    const match = await checkMatchStatus(matchId, effectiveUserId);
 
     // v4.3: 如果匹配成功，获取房间和脑洞信息
     let roomData = null;
@@ -62,7 +66,11 @@ export async function DELETE(
     const guestId = request.headers.get("x-guest-id");
 
     const { matchId } = await params;
-    const success = await cancelMatch(matchId, userId || matchId);
+    const effectiveUserId = userId || guestId;
+    if (!effectiveUserId) {
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
+    }
+    const success = await cancelMatch(matchId, effectiveUserId);
 
     return NextResponse.json(apiResponse({ success }));
   } catch (error: any) {

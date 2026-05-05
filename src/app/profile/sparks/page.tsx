@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -31,6 +31,14 @@ export default function MySparksPage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [guestId, setGuestId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    setMounted(true);
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     setGuestId(localStorage.getItem('xh_user_id'));
@@ -44,12 +52,16 @@ export default function MySparksPage() {
       const res = await fetch(`/api/sparks/mine?sort=${sort}`, {
         headers: gid ? { 'x-guest-id': gid } : {},
       });
+      if (!res.ok) {
+        console.error(`[MySparks] fetch failed: ${res.status}`);
+        return;
+      }
       const data = await res.json();
-      setSparks(data.data?.list || []);
+      if (mountedRef.current) setSparks(data.data?.list || []);
     } catch (e) {
       console.error('我的火花加载失败:', e);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [sort, guestId]);
 
@@ -150,7 +162,7 @@ export default function MySparksPage() {
               sparks.map((spark, idx) => (
                 <motion.div
                   key={spark.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={mounted ? { opacity: 0, y: 10 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   className="p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"

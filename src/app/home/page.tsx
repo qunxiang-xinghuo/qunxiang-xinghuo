@@ -22,6 +22,9 @@ export default function HomePage() {
   const [top3, setTop3] = useState<Brainhole[]>([]);
   const [loading, setLoading] = useState(true);
   const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     async function init() {
@@ -106,7 +109,7 @@ export default function HomePage() {
               {top3.map((item, idx) => (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={mounted ? { opacity: 0, y: 10 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
                   onClick={() => router.push(`/duo-match?brainholeId=${item.id}`)}
@@ -141,7 +144,7 @@ export default function HomePage() {
               return (
                 <motion.button
                   key={mode.key}
-                  initial={{ opacity: 0, y: 15 }}
+                  initial={mounted ? { opacity: 0, y: 15 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + idx * 0.08 }}
                   onClick={() => {

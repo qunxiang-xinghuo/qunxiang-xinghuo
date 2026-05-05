@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 interface PageHeaderProps {
@@ -8,9 +9,12 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ title, subtitle }: PageHeaderProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
+      initial={mounted ? { opacity: 0, y: -10 } : false}
       animate={{ opacity: 1, y: 0 }}
       className="shrink-0 px-4 pt-4 pb-2 text-center"
     >

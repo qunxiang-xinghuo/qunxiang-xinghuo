@@ -6,7 +6,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 
 const passwordSchema = z.object({
-  oldPassword: z.string().min(1),
+  oldPassword: z.string().min(1).max(256),
   newPassword: z.string().min(6).max(100),
   confirmPassword: z.string().min(6).max(100),
 });
@@ -19,8 +19,7 @@ const passwordSchema = z.object({
 export async function PUT(req: NextRequest) {
   try {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    const guestId = req.headers.get("x-guest-id");
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
 
     if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });

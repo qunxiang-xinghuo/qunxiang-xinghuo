@@ -57,9 +57,16 @@ export default function SpectateRoomPage() {
   const [isSwitching, setIsSwitching] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const likeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const switchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
   const { isConnected, joinRoom, leaveRoom, sendLike, on, off } = useSocket();
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   // 从 localStorage 获取公开房间列表
   useEffect(() => {
@@ -71,7 +78,9 @@ export default function SpectateRoomPage() {
         const idx = list.indexOf(roomId);
         setCurrentIdx(idx >= 0 ? idx : 0);
       }
-    } catch { /* ignore */ }
+    } catch (e) {
+      console.error('[Spectate] parse room list error:', e);
+    }
   }, [roomId]);
 
   // 加载房间数据
@@ -93,6 +102,10 @@ export default function SpectateRoomPage() {
       const res = await fetch(`/api/rooms/${id}`, {
         headers: guestId ? { 'x-guest-id': guestId } : {},
       });
+      if (!res.ok) {
+        console.error(`[Spectate] fetch room ${id} failed: ${res.status}`);
+        return;
+      }
       const data = await res.json();
       if (data.success && data.data) {
         const r = data.data as RoomData;
@@ -146,8 +159,12 @@ export default function SpectateRoomPage() {
     };
 
     const handleNewLike = () => {
+      if (!mountedRef.current) return;
       setLikeCount((prev) => prev + 1);
-      setTimeout(() => setLikeCount((prev) => Math.max(0, prev - 1)), 1500);
+      if (likeTimeoutRef.current) clearTimeout(likeTimeoutRef.current);
+      likeTimeoutRef.current = setTimeout(() => {
+        if (mountedRef.current) setLikeCount((prev) => Math.max(0, prev - 1));
+      }, 1500);
     };
 
     const handleViewerCount = (data: { count: number; roomId: string }) => {
@@ -165,6 +182,7 @@ export default function SpectateRoomPage() {
       off('new-like', handleNewLike);
       off('room-viewer-count', handleViewerCount);
       leaveRoom(roomId, stableUserId);
+      if (likeTimeoutRef.current) clearTimeout(likeTimeoutRef.current);
     };
   }, [roomId, joinRoom, leaveRoom, on, off, stableUserId]);
 
@@ -182,7 +200,10 @@ export default function SpectateRoomPage() {
     setIsSwitching(true);
     setCurrentIdx(nextIdx);
     router.push(`/spectate/${roomList[nextIdx]}`);
-    setTimeout(() => setIsSwitching(false), 600);
+    if (switchTimeoutRef.current) clearTimeout(switchTimeoutRef.current);
+    switchTimeoutRef.current = setTimeout(() => {
+      if (mountedRef.current) setIsSwitching(false);
+    }, 600);
   }, [roomList, currentIdx, isSwitching, router]);
 
   const swipeHandlers = useSwipeable({
@@ -347,7 +368,10 @@ export default function SpectateRoomPage() {
             onClick={() => {
               sendLike(roomId, stableUserId, '观众');
               setLikeCount((prev) => prev + 1);
-              setTimeout(() => setLikeCount((prev) => Math.max(0, prev - 1)), 1500);
+              if (likeTimeoutRef.current) clearTimeout(likeTimeoutRef.current);
+              likeTimeoutRef.current = setTimeout(() => {
+                if (mountedRef.current) setLikeCount((prev) => Math.max(0, prev - 1));
+              }, 1500);
             }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#e2b04a]/10 text-[#e2b04a] border border-[#e2b04a]/20 text-xs hover:bg-[#e2b04a]/20 active:scale-95 transition-all"
           >

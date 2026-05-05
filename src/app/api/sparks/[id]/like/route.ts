@@ -16,12 +16,15 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
+  let effectiveUserId: string | null | undefined;
   try {
-    const { id } = await params;
+    const paramsData = await params;
+    id = paramsData.id;
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
-    const effectiveUserId = userId || guestId;
+    effectiveUserId = userId || guestId;
 
     if (!effectiveUserId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
@@ -99,8 +102,20 @@ export async function POST(
         message: "点赞成功",
       }));
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Spark Like] Error:", error);
+    // v7.0-test11: 并发竞态条件防护，两个请求同时查到无like会触发P2002
+    if (error?.code === 'P2002' && id && effectiveUserId) {
+      const like = await prisma.assetLike.findUnique({
+        where: { assetId_userId: { assetId: id, userId: effectiveUserId } },
+      });
+      const updated = await prisma.asset.findUnique({ where: { id }, select: { hotScore: true } });
+      return NextResponse.json(apiResponse({
+        liked: !!like,
+        hotScore: updated?.hotScore || 0,
+        message: like ? "点赞成功" : "已取消点赞",
+      }));
+    }
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "操作失败"), { status: 500 });
   }
 }
