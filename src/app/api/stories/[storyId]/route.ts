@@ -9,6 +9,9 @@ export async function GET(
 ) {
   try {
     const { storyId } = await params;
+    if (!storyId || storyId.length > 100) {
+      return NextResponse.json(apiError("BAD_REQUEST", "无效的ID"), { status: 400 });
+    }
 
     const story = await db.story.findUnique({
       where: { id: storyId },

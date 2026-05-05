@@ -14,6 +14,9 @@ export async function GET(
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
 
     const { roomId } = await params;
+    if (!roomId || roomId.length > 100) {
+      return NextResponse.json(apiError("BAD_REQUEST", "无效的房间ID"), { status: 400 });
+    }
     const room = await getRoomWithParticipants(roomId);
 
     if (!room) {

@@ -13,6 +13,9 @@ export async function GET(
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const { id } = await params;
+    if (!id || id.length > 100) {
+      return NextResponse.json(apiError("BAD_REQUEST", "无效的ID"), { status: 400 });
+    }
 
     const asset = await db.asset.findUnique({
       where: { id },
