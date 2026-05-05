@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import TopBar from '@/components/layout/TopBar';
 import { Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,11 @@ export default function ZhihuZhidaPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
@@ -26,10 +31,14 @@ export default function ZhihuZhidaPage() {
     setLoading(true);
     setError('');
 
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+
     try {
       const res = await fetch('/api/zhihu/zhida', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: abortRef.current.signal,
         body: JSON.stringify({
           messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
           model: selectedModel,
@@ -45,7 +54,8 @@ export default function ZhihuZhidaPage() {
       } else {
         setError(json.error?.message || '回答生成失败');
       }
-    } catch (e) {
+    } catch (e: any) {
+      if (e.name === 'AbortError') return;
       setError('网络错误，请重试');
     } finally {
       setLoading(false);

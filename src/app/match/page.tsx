@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import TopBar from '@/components/layout/TopBar';
 import BrainholeStack from '@/components/brainhole/BrainholeStack';
 import { useBrainhole } from '@/hooks/useBrainhole';
+import type { Brainhole } from '@/components/brainhole/BrainholeCard';
 import { useCollection } from '@/hooks/useCollection';
 
 export default function MatchPage() {
@@ -13,7 +14,7 @@ export default function MatchPage() {
   const { collectBrainhole } = useCollection();
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleSwipeRight = (brainhole: any) => {
+  const handleSwipeRight = (brainhole: Brainhole) => {
     collectBrainhole(brainhole);
     router.push(`/brainhole/${brainhole.id}`);
   };
