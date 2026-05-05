@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Send, Sparkles, ArrowLeft, Flame, XCircle } from 'lucide-react';
+import { Send, Sparkles, ArrowLeft, Flame, XCircle, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/hooks/useAuth';
@@ -59,6 +59,7 @@ export default function RoomPage() {
   const [assetSaved, setAssetSaved] = useState(false);
   const [userRole, setUserRole] = useState<'actor' | 'spectator'>('actor');
   const [likeCount, setLikeCount] = useState(0);
+  const [viewerCount, setViewerCount] = useState(0); // v6.3: 在线人数
   const [aiAgents, setAiAgents] = useState<AiAgent[]>([]);
   const isProcessingAI = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -225,14 +226,21 @@ export default function RoomPage() {
     const handleTyping = () => { setPartnerTyping(true); setTimeout(() => setPartnerTyping(false), 2000); };
     const handleNewLike = () => { setLikeCount((prev) => prev + 1); setTimeout(() => setLikeCount((prev) => Math.max(0, prev - 1)), 1500); };
 
+    // v6.3: 监听房间在线人数（静默更新）
+    const handleViewerCount = (data: { count: number; roomId: string }) => {
+      if (data.roomId === roomId) setViewerCount(data.count);
+    };
+
     on('new-message', handleNewMessage);
     on('user-typing', handleTyping);
     on('new-like', handleNewLike);
+    on('room-viewer-count', handleViewerCount);
 
     return () => {
       off('new-message', handleNewMessage);
       off('user-typing', handleTyping);
       off('new-like', handleNewLike);
+      off('room-viewer-count', handleViewerCount);
       leaveRoom(roomId, stableUserId || 'guest');
     };
   }, [user, roomId, myIdentity, joinRoom, leaveRoom, on, off]);
@@ -362,17 +370,24 @@ export default function RoomPage() {
               <p className="text-[11px] text-white/30 truncate mt-0.5">{brainholeScenario}</p>
             )}
           </div>
-          {isConnected ? (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              在线
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] text-amber-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              连接中
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {/* v6.3: 在线人数 */}
+            <div className="flex items-center gap-1 text-[11px] text-white/40">
+              <Eye className="w-3.5 h-3.5" />
+              <span>{viewerCount}</span>
+            </div>
+            {isConnected ? (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                在线
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-[10px] text-amber-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                连接中
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -496,6 +511,10 @@ export default function RoomPage() {
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-[#74b9ff]/60 bg-[#74b9ff]/10 px-2 py-1 rounded-full border border-[#74b9ff]/20">
                 👁 观众模式
+              </span>
+              <span className="text-[10px] text-white/20 flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                {viewerCount}
               </span>
               <span className="text-[10px] text-white/20">{messages.length} 条消息</span>
             </div>

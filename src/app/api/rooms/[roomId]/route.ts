@@ -10,7 +10,6 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    // v4.4-fix: 支持guest用户
     const guestId = request.headers.get("x-guest-id");
     const userId = session?.user?.id || guestId;
 
@@ -21,9 +20,15 @@ export async function GET(
       return NextResponse.json(apiError("ROOM_NOT_FOUND", "房间不存在"), { status: 404 });
     }
 
-    // 检查用户是否是房间参与者（支持guest）
-    const isParticipant = userId && (room as any).participants.some((p: any) => p.userId === userId);
-    if (!isParticipant) {
+    // v6.2-fix6: 允许参与者（actor/ai_agent）和观众（spectator）访问
+    const isParticipant = userId && (room as any).participants.some(
+      (p: any) => p.userId === userId && (p.role === 'actor' || p.role === 'ai_agent')
+    );
+    const isSpectator = userId && (room as any).participants.some(
+      (p: any) => p.userId === userId && p.role === 'spectator'
+    );
+
+    if (!isParticipant && !isSpectator) {
       return NextResponse.json(apiError("NOT_PARTICIPANT", "不是房间参与者"), { status: 403 });
     }
 

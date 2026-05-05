@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle,
+  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -40,11 +40,11 @@ export default function HomePage() {
     init();
   }, []);
 
-  // v6.1: 四大模式，长期连载和多人模式标记为 comingSoon
+  // v6.2-fix6: 四大模式入口更新
   const modes = [
     {
       key: 'ai',
-      title: '人机模式',
+      title: '人机交互模式',
       desc: '与刘看山一对一对话',
       icon: Bot,
       color: 'from-[#00b894]/20 to-emerald-500/20',
@@ -54,7 +54,7 @@ export default function HomePage() {
     },
     {
       key: 'duo',
-      title: '双人对白',
+      title: '双人对白模式',
       desc: '与陌生人配对，即兴对话',
       icon: MessageCircle,
       color: 'from-[#e2b04a]/20 to-orange-500/20',
@@ -64,7 +64,7 @@ export default function HomePage() {
     },
     {
       key: 'multi',
-      title: '多人组队',
+      title: '多人组队模式',
       desc: '多人共创故事',
       icon: Users,
       color: 'from-[#74b9ff]/20 to-blue-500/20',
@@ -73,14 +73,14 @@ export default function HomePage() {
       comingSoon: true,
     },
     {
-      key: 'serial',
-      title: '长期连载',
-      desc: '连载故事，持续更新',
-      icon: BookOpen,
-      color: 'from-[#a29bfe]/20 to-purple-500/20',
-      iconColor: 'text-[#a29bfe]',
-      path: '/story-hall?tab=serial',
-      comingSoon: true,
+      key: 'spectate',
+      title: '观看模式',
+      desc: '实时围观公开房间对白',
+      icon: Eye,
+      color: 'from-[#ff6b6b]/20 to-red-500/20',
+      iconColor: 'text-[#ff6b6b]',
+      path: '/spectate',
+      comingSoon: false,
     },
   ];
 

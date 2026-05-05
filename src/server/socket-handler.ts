@@ -1,8 +1,7 @@
 /**
  * Socket.io 事件处理器
  *
- * 处理客户端连接、房间加入/离开、消息转发等事件。
- * v6.1: 修复消息持久化、生命周期同步、观众点赞
+ * v6.2-fix6: 移除文字广播，改为静默 viewer count 更新（抖音直播间式围观体验）
  */
 
 import { Server as SocketIOServer, Socket } from 'socket.io'
@@ -66,24 +65,40 @@ interface BranchVoteData {
   votedBy: string
 }
 
+/**
+ * 获取房间的在线人数并广播
+ * 包括 actor + spectator
+ */
+async function broadcastViewerCount(io: SocketIOServer, roomId: string) {
+  try {
+    const count = await db.roomParticipant.count({
+      where: {
+        roomId,
+        isOnline: true,
+      },
+    });
+    io.to(roomId).emit('room-viewer-count', { count, roomId });
+  } catch (err: any) {
+    console.error('[Socket] broadcastViewerCount failed:', err.message);
+  }
+}
+
 export function registerSocketHandlers(io: SocketIOServer): void {
   io.on('connection', (socket: Socket) => {
     console.log('[Socket] Connected:', socket.id)
 
+    // v6.3: 跟踪该 socket 加入的所有房间及对应 userId
+    const joinedRooms = new Map<string, string>() // roomId -> userId
+
     // ==================== 原有房间事件 ====================
 
-    // 加入房间 —— v6.1-fix: 同步更新DB participant状态
+    // 加入房间 —— v6.2-fix6: 不再广播 user-joined 文字消息，改为静默更新 viewer count
     socket.on('join-room', async ({ roomId, userId, identity }: JoinRoomData) => {
       socket.join(roomId)
-      socket.to(roomId).emit('user-joined', {
-        userId,
-        identity,
-        socketId: socket.id,
-        timestamp: Date.now(),
-      })
+      joinedRooms.set(roomId, userId)
       console.log(`[Socket] User ${userId} (${identity}) joined room ${roomId}`)
 
-      // v6.1-fix: 更新或创建 participant，标记为在线
+      // 更新或创建 participant，标记为在线
       try {
         await db.roomParticipant.upsert({
           where: {
@@ -105,18 +120,18 @@ export function registerSocketHandlers(io: SocketIOServer): void {
       } catch (err: any) {
         console.error('[Socket] join-room DB update failed:', err.message)
       }
+
+      // v6.2-fix6: 静默广播房间在线人数（不再发送 "Xxx 加入了房间" 文字提示）
+      await broadcastViewerCount(io, roomId)
     })
 
-    // 离开房间 —— v6.1-fix: 同步更新DB participant状态
+    // 离开房间 —— v6.2-fix6: 同上，静默更新 viewer count
     socket.on('leave-room', async ({ roomId, userId }: LeaveRoomData) => {
       socket.leave(roomId)
-      socket.to(roomId).emit('user-left', {
-        userId,
-        timestamp: Date.now(),
-      })
+      joinedRooms.delete(roomId)
       console.log(`[Socket] User ${userId} left room ${roomId}`)
 
-      // v6.1-fix: 标记 participant 为离线
+      // 标记 participant 为离线
       try {
         await db.roomParticipant.updateMany({
           where: { roomId, userId },
@@ -128,11 +143,13 @@ export function registerSocketHandlers(io: SocketIOServer): void {
       } catch (err: any) {
         console.error('[Socket] leave-room DB update failed:', err.message)
       }
+
+      // v6.2-fix6: 静默广播房间在线人数
+      await broadcastViewerCount(io, roomId)
     })
 
     // 转发消息 —— v6.1-fix: 排除发送者避免重复
     socket.on('send-message', ({ roomId, message }: SendMessageData) => {
-      // 使用 socket.to() 排除发送者，避免发送者收到自己的消息
       socket.to(roomId).emit('new-message', message)
     })
 
@@ -236,20 +253,26 @@ export function registerSocketHandlers(io: SocketIOServer): void {
       socket.to(roomKey).emit('story-user-typing', { userId, identity })
     })
 
-    // 断开连接 —— v6.1-fix: 更新所有房间的participant状态
+    // 断开连接 —— v6.3: 标记离线并静默更新 viewer count
     socket.on('disconnect', async (reason: string) => {
       console.log('[Socket] Disconnected:', socket.id, reason)
 
-      // 遍历该socket加入的所有room，标记participant为离线
-      const rooms = Array.from(socket.rooms).filter(r => r !== socket.id)
-      for (const roomId of rooms) {
-        // 尝试从socket.data获取userId（如果join-room时存了）
-        // 由于我们没有在socket.data中存userId，这里直接广播user-left
-        socket.to(roomId).emit('user-left', {
-          userId: 'unknown',
-          timestamp: Date.now(),
-        })
+      // 遍历该 socket 跟踪的所有房间，标记 participant 为离线
+      for (const [roomId, userId] of joinedRooms.entries()) {
+        try {
+          await db.roomParticipant.updateMany({
+            where: { roomId, userId },
+            data: {
+              isOnline: false,
+              leftAt: new Date(),
+            },
+          })
+        } catch (err: any) {
+          console.error('[Socket] disconnect DB update failed:', err.message)
+        }
+        await broadcastViewerCount(io, roomId)
       }
+      joinedRooms.clear()
     })
   })
 }
