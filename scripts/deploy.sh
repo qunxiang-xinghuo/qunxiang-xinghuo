@@ -37,4 +37,8 @@ npm run build >> "$LOG_FILE" 2>&1
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Restarting PM2..." >> "$LOG_FILE"
 pm2 restart qunxiang-xinghuo >> "$LOG_FILE" 2>&1 || pm2 start npm --name "qunxiang-xinghuo" -- start >> "$LOG_FILE" 2>&1
 
+# v7.0-fix7: 重启 Nginx 清除可能存在的页面缓存
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Reloading Nginx..." >> "$LOG_FILE"
+/www/server/nginx/sbin/nginx -s reload >> "$LOG_FILE" 2>&1 || true
+
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ===== Deploy Complete =====" >> "$LOG_FILE"
