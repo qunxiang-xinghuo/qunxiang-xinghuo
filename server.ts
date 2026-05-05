@@ -44,6 +44,18 @@ app.prepare().then(() => {
         }
       }
 
+      // v7.0-fix7: 对 /spectate 进行服务端登录检查兜底（中间件对此路由执行异常）
+      if (req.url === '/spectate' || req.url?.startsWith('/spectate?')) {
+        const cookie = req.headers.cookie || '';
+        const hasSession = cookie.includes('next-auth.session-token');
+        if (!hasSession) {
+          res.statusCode = 307;
+          res.setHeader('Location', '/login');
+          res.end();
+          return;
+        }
+      }
+
       const parsedUrl = parse(req.url!, true)
       await handle(req, res, parsedUrl)
     } catch (err) {
