@@ -80,7 +80,9 @@ export default function SettingsPage() {
 
   // Toast
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => { loadUser(); }, []);
 
   useEffect(() => {
@@ -249,7 +251,7 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-6">
         {/* 头像区域：居中，可点击上传 */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={mounted ? { opacity: 0, y: 10 } : false}
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center mb-8"
         >
@@ -285,7 +287,7 @@ export default function SettingsPage() {
         <div className="space-y-2">
           {/* 修改用户名 */}
           <motion.button
-            initial={{ opacity: 0, y: 10 }}
+            initial={mounted ? { opacity: 0, y: 10 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             onClick={() => {
@@ -306,7 +308,7 @@ export default function SettingsPage() {
 
           {/* 修改密码 */}
           <motion.button
-            initial={{ opacity: 0, y: 10 }}
+            initial={mounted ? { opacity: 0, y: 10 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
             onClick={() => setShowPasswordModal(true)}

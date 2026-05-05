@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { apiResponse, apiError } from "@/lib/utils";
 import { db } from "@/lib/db";
+import { z } from "zod";
 
 /**
  * POST /api/rooms/:roomId/spectate
@@ -22,8 +23,16 @@ export async function POST(
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
+    const spectateSchema = z.object({
+      identity: z.string().min(1, "身份不能为空").max(100, "身份不能超过100字").optional(),
+    });
+
     const body = await request.json().catch(() => ({}));
-    const identity = body.identity || "观众";
+    const validation = spectateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(apiError("VALIDATION_ERROR", validation.error.issues[0]?.message || "参数格式错误"), { status: 400 });
+    }
+    const identity = validation.data.identity || "观众";
 
     const { roomId } = await params;
 

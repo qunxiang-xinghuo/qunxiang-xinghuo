@@ -22,23 +22,35 @@ export default function HealingPage() {
   const [sessions, setSessions] = useState<HealingSessionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     loadSessions();
   }, []);
 
   async function loadSessions() {
+    setError('');
     try {
       const guestId = localStorage.getItem('xh_user_id');
       const res = await fetch('/api/healing', {
         headers: guestId ? { 'x-guest-id': guestId } : {},
       });
+      if (!res.ok) {
+        setError(`加载失败 (${res.status})`);
+        return;
+      }
       const result = await res.json();
       if (result.success && result.data) {
         setSessions(result.data);
+      } else {
+        setError(result.error?.message || '加载失败');
       }
     } catch (e) {
       console.error('加载疗愈会话失败:', e);
+      setError('网络错误，请重试');
     } finally {
       setIsLoading(false);
     }
@@ -46,6 +58,7 @@ export default function HealingPage() {
 
   const handleCreateSession = async () => {
     setCreating(true);
+    setError('');
     try {
       const guestId = localStorage.getItem('xh_user_id');
       const res = await fetch('/api/healing', {
@@ -53,12 +66,19 @@ export default function HealingPage() {
         headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
         body: JSON.stringify({}),
       });
+      if (!res.ok) {
+        setError(`创建失败 (${res.status})`);
+        return;
+      }
       const result = await res.json();
       if (result.success && result.data?.sessionId) {
         router.push(`/healing/session/${result.data.sessionId}`);
+      } else {
+        setError(result.error?.message || '创建失败');
       }
     } catch (e) {
       console.error('创建疗愈会话失败:', e);
+      setError('网络错误，请重试');
     } finally {
       setCreating(false);
     }
@@ -71,7 +91,7 @@ export default function HealingPage() {
       {/* 顶部引导区 */}
       <div className="px-5 pt-4 pb-3">
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={mounted ? { opacity: 0, y: -10 } : false}
           animate={{ opacity: 1, y: 0 }}
           className="card-elevated p-4 border-l-2 border-rose-400/50"
         >
@@ -88,6 +108,13 @@ export default function HealingPage() {
           </p>
         </motion.div>
       </div>
+
+      {/* 错误提示 */}
+      {error && (
+        <div className="px-5 pb-3">
+          <p className="text-xs text-red-400 text-center bg-red-500/10 rounded-lg py-2">{error}</p>
+        </div>
+      )}
 
       {/* 新建会话按钮 */}
       <div className="px-5 pb-3">
@@ -125,7 +152,7 @@ export default function HealingPage() {
             {sessions.map((session, index) => (
               <motion.div
                 key={session.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={mounted ? { opacity: 0, y: 10 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => router.push(`/healing/session/${session.id}`)}
