@@ -56,6 +56,7 @@ export default function StoryRoomPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isSavingAsset, setIsSavingAsset] = useState(false);
   const [assetSaved, setAssetSaved] = useState(false);
+  const [sendError, setSendError] = useState('');
 
   useEffect(() => {
     const uid = localStorage.getItem('xh_user_id') || `guest-${Date.now()}`;
@@ -73,7 +74,7 @@ export default function StoryRoomPage() {
         const myRole = result.data.story.roles.find((r: any) => r.claimedBy === uid);
         if (myRole) setMyIdentity(myRole.name);
       }
-    } catch {}
+    } catch (e) { console.error('[StoryRoom] loadStory failed:', e); }
   }, [storyId]);
 
   const loadMessages = useCallback(async () => {
@@ -81,7 +82,7 @@ export default function StoryRoomPage() {
       const res = await fetch(`/api/stories/${storyId}/messages`);
       const result = await res.json();
       if (result.success && result.data?.messages) setMessages(result.data.messages);
-    } catch {}
+    } catch (e) { console.error('[StoryRoom] loadMessages failed:', e); }
   }, [storyId]);
 
   const loadBranches = useCallback(async () => {
@@ -89,7 +90,7 @@ export default function StoryRoomPage() {
       const res = await fetch(`/api/stories/${storyId}/branches`);
       const result = await res.json();
       if (result.success && result.data?.branches) setBranches(result.data.branches);
-    } catch {}
+    } catch (e) { console.error('[StoryRoom] loadBranches failed:', e); }
   }, [storyId]);
 
   const loadInspirations = useCallback(async () => {
@@ -97,12 +98,16 @@ export default function StoryRoomPage() {
       const res = await fetch(`/api/stories/${storyId}/inspirations`);
       const result = await res.json();
       if (result.success && result.data?.inspirations) setInspirations(result.data.inspirations);
-    } catch {}
+    } catch (e) { console.error('[StoryRoom] loadInspirations failed:', e); }
   }, [storyId]);
 
   useEffect(() => {
+    let mounted = true;
     setLoading(true);
-    Promise.all([loadStory(), loadMessages(), loadBranches(), loadInspirations()]).finally(() => setLoading(false));
+    Promise.all([loadStory(), loadMessages(), loadBranches(), loadInspirations()]).finally(() => {
+      if (mounted) setLoading(false);
+    });
+    return () => { mounted = false; };
   }, [loadStory, loadMessages, loadBranches, loadInspirations]);
 
   // WebSocket
@@ -131,6 +136,7 @@ export default function StoryRoomPage() {
     if (!input.trim() || isPaused || !myIdentity) return;
     const content = input.trim();
     setInput('');
+    setSendError('');
     if (inputRef.current) inputRef.current.style.height = 'auto';
     try {
       const res = await fetch(`/api/stories/${storyId}/messages`, {
@@ -139,14 +145,17 @@ export default function StoryRoomPage() {
       });
       const result = await res.json();
       if (result.success && result.data?.message) socketSend(`story-${storyId}`, result.data.message);
-    } catch {}
+      else setSendError('发送失败');
+    } catch (e) {
+      setSendError('网络异常，发送失败');
+    }
   };
 
   const handleDirectorPause = async () => {
-    try { await fetch(`/api/stories/${storyId}/pause`, { method: 'POST' }); setIsPaused(true); } catch {}
+    try { await fetch(`/api/stories/${storyId}/pause`, { method: 'POST' }); setIsPaused(true); } catch (e) { console.error('[StoryRoom] pause failed:', e); }
   };
   const handleDirectorResume = async () => {
-    try { await fetch(`/api/stories/${storyId}/resume`, { method: 'POST' }); setIsPaused(false); } catch {}
+    try { await fetch(`/api/stories/${storyId}/resume`, { method: 'POST' }); setIsPaused(false); } catch (e) { console.error('[StoryRoom] resume failed:', e); }
   };
 
   const handleGenerateBranch = async () => {
@@ -167,7 +176,7 @@ export default function StoryRoomPage() {
         loadBranches();
         setShowBranches(true);
       }
-    } catch {}
+    } catch (e) { console.error('[StoryRoom] generateBranch failed:', e); }
     setGeneratingBranch(false);
   };
 
@@ -177,7 +186,7 @@ export default function StoryRoomPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ optionIdx }),
       });
-    } catch {}
+    } catch (e) { console.error('[StoryRoom] vote failed:', e); }
   };
 
   const handleResolveBranch = async (branchId: string, optionIdx: number) => {
@@ -187,7 +196,7 @@ export default function StoryRoomPage() {
         body: JSON.stringify({ optionIdx, resolve: true }),
       });
       loadBranches();
-    } catch {}
+    } catch (e) { console.error('[StoryRoom] resolveBranch failed:', e); }
   };
 
   const handleSaveAsset = async () => {
@@ -197,7 +206,7 @@ export default function StoryRoomPage() {
       const res = await fetch('/api/assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ storyId }) });
       const result = await res.json();
       if (result.success) setAssetSaved(true);
-    } catch {}
+    } catch (e) { console.error('[StoryRoom] saveAsset failed:', e); }
     setIsSavingAsset(false);
   };
 
@@ -310,7 +319,8 @@ export default function StoryRoomPage() {
               ) : (
                 <div className="space-y-2">
                   {branches.map((branch) => {
-                    const opts = JSON.parse(branch.options || '[]');
+                    let opts: any[] = [];
+                    try { opts = JSON.parse(branch.options || '[]'); } catch { opts = []; }
                     return (
                       <div key={branch.id} className="bg-slate-800/30 rounded-lg p-2.5 border border-slate-700/15">
                         <p className="text-[11px] text-slate-300 mb-1.5">{branch.content}</p>
@@ -420,6 +430,11 @@ export default function StoryRoomPage() {
 
       {/* 输入栏 - textarea自动增高 */}
       <div className="shrink-0 px-4 py-3 border-t border-slate-700/20 bg-slate-900/50 backdrop-blur-xl">
+        {sendError && (
+          <div className="mb-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
+            <p className="text-[11px] text-red-400">{sendError}</p>
+          </div>
+        )}
         {isPaused ? (
           <div className="flex items-center justify-center py-2.5">
             <Pause className="w-4 h-4 text-red-400 mr-1.5" />
