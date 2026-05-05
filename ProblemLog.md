@@ -1728,3 +1728,88 @@ pb-1 border-b-2 text-[#e2b04a] border-[#e2b04a]
 2. **登录验证完整性**：`signIn` 返回后必须检查 `result?.error || !result?.ok`，`/api/users/me` 失败时必须阻断跳转
 3. **退出登录可靠性**：先清本地数据 → `signOut` → `window.location.replace('/')`，不使用 `router.push` + `router.refresh()`
 4. **批量修改脚本化**：大规模 API 修改使用 Python 脚本+子agent协作，避免遗漏
+
+
+---
+
+## v7.0-fix7 /login路由+消息重复修复+结束逻辑+脑洞显示+middleware诊断 (2026-04-29)
+
+### 核心诊断结果
+
+**middleware.ts 诊断**：
+- ✅ middleware 函数正确导出，config.matcher 匹配所有页面路由
+- ✅ 使用 `getToken` 验证 JWT token
+- ✅ 未登录用户访问非公开页 → 重定向到 `/login`
+- ✅ 已登录用户访问 `/login` → 重定向到 `/home`
+- ⚠️ 原 PUBLIC_PATHS 缺少 `/login`，已修复
+
+**AppShell.tsx 诊断**：
+- ✅ 使用 `useSession()` 双重检查
+- ✅ `sessionStatus === 'unauthenticated'` 时清除 localStorage
+- ⚠️ 原 PUBLIC_PAGES 缺少 `/login`，已修复
+
+### 任务一：紧急修复"登录状态残留与退出跳转错误"
+
+**问题A：没登录就自动跳转到发现页**
+- **根因**：middleware 中 PUBLIC_PATHS 缺少 `/login`，且未登录重定向到 `/` 而非 `/login`
+- **修复**：
+  1. 创建 `/login` 路由（`src/app/login/page.tsx`）
+  2. middleware.ts：PUBLIC_PATHS 添加 `/login`，matcher 添加 `/login`
+  3. middleware.ts：未登录重定向到 `/login`（而非 `/`）
+  4. AppShell.tsx：PUBLIC_PAGES 添加 `/login`
+  5. auth.ts：`pages.signIn` 指向 `/login`
+
+**问题B：退出登录后跳转到发现页**
+- **根因**：`profile/page.tsx` 退出后 `window.location.replace('/')`，但 `/` 可能被 middleware 重定向
+- **修复**：退出后 `window.location.replace('/login')`
+
+### 任务二：修复"双人对白消息重复显示"
+
+**根因**：`useSocket` hook 中 `off()` 需要完全相同的 handler 引用，但 `handleNewMessage` 每次 useEffect 执行时都是新函数，导致旧监听器无法被清理，消息重复触发。
+
+**修复方案**：
+1. `useSocket.ts`：新增 `removeAllListeners(event)` 方法
+2. `room/[id]/page.tsx`：useEffect 中注册监听器前先 `removeAllListeners` 清理所有旧监听器
+3. `room/[id]/page.tsx`：`handleNewMessage` 中额外过滤自己发送的消息（`senderId === stableUserId`）
+
+### 任务三：修复"双人对白结束逻辑缺失"
+
+**根因**：`handleEndChat` 只保存 asset 并跳转到 `/library`，没有通知对方。
+
+**修复方案**：
+1. `socket-handler.ts`：`leave-room` 事件中，标记离线后向对方广播 `opponent-left` 事件
+2. `room/[id]/page.tsx`：添加 `opponent-left` 监听器，收到后 `alert('对方已结束对白')` 并跳转 `/home`
+3. `room/[id]/page.tsx`：`handleEndChat` 中先调用 `leaveRoom()` 通知对方，再保存 asset
+
+### 任务四：修复"对白时脑洞话题没有完整显示"
+
+**根因**：脑洞标题使用 `text-sm`（14px）、灰色、截断显示。
+
+**修复方案**：
+- 标题：`text-xl font-bold text-[#e2b04a] break-words`
+- 描述：`text-sm text-[#e2b04a]/70 break-words`
+- 移除 `truncate`，改为 `break-words` 完整显示
+
+### 文件变更
+
+| 文件 | 变更 |
+|------|------|
+| `src/app/login/page.tsx` | **新增** — `/login` 登录页 |
+| `middleware.ts` | PUBLIC_PATHS 添加 `/login`；matcher 添加 `/login`；重定向到 `/login` |
+| `src/lib/auth.ts` | `pages.signIn` 指向 `/login` |
+| `src/components/layout/AppShell.tsx` | PUBLIC_PAGES 添加 `/login`；重定向到 `/login` |
+| `src/app/profile/page.tsx` | 退出后跳转 `/login` |
+| `src/app/register/page.tsx` | 注册后跳转 `/login`；返回登录页跳转 `/login` |
+| `src/app/brainhole/[id]/page.tsx` | 返回首页跳转 `/login` |
+| `src/hooks/useSocket.ts` | 新增 `removeAllListeners` 方法 |
+| `src/server/socket-handler.ts` | `leave-room` 广播 `opponent-left` 事件 |
+| `src/app/room/[id]/page.tsx` | 消息去重+自己过滤；opponent-left 监听；leaveRoom 先通知；脑洞显示加大金色 |
+
+### 编译结果：66/66 路由全部通过 ✅（含 Middleware + `/login`）
+
+### 预防措施
+
+1. **登录页统一为 `/login`**：所有认证相关跳转统一指向 `/login`，避免 `/` 和 `/login` 混乱
+2. **Socket 监听器清理**：注册新监听器前必须先 `removeAllListeners` 清理旧监听器
+3. **消息去重双保险**：不仅比较消息ID，还过滤自己发送的消息
+4. **离开房间先通知**：结束对白时先发送 socket 事件通知对方，再执行后续操作

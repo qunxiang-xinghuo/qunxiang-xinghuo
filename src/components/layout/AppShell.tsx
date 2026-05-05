@@ -77,7 +77,7 @@ export default function AppShell({ children }: AppShellProps) {
     );
   }
 
-  const isLoginPage = pathname === '/';
+  const isLoginPage = pathname === '/' || pathname === '/login';
 
   return (
     <div className="h-full w-full max-w-md sm:max-w-lg mx-auto bg-xh-primary relative overflow-hidden flex flex-col">

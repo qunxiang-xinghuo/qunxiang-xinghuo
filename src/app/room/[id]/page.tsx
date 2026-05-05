@@ -195,11 +195,15 @@ export default function RoomPage() {
     }
   }, [brainholeTitle, messages, user?.id, aiAgents]);
 
+  // v7.0-fix7: 使用 ref 存储动态 user/identity，避免 useEffect 因对象引用变化而频繁重注册
+  const userRef = useRef(user);
+  userRef.current = user;
+
   // WebSocket
   useEffect(() => {
-    if (!user || !roomId) return;
-    const identity = myIdentity || user.identity?.label || '匿名';
-    joinRoom(roomId, stableUserId || 'guest', identity);
+    if (!roomId || !stableUserId) return;
+    const identity = myIdentity || userRef.current?.identity?.label || '匿名';
+    joinRoom(roomId, stableUserId, identity);
 
     // v7.0-fix7: 先清理所有旧监听器，防止重复注册导致消息重复显示
     removeAllListeners('new-message');
@@ -216,7 +220,7 @@ export default function RoomPage() {
       const senderId = raw.senderId || raw.userId;
 
       // 忽略自己发送的消息（已通过乐观更新添加）
-      if (senderId === stableUserId || senderId === user?.id) return;
+      if (senderId === stableUserId) return;
 
       setMessages((prev) => {
         // 去重：消息ID已存在则忽略
@@ -259,9 +263,10 @@ export default function RoomPage() {
       off('new-like', handleNewLike);
       off('room-viewer-count', handleViewerCount);
       off('opponent-left', handleOpponentLeft);
-      leaveRoom(roomId, stableUserId || 'guest');
+      leaveRoom(roomId, stableUserId);
     };
-  }, [user, roomId, myIdentity, joinRoom, leaveRoom, on, off, removeAllListeners, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, stableUserId, myIdentity]);
 
   const handleSend = useCallback(async () => {
     if (!inputValue.trim()) return;

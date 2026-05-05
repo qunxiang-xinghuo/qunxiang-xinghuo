@@ -104,7 +104,7 @@ export default function ProfilePage() {
         <h2 className="text-lg font-bold text-white/90 mb-2">请先登录</h2>
         <p className="text-sm text-white/40 mb-6 text-center">登录后即可查看个人信息和使用全部功能</p>
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/login')}
           className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#e2b04a] to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
           去登录

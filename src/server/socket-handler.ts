@@ -274,6 +274,8 @@ export function registerSocketHandlers(io: SocketIOServer): void {
         } catch (err: any) {
           console.error('[Socket] disconnect DB update failed:', err.message)
         }
+        // v7.0-fix7: 用户意外断开（关闭浏览器/断网）时，向对方广播 opponent-left
+        socket.to(roomId).emit('opponent-left', { userId, roomId, timestamp: Date.now() })
         await broadcastViewerCount(io, roomId)
       }
       joinedRooms.clear()
