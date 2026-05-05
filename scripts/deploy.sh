@@ -27,6 +27,10 @@ fi
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Installing dependencies..." >> "$LOG_FILE"
 npm install >> "$LOG_FILE" 2>&1
 
+# v7.0-fix7: 清除 Next.js 内部缓存，防止动态页面被缓存为静态响应
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Clearing Next.js cache..." >> "$LOG_FILE"
+rm -rf .next/cache >> "$LOG_FILE" 2>&1
+
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Building..." >> "$LOG_FILE"
 npm run build >> "$LOG_FILE" 2>&1
 
