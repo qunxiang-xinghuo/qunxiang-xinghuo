@@ -334,4 +334,53 @@
 
 ---
 
+## v6.3-fix3 登录页恢复 + 强制登录墙 + 导航栏控制 (2026-05-05)
+
+### 问题1：未登录用户打开网站后直接跳过登录页进入发现页
+
+**现象**：用户打开 `/`，但页面直接显示 `/home` 的内容，看不到登录表单
+
+**根因链**：
+```
+用户打开网站
+  → middleware.ts 的 matcher 正则 `.*\.` 不被 path-to-regexp 正确解析
+  → middleware 对 `/home` 等路径完全不执行
+  → AppShell.tsx 中 useEffect 重定向有延迟
+  → 页面先渲染 `/home` 的内容（包括 BottomNav）
+  → 用户看到的是发现页而不是登录页
+```
+
+**根因1**：`middleware.ts` 的 `matcher` 使用了 `.*\.` 负向前瞻，Next.js 的 `path-to-regexp` 无法正确解析，导致 middleware 对大部分路径不生效
+**根因2**：`auth.ts` 中 JWT 默认 `maxAge: 30 * 24 * 60 * 60`（30天），关闭浏览器后 cookie 仍然存在
+**根因3**：`AppShell.tsx` 中 session `loading` 状态时，如果 localStorage 有 `xh_user` 残留，不做任何处理，页面继续渲染
+**根因4**：`useAuth.ts` 中 session `unauthenticated` 时，只有当 `savedUser` 存在才清除 localStorage，逻辑不够严格
+
+### 问题2：未登录状态下底部导航栏显示并可点击
+
+**现象**：未登录用户可以看到底部导航栏（发现、火花、故事、我的）
+
+**根因**：`BottomNav.tsx` 虽然检查了 `status === 'unauthenticated'`，但 `AppShell.tsx` 渲染 BottomNav 的时机在 session 状态确定之前，加上 middleware 失效，导致未登录用户一度能看到导航栏
+
+### 修复方案
+
+1. **修复 `middleware.ts`**：将 `matcher` 从复杂的正则改为**显式路径列表**，确保每个需要保护的页面都被匹配
+2. **修复 `auth.ts`**：显式设置 `secret: process.env.NEXTAUTH_SECRET`，JWT `maxAge` 从 30 天缩短为 **24 小时**
+3. **修复 `AppShell.tsx`**：session `unauthenticated` 时**无条件清除**所有 localStorage 残留，无论是否存在 `xh_user`
+4. **修复 `LoginForm.tsx`**：加载时如果 `status === 'unauthenticated'`，主动清除所有 localStorage 数据
+5. **修复 `useAuth.ts`**：session `unauthenticated` 时**无条件清除**所有残留数据（`xh_user` + `xh_user_id` + `xh_identity`）
+
+### 文件变更
+
+| 文件 | 变更 |
+|------|------|
+| `middleware.ts` | matcher 从正则改为显式路径列表，确保所有页面被拦截 |
+| `src/lib/auth.ts` | 显式设置 secret，JWT maxAge 30天→24小时 |
+| `src/components/layout/AppShell.tsx` | session unauthenticated 时无条件清除残留 |
+| `src/app/LoginForm.tsx` | 加载时清除本地残留数据 |
+| `src/hooks/useAuth.ts` | session 失效时无条件清除所有残留 |
+
+### 编译结果：64/64 路由全部通过 ✅（含 Middleware）
+
+---
+
 > **铁律**：每次100% context前，先读 IMPORTANT.md，记录所有 bug 根因+解决+预防措施，犯过的问题不再犯。

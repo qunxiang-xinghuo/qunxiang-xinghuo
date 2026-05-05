@@ -21,18 +21,21 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // v6.3-auth-fix: session 明确为未认证时，清除本地残留数据
+    // v6.3-auth-fix3: session 明确为未认证时，无条件清除本地残留数据
     if (sessionStatus === 'unauthenticated') {
       const savedUser = localStorage.getItem('xh_user');
-      if (savedUser) {
-        console.log('[useAuth] Session 已失效，清除本地残留用户数据');
+      const savedUserId = localStorage.getItem('xh_user_id');
+      const savedIdentity = localStorage.getItem('xh_identity');
+
+      if (savedUser || savedUserId || savedIdentity) {
+        console.log('[useAuth] Session 已失效，清除所有本地残留用户数据');
         localStorage.removeItem('xh_user');
         localStorage.removeItem('xh_identity');
         localStorage.removeItem('xh_user_id');
-        setUser(null);
-        setLoading(false);
-        return;
       }
+      setUser(null);
+      setLoading(false);
+      return;
     }
 
     // 1. 优先从 NextAuth session 读取（最可信）
@@ -54,21 +57,22 @@ export function useAuth() {
       return;
     }
 
-    // 2. 其次从 localStorage 读取（session 加载中时的兜底）
-    const savedUser = localStorage.getItem('xh_user');
-    const savedIdentity = localStorage.getItem('xh_identity');
-
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-        setLoading(false);
-        return;
-      } catch {
-        localStorage.removeItem('xh_user');
+    // 2. session 还在加载中，用 localStorage 做临时兜底
+    if (sessionStatus === 'loading') {
+      const savedUser = localStorage.getItem('xh_user');
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+          setLoading(false);
+          return;
+        } catch {
+          localStorage.removeItem('xh_user');
+        }
       }
     }
 
-    // 3. 最后从 identity 创建临时用户
+    // 3. 最后从 identity 创建临时用户（仅用于匿名模式）
+    const savedIdentity = localStorage.getItem('xh_identity');
     if (savedIdentity) {
       try {
         const identity = JSON.parse(savedIdentity);

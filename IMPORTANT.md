@@ -260,6 +260,22 @@ DATABASE_URL="file:./dev.db"
 3. **必须**从 `/api/users/me` 获取服务器真实用户数据
 4. **session 失效时**必须同步清除 localStorage
 
+## 十四、v6.3-fix3 强制登录墙纪律
+
+### 14.1 Middleware matcher 铁律
+- **不允许**使用复杂的正则表达式（如 `.*\.`) 作为 matcher
+- **必须使用**显式路径列表或 Next.js 官方推荐的简单正则 `/((?!api|_next/static|_next/image|favicon.ico).*)`
+- **必须**确保 `/` 和 `/register` 被 matcher 覆盖
+
+### 14.2 JWT 会话策略
+- `maxAge` 设置为 **24 小时**（86400 秒），避免长期会话残留
+- `updateAge` 设置为 **6 小时**（21600 秒）
+- `secret` 必须显式配置，不能依赖默认值
+
+### 14.3 本地数据清除铁律
+- `session === 'unauthenticated'` 时，**无条件**清除 `xh_user` + `xh_identity` + `xh_user_id`
+- 不判断数据是否存在，直接清除，防止任何形式的残留
+
 ---
 
-> 最后更新：2026-05-05 v6.3-fix2 认证系统紧急修复完成 ✅
+> 最后更新：2026-05-05 v6.3-fix3 强制登录墙修复完成 ✅

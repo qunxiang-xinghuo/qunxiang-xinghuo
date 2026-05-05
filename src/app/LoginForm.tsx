@@ -36,6 +36,17 @@ export default function LoginForm() {
     setMounted(true);
   }, []);
 
+  // v6.3-auth-fix3: 如果 session 明确未认证，清除所有本地残留数据
+  // 确保打开登录页时，任何旧的 localStorage 数据都不会导致自动登录
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      console.log('[LoginForm] Session 未认证，清除本地残留');
+      localStorage.removeItem('xh_user');
+      localStorage.removeItem('xh_identity');
+      localStorage.removeItem('xh_user_id');
+    }
+  }, [status]);
+
   // 已登录用户访问登录页，直接重定向到发现页
   useEffect(() => {
     if (status === 'authenticated') {
@@ -63,7 +74,7 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      // v6.3-auth-fix: 清除可能残留的旧 session/localStorage
+      // v6.3-auth-fix3: 登录前清除可能残留的旧数据
       localStorage.removeItem('xh_user');
       localStorage.removeItem('xh_identity');
       localStorage.removeItem('xh_user_id');
@@ -79,7 +90,7 @@ export default function LoginForm() {
         return;
       }
 
-      // v6.3-auth-fix: 登录成功后，从服务器获取真实用户数据
+      // v6.3-auth-fix3: 登录成功后，从服务器获取真实用户数据
       console.log('[Login] 认证成功，正在获取用户数据...');
       const meRes = await fetch('/api/users/me');
       const meData = await meRes.json();
@@ -99,7 +110,6 @@ export default function LoginForm() {
         localStorage.setItem('xh_user_id', meData.data.id);
         console.log('[Login] 用户数据已同步到 localStorage:', realUser.id);
       } else {
-        // 如果 /api/users/me 失败，使用基本数据兜底
         console.warn('[Login] /api/users/me 获取失败，使用基本数据');
         const fallbackUser = {
           id: 'user-' + Date.now(),
