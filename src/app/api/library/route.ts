@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取用户的反应、火花和故事草稿
-    const [reactions, sparks, storyDrafts] = await Promise.all([
+    const [reactions, sparks, storyDrafts, totalReactions, totalSparks, totalStoryDrafts] = await Promise.all([
       db.reaction.findMany({
         where: { userId },
         include: {
@@ -50,17 +50,16 @@ export async function GET(request: NextRequest) {
         orderBy: { updatedAt: "desc" },
         take: 10,
       }),
+      db.reaction.count({ where: { userId } }),
+      db.reaction.count({ where: { userId, isSpark: true } }),
+      db.storyDraft.count({ where: { userId } }),
     ]);
 
     return NextResponse.json(apiResponse({
       reactions,
       sparks,
       storyDrafts,
-      stats: {
-        totalReactions: await db.reaction.count({ where: { userId } }),
-        totalSparks: await db.reaction.count({ where: { userId, isSpark: true } }),
-        totalStoryDrafts: await db.storyDraft.count({ where: { userId } }),
-      },
+      stats: { totalReactions, totalSparks, totalStoryDrafts },
     }));
   } catch (error) {
     console.error("获取个人素材库失败:", error);

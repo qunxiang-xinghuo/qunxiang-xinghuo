@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       alreadyJoined: false,
     }), { status: 200 });
   } catch (error: any) {
-    console.error("[Join API] 错误:", error.message);
+    console.error("[Join API] 错误:", error instanceof Error ? error.message : String(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "加入房间失败"), { status: 500 });
   }
 }

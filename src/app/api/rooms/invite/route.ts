@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       inviteCode,
     }), { status: 201 });
   } catch (error: any) {
-    console.error("[Invite API] 错误:", error.message);
+    console.error("[Invite API] 错误:", error instanceof Error ? error.message : String(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建邀请房间失败"), { status: 500 });
   }
 }

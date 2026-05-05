@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { brainholeCreateSchema, brainholeQuerySchema } from "@/lib/validators/brainhole";
+import { ZodError } from "zod";
 
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
@@ -116,6 +117,9 @@ export async function GET(request: NextRequest) {
       })
     );
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(apiError("VALIDATION_ERROR", error.issues[0]?.message || "参数校验失败"), { status: 400 });
+    }
     console.error("获取脑洞列表失败:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取脑洞列表失败"), { status: 500 });
   }
@@ -170,6 +174,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(apiResponse(brainhole), { status: 201 });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(apiError("VALIDATION_ERROR", error.issues[0]?.message || "请求体格式错误"), { status: 400 });
+    }
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
+    }
     console.error("创建脑洞失败:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建脑洞失败"), { status: 500 });
   }

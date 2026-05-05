@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
