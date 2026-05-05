@@ -345,6 +345,18 @@ DATABASE_URL="file:./dev.db"
 - profile/sparks 等子页面标题使用 `flex-1 text-center pr-10` 保持绝对居中
 - TopBar 组件使用左-中-右三等分布局确保标题绝对居中
 
+### 16.8 我的页面布局规范
+- 头像：64px 白底圆形（`bg-white/10` + `text-white/50`），非彩色背景
+- 布局：头像左 + 用户名右，整体左对齐（`flex items-center gap-4 px-2`）
+- 无统计数据区块（火花/故事/匹配计数已移除）
+
+### 16.9 火花页 Tab 样式规范
+- 必须使用故事页同款 Tab 样式：底部边框 + 文字高亮
+- **禁止使用**圆角按钮/圆圈/pill 形状
+- 选中态：`text-[#e2b04a] border-[#e2b04a]`
+- 未选中态：`text-white/30 border-transparent hover:text-white/50`
+- 容器：`flex gap-4 mb-4 border-b border-white/5 pb-3`
+
 ### 16.8 登录页路由规范
 - `/` 根路径显示登录页（首页）
 - `/login` 也显示登录页（复用 LoginForm）

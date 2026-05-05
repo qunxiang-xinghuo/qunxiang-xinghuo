@@ -17,22 +17,14 @@ interface UserData {
   level: number;
 }
 
-// 首字母彩色头像（默认头像）
-function DefaultAvatar({ name, size = 48 }: { name: string; size?: number }) {
+// 默认头像：白底灰色首字母
+function DefaultAvatar({ name, size = 64 }: { name: string; size?: number }) {
   const initial = name?.charAt(0)?.toUpperCase() || '?';
-  const colors = [
-    'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-green-500',
-    'bg-emerald-500', 'bg-teal-500', 'bg-cyan-500', 'bg-sky-500',
-    'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-purple-500',
-    'bg-fuchsia-500', 'bg-pink-500', 'bg-rose-500',
-  ];
-  const colorIndex = name?.charCodeAt(0) % colors.length || 0;
-  const bgColor = colors[colorIndex];
 
   return (
     <div
-      className={`${bgColor} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
+      className="bg-white/10 rounded-full flex items-center justify-center text-white/50 font-bold flex-shrink-0 border border-white/10"
+      style={{ width: size, height: size, fontSize: size * 0.35 }}
     >
       {initial}
     </div>
@@ -40,14 +32,14 @@ function DefaultAvatar({ name, size = 48 }: { name: string; size?: number }) {
 }
 
 // 用户头像组件
-function UserAvatar({ user, size = 48 }: { user: UserData | null; size?: number }) {
+function UserAvatar({ user, size = 64 }: { user: UserData | null; size?: number }) {
   if (!user) return <DefaultAvatar name="?" size={size} />;
   if (user.image) {
     return (
       <img
         src={user.image}
         alt={user.name || '头像'}
-        className="rounded-full object-cover flex-shrink-0"
+        className="rounded-full object-cover flex-shrink-0 border border-white/10"
         style={{ width: size, height: size }}
       />
     );
@@ -58,7 +50,6 @@ function UserAvatar({ user, size = 48 }: { user: UserData | null; size?: number 
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
-  const [stats, setStats] = useState({ sparks: 0, stories: 0, matches: 0 });
   const [pageLoading, setPageLoading] = useState(true);
 
   // 从 API 加载最新用户信息
@@ -94,29 +85,6 @@ export default function ProfilePage() {
 
     // 然后从 API 刷新最新数据
     loadUserFromApi();
-
-    // 获取统计数据
-    async function loadStats() {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
-
-        const [sparkRes, storyRes] = await Promise.all([
-          fetch('/api/sparks/mine', { signal: controller.signal }).then(r => r.json()),
-          fetch('/api/stories/mine', { signal: controller.signal }).then(r => r.json()),
-        ]);
-        clearTimeout(timeout);
-
-        setStats({
-          sparks: sparkRes.data?.list?.length || 0,
-          stories: storyRes.data?.list?.length || 0,
-          matches: parseInt(localStorage.getItem('xh_match_count') || '0'),
-        });
-      } catch (e: any) {
-        console.error('统计加载失败:', e);
-      }
-    }
-    loadStats();
   }, [router]);
 
   if (pageLoading) {
@@ -136,7 +104,7 @@ export default function ProfilePage() {
         <h2 className="text-lg font-bold text-white/90 mb-2">请先登录</h2>
         <p className="text-sm text-white/40 mb-6 text-center">登录后即可查看个人信息和使用全部功能</p>
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/login')}
           className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#e2b04a] to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
           去登录
@@ -148,8 +116,8 @@ export default function ProfilePage() {
   const menuItems = [
     { icon: Coins, label: '我的收益', desc: '盐粒收益明细', path: '/earnings' },
     { icon: Heart, label: '个人疗愈', desc: '私密对话空间', path: '/healing' },
-    { icon: Flame, label: '我的火花', desc: `${stats.sparks} 条灵感片段`, path: '/profile/sparks' },
-    { icon: BookOpen, label: '我的故事', desc: `${stats.stories} 个参与的故事`, path: '/story-hall' },
+    { icon: Flame, label: '我的火花', desc: '管理你的灵感片段', path: '/profile/sparks' },
+    { icon: BookOpen, label: '我的故事', desc: '参与的故事记录', path: '/story-hall' },
     { icon: Settings, label: '设置', desc: '账号与偏好', path: '/settings' },
   ];
 
@@ -163,42 +131,19 @@ export default function ProfilePage() {
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* v6.3: 用户信息整体居中，头像左+用户名右水平对齐 */}
+        {/* 用户信息：头像左+用户名右，左对齐 */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex justify-center mb-8"
+          className="flex items-center gap-4 mb-8 px-2"
         >
-          <div className="flex items-center gap-3">
-            {/* 头像 48px 圆形 */}
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#e2b04a]/20 flex-shrink-0">
-              <UserAvatar user={user} size={48} />
-            </div>
+          {/* 头像 64px 圆形，白底 */}
+          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+            <UserAvatar user={user} size={64} />
+          </div>
 
-            {/* 用户名（用户名就是昵称） */}
-            <h2 className="text-lg font-bold text-white/90">{displayName}</h2>
-          </div>
-        </motion.div>
-
-        {/* 统计数据 */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="flex items-center justify-center gap-6 mb-8"
-        >
-          <div className="text-center">
-            <p className="text-base font-semibold text-white/80">{stats.sparks}</p>
-            <p className="text-[10px] text-white/25">火花</p>
-          </div>
-          <div className="text-center">
-            <p className="text-base font-semibold text-white/80">{stats.stories}</p>
-            <p className="text-[10px] text-white/25">故事</p>
-          </div>
-          <div className="text-center">
-            <p className="text-base font-semibold text-white/80">{stats.matches}</p>
-            <p className="text-[10px] text-white/25">匹配</p>
-          </div>
+          {/* 用户名 */}
+          <h2 className="text-xl font-bold text-white/90">{displayName}</h2>
         </motion.div>
 
         {/* 功能菜单 */}
@@ -210,7 +155,7 @@ export default function ProfilePage() {
                 key={item.label}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 + idx * 0.05 }}
+                transition={{ delay: 0.05 + idx * 0.05 }}
                 onClick={() => router.push(item.path)}
                 className="w-full flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all text-left"
               >
@@ -231,7 +176,6 @@ export default function ProfilePage() {
         <div className="mt-8 pb-6">
           <button
             onClick={async () => {
-              // 先清除 next-auth session cookie，再清除 localStorage
               await signOut({ redirect: false });
               localStorage.removeItem('xh_user');
               localStorage.removeItem('xh_identity');

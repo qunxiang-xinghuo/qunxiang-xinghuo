@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Flame, TrendingUp, Clock, ChevronRight,
+  Flame, Clock, ChevronRight,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -105,30 +105,24 @@ export default function SparksPage() {
       <PageHeader title="火花" subtitle="灵感碰撞的瞬间" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-2">
-        {/* Tab 切换：最新火花 / 最热火花 */}
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <button
-            onClick={() => setTab('latest')}
-            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full transition-all ${
-              tab === 'latest'
-                ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 font-medium'
-                : 'bg-white/[0.03] text-white/30 border border-white/5 hover:text-white/50'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            最新火花
-          </button>
-          <button
-            onClick={() => setTab('hottest')}
-            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full transition-all ${
-              tab === 'hottest'
-                ? 'bg-[#ff6b6b]/15 text-[#ff6b6b] border border-[#ff6b6b]/25 font-medium'
-                : 'bg-white/[0.03] text-white/30 border border-white/5 hover:text-white/50'
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            最热火花
-          </button>
+        {/* Tab 切换：最新火花 / 最热火花（故事页样式）*/}
+        <div className="flex gap-4 mb-4 border-b border-white/5 pb-3">
+          {[
+            { key: 'latest', label: '最新火花' },
+            { key: 'hottest', label: '最热火花' },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key as TabType)}
+              className={`text-sm font-medium transition-colors pb-1 border-b-2 ${
+                tab === t.key
+                  ? 'text-[#e2b04a] border-[#e2b04a]'
+                  : 'text-white/30 border-transparent hover:text-white/50'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
