@@ -268,4 +268,70 @@
 
 ---
 
+## v6.3-fix2 认证系统紧急修复（老用户跳过登录 + 新用户注册失败） (2026-05-05)
+
+### 问题1：老用户可能跳过登录表单直接进入主页面
+
+**现象**：未登录或 session 已过期的用户，因为 localStorage 中残留 `xh_user` 数据，可以绕过登录页直接访问 `/home` 等页面
+
+**根因链**：
+```
+用户关闭浏览器后重新打开
+  → next-auth session/JWT 已过期
+  → 但 localStorage 中 xh_user 仍然存在
+  → AppShell.tsx 只检查 localStorage，不验证 session
+  → useAuth.ts 优先从 localStorage 读取，session 状态被忽略
+  → 用户"看起来"已登录，可以访问所有页面
+  → 但访问需要真实用户ID的API时全部失败
+```
+
+**根因1**：`AppShell.tsx` 认证守卫只检查 `localStorage.getItem('xh_user')`，不验证 next-auth session 有效性
+**根因2**：`useAuth.ts` 优先从 localStorage 读取用户数据，session 状态为 `unauthenticated` 时仍认为用户已登录
+**根因3**：项目没有 `middleware.ts` 全局认证中间件，所有认证判断分散在前端组件中
+**根因4**：`LoginForm.tsx` 登录成功后写入 localStorage 的是假数据（`id: 'user-' + Date.now()`），不是服务器真实用户ID
+
+**修复方案**：
+1. **新增 `middleware.ts`**：全局边缘认证中间件，基于 next-auth JWT token 判断登录状态
+   - 未登录访问非公开页 → 重定向到 `/`
+   - 已登录访问 `/` 或 `/register` → 重定向到 `/home`
+2. **修复 `AppShell.tsx`**：引入 `useSession()`，双重认证守卫（session + localStorage）
+3. **修复 `useAuth.ts`**：session 状态为 `unauthenticated` 时，主动清除 localStorage 残留数据
+4. **修复 `LoginForm.tsx`**：登录成功后调用 `/api/users/me` 获取真实用户数据，再写入 localStorage
+
+### 问题2：新用户注册后无法正常登录
+
+**现象**：用户注册成功后需要手动回到登录页再次输入用户名密码登录
+
+**根因**：`register/page.tsx` 注册成功后只是 `router.push('/?username=...&password=...')`，没有自动完成登录流程
+
+**修复方案**：
+1. **修复 `register/page.tsx`**：注册成功后自动调用 `signIn('credentials', ...)` 完成登录
+2. **注册API添加详细日志**：在请求接收、参数校验、数据库查询、用户创建等关键步骤添加 `console.log`
+3. **错误反馈增强**：API 返回的 `message` 直接显示给用户（如"用户名已被注册，请更换后重试"）
+
+### 问题3：登录后 localStorage 存储假数据
+
+**现象**：登录成功后 `xh_user` 的 `id` 是 `'user-' + Date.now()`，不是数据库真实ID，导致后续API调用失败
+
+**根因**：`LoginForm.tsx` 登录成功后自己构造了一个 `userData` 对象，没有从服务器获取真实数据
+
+**修复方案**：
+- `LoginForm.tsx` 登录成功后 → `signIn` 返回成功 → 调用 `fetch('/api/users/me')` → 获取真实用户数据 → 写入 localStorage
+- 如果 `/api/users/me` 获取失败，使用基本数据兜底并记录警告日志
+
+### 文件变更
+
+| 文件 | 变更 |
+|------|------|
+| `middleware.ts`（新增） | 全局边缘认证中间件，JWT token 验证 |
+| `src/app/LoginForm.tsx` | 登录成功后获取真实用户数据；清除旧session残留 |
+| `src/app/register/page.tsx` | 注册成功后自动登录 |
+| `src/app/api/auth/register/route.ts` | 添加详细 console.log 日志；增强错误处理 |
+| `src/hooks/useAuth.ts` | session 失效时清除 localStorage |
+| `src/components/layout/AppShell.tsx` | 引入 useSession，双重认证守卫 |
+
+### 编译结果：64/64 路由全部通过 ✅（含 Middleware）
+
+---
+
 > **铁律**：每次100% context前，先读 IMPORTANT.md，记录所有 bug 根因+解决+预防措施，犯过的问题不再犯。

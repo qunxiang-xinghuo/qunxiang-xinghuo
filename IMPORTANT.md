@@ -235,6 +235,31 @@ DATABASE_URL="file:./dev.db"
 - 各自独立入口、独立弹窗、独立 API
 - 不允许在同一个表单中混合两者
 
+## 十三、v6.3-fix2 认证系统修复纪律
+
+### 13.1 认证架构（三层守卫）
+```
+边缘层: middleware.ts → JWT token 验证（最严格）
+  ↓
+布局层: AppShell.tsx → useSession() + localStorage 双重检查
+  ↓
+组件层: useAuth.ts → session 优先，失效时清除 localStorage
+```
+
+### 13.2 登录/注册流程规范
+| 步骤 | 登录 | 注册 |
+|------|------|------|
+| 1 | signIn('credentials') | POST /api/auth/register |
+| 2 | 成功后调用 /api/users/me | 成功后自动 signIn('credentials') |
+| 3 | 真实用户数据写入 localStorage | 真实用户数据写入 localStorage |
+| 4 | router.push('/home') | router.push('/home') |
+
+### 13.3 认证守卫铁律
+1. **不允许**只凭 localStorage 判断登录状态
+2. **不允许**前端自己构造用户 ID
+3. **必须**从 `/api/users/me` 获取服务器真实用户数据
+4. **session 失效时**必须同步清除 localStorage
+
 ---
 
-> 最后更新：2026-05-05 v6.3-fix1 「我的」+「设置」重构完成 ✅
+> 最后更新：2026-05-05 v6.3-fix2 认证系统紧急修复完成 ✅

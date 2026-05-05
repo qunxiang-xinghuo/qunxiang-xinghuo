@@ -63,6 +63,11 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
+      // v6.3-auth-fix: 清除可能残留的旧 session/localStorage
+      localStorage.removeItem('xh_user');
+      localStorage.removeItem('xh_identity');
+      localStorage.removeItem('xh_user_id');
+
       const result = await signIn('credentials', {
         username: username.trim(),
         password,
@@ -71,19 +76,45 @@ export default function LoginForm() {
 
       if (result?.error) {
         setError('用户名或密码错误');
+        return;
+      }
+
+      // v6.3-auth-fix: 登录成功后，从服务器获取真实用户数据
+      console.log('[Login] 认证成功，正在获取用户数据...');
+      const meRes = await fetch('/api/users/me');
+      const meData = await meRes.json();
+
+      if (meData.success && meData.data) {
+        const realUser = {
+          id: meData.data.id,
+          name: meData.data.name || meData.data.username || username.trim(),
+          username: meData.data.username,
+          email: meData.data.email,
+          image: meData.data.image,
+          identity: { type: 'real' as const, label: meData.data.username || meData.data.name || username.trim() },
+          level: meData.data.level || 1,
+          sparkCount: meData.data.sparkCount || 0,
+        };
+        localStorage.setItem('xh_user', JSON.stringify(realUser));
+        localStorage.setItem('xh_user_id', meData.data.id);
+        console.log('[Login] 用户数据已同步到 localStorage:', realUser.id);
       } else {
-        const userData = {
+        // 如果 /api/users/me 失败，使用基本数据兜底
+        console.warn('[Login] /api/users/me 获取失败，使用基本数据');
+        const fallbackUser = {
           id: 'user-' + Date.now(),
           name: username.trim(),
           identity: { type: 'real' as const, label: username.trim() },
           level: 1,
           sparkCount: 0,
         };
-        localStorage.setItem('xh_user', JSON.stringify(userData));
-        router.push('/home');
-        router.refresh();
+        localStorage.setItem('xh_user', JSON.stringify(fallbackUser));
       }
-    } catch {
+
+      router.push('/home');
+      router.refresh();
+    } catch (err) {
+      console.error('[Login] 登录异常:', err);
       setError('登录失败，请稍后重试');
     } finally {
       setLoading(false);
@@ -277,7 +308,7 @@ export default function LoginForm() {
       </motion.form>
 
       <div className="px-6 pb-6 text-center relative z-10">
-        <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策 · v6.0</p>
+        <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策 · v6.3</p>
       </div>
     </div>
   );

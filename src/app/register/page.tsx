@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Sparkles, Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -44,6 +45,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      console.log('[Register] 正在发送注册请求...');
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,15 +56,54 @@ export default function RegisterPage() {
       });
 
       const result = await res.json();
+      console.log('[Register] 注册响应:', result);
 
       if (result.success) {
-        // v4.2-fix: 注册成功 → 自动跳回登录页，并带上用户名和密码参数自动填入
-        router.push(`/?username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password)}`);
+        // v6.3-auth-fix: 注册成功后自动登录，不再跳转回登录页手动登录
+        console.log('[Register] 注册成功，正在自动登录...');
+        const signInResult = await signIn('credentials', {
+          username: username.trim(),
+          password,
+          redirect: false,
+        });
+
+        if (signInResult?.error) {
+          console.error('[Register] 自动登录失败:', signInResult.error);
+          setError('注册成功，但自动登录失败，请手动登录');
+          // 自动登录失败时，跳转回登录页并预填用户名密码
+          router.push(`/?username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password)}`);
+          return;
+        }
+
+        // 自动登录成功，获取真实用户数据
+        console.log('[Register] 自动登录成功，正在获取用户数据...');
+        const meRes = await fetch('/api/users/me');
+        const meData = await meRes.json();
+
+        if (meData.success && meData.data) {
+          const realUser = {
+            id: meData.data.id,
+            name: meData.data.name || meData.data.username || username.trim(),
+            username: meData.data.username,
+            email: meData.data.email,
+            image: meData.data.image,
+            identity: { type: 'real' as const, label: meData.data.username || meData.data.name || username.trim() },
+            level: meData.data.level || 1,
+            sparkCount: meData.data.sparkCount || 0,
+          };
+          localStorage.setItem('xh_user', JSON.stringify(realUser));
+          localStorage.setItem('xh_user_id', meData.data.id);
+        }
+
+        router.push('/home');
+        router.refresh();
       } else {
-        setError(result.message || '注册失败');
+        // v6.3-auth-fix: 清晰显示 API 返回的错误信息
+        setError(result.message || '注册失败，请稍后重试');
       }
-    } catch {
-      setError('网络错误，请稍后重试');
+    } catch (err) {
+      console.error('[Register] 注册异常:', err);
+      setError('网络错误，请检查网络连接后重试');
     } finally {
       setLoading(false);
     }
