@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { signOut } from 'next-auth/react';
 import {
   Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins, Heart,
 } from 'lucide-react';
@@ -229,11 +230,14 @@ export default function ProfilePage() {
         {/* 退出登录 */}
         <div className="mt-8 pb-6">
           <button
-            onClick={() => {
+            onClick={async () => {
+              // 先清除 next-auth session cookie，再清除 localStorage
+              await signOut({ redirect: false });
               localStorage.removeItem('xh_user');
               localStorage.removeItem('xh_identity');
               localStorage.removeItem('xh_user_id');
               router.push('/');
+              router.refresh();
             }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-500/20 text-red-400/60 text-sm hover:bg-red-500/5 transition-colors"
           >
@@ -242,7 +246,7 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        <p className="text-center text-[10px] text-white/10 pb-4">群像·星火 v6.3</p>
+        <p className="text-center text-[10px] text-white/10 pb-4">群像·星火 v7.0</p>
       </div>
     </div>
   );

@@ -318,7 +318,7 @@ export default function LoginForm() {
       </motion.form>
 
       <div className="px-6 pb-6 text-center relative z-10">
-        <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策 · v6.3</p>
+        <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策 · v7.0</p>
       </div>
     </div>
   );

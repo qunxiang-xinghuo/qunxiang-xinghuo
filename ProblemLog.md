@@ -525,4 +525,72 @@ model AssetLike {
 
 ---
 
+## v7.0-fix1 登录页显示修复 + 页面标题居中 + 退出登录修复 (2026-05-05)
+
+### 问题1：退出登录后无法看到登录页面
+
+**现象**：用户点击"退出登录"后，页面没有跳转到登录页，而是继续显示发现页或不断重定向
+
+**根因链**：
+```
+用户点击退出登录
+  → profile/page.tsx 只清除了 localStorage
+  → 但 next-auth session cookie 仍然存在
+  → middleware 检查到 cookie → 认为用户已登录
+  → 访问 / 时被重定向到 /home
+  → 用户永远看不到登录页
+```
+
+**根因**：退出登录只清除了 localStorage，没有调用 `signOut()` 清除 next-auth session cookie
+
+**修复方案**：
+1. profile/page.tsx 退出登录时 `await signOut({ redirect: false })`
+2. 然后清除 localStorage
+3. 最后 `router.push('/')` + `router.refresh()`
+
+### 问题2：页面标题未统一居中
+
+**现象**：发现页、火花页、故事页等页面标题左对齐，不统一
+
+**根因**：PageHeader 组件和 TopBar 组件未设置 `text-center`
+
+**修复方案**：
+1. PageHeader 组件添加 `text-center`
+2. TopBar 组件改为左-中-右三等分布局，标题 `flex-1 text-center`
+3. profile/sparks 子页面标题使用 `flex-1 text-center pr-10` 保持绝对居中
+
+### 问题3：火花页面内容位置偏下
+
+**现象**：火花页面顶部空白区域过大，内容偏下
+
+**根因**：Tab 切换区域上方有 `pt-4` (16px) 和 `mb-5` (20px) 的间距
+
+**修复方案**：`pt-4` → `pt-2`，`mb-5` → `mb-4`
+
+### 4轮自检结果
+
+| 轮次 | 发现问题 | 状态 |
+|------|---------|------|
+| 第1轮 | 构建通过，确认 signOut 修复 | ✅ |
+| 第2轮 | TopBar 测试通过，无 title 情况检查 | ✅ |
+| 第3轮 | 检查所有 TopBar 使用情况，均传 title | ✅ |
+| 第4轮 | 版本号更新 v6.3→v7.0，最终构建通过 | ✅ |
+
+### 编译结果：65/65 路由全部通过 ✅（含 Middleware）
+
+### 文件变更
+
+| 文件 | 变更 |
+|------|------|
+| `src/app/profile/page.tsx` | 退出登录调用 signOut + 导入 signOut |
+| `src/components/layout/PageHeader.tsx` | 添加 `text-center` |
+| `src/components/layout/TopBar.tsx` | 左-中-右三等分布局，标题绝对居中 |
+| `src/app/profile/sparks/page.tsx` | 标题 `flex-1 text-center pr-10` |
+| `src/app/library/page.tsx` | `pt-4`→`pt-2`, `mb-5`→`mb-4` |
+| `src/app/LoginForm.tsx` | 版本号 v6.3→v7.0 |
+| `src/app/settings/page.tsx` | 版本号 v6.3→v7.0 |
+| `IMPORTANT.md` | 新增退出登录规范 + 标题居中规范 |
+
+---
+
 > **铁律**：每次100% context前，先读 IMPORTANT.md，记录所有 bug 根因+解决+预防措施，犯过的问题不再犯。

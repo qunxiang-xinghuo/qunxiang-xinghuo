@@ -104,9 +104,9 @@ export default function SparksPage() {
     <div className="flex flex-col min-h-full page-gradient">
       <PageHeader title="火花" subtitle="灵感碰撞的瞬间" />
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-2">
         {/* Tab 切换：最新火花 / 最热火花 */}
-        <div className="flex items-center justify-center gap-2 mb-5">
+        <div className="flex items-center justify-center gap-2 mb-4">
           <button
             onClick={() => setTab('latest')}
             className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full transition-all ${

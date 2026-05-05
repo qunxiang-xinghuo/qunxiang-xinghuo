@@ -333,10 +333,22 @@ DATABASE_URL="file:./dev.db"
 - 同步更新该用户所有 `Asset` 记录的 `identity` 字段
 - 前端修改成功后同步更新 `localStorage.xh_user`
 
-### 16.6 Middleware 更新
+### 16.6 退出登录规范
+- **必须先调用 `signOut({ redirect: false })`** 清除 next-auth session cookie
+- 再清除 localStorage（xh_user / xh_identity / xh_user_id）
+- 最后 `router.push('/')` + `router.refresh()`
+- **禁止只清除 localStorage 不调用 signOut**，否则 cookie 残留导致无法返回登录页
+
+### 16.7 页面标题居中规范
+- 所有主页面标题必须居中（`text-center`）
+- PageHeader 组件统一使用 `text-center`
+- profile/sparks 等子页面标题使用 `flex-1 text-center pr-10` 保持绝对居中
+- TopBar 组件使用左-中-右三等分布局确保标题绝对居中
+
+### 16.8 Middleware 更新
 - 新增 `/profile/sparks` 到 matcher 列表
 - 保持所有其他路由不变
 
 ---
 
-> 最后更新：2026-05-05 v7.0 火花墙重构完成 ✅
+> 最后更新：2026-05-05 v7.0 完整版完成 ✅

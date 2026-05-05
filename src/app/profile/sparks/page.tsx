@@ -96,11 +96,11 @@ export default function MySparksPage() {
       <div className="shrink-0 px-4 pt-4 pb-2 flex items-center gap-3">
         <button
           onClick={() => router.push('/profile')}
-          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4 text-white/50" />
         </button>
-        <h1 className="text-lg font-bold text-white/90">我的火花</h1>
+        <h1 className="flex-1 text-lg font-bold text-white/90 text-center pr-10">我的火花</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">

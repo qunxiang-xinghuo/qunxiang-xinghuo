@@ -322,7 +322,7 @@ export default function SettingsPage() {
           </motion.button>
         </div>
 
-        <p className="text-center text-[10px] text-white/10 pt-8">群像·星火 v6.3</p>
+        <p className="text-center text-[10px] text-white/10 pt-8">群像·星火 v7.0</p>
       </div>
 
       {/* 用户名修改弹窗 */}
