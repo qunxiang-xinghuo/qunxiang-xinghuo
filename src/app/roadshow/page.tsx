@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -59,12 +60,14 @@ const stats = [
 ];
 
 export default function RoadshowPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   return (
     <div className="min-h-screen bg-[#0f0f23] text-white overflow-hidden">
       {/* Hero Section */}
       <section className="relative px-6 pt-20 pb-16 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={mounted ? { opacity: 0, y: 30 } : false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
@@ -96,7 +99,7 @@ export default function RoadshowPage() {
         {/* Stats */}
         <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mt-16"
-          initial={{ opacity: 0 }}
+          initial={mounted ? { opacity: 0 } : false}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
@@ -118,7 +121,7 @@ export default function RoadshowPage() {
       <section className="px-6 py-16 max-w-6xl mx-auto">
         <motion.h2
           className="text-2xl font-bold text-center mb-12"
-          initial={{ opacity: 0 }}
+          initial={mounted ? { opacity: 0 } : false}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >
@@ -130,7 +133,7 @@ export default function RoadshowPage() {
               key={idx}
               className="p-6 rounded-2xl bg-white/5 border border-white/10
                 hover:border-white/20 transition-colors group"
-              initial={{ opacity: 0, y: 20 }}
+              initial={mounted ? { opacity: 0, y: 20 } : false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
@@ -154,7 +157,7 @@ export default function RoadshowPage() {
       {/* Tech Stack */}
       <section className="px-6 py-16 max-w-4xl mx-auto text-center">
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={mounted ? { opacity: 0 } : false}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >

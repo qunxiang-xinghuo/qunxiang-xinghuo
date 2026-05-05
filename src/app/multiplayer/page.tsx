@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Theater, Users, Zap, ArrowRight, Sparkles, Crown, Vote, MessageSquare } from 'lucide-react';
@@ -38,6 +38,8 @@ const entryPoints = [
 
 export default function MultiplayerPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <div className="flex flex-col h-full page-gradient">
@@ -46,7 +48,7 @@ export default function MultiplayerPage() {
       {/* 剧场头部 */}
       <div className="shrink-0 px-5 pt-6 pb-4">
         <motion.div
-          initial={{ opacity: 0, y: -12 }}
+          initial={mounted ? { opacity: 0, y: -12 } : false}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 mb-3"
         >
@@ -66,7 +68,7 @@ export default function MultiplayerPage() {
             return (
               <motion.div
                 key={f.label}
-                initial={{ opacity: 0, y: 8 }}
+                initial={mounted ? { opacity: 0, y: 8 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
                 className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/30 border border-slate-700/15"
@@ -96,7 +98,7 @@ export default function MultiplayerPage() {
           return (
             <motion.button
               key={entry.id}
-              initial={{ opacity: 0, y: 12 }}
+              initial={mounted ? { opacity: 0, y: 12 } : false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + index * 0.1 }}
               whileTap={{ scale: 0.97 }}
@@ -121,7 +123,7 @@ export default function MultiplayerPage() {
 
         {/* 流程说明 */}
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={mounted ? { opacity: 0 } : false}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
           className="mt-4 p-4 rounded-2xl bg-slate-800/20 border border-slate-700/15"

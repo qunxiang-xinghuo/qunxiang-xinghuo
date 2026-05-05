@@ -38,19 +38,25 @@ export default function AssetDetailPage() {
   const [asset, setAsset] = useState<AssetDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
+    let cancelled = false;
     fetch(`/api/assets/${assetId}`)
       .then((r) => r.json())
       .then((res) => {
+        if (cancelled) return;
         if (res.success && res.data?.asset) {
           setAsset(res.data.asset);
         } else {
           setError(res.error?.message || '加载失败');
         }
       })
-      .catch(() => setError('网络错误'))
-      .finally(() => setLoading(false));
+      .catch(() => { if (!cancelled) setError('网络错误'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [assetId]);
 
   const formatTime = (dateStr: string) => {
@@ -143,7 +149,7 @@ export default function AssetDetailPage() {
             return (
               <motion.div
                 key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={mounted ? { opacity: 0, y: 10 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
                 className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
