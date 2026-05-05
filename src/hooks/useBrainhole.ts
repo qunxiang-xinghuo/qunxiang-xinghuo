@@ -29,7 +29,10 @@ export function useBrainhole() {
   useEffect(() => {
     let mounted = true;
     fetch('/api/brainholes')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((result) => {
         if (!mounted) return;
         if (result.success && result.data?.brainholes) {

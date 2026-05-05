@@ -236,9 +236,9 @@ async function createDuetMatch(
   strategy: string,
   identity: string
 ): Promise<MatchResult> {
-  // 使用 $transaction 确保原子性
-  const [room] = await db.$transaction([
-    db.room.create({
+  // v7.0-test12: 所有DB写操作在同一个事务中原子执行
+  const room = await db.$transaction(async (tx) => {
+    const room = await tx.room.create({
       data: {
         brainholeId: brainholeId || undefined,
         type: "duet",
@@ -246,71 +246,73 @@ async function createDuetMatch(
         maxRound: 10,
         currentRound: 0,
       },
-    }),
-  ]);
+    });
 
-  // 更新 matchedRequest（已被claim，状态已是matched，这里补充roomId等）
-  const updates: Promise<any>[] = [
-    db.matchRequest.update({
-      where: { id: matchedRequest.id },
-      data: {
-        matchedUserId: userId,
-        roomId: room.id,
-        resolvedAt: new Date(),
-      },
-    }),
-  ];
-
-  if (matchRequestId) {
-    updates.push(
-      db.matchRequest.update({
-        where: { id: matchRequestId },
+    // 更新 matchedRequest
+    const updates: Promise<any>[] = [
+      tx.matchRequest.update({
+        where: { id: matchedRequest.id },
         data: {
-          matchedUserId: matchedRequest.userId,
+          matchedUserId: userId,
           roomId: room.id,
           resolvedAt: new Date(),
         },
-      })
-    );
-  } else {
-    updates.push(
-      db.matchRequest.create({
+      }),
+    ];
+
+    if (matchRequestId) {
+      updates.push(
+        tx.matchRequest.update({
+          where: { id: matchRequestId },
+          data: {
+            matchedUserId: matchedRequest.userId,
+            roomId: room.id,
+            resolvedAt: new Date(),
+          },
+        })
+      );
+    } else {
+      updates.push(
+        tx.matchRequest.create({
+          data: {
+            userId,
+            brainholeId: brainholeId || null,
+            identity: identity || "default",
+            status: "matched",
+            matchedUserId: matchedRequest.userId,
+            roomId: room.id,
+            resolvedAt: new Date(),
+            expiresAt: new Date(Date.now() + 60 * 1000),
+          },
+        })
+      );
+    }
+
+    await Promise.all(updates);
+
+    await Promise.all([
+      tx.roomParticipant.create({
         data: {
+          roomId: room.id,
           userId,
-          brainholeId: brainholeId || null,
           identity: identity || "default",
-          status: "matched",
-          matchedUserId: matchedRequest.userId,
-          roomId: room.id,
-          resolvedAt: new Date(),
-          expiresAt: new Date(Date.now() + 60 * 1000),
+          role: "actor",
+          isOnline: true,
         },
-      })
-    );
-  }
+      }),
+      tx.roomParticipant.create({
+        data: {
+          roomId: room.id,
+          userId: matchedRequest.userId,
+          identity: matchedRequest.identity || "default",
+          role: "actor",
+          isOnline: true,
+        },
+      }),
+    ]);
 
-  await Promise.all(updates);
-
-  await Promise.all([
-    db.roomParticipant.create({
-      data: {
-        roomId: room.id,
-        userId,
-        identity: identity || "default",
-        role: "actor",
-        isOnline: true,
-      },
-    }),
-    db.roomParticipant.create({
-      data: {
-        roomId: room.id,
-        userId: matchedRequest.userId,
-        identity: matchedRequest.identity || "default",
-        role: "actor",
-        isOnline: true,
-      },
-    }),
-  ]);
+    return room;
+  });
 
   console.log("[MatchEngine] 房间创建成功, ID:", room.id, "策略:", strategy);
   return {

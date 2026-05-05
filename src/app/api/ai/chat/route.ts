@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
-        apiError("messages 不能为空", "VALIDATION_ERROR"),
+        apiError("VALIDATION_ERROR", "messages 不能为空"),
         { status: 400 }
       );
     }
@@ -188,13 +188,11 @@ export async function POST(request: NextRequest) {
         source,
       })
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AI Chat] 致命错误:", error);
     return NextResponse.json(
-      apiResponse({
-        content: "（对方正在思考...）",
-        source: "fallback",
-      })
+      apiError("INTERNAL_SERVER_ERROR", error instanceof Error ? error.message : "AI回复生成失败"),
+      { status: 500 }
     );
   }
 }

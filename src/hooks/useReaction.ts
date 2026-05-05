@@ -46,6 +46,7 @@ export function useReaction(brainholeId?: string) {
       const params = new URLSearchParams();
       if (brainholeId) params.set('brainholeId', brainholeId);
       const res = await fetch(`/api/reactions?${params.toString()}`, { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
       if (result.success && result.data?.reactions) {
         setReactions(result.data.reactions.map(mapApiReaction));
@@ -80,6 +81,7 @@ export function useReaction(brainholeId?: string) {
           content: reaction.content,
         }),
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
       if (result.success) {
         await fetchReactions();

@@ -1,12 +1,26 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 export function useVoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState('');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const isRecordingRef = useRef(false);
+
+  // v7.0-test12: 同步ref避免闭包引用陈旧状态
+  useEffect(() => { isRecordingRef.current = isRecording; }, [isRecording]);
+
+  // v7.0-test12: 组件卸载时停止语音识别，防止内存泄漏
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch { /* ignore */ }
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
 
   const startRecording = useCallback(() => {
     setError('');
@@ -34,18 +48,19 @@ export function useVoiceRecorder() {
     };
 
     recognitionRef.current.onend = () => {
-      if (isRecording) {
-        recognitionRef.current?.start();
+      // 使用ref而非闭包变量，确保获取最新状态
+      if (isRecordingRef.current && recognitionRef.current) {
+        try { recognitionRef.current.start(); } catch { /* ignore */ }
       }
     };
 
     recognitionRef.current.start();
     setIsRecording(true);
-  }, [isRecording]);
+  }, []);
 
   const stopRecording = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try { recognitionRef.current.stop(); } catch { /* ignore */ }
       recognitionRef.current = null;
     }
     setIsRecording(false);

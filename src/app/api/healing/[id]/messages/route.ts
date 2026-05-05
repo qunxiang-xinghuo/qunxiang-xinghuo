@@ -92,14 +92,14 @@ export async function POST(
     });
 
     // 异步生成AI回复（不阻塞响应）
-    // 获取最近10条消息作为上下文
+    // v7.0-test12: 获取最近10条消息作为上下文（先desc取最近，再reverse恢复顺序）
     const history = await db.healingMessage.findMany({
       where: { sessionId },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       take: 10,
     });
 
-    const messagesForAI = history.map((msg) => ({
+    const messagesForAI = history.reverse().map((msg) => ({
       role: msg.isAi ? ("assistant" as const) : ("user" as const),
       content: decrypt(msg.content),
     }));
