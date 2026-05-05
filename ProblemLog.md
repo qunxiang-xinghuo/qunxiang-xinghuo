@@ -696,4 +696,61 @@ pb-1 border-b-2 text-[#e2b04a] border-[#e2b04a]
 
 ---
 
+## v7.0-fix4 登录页恢复为根路径 + 用户名显示修复 + 注册后需手动登录 (2026-05-05)
+
+### 需求清单
+
+| # | 需求 | 文件 |
+|---|------|------|
+| 1 | **登录页恢复为 `/`** — 删除 `/login` 路由 | `app/login/`（删除）|
+| 2 | **注册后需手动登录** — 不再自动登录 | `register/page.tsx` |
+| 3 | **显示登录用户名** — `username` 优先于 `name` | `profile/page.tsx` |
+| 4 | **登录保存 username** — localStorage `name` 优先用 `username` | `LoginForm.tsx` |
+
+### 问题1：登录页路径混乱
+
+**现象**：存在 `/` 和 `/login` 两个登录路径
+
+**修复**：删除 `app/login/` 目录，恢复 `/` 为唯一登录页
+
+### 问题2：注册后自动登录
+
+**现象**：用户注册成功后直接跳转到发现页，跳过了登录流程
+
+**修复**：`register/page.tsx` 注册成功后只跳转 `/?username=xxx`，不再调用 `signIn`
+
+### 问题3：我的页面显示的是 name 而非 username
+
+**现象**：用户看到的是 `name` 字段，而非存入数据库的登录用户名 `username`
+
+**修复**：
+- `profile/page.tsx`: `displayName = user.username || user.name || '用户'`
+- `LoginForm.tsx`: `name: displayName` 其中 `displayName = meData.data.username || ...`
+
+### 4轮自检结果
+
+| 轮次 | 检查项 | 结果 |
+|------|--------|------|
+| 第1轮 | 构建测试 65/65 | ✅ 通过 |
+| 第2轮 | `/login` 路由已删除 | ✅ 通过 |
+| 第3轮 | 注册流程不再自动登录 | ✅ 通过 |
+| 第4轮 | username 显示逻辑正确 | ✅ 通过 |
+
+### 编译结果：65/65 路由全部通过 ✅（含 Middleware）
+
+### 文件变更
+
+| 文件 | 变更 |
+|------|------|
+| `src/app/login/page.tsx` | **删除** |
+| `middleware.ts` | 移除 `/login` |
+| `src/lib/auth.ts` | `pages.signIn` 改回 `/` |
+| `src/components/layout/AppShell.tsx` | PUBLIC_PAGES 移除 `/login` |
+| `src/app/register/page.tsx` | 注册后跳转 `/` 不再自动登录 |
+| `src/app/profile/page.tsx` | 显示 `username`，退出跳转 `/` |
+| `src/app/LoginForm.tsx` | `name` 优先使用 `username` |
+| `src/app/settings/page.tsx` | 用户名弹窗默认显示 `username` |
+
+---
+
 > **铁律**：每次100% context前，先读 IMPORTANT.md，记录所有 bug 根因+解决+预防措施，犯过的问题不再犯。

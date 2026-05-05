@@ -121,7 +121,8 @@ export default function ProfilePage() {
     { icon: Settings, label: '设置', desc: '账号与偏好', path: '/settings' },
   ];
 
-  const displayName = user.name || user.username || '用户';
+  // 显示数据库中的登录用户名（username）
+  const displayName = user.username || user.name || '用户';
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
@@ -180,7 +181,7 @@ export default function ProfilePage() {
               localStorage.removeItem('xh_user');
               localStorage.removeItem('xh_identity');
               localStorage.removeItem('xh_user_id');
-              router.push('/login');
+              router.push('/');
               router.refresh();
             }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-500/20 text-red-400/60 text-sm hover:bg-red-500/5 transition-colors"

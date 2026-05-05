@@ -99,6 +99,7 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success && data.data) {
         setUser(data.data);
+        // v7.0: 优先显示 username（登录用户名）
         setUsernameValue(data.data.username || data.data.name || '');
         localStorage.setItem('xh_user', JSON.stringify(data.data));
       }

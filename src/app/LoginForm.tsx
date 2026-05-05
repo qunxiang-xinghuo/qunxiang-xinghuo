@@ -96,13 +96,15 @@ export default function LoginForm() {
       const meData = await meRes.json();
 
       if (meData.success && meData.data) {
+        // v7.0: 优先使用 username（登录用户名）显示
+        const displayName = meData.data.username || meData.data.name || username.trim();
         const realUser = {
           id: meData.data.id,
-          name: meData.data.name || meData.data.username || username.trim(),
+          name: displayName,
           username: meData.data.username,
           email: meData.data.email,
           image: meData.data.image,
-          identity: { type: 'real' as const, label: meData.data.username || meData.data.name || username.trim() },
+          identity: { type: 'real' as const, label: displayName },
           level: meData.data.level || 1,
           sparkCount: meData.data.sparkCount || 0,
         };

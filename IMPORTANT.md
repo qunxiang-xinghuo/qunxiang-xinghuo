@@ -358,13 +358,23 @@ DATABASE_URL="file:./dev.db"
 - 容器：`flex gap-4 mb-4 border-b border-white/5 pb-3`
 
 ### 16.8 登录页路由规范
-- `/` 根路径显示登录页（首页）
-- `/login` 也显示登录页（复用 LoginForm）
-- 两个路径都加入 PUBLIC_PATHS 和 middleware matcher
-- `auth.ts` 中 `pages.signIn` 指向 `/login`
-- 退出登录后跳转 `/login`
+- **`/` 根路径是唯一登录页**，删除所有其他登录路径（如 `/login`）
+- `/` 和 `/register` 加入 PUBLIC_PATHS 和 middleware matcher
+- `auth.ts` 中 `pages.signIn` 指向 `/`
+- 退出登录后跳转 `/`
 
-### 16.9 App Router getServerSession 铁律
+### 16.9 用户名显示规范
+- **必须显示 `username`（登录用户名）**，而非 `name`
+- 所有页面显示用户名的逻辑：`user.username || user.name || '用户'`
+- 登录成功后保存到 localStorage 的 `name` 字段优先使用 `username`
+- settings 页面修改用户名弹窗的默认值也优先使用 `username`
+
+### 16.10 注册流程规范
+- 注册成功后**必须跳转登录页 `/`**，不允许自动登录
+- 注册页可以预填用户名（`/?username=xxx`）
+- 用户必须手动输入密码登录后才能进入发现页
+
+### 16.11 App Router getServerSession 铁律
 - **App Router 中禁止使用 `getServerSession()`**
 - API Route Handler 中必须使用 `getToken({ req, secret })` 读取 JWT
 - `getServerSession` 在 App Router 中无法正确读取 cookie，导致 session 为 null
