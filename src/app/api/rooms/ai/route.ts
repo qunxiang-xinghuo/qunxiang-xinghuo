@@ -51,8 +51,13 @@ export async function POST(request: NextRequest) {
       });
       console.log("[AI Room API] 用户记录已确认:", userId);
     } catch (userErr: any) {
-      console.error("[AI Room API] 用户记录创建失败:", userErr.message);
-      // 继续尝试，也许用户已存在
+      // v7.0-test2: 仅吞掉唯一约束冲突（用户已存在），其他错误向上抛出
+      if (userErr.code === 'P2002') {
+        console.log("[AI Room API] 用户已存在，继续:", userId);
+      } else {
+        console.error("[AI Room API] 用户记录创建失败:", userErr.message);
+        throw userErr;
+      }
     }
 
     // v6.1: 确保所有AI Agent用户记录在User表中存在

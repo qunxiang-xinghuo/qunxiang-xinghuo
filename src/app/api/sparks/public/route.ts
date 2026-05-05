@@ -14,7 +14,8 @@ import { apiResponse } from "@/lib/utils";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 100);
+    const rawLimit = parseInt(searchParams.get("limit") || "50", 10);
+    const limit = Number.isNaN(rawLimit) ? 50 : Math.min(Math.max(rawLimit, 1), 100);
     const sort = searchParams.get("sort") || "latest"; // latest | hottest
 
     const orderBy = sort === "hottest"
