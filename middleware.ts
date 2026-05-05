@@ -26,6 +26,9 @@ export async function middleware(request: NextRequest) {
 
   const isLoggedIn = !!token;
 
+  // v7.0-fix7: 强制 spectate 路由经过中间件
+  console.log('[Middleware]', pathname, 'isLoggedIn=', isLoggedIn, 'token=', token ? 'yes' : 'no');
+
   // 已登录用户访问登录页/注册页 → 重定向到首页
   if (isLoggedIn && PUBLIC_PATHS.includes(pathname)) {
     console.log('[Middleware] 已登录用户访问', pathname, '→ 重定向到 /home');
