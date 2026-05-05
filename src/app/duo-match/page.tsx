@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { User, Sparkles, Edit3, Check, BrainCircuit, ArrowRight, DoorOpen } from 'lucide-react';
@@ -41,27 +41,41 @@ function DuoMatchContent() {
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   // 获取知乎身份 + 预选的brainhole信息
   useEffect(() => {
     fetch('/api/users/identities')
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((res) => {
+        if (!mountedRef.current) return;
         if (res.success && res.data) {
           const labels = res.data.map((i: any) => i.label);
           setZhihuIdentities(labels);
           if (labels.length > 0) setSelectedZhihuId(labels[0]);
         }
       })
-      .catch(() => {});
+      .catch((err) => { console.error('[DuoMatch] identities fetch error:', err); });
     
     setAiGenerated(aiIdentities[Math.floor(Math.random() * aiIdentities.length)]);
 
     // v6.0: 如果从泡泡来，获取brainhole信息展示
     if (preselectedBrainholeId) {
       fetch(`/api/brainholes/${preselectedBrainholeId}`)
-        .then(r => r.json())
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
         .then(res => {
+          if (!mountedRef.current) return;
           if (res.success && res.data) {
             setBrainholeInfo({
               id: res.data.id,
@@ -70,7 +84,7 @@ function DuoMatchContent() {
             });
           }
         })
-        .catch(() => {});
+        .catch((err) => { console.error('[DuoMatch] brainhole fetch error:', err); });
     }
   }, [preselectedBrainholeId]);
 
@@ -136,7 +150,7 @@ function DuoMatchContent() {
       {/* v6.0: 如果从泡泡来，显示预选brainhole卡片 */}
       {brainholeInfo && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           className="mx-5 mt-3 mb-1"
         >
@@ -275,7 +289,7 @@ function DuoMatchContent() {
           </button>
         ) : (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             className="space-y-2"
           >

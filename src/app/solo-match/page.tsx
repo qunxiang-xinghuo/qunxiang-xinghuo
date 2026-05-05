@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Bot, ArrowRight, Sparkles, Shuffle, User } from 'lucide-react';
@@ -21,6 +22,9 @@ export default function SoloMatchPage() {
   const [mode, setMode] = useState<'preset' | 'random' | 'custom'>('preset');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('xh_duo_identity');
@@ -74,7 +78,7 @@ export default function SoloMatchPage() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-24">
         {/* 刘看山介绍 */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={mounted ? { opacity: 0, y: 10 } : false}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
@@ -90,7 +94,7 @@ export default function SoloMatchPage() {
 
         {/* 身份选择 */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={mounted ? { opacity: 0, y: 10 } : false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="mb-6"

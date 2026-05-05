@@ -66,6 +66,7 @@ export default function RoomPage() {
   const isProcessingAI = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const timersRef = useRef<number[]>([]);
 
   // 滚动到底部
   useEffect(() => {
@@ -77,7 +78,10 @@ export default function RoomPage() {
     const guestId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
     const localIdentity = typeof window !== 'undefined' ? localStorage.getItem('xh_duo_identity') : null;
     fetch(`/api/rooms/${roomId}`, { headers: guestId ? { 'x-guest-id': guestId } : {} })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((res) => {
         if (res.success && res.data) {
           const room = res.data;
@@ -148,6 +152,10 @@ export default function RoomPage() {
           identity: myIdentity,
         }),
       });
+      if (!res.ok) {
+        console.error(`[Room] AI催化失败: ${res.status}`);
+        return;
+      }
       const data = await res.json();
       if (data.data?.prompts) {
         setAiPrompts(data.data.prompts);
@@ -191,6 +199,11 @@ export default function RoomPage() {
         };
         setMessages((prev) => [...prev, aiMsg]);
       }
+    } catch (err: any) {
+      console.error('[Room] AI回复生成失败:', err);
+      setSendError('AI回复失败，请稍后重试');
+      const t = window.setTimeout(() => setSendError(null), 3000);
+      timersRef.current.push(t);
     } finally {
       setPartnerTyping(false);
       isProcessingAI.current = false;
@@ -237,8 +250,16 @@ export default function RoomPage() {
         return [...prev, msg];
       });
     };
-    const handleTyping = () => { setPartnerTyping(true); setTimeout(() => setPartnerTyping(false), 2000); };
-    const handleNewLike = () => { setLikeCount((prev) => prev + 1); setTimeout(() => setLikeCount((prev) => Math.max(0, prev - 1)), 1500); };
+    const handleTyping = () => {
+      setPartnerTyping(true);
+      const t = window.setTimeout(() => setPartnerTyping(false), 2000);
+      timersRef.current.push(t);
+    };
+    const handleNewLike = () => {
+      setLikeCount((prev) => prev + 1);
+      const t = window.setTimeout(() => setLikeCount((prev) => Math.max(0, prev - 1)), 1500);
+      timersRef.current.push(t);
+    };
 
     // v6.3: 监听房间在线人数（静默更新）
     const handleViewerCount = (data: { count: number; roomId: string }) => {
@@ -249,10 +270,11 @@ export default function RoomPage() {
     const handleOpponentLeft = (data: { userId: string; roomId: string }) => {
       if (data.roomId === roomId) {
         setOpponentLeftNotice(true);
-        setTimeout(() => {
+        const t = window.setTimeout(() => {
           setOpponentLeftNotice(false);
           router.push('/home');
         }, 2500);
+        timersRef.current.push(t);
       }
     };
 
@@ -269,6 +291,8 @@ export default function RoomPage() {
       off('room-viewer-count', handleViewerCount);
       off('opponent-left', handleOpponentLeft);
       leaveRoom(roomId, stableUserId);
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, stableUserId, myIdentity]);
