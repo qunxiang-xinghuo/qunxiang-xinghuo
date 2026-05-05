@@ -104,11 +104,15 @@ export default function HealingSessionPage() {
   }, [inputValue, sending, sessionId, sessionStatus, stableUserId]);
 
   const handlePublish = async () => {
+    // v7.0-test13: 先检查内容再设置publishing，避免死锁
+    const content = messages.filter((m) => !m.isAi).map((m) => m.content).join('\n\n');
+    if (!content) {
+      setToast({ type: 'error', message: '没有可公开的内容' });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
     setPublishing(true);
     try {
-      // 创建公开火花（简化版：调用sparks API或assets API）
-      const content = messages.filter((m) => !m.isAi).map((m) => m.content).join('\n\n');
-      if (!content) return;
 
       const guestId = localStorage.getItem('xh_user_id');
       await fetch('/api/assets', {
