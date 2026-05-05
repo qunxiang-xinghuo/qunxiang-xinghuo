@@ -1813,3 +1813,89 @@ pb-1 border-b-2 text-[#e2b04a] border-[#e2b04a]
 2. **Socket 监听器清理**：注册新监听器前必须先 `removeAllListeners` 清理旧监听器
 3. **消息去重双保险**：不仅比较消息ID，还过滤自己发送的消息
 4. **离开房间先通知**：结束对白时先发送 socket 事件通知对方，再执行后续操作
+
+
+---
+
+## v7.0-fix7-patch 核心诊断与全面修复 (2026-05-05)
+
+### 核心诊断结果
+
+**middleware.ts 诊断**：
+- ✅ middleware 函数正确导出，config.matcher 匹配所有页面路由
+- ✅ 使用 `getToken` 验证 JWT token
+- ✅ 未登录用户访问非公开页 → 307 重定向到 `/login`
+- ✅ 已登录用户访问 `/login` → 307 重定向到 `/home`
+- ✅ console.log 诊断已存在
+
+**AppShell.tsx 诊断**：
+- ✅ 使用 `useSession()` 双重检查
+- ✅ `sessionStatus === 'unauthenticated'` 时清除 localStorage
+- ⚠️ `isLoginPage` 只判断 `pathname === '/'`，未包含 `/login`，导致 `/login` 页面渲染 BottomNav
+
+**profile/page.tsx 诊断**：
+- ✅ 退出逻辑正确：清 localStorage → signOut → `window.location.replace('/login')`
+- ⚠️ "去登录"按钮跳转 `/` 而非 `/login`
+
+**socket-handler.ts 诊断**：
+- ✅ `leave-room` 广播 `opponent-left`
+- ✅ `send-message` 使用 `socket.to()` 排除发送者
+- ⚠️ `disconnect` 事件未广播 `opponent-left`，用户关闭浏览器时另一方不会收到通知
+
+**Room 页面诊断**：
+- ✅ 消息去重：removeAllListeners + senderId 过滤
+- ✅ opponent-left 监听
+- ✅ 脑洞标题 `text-xl font-bold text-[#e2b04a]`
+- ⚠️ `useEffect` 依赖数组包含 `user` 对象，可能导致频繁重新注册监听器
+
+### 修复内容
+
+**修复1：AppShell.tsx 登录页判断**
+- **问题**：`isLoginPage = pathname === '/'` 未包含 `/login`
+- **修复**：`isLoginPage = pathname === '/' || pathname === '/login'`
+- **影响**：`/login` 页面不再渲染 BottomNav
+
+**修复2：profile/page.tsx 跳转路径**
+- **问题**："去登录"按钮跳转 `/`
+- **修复**：改为 `router.push('/login')`
+- **影响**：未登录用户点击"去登录"后 URL 显示 `/login`
+
+**修复3：socket-handler.ts disconnect 广播**
+- **问题**：用户意外断开（关闭浏览器/断网）时，对方不会收到通知
+- **修复**：`disconnect` 事件中增加 `socket.to(roomId).emit('opponent-left', ...)`
+- **影响**：任何一方关闭浏览器，另一方立即收到通知并跳转
+
+**修复4：Room 页面 useEffect 依赖优化**
+- **问题**：`user` 对象变化导致 useEffect 频繁重新执行，重新注册监听器
+- **修复**：使用 `useRef` 存储 `user`，useEffect 依赖从 `[user, roomId, ...]` 缩减为 `[roomId, stableUserId, myIdentity]`
+- **影响**：减少不必要的 Socket 重新连接，提升性能
+
+### 测试验证
+
+| 测试项 | 期望 | 实际 | 结果 |
+|--------|------|------|------|
+| 访问 `/` | 200 | 200 | ✅ |
+| 访问 `/login` | 200 | 200 | ✅ |
+| 访问 `/register` | 200 | 200 | ✅ |
+| 访问 `/home`（未登录） | 307 → /login | 307 | ✅ |
+| 访问 `/library`（未登录） | 307 → /login | 307 | ✅ |
+| 访问 `/profile`（未登录） | 307 → /login | 307 | ✅ |
+| 访问 `/room/test`（未登录） | 307 → /login | 307 | ✅ |
+| 访问 `/settings`（未登录） | 307 → /login | 307 | ✅ |
+
+### 文件变更
+
+| 文件 | 变更 |
+|------|------|
+| `src/components/layout/AppShell.tsx` | `isLoginPage` 添加 `/login` 判断 |
+| `src/app/profile/page.tsx` | "去登录"按钮跳转 `/login` |
+| `src/server/socket-handler.ts` | `disconnect` 广播 `opponent-left` |
+| `src/app/room/[id]/page.tsx` | `userRef` 优化 useEffect 依赖 |
+| `docs/qunxiangxinhuo-TDD-v7.0.md` | 更新 v7.0-fix7 完整文档 |
+
+### 部署状态
+
+- 构建：66/66 路由通过 ✅
+- Webhook 自动部署：已触发 ✅
+- 服务器状态：online ✅
+

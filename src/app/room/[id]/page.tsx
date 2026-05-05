@@ -61,6 +61,8 @@ export default function RoomPage() {
   const [likeCount, setLikeCount] = useState(0);
   const [viewerCount, setViewerCount] = useState(0); // v6.3: 在线人数
   const [aiAgents, setAiAgents] = useState<AiAgent[]>([]);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [opponentLeftNotice, setOpponentLeftNotice] = useState(false);
   const isProcessingAI = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -243,11 +245,14 @@ export default function RoomPage() {
       if (data.roomId === roomId) setViewerCount(data.count);
     };
 
-    // v7.0-fix7: 监听对方离开事件
+    // v7.0-fix7: 监听对方离开事件（非阻塞式提示）
     const handleOpponentLeft = (data: { userId: string; roomId: string }) => {
       if (data.roomId === roomId) {
-        alert('对方已结束对白');
-        router.push('/home');
+        setOpponentLeftNotice(true);
+        setTimeout(() => {
+          setOpponentLeftNotice(false);
+          router.push('/home');
+        }, 2500);
       }
     };
 
@@ -297,10 +302,15 @@ export default function RoomPage() {
         body: JSON.stringify({ content, identity: myIdentity }),
       });
       if (!res.ok) {
-        console.error('[Room] 消息保存失败:', await res.text());
+        const errText = await res.text();
+        console.error('[Room] 消息保存失败:', errText);
+        setSendError('消息发送失败，请检查网络');
+        setTimeout(() => setSendError(null), 3000);
       }
     } catch (err) {
       console.error('[Room] 消息保存异常:', err);
+      setSendError('网络异常，消息可能未保存');
+      setTimeout(() => setSendError(null), 3000);
     }
 
     // 兼容：仍通过socket广播（用于非HTTP保存的旧路径）
@@ -385,6 +395,13 @@ export default function RoomPage() {
 
   return (
     <div className="flex flex-col h-full page-gradient">
+      {/* 对方离开通知条 */}
+      {opponentLeftNotice && (
+        <div className="shrink-0 px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-center">
+          <p className="text-xs text-red-400">对方已结束对白，即将返回发现页...</p>
+        </div>
+      )}
+
       {/* 顶部标题栏 + 脑洞信息 */}
       <div className="shrink-0 border-b border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 py-3">
@@ -516,6 +533,13 @@ export default function RoomPage() {
 
       {/* 输入区 + 结束按钮 / 观众模式 */}
       <div className="shrink-0 p-3 border-t border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
+        {/* 发送错误提示 */}
+        {sendError && (
+          <div className="mb-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
+            <p className="text-[11px] text-red-400">{sendError}</p>
+          </div>
+        )}
+
         {/* 点赞动画 */}
         {likeCount > 0 && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 pointer-events-none">

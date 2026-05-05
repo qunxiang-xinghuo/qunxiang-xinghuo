@@ -75,5 +75,7 @@ export const config = {
     '/zhihu-zhida',
     '/zhihu-ring',
     '/brainhole/:path*',
+    '/spectate',
+    '/spectate/:path*',
   ],
 };
