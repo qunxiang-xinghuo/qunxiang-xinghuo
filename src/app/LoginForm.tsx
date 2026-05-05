@@ -34,25 +34,16 @@ export default function LoginForm() {
   useEffect(() => {
     setWindowHeight(window.innerHeight);
     setMounted(true);
+    // v7.0-fix5: 组件挂载时无条件清除所有本地残留数据
+    // 防止关闭浏览器后再打开时 localStorage 残留导致状态混乱
+    localStorage.removeItem('xh_user');
+    localStorage.removeItem('xh_identity');
+    localStorage.removeItem('xh_user_id');
+    sessionStorage.clear();
   }, []);
 
-  // v6.3-auth-fix3: 如果 session 明确未认证，清除所有本地残留数据
-  // 确保打开登录页时，任何旧的 localStorage 数据都不会导致自动登录
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      console.log('[LoginForm] Session 未认证，清除本地残留');
-      localStorage.removeItem('xh_user');
-      localStorage.removeItem('xh_identity');
-      localStorage.removeItem('xh_user_id');
-    }
-  }, [status]);
-
-  // 已登录用户访问登录页，直接重定向到发现页
-  useEffect(() => {
-    if (status === 'authenticated') {
-      router.replace('/home');
-    }
-  }, [status, router]);
+  // 已登录用户访问登录页，由 middleware + AppShell 统一处理重定向
+  // LoginForm 不做额外重定向，避免与 handleLogin 中的 router.push 冲突（v7.0-fix5）
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -124,7 +115,7 @@ export default function LoginForm() {
       }
 
       router.push('/home');
-      router.refresh();
+      // v7.0-fix5: 移除 router.refresh()，避免与 status 变化触发的导航冲突
     } catch (err) {
       console.error('[Login] 登录异常:', err);
       setError('登录失败，请稍后重试');

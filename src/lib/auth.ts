@@ -48,6 +48,36 @@ export const authOptions: NextAuthOptions = {
     // JWT 签名密钥（fallback 到 NEXTAUTH_SECRET）
     secret: process.env.NEXTAUTH_SECRET,
   },
+  // v7.0-fix5: cookie 设为 session cookie（关闭浏览器即失效），
+  // 同时 JWT 仍保持 24 小时服务端有效期
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: 'next-auth.callback-url',
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   pages: {
     signIn: "/",
     error: "/",

@@ -41,13 +41,11 @@ export default function AppShell({ children }: AppShellProps) {
 
     // 情况2：session 明确未认证
     if (sessionStatus === 'unauthenticated') {
-      // 清除所有本地残留数据（无条件清除，防止任何形式的残留）
-      if (localUser || localUserId) {
-        console.log('[AppShell] Session 未认证，清除所有本地残留数据');
-        localStorage.removeItem('xh_user');
-        localStorage.removeItem('xh_identity');
-        localStorage.removeItem('xh_user_id');
-      }
+      // v7.0-fix5: 无条件清除所有本地残留数据，防止任何形式的残留
+      console.log('[AppShell] Session 未认证，清除所有本地残留数据');
+      localStorage.removeItem('xh_user');
+      localStorage.removeItem('xh_identity');
+      localStorage.removeItem('xh_user_id');
 
       // 未登录用户访问非公开页面 → 重定向到登录页
       if (!isPublicPage) {
