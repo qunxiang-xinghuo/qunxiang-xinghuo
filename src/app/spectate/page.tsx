@@ -1,6 +1,7 @@
-// v8.0-login-fix: 服务端入口，强制动态渲染 + 禁用所有缓存
+// v8.0-login-fix: 服务端入口，强制动态渲染 + 禁用所有缓存 + 禁用 PPR 预渲染
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
+export const experimental_ppr = false;
 
 import { unstable_noStore } from 'next/cache';
 import { cookies } from 'next/headers';
