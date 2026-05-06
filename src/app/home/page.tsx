@@ -4,24 +4,31 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye,
+  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye, Sparkles,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
-interface Brainhole {
+interface SparkItem {
   id: string;
   title: string;
-  category: string;
+  content: string;
   hotScore: number;
-  heat?: number;
-  scene: string;
+  createdAt: string;
+  identity: string;
+  identityPair: string;
+  brainholeTitle: string;
+  brainholeCategory: string;
+  roomId: string | null;
+  messageCount: number;
+  sparkCount: number;
+  previewMessages: { content: string; identity: string }[];
 }
 
 export default function HomePage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
-  const [top3, setTop3] = useState<Brainhole[]>([]);
+  const [top3, setTop3] = useState<SparkItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -36,10 +43,11 @@ export default function HomePage() {
   useEffect(() => {
     async function init() {
       try {
-        const res = await fetch('/api/brainholes/bubble?limit=10');
+        // v8.0: TOP3 改为火花排行榜
+        const res = await fetch('/api/sparks/top?limit=3');
         const data = await res.json();
         if (data.data?.list) {
-          setTop3(data.data.list.slice(0, 3));
+          setTop3(data.data.list);
         }
       } catch (e) {
         console.error('首页加载失败:', e);
@@ -99,16 +107,17 @@ export default function HomePage() {
       <PageHeader title="发现" subtitle="今日灵感" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* 今日最热 TOP3 */}
+        {/* v8.0: 今日最热 TOP3 火花排行榜 */}
         <section className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-[#e2b04a]" />
-            <h2 className="text-sm font-semibold text-white/90">今日最热</h2>
+            <h2 className="text-sm font-semibold text-white/90">今日最热火花</h2>
+            <span className="text-[10px] text-white/20 ml-1">已完结对白精选</span>
           </div>
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />
+                <div key={i} className="h-20 rounded-xl bg-white/5 animate-pulse" />
               ))}
             </div>
           ) : (
@@ -119,23 +128,52 @@ export default function HomePage() {
                   initial={mounted ? { opacity: 0, y: 10 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  onClick={() => router.push(`/duo-match?brainholeId=${item.id}`)}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all cursor-pointer"
+                  onClick={() => router.push(`/spark-detail/${item.id}`)}
+                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all cursor-pointer"
                 >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                    idx === 0 ? 'bg-[#e2b04a]/20 text-[#e2b04a]' :
-                    idx === 1 ? 'bg-white/10 text-white/70' :
-                    'bg-[#74b9ff]/10 text-[#74b9ff]'
-                  }`}>
-                    {idx + 1}
+                  <div className="flex items-start gap-3">
+                    {/* 排名 */}
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 ${
+                      idx === 0 ? 'bg-[#e2b04a]/20 text-[#e2b04a]' :
+                      idx === 1 ? 'bg-white/10 text-white/70' :
+                      'bg-[#74b9ff]/10 text-[#74b9ff]'
+                    }`}>
+                      {idx + 1}
+                    </div>
+                    {/* 内容 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-[11px] text-[#e2b04a]/60 font-medium">{item.brainholeTitle}</p>
+                        <span className="text-[10px] text-white/20">·</span>
+                        <p className="text-[10px] text-white/30">{item.identityPair}</p>
+                      </div>
+                      {/* 预览消息 */}
+                      {item.previewMessages.length > 0 && (
+                        <div className="space-y-1 mb-1.5">
+                          {item.previewMessages.map((msg, mIdx) => (
+                            <p key={mIdx} className="text-xs text-white/50 truncate">
+                              <span className="text-white/30">{msg.identity}:</span> {msg.content}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {/* 底部信息 */}
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1 text-[10px] text-white/20">
+                          <Flame className="w-3 h-3 text-[#e2b04a]/40" />
+                          {item.hotScore}
+                        </span>
+                        <span className="flex items-center gap-1 text-[10px] text-white/20">
+                          <MessageCircle className="w-3 h-3" />
+                          {item.messageCount}条
+                        </span>
+                        <span className="text-[10px] text-white/15">
+                          {new Date(item.createdAt).toLocaleDateString('zh-CN')}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-white/20 flex-shrink-0 mt-2" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white/90 font-medium truncate">{item.title}</p>
-                    <p className="text-[11px] text-white/40 truncate mt-0.5">{item.scene || item.category}</p>
-                  </div>
-                  <Flame className="w-3.5 h-3.5 text-[#e2b04a]/60" />
-                  <span className="text-[11px] text-white/30 flex-shrink-0">{item.heat || item.hotScore || 0}</span>
-                  <ChevronRight className="w-4 h-4 text-white/20" />
                 </motion.div>
               ))}
             </div>

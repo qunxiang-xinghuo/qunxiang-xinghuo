@@ -95,5 +95,7 @@ export const config = {
     '/brainhole/:path*',
     '/spectate',
     '/spectate/:path*',
+    '/spark-detail',
+    '/spark-detail/:path*',
   ],
 };
