@@ -1,5 +1,36 @@
 # 群像·星火 — 问题排查记录
 
+## v8.1 改造过程中的关键问题
+
+---
+
+### 问题1：Prisma 双向关系缺失
+
+**现象**：
+- `prisma db push` 报错：`Error validating field 'room' in model 'RoomComment': missing an opposite relation field on model 'Room'`
+
+**根因**：
+- 新增 `RoomComment` 模型时，只在 `RoomComment` 上定义了 `@relation`，没有在 `Room` 和 `User` 模型上添加反向关系字段
+
+**解决**：
+- 在 `Room` 模型添加 `comments RoomComment[]`
+- 在 `User` 模型添加 `roomComments RoomComment[]`
+
+---
+
+### 问题2：Prisma Client 类型未更新
+
+**现象**：
+- `npm run build` 报错：`Property 'roomComment' does not exist on type 'PrismaClient'`
+
+**根因**：
+- `prisma db push` 只同步了数据库 schema，但没有重新生成 TypeScript 类型
+
+**解决**：
+- 运行 `npx prisma generate` 重新生成 Prisma Client 类型
+
+---
+
 ## v8.0 登录系统修复过程中的关键问题
 
 ---

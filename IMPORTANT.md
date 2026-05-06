@@ -1,8 +1,38 @@
 # 群像·星火 — 重要操作记录
 
-## v8.0 登录系统强制守卫修复 — 部署教程
+## v8.1 四大改造 — 部署教程
 
 > 最后更新：2026-05-06
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| TOP3 极简列表 | `src/app/home/page.tsx` | 排名+脑洞标题+身份+火花数，点击跳转 `/room/[id]` |
+| 对白详情只读 | `src/app/room/[id]/page.tsx` | 微信气泡、火花金色边框+发光、评论区 |
+| 评论 API | `src/app/api/room-comments/*.ts` | GET列表 / POST创建 / DELETE删除 |
+| 职业分类 | `src/app/library/page.tsx` | 横向标签栏(医疗/法律/教育/服务/技术/生活) |
+| 分类筛选 API | `src/app/api/sparks/public/route.ts` | 新增 `category` 参数 |
+| 全局 Flame | 10+ 文件 | Heart/ThumbsUp → Flame，已赞金色 `#e2b04a`+发光 |
+| Prisma | `prisma/schema.prisma` | 新增 `RoomComment` 模型 |
+
+### 部署步骤
+
+```bash
+cd /var/www/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npx prisma migrate deploy   # 生产环境
+npm run build
+pm2 restart all
+```
+
+---
+
+## v8.0 登录系统强制守卫修复 — 部署教程
+
+> 更新：2026-05-06
 
 ---
 
