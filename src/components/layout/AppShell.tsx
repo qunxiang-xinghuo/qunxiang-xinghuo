@@ -1,10 +1,43 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, Component, ErrorInfo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import MobileContainer from './MobileContainer';
 import BottomNav from './BottomNav';
+
+// v8.0: Error Boundary 防止渲染崩溃白屏
+interface EBProps { children: ReactNode; }
+interface EBState { hasError: boolean; error?: Error; }
+class ErrorBoundary extends Component<EBProps, EBState> {
+  constructor(props: EBProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: Error): EBState {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[ErrorBoundary]', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+          <p className="text-lg text-white/40 mb-2">出错了</p>
+          <p className="text-xs text-white/20 mb-4">页面遇到了一点问题，请刷新重试</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm border border-[#e2b04a]/25"
+          >
+            刷新页面
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface AppShellProps {
   children: ReactNode;
@@ -85,7 +118,9 @@ export default function AppShell({ children }: AppShellProps) {
   return (
     <div className="h-full w-full max-w-md sm:max-w-lg mx-auto bg-xh-primary relative overflow-hidden flex flex-col">
       <MobileContainer className="flex-1 min-h-0 overflow-hidden">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </MobileContainer>
       {/* 登录页绝对不渲染底部导航栏 */}
       {!isLoginPage && <BottomNav />}

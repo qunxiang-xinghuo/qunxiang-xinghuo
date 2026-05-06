@@ -60,6 +60,10 @@ export default function RoomPage() {
   const [finished, setFinished] = useState(false);
   const [showTruth, setShowTruth] = useState(false);
 
+  // 交互优化状态
+  const [openingInfoCollapsed, setOpeningInfoCollapsed] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isProcessingAI = useRef(false);
@@ -72,6 +76,13 @@ export default function RoomPage() {
 
   // 滚动到底部
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  // openingInfo 30秒后自动折叠
+  useEffect(() => {
+    if (!myOpeningInfo || roomStatus === 'closed' || finished) return;
+    const t = setTimeout(() => setOpeningInfoCollapsed(true), 30000);
+    return () => clearTimeout(t);
+  }, [myOpeningInfo, roomStatus, finished]);
 
   // 加载房间信息
   useEffect(() => {
@@ -188,16 +199,30 @@ export default function RoomPage() {
     };
   }, [messages.length, story, roomId, roomStatus]);
 
-  // AI 房间自动回复
+  // AI 房间自动回复 — 使用故事上下文作为 system prompt
   const generateAIReply = useCallback(async (userMessage: string) => {
     if (isProcessingAI.current || !story) return;
     isProcessingAI.current = true;
     try {
+      // 构建故事上下文提示
+      const storyContext = [
+        `你正在参与一个解密故事《${story.title}》。`,
+        `你的角色是「${aiRoleName || '刘看山'}」。`,
+        myOpeningInfo ? `你的开场信息：${myOpeningInfo}` : '',
+        story.act1Reveal ? `故事背景（起）：${story.act1Reveal}` : '',
+        story.act2Reveal ? `发展线索（承）：${story.act2Reveal}` : '',
+        story.act3Reveal ? `转折信息（转）：${story.act3Reveal}` : '',
+        '请基于以上信息回应对方，保持角色一致性，不要直接透露你是AI。',
+      ].filter(Boolean).join('\n');
+
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: userMessage }],
+          messages: [
+            { role: 'system', content: storyContext },
+            { role: 'user', content: userMessage },
+          ],
           topic: story.title,
           persona: 'catalyst',
         }),
@@ -220,7 +245,7 @@ export default function RoomPage() {
       });
     } catch (e) { console.error('AI回复失败:', e); }
     finally { isProcessingAI.current = false; }
-  }, [story, roomId, aiRoleName]);
+  }, [story, roomId, aiRoleName, myOpeningInfo]);
 
   const handleSend = useCallback(async () => {
     if (!inputValue.trim() || roomStatus === 'closed') return;
@@ -345,13 +370,23 @@ export default function RoomPage() {
         </div>
       </div>
 
-      {/* OpeningInfo 提示 */}
+      {/* OpeningInfo 提示 — 30秒后自动折叠 */}
       {myOpeningInfo && !isReadonly && (
         <div className="shrink-0 px-4 py-2 border-b border-white/5 bg-white/[0.02]">
-          <p className="text-[11px] text-white/40 leading-relaxed">
-            <span className="text-[#e2b04a]/50 font-medium">你的开场信息：</span>
-            {myOpeningInfo}
-          </p>
+          {openingInfoCollapsed ? (
+            <button
+              onClick={() => setOpeningInfoCollapsed(false)}
+              className="flex items-center gap-1.5 text-[11px] text-[#e2b04a]/40 hover:text-[#e2b04a]/60 transition-colors"
+            >
+              <span>📋</span>
+              <span>查看开场信息</span>
+            </button>
+          ) : (
+            <p className="text-[11px] text-white/40 leading-relaxed">
+              <span className="text-[#e2b04a]/50 font-medium">你的开场信息：</span>
+              {myOpeningInfo}
+            </p>
+          )}
         </div>
       )}
 
@@ -419,13 +454,38 @@ export default function RoomPage() {
       {!isReadonly && (
         <div className="shrink-0 p-3 border-t border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
           {/* 结束对白按钮 */}
+          {/* 结束对白确认卡片 */}
+          {showEndConfirm && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-2 p-3 rounded-xl bg-white/[0.03] border border-white/10"
+            >
+              <p className="text-xs text-white/60 mb-2 leading-relaxed">
+                真的要揭晓谜底了吗？<br />
+                <span className="text-white/40">一旦结束，这段对白就将成为你的故事资产。</span>
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowEndConfirm(false)}
+                  className="flex-1 py-1.5 rounded-lg text-xs text-white/40 bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
+                >
+                  再聊一会
+                </button>
+                <button
+                  onClick={() => { setShowEndConfirm(false); handleFinish(); }}
+                  disabled={finishing}
+                  className="flex-1 py-1.5 rounded-lg text-xs text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-colors"
+                >
+                  {finishing ? '保存中...' : '揭晓谜底'}
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           <div className="flex items-center justify-between mb-2 px-1">
             <button
-              onClick={() => {
-                if (confirm('结束这场对白？\n\n结束后：\n· 对白会被保存为你的资产\n· 完整谜底将被揭晓\n· 房间变为只读，可以发表评论')) {
-                  handleFinish();
-                }
-              }}
+              onClick={() => { if (messages.length >= 3) setShowEndConfirm(true); }}
               disabled={finishing || messages.length < 3}
               className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full transition-colors ${
                 messages.length < 3
@@ -490,12 +550,20 @@ export default function RoomPage() {
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => setShowTruth(false)}
-              className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/25"
-            >
-              知道了
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowTruth(false)}
+                className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/25"
+              >
+                知道了
+              </button>
+              <button
+                onClick={() => router.push('/story-hall')}
+                className="w-full py-2 rounded-xl bg-white/[0.03] text-white/40 text-xs border border-white/5 hover:bg-white/[0.06] transition-colors"
+              >
+                🎭 再来一局
+              </button>
+            </div>
           </motion.div>
         </motion.div>
       )}

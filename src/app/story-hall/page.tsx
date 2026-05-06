@@ -72,6 +72,18 @@ export default function StoryHallPage() {
               <div key={i} className="h-32 rounded-xl bg-white/5 animate-pulse" />
             ))}
           </div>
+        ) : stories.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Sparkles className="w-10 h-10 text-white/10 mb-3" />
+            <p className="text-sm text-white/30 mb-1">还没有解密故事</p>
+            <p className="text-xs text-white/20 mb-4">第一个故事即将上线，敬请期待</p>
+            <button
+              onClick={() => router.push('/story-hall/long-term')}
+              className="text-xs text-[#e2b04a]/50 hover:text-[#e2b04a]/70 transition-colors"
+            >
+              去看看长期连载 →
+            </button>
+          </div>
         ) : (
           <div className="space-y-3">
             {stories.map((story, idx) => (

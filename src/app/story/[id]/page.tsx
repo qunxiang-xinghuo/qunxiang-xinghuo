@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Lock, Users, Clock, Sparkles, MessageCircle, X } from 'lucide-react';
+import { ArrowLeft, Lock, Users, Clock, Sparkles, MessageCircle, X, Dices, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface StoryRole {
@@ -40,6 +40,7 @@ export default function StoryDetailPage() {
   const [matchResult, setMatchResult] = useState<'waiting' | 'matched' | 'timeout'>('waiting');
   const [matchedRoomId, setMatchedRoomId] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
+  const [expandedRoleId, setExpandedRoleId] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -147,7 +148,15 @@ export default function StoryDetailPage() {
 
   const handleContinueWaiting = () => {
     setMatchResult('waiting');
-    setWaitingSeconds(15);
+    setWaitingSeconds(10);
+  };
+
+  const handleRandomRole = () => {
+    if (!story || joinLoading) return;
+    const availableRoles = story.roles.filter((r) => !r.claimed);
+    if (availableRoles.length === 0) return;
+    const randomRole = availableRoles[Math.floor(Math.random() * availableRoles.length)];
+    handleSelectRole(randomRole.id);
   };
 
   const handleCloseWaiting = () => {
@@ -222,33 +231,71 @@ export default function StoryDetailPage() {
 
         {/* 角色选择 */}
         <div className="mt-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="w-4 h-4 text-[#e2b04a]" />
-            <h2 className="text-sm font-semibold text-white/90">选择角色</h2>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#e2b04a]" />
+              <h2 className="text-sm font-semibold text-white/90">选择角色</h2>
+            </div>
+            <button
+              onClick={handleRandomRole}
+              disabled={joinLoading || story.roles.every((r) => r.claimed)}
+              className="flex items-center gap-1 text-[11px] text-[#e2b04a]/50 hover:text-[#e2b04a]/70 transition-colors disabled:opacity-20"
+            >
+              <Dices className="w-3.5 h-3.5" />
+              <span>随机分配</span>
+            </button>
           </div>
           <div className="space-y-2">
-            {story.roles.map((role) => (
-              <button
-                key={role.id}
-                onClick={() => !role.claimed && handleSelectRole(role.id)}
-                disabled={role.claimed || joinLoading}
-                className={`w-full text-left p-3 rounded-xl border transition-all ${
-                  role.claimed
-                    ? 'bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed'
-                    : selectedRoleId === role.id
-                      ? 'bg-[#e2b04a]/10 border-[#e2b04a]/30'
-                      : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06] active:scale-[0.99]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-white/80">{role.name}</span>
-                  {role.claimed && (
-                    <span className="text-[10px] text-white/20 bg-white/[0.05] px-1.5 py-0.5 rounded-full">已被选</span>
+            {story.roles.map((role) => {
+              const isExpanded = expandedRoleId === role.id;
+              return (
+                <div
+                  key={role.id}
+                  className={`w-full text-left rounded-xl border transition-all ${
+                    role.claimed
+                      ? 'bg-white/[0.02] border-white/5 opacity-40'
+                      : selectedRoleId === role.id
+                        ? 'bg-[#e2b04a]/10 border-[#e2b04a]/30'
+                        : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06]'
+                  }`}
+                >
+                  <button
+                    onClick={() => !role.claimed && handleSelectRole(role.id)}
+                    disabled={role.claimed || joinLoading}
+                    className="w-full text-left p-3"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-white/80">{role.name}</span>
+                      <div className="flex items-center gap-2">
+                        {role.claimed && (
+                          <span className="text-[10px] text-white/20 bg-white/[0.05] px-1.5 py-0.5 rounded-full">已被选</span>
+                        )}
+                        {role.description && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setExpandedRoleId(isExpanded ? null : role.id); }}
+                            className="p-0.5 rounded hover:bg-white/5 text-white/20"
+                          >
+                            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-white/30 leading-relaxed">{role.openingInfo}</p>
+                  </button>
+                  {isExpanded && role.description && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      className="px-3 pb-3"
+                    >
+                      <p className="text-[11px] text-white/25 leading-relaxed border-t border-white/5 pt-2">
+                        {role.description}
+                      </p>
+                    </motion.div>
                   )}
                 </div>
-                <p className="text-[11px] text-white/30 leading-relaxed">{role.openingInfo}</p>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
