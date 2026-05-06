@@ -272,3 +272,22 @@ git pull fqunxiang dev
 
 **解决**：
 - 运行 `npx prisma generate` 重新生成 Prisma Client 类型
+
+
+### 问题3：生产环境 Prisma migrate deploy P3005
+
+**现象**：
+- 服务器部署时 `npx prisma migrate deploy` 报错：`Error: P3005 The database schema is not empty`
+
+**根因**：
+- 生产数据库此前一直使用 `prisma db push` 管理 schema，没有创建 migration 文件
+- `prisma migrate deploy` 需要空的数据库或已 baselined 的数据库
+
+**解决**：
+- 如果新表（如 `RoomComment`）尚未创建，改用 `npx prisma db push --accept-data-loss`
+- 后续应统一使用 `prisma migrate dev`（开发）+ `prisma migrate deploy`（生产）
+- 当前修复：生产环境执行 `prisma db push` 后，PM2 restart 成功
+
+**验证**：
+- `npm run build` 68/68 通过 ✅
+- `pm2 restart all` 成功 ✅
