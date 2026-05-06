@@ -73,7 +73,7 @@ export default function SoloMatchPage() {
 
   return (
     <div className="flex flex-col h-full page-gradient">
-      <TopBar title="人机模式" showBack onBack={() => router.back()} />
+      <TopBar title="和刘看山对话" showBack onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-24">
         {/* 刘看山介绍 */}

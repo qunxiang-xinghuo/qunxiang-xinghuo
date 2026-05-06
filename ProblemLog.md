@@ -230,3 +230,45 @@ git pull fqunxiang dev
 | findUnique 误用 | ✅ 无复现（where 条件均为 @id 字段） |
 | useSearchParams 未包裹 Suspense | ✅ 无复现（LoginForm 被 page.tsx Suspense 包裹） |
 | 消息重复显示 | ✅ 无需测试（仅 UI 改造，未改动消息逻辑） |
+
+
+---
+
+## v8.1b 补充改造问题记录
+
+### 问题：无
+
+本次补充改造（多人组队愿景页 + 人机模式改名）为纯前端文字改动，无新 API、无 Schema 变更、无复杂逻辑。
+
+- `multiplayer/page.tsx` 完全重写为静态愿景介绍页，零依赖
+- `home/page.tsx` 和 `solo-match/page.tsx` 仅改一个字符串常量
+- 构建一次通过，68/68 页面无错误
+
+---
+
+## v8.1 改造问题记录
+
+### 问题1：Prisma 双向关系缺失
+
+**现象**：
+- `prisma db push` 报错：`Error validating field 'room' in model 'RoomComment': missing an opposite relation field on model 'Room'`
+
+**根因**：
+- 新增 `RoomComment` 模型时，只在 `RoomComment` 上定义了 `@relation`，没有在 `Room` 和 `User` 模型上添加反向关系字段
+
+**解决**：
+- 在 `Room` 模型添加 `comments RoomComment[]`
+- 在 `User` 模型添加 `roomComments RoomComment[]`
+
+---
+
+### 问题2：Prisma Client 类型未更新
+
+**现象**：
+- `npm run build` 报错：`Property 'roomComment' does not exist on type 'PrismaClient'`
+
+**根因**：
+- `prisma db push` 只同步了数据库 schema，但没有重新生成 TypeScript 类型
+
+**解决**：
+- 运行 `npx prisma generate` 重新生成 Prisma Client 类型

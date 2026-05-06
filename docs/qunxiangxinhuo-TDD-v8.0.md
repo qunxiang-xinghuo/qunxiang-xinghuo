@@ -448,3 +448,103 @@ new file:   src/app/api/sparks/[id]/route.ts       # 火花详情 API
 new file:   src/app/spark-detail/[id]/page.tsx     # 火花详情服务端入口
 new file:   src/app/spark-detail/[id]/SparkDetailClient.tsx  # 微信聊天风格展示
 ```
+
+
+---
+
+## 十二、v8.1 四大改造
+
+### 12.1 TOP3 极简列表改造
+
+**改动**：
+- 发现页 `/home` 的 TOP3 从复杂卡片改为**极简文字列表**
+- 显示：排名 + 脑洞标题 + 参与者身份对 + 火花数
+- 点击跳转从 `/spark-detail/:id` 改为 `/room/:roomId`
+
+**文件**：`src/app/home/page.tsx`
+
+---
+
+### 12.2 对白详情页 `/room/[id]` 只读改造
+
+**改动**：
+- 移除实时聊天、WebSocket、输入框、AI 催化、结束按钮
+- 改为只读模式，从 `/api/rooms/:id` 加载历史消息
+- 微信聊天风格气泡，左右交替排列
+- **火花消息**：金色边框 `border-[#e2b04a]/40` + 发光 `shadow-[0_0_12px_rgba(226,176,74,0.12)]`
+- **评论区**：
+  - GET `/api/room-comments?roomId=xxx` — 加载评论列表
+  - POST `/api/room-comments` — 创建评论（需登录）
+  - DELETE `/api/room-comments/:id` — 删除自己的评论
+
+**文件**：
+- `src/app/room/[id]/page.tsx`
+- `src/app/api/room-comments/route.ts`
+- `src/app/api/room-comments/[id]/route.ts`
+
+**Prisma**：
+- 新增 `RoomComment` 模型
+- `Room.comments` / `User.roomComments` 双向关系
+
+---
+
+### 12.3 火花页职业分类
+
+**改动**：
+- `/library` 增加横向滚动标签栏
+- 分类：全部 / 医疗 / 法律 / 教育 / 服务 / 技术 / 生活
+- API `/api/sparks/public` 增加 `?category=xxx` 筛选参数
+
+**文件**：
+- `src/app/library/page.tsx`
+- `src/app/api/sparks/public/route.ts`
+
+---
+
+### 12.4 全局 Flame 图标替换
+
+**改动**：
+- 所有 `Heart` / `ThumbsUp` 替换为 `lucide-react` 的 `Flame`
+- 已赞：金色 `#e2b04a` + `fill-current` + `drop-shadow` 发光
+- 未赞：灰色
+
+**涉及文件**（15个）：
+- `src/app/home/page.tsx`
+- `src/app/library/page.tsx`
+- `src/app/healing/page.tsx`
+- `src/app/healing/session/[id]/page.tsx`
+- `src/app/spectate/[roomId]/page.tsx`
+- `src/app/profile/page.tsx`
+- `src/app/room/[id]/page.tsx`
+- `src/components/bubble-cloud/BubbleDetailModal.tsx`
+- `src/components/match/MatchCard.tsx`
+- `src/components/home/ModeDock.tsx`
+- `src/components/story/CreateStoryModal.tsx`
+
+---
+
+### 12.5 v8.1b 补充改造
+
+#### 12.5.1 多人组队愿景介绍页
+
+**改动**：
+- `src/app/multiplayer/page.tsx` 完全重写为愿景介绍页
+- 无按钮，纯文字介绍多人即兴碰撞的玩法和愿景
+- 包含：场景想象（急诊室）、玩法四步、四个价值点
+- 底部"🚧 功能开发中"
+
+#### 12.5.2 "人机交互模式"改名
+
+**改动**：
+- `src/app/home/page.tsx`：模式卡片标题 "人机交互模式" → "和刘看山对话"
+- `src/app/solo-match/page.tsx`：TopBar 标题 "人机模式" → "和刘看山对话"
+
+---
+
+## 十三、构建验证记录
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0 | 2026-05-06 | ✅ 通过 | 68/68 |
+| v8.1 | 2026-05-06 | ✅ 通过 | 68/68 |
+| v8.1b | 2026-05-06 | ✅ 通过 | 68/68 |

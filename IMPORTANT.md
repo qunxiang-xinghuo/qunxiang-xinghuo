@@ -1,6 +1,6 @@
 # 群像·星火 — 重要操作记录
 
-## v8.1 四大改造 — 部署教程
+## v8.1 + v8.1b 改造 — 部署教程
 
 > 最后更新：2026-05-06
 
@@ -13,8 +13,10 @@
 | 评论 API | `src/app/api/room-comments/*.ts` | GET列表 / POST创建 / DELETE删除 |
 | 职业分类 | `src/app/library/page.tsx` | 横向标签栏(医疗/法律/教育/服务/技术/生活) |
 | 分类筛选 API | `src/app/api/sparks/public/route.ts` | 新增 `category` 参数 |
-| 全局 Flame | 10+ 文件 | Heart/ThumbsUp → Flame，已赞金色 `#e2b04a`+发光 |
+| 全局 Flame | 15 个文件 | Heart/ThumbsUp → Flame，已赞金色 `#e2b04a`+发光 |
 | Prisma | `prisma/schema.prisma` | 新增 `RoomComment` 模型 |
+| 多人愿景页 | `src/app/multiplayer/page.tsx` | 改为纯文字愿景介绍页，无按钮 |
+| 人机改名 | `home/page.tsx`, `solo-match/page.tsx` | "人机交互模式"/"人机模式" → "和刘看山对话" |
 
 ### 部署步骤
 

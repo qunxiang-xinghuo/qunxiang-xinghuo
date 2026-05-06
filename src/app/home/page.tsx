@@ -52,7 +52,7 @@ export default function HomePage() {
   const modes = [
     {
       key: 'ai',
-      title: '人机交互模式',
+      title: '和刘看山对话',
       desc: '与刘看山一对一对话',
       icon: Bot,
       color: 'from-[#00b894]/20 to-emerald-500/20',
