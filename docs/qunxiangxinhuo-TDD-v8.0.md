@@ -931,3 +931,78 @@ sqlite3 dev.db "SELECT title FROM Story;"
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
 > 最后更新：2026-05-06 v8.0 生产部署完成 ✅
+
+
+---
+
+## 二十、v8.0 登录/注册服务器错误修复（2026-05-06）
+
+### 20.1 问题现象
+
+- 用户访问网站时显示「服务器错误」
+- 登录验证失败
+- 注册时显示「服务器错误，请稍后重试」（HTTP 500）
+
+### 20.2 根因分析（5轮自测）
+
+#### 自测1：排查服务器错误根因
+- 检查注册 API `/api/auth/register` → 代码正常，有完善错误处理
+- 检查 next-auth 配置 `/api/auth/[...nextauth]` → 引用了 `PrismaAdapter`
+- 检查数据库连接 `src/lib/db.ts` → 使用了 `@prisma/adapter-better-sqlite3`
+
+#### 自测2：发现关键问题 — PrismaAdapter 不兼容
+- `@auth/prisma-adapter` v2.11.2 是为 **Auth.js (next-auth v5)** 设计的
+- `next-auth` v4.24.14 使用旧版适配器 API
+- `PrismaAdapter(db)` 中 `db` 是 Prisma 7 + `@prisma/adapter-better-sqlite3`
+- 三者组合导致 next-auth 初始化失败，所有 `/api/auth/*` 路由返回 500
+
+#### 自测3：修复 db 全局单例
+- 原代码：`if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db`
+- 生产环境中每次 import 都会创建新的 PrismaClient
+- 修复：始终使用全局单例 `globalForPrisma.prisma = db`
+
+#### 自测4：增强错误处理
+- `authorize` 函数添加 try/catch，防止未捕获异常导致 500
+- 注册 API 添加数据库连接错误分支（503）
+- `NEXTAUTH_SECRET` 添加 fallback（防止生产环境未设置）
+
+#### 自测5：验证构建
+- TypeScript 编译通过
+- 70/70 页面生成成功
+
+### 20.3 修复方案
+
+```
+┌─────────────────┐     ┌─────────────────────┐     ┌─────────────────┐
+│  原代码          │     │  问题                │     │  修复            │
+├─────────────────┤     ├─────────────────────┤     ├─────────────────┤
+│ adapter:        │     │ @auth/prisma-adapter │     │ 移除 adapter     │
+│ PrismaAdapter() │────▶│ v2 与 next-auth v4   │────▶│ JWT+Credentials  │
+│                 │     │ 不兼容               │     │ 不需要 adapter   │
+├─────────────────┤     ├─────────────────────┤     ├─────────────────┤
+│ NODE_ENV !==    │     │ 生产环境不缓存       │     │ 始终缓存         │
+│ "production"    │────▶│ PrismaClient         │────▶│ globalForPrisma  │
+├─────────────────┤     ├─────────────────────┤     ├─────────────────┤
+│ NEXTAUTH_SECRET │     │ 生产环境可能未设置   │     │ 添加 fallback    │
+│ 无 fallback     │────▶│ 导致 getToken 失败   │────▶│ 密钥（32位+）    │
+└─────────────────┘     └─────────────────────┘     └─────────────────┘
+```
+
+### 20.4 文件变更
+
+```
+modified:   src/lib/auth.ts                 # 移除 PrismaAdapter + 添加 fallback
+modified:   src/lib/db.ts                   # 始终使用全局单例
+modified:   src/app/api/auth/register/route.ts  # 增强错误处理
+```
+
+### 20.5 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-auth-fix | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`
+> 最后更新：2026-05-06 v8.0 登录/注册服务器错误修复完成 ✅

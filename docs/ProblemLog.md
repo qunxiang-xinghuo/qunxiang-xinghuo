@@ -694,3 +694,72 @@ sqlite3 dev.db "DELETE FROM Story WHERE id NOT IN (SELECT MAX(id) FROM Story GRO
 | 2026-05-06 | 种子数据插入 5 个剧本杀化故事 |
 
 ---
+
+
+---
+
+## v8.0 登录/注册服务器错误 — 问题记录
+
+### 问题15：登录/注册返回「服务器错误」（HTTP 500）
+
+**现象**：
+- 访问网站显示「服务器错误」
+- 注册时返回「服务器错误，请稍后重试」
+- 登录验证失败
+
+**排查过程（5轮自测）**：
+
+| 轮次 | 检查项 | 结果 |
+|------|--------|------|
+| 1 | 注册 API `/api/auth/register` | 代码正常，有 try/catch |
+| 1 | next-auth `/api/auth/[...nextauth]` | 引用了 `PrismaAdapter` |
+| 1 | 数据库 `src/lib/db.ts` | 使用 `@prisma/adapter-better-sqlite3` |
+| 2 | `@auth/prisma-adapter` v2.11.2 | 为 next-auth v5 设计 |
+| 2 | `next-auth` v4.24.14 | 使用旧版适配器 API |
+| 2 | **结论** | PrismaAdapter v2 + next-auth v4 = 不兼容 |
+| 3 | `src/lib/db.ts` 全局缓存 | 生产环境不缓存，每次创建新连接 |
+| 4 | `authorize` 函数 | 缺少 try/catch，可能抛出未捕获异常 |
+| 4 | `NEXTAUTH_SECRET` | 无 fallback，生产环境可能未设置 |
+| 5 | 构建测试 | TypeScript 编译通过，70/70 页面 |
+
+**根因**：
+- `@auth/prisma-adapter` v2.x 与 `next-auth` v4.x 不兼容
+- `PrismaAdapter(db)` 初始化失败，导致整个 next-auth 路由崩溃
+- 所有 `/api/auth/*` 请求返回 500
+
+**解决**：
+1. 移除 `PrismaAdapter`（JWT + Credentials 不需要 adapter）
+2. 修复 `db` 全局单例（生产环境始终缓存）
+3. `authorize` 添加 try/catch
+4. `NEXTAUTH_SECRET` 添加 fallback
+
+```ts
+// 修复前
+import { PrismaAdapter } from "@auth/prisma-adapter";
+export const authOptions = {
+  adapter: PrismaAdapter(db) as any,  // ❌ 不兼容
+  // ...
+};
+
+// 修复后
+export const authOptions = {
+  // 移除 adapter — JWT + Credentials 不需要
+  // ...
+};
+```
+
+---
+
+## v8.0 完整时间线（最终最终版）
+
+| 时间 | 事件 |
+|------|------|
+| 2026-05-06 | 初始开发完成 |
+| 2026-05-06 | 修复 20 个初始问题 |
+| 2026-05-06 | 代码审查修复 9 个问题 |
+| 2026-05-06 | UX 优化 11 项 |
+| 2026-05-06 | 全方位建议实现（种子/催化/分类/动画） |
+| 2026-05-06 | 生产部署成功 |
+| 2026-05-06 | **登录/注册服务器错误修复** |
+
+---

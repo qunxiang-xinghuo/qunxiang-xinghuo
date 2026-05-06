@@ -288,3 +288,80 @@ flowchart TD
 
 > 文档位置：`docs/story-system-flow.md`
 > 最后更新：2026-05-06 生产部署验证完成 ✅
+
+
+---
+
+## 附录B：认证系统架构
+
+### B.1 登录流程
+
+```
+用户输入用户名/密码
+    │
+    ▼
+LoginForm.tsx → signIn('credentials', { username, password })
+    │
+    ▼
+/api/auth/[...nextauth] → NextAuth(authOptions)
+    │
+    ▼
+CredentialsProvider.authorize(credentials)
+    │
+    ├── 1. db.user.findFirst({ where: { OR: [{ username }, { email }] } })
+    │   └── 数据库查询
+    │
+    ├── 2. bcrypt.compare(password, user.password)
+    │   └── 密码验证
+    │
+    └── 3. 返回 { id, name, email, username, level, sparkCount }
+    │
+    ▼
+JWT 签名（使用 NEXTAUTH_SECRET）
+    │
+    ▼
+设置 next-auth.session-token cookie
+    │
+    ▼
+LoginForm 获取成功 → fetch('/api/users/me')
+    │
+    ▼
+/api/users/me → getToken({ req, secret: NEXTAUTH_SECRET })
+    │
+    ▼
+返回用户数据 → 存储到 localStorage
+    │
+    ▼
+router.push('/home')
+```
+
+### B.2 关键组件关系
+
+```
+next-auth v4.24.14
+    │
+    ├── CredentialsProvider → 自定义用户名/密码验证
+    │   ├── db.user.findFirst
+    │   └── bcrypt.compare
+    │
+    ├── JWT strategy → 不依赖数据库存储 session
+    │   └── 不需要 PrismaAdapter
+    │
+    ├── callbacks.jwt → 将 level/sparkCount/username 写入 token
+    │
+    └── callbacks.session → 从 token 恢复用户信息
+```
+
+### B.3 已修复的认证问题
+
+| # | 问题 | 修复 |
+|---|------|------|
+| 1 | `@auth/prisma-adapter` v2 与 next-auth v4 不兼容 | 移除 PrismaAdapter |
+| 2 | 生产环境 db 单例未缓存 | 始终设置 `globalForPrisma.prisma = db` |
+| 3 | `authorize` 无 try/catch | 添加异常捕获，返回 null |
+| 4 | `NEXTAUTH_SECRET` 无 fallback | 添加 fallback 密钥 |
+
+---
+
+> 文档位置：`docs/story-system-flow.md`
+> 最后更新：2026-05-06 认证系统架构补充 ✅

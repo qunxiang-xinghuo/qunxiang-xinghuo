@@ -436,3 +436,52 @@ npx tsx prisma/seed-stories.ts
 | 种子数据 | ✅ 剧本杀化 openingInfo |
 
 ---
+
+
+---
+
+## v8.0 登录/注册服务器错误修复 — 部署记录
+
+> 更新：2026-05-06
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 修复文件清单
+
+```
+modified:   src/lib/auth.ts                 # 移除 PrismaAdapter + NEXTAUTH_SECRET fallback
+modified:   src/lib/db.ts                   # 全局单例修复
+modified:   src/app/api/auth/register/route.ts  # 错误处理增强
+```
+
+### 根因说明
+
+**问题**：`@auth/prisma-adapter` v2.x 与 `next-auth` v4.x 不兼容
+
+**原因**：
+- 项目使用 `next-auth` v4.24.14（旧版）
+- `@auth/prisma-adapter` v2.11.2 是为 next-auth v5 (Auth.js) 设计的
+- 两者 API 不兼容，导致 `/api/auth/[...nextauth]` 初始化失败
+- 所有认证路由返回 HTTP 500
+
+**解决**：移除 `PrismaAdapter`。项目使用 JWT strategy + CredentialsProvider，根本不需要数据库存储 session/account。
+
+### 验证步骤
+
+```
+□ 1. 访问 http://81.70.59.228/ → 登录页正常显示
+□ 2. 点击「去注册」→ 注册页正常
+□ 3. 输入用户名/密码 → 点击注册 → 注册成功
+□ 4. 返回登录 → 输入用户名/密码 → 登录成功 → 跳转 /home
+□ 5. 访问 /story-hall → 故事列表正常
+```
+
+---
