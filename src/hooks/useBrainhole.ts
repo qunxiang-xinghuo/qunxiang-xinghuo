@@ -27,9 +27,14 @@ export function useBrainhole() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
     fetch('/api/brainholes')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((result) => {
+        if (!mounted) return;
         if (result.success && result.data?.brainholes) {
           const mapped: Brainhole[] = result.data.brainholes.map((b: any) => ({
             id: String(b.id),
@@ -44,19 +49,20 @@ export function useBrainhole() {
           }));
           setBrainholes(mapped);
         } else {
-          // Fallback to mock data if API fails
           setBrainholes(mockBrainholes);
           setError(result.error || 'API 返回异常，已使用演示数据');
         }
       })
       .catch((err) => {
+        if (!mounted) return;
         console.error('[useBrainhole] Fetch error:', err);
         setBrainholes(mockBrainholes);
         setError('网络错误，已使用演示数据');
       })
       .finally(() => {
-        setLoading(false);
+        if (mounted) setLoading(false);
       });
+    return () => { mounted = false; };
   }, []);
 
   const getBrainholeById = (id: string) => {

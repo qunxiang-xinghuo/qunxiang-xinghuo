@@ -41,11 +41,12 @@ export function useReaction(brainholeId?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchReactions = useCallback(async () => {
+  const fetchReactions = useCallback(async (signal?: AbortSignal) => {
     try {
       const params = new URLSearchParams();
       if (brainholeId) params.set('brainholeId', brainholeId);
-      const res = await fetch(`/api/reactions?${params.toString()}`);
+      const res = await fetch(`/api/reactions?${params.toString()}`, { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
       if (result.success && result.data?.reactions) {
         setReactions(result.data.reactions.map(mapApiReaction));
@@ -53,15 +54,18 @@ export function useReaction(brainholeId?: string) {
         setError(result.error || '加载反应失败');
       }
     } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error('[useReaction] Fetch error:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
   }, [brainholeId]);
 
   useEffect(() => {
-    fetchReactions();
+    const controller = new AbortController();
+    fetchReactions(controller.signal);
+    return () => controller.abort();
   }, [fetchReactions]);
 
   const submitReaction = async (
@@ -77,6 +81,7 @@ export function useReaction(brainholeId?: string) {
           content: reaction.content,
         }),
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
       if (result.success) {
         await fetchReactions();

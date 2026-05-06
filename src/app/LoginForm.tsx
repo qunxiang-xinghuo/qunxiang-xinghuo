@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, LogIn, Flame } from 'lucide-react';
 import { signIn } from 'next-auth/react';
@@ -21,11 +22,29 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const { status } = useSession();
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [windowHeight, setWindowHeight] = useState(800);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setWindowHeight(window.innerHeight);
+    setMounted(true);
+    // v7.0-fix5: 组件挂载时无条件清除所有本地残留数据
+    // 防止关闭浏览器后再打开时 localStorage 残留导致状态混乱
+    localStorage.removeItem('xh_user');
+    localStorage.removeItem('xh_identity');
+    localStorage.removeItem('xh_user_id');
+    sessionStorage.clear();
+  }, []);
+
+  // 已登录用户访问登录页，由 middleware + AppShell 统一处理重定向
+  // LoginForm 不做额外重定向，避免与 handleLogin 中的 router.push 冲突（v7.0-fix5）
 
   useEffect(() => {
     const autoUser = searchParams.get('username');
@@ -40,33 +59,61 @@ export default function LoginForm() {
 
     if (!username.trim() || !password.trim()) {
       setError('请输入用户名和密码');
+      setLoading(false);
       return;
     }
 
     setLoading(true);
 
     try {
+      // v6.3-auth-fix3: 登录前清除可能残留的旧数据
+      localStorage.removeItem('xh_user');
+      localStorage.removeItem('xh_identity');
+      localStorage.removeItem('xh_user_id');
+
       const result = await signIn('credentials', {
         username: username.trim(),
         password,
         redirect: false,
       });
 
-      if (result?.error) {
+      if (result?.error || !result?.ok) {
         setError('用户名或密码错误');
-      } else {
-        const userData = {
-          id: 'user-' + Date.now(),
-          name: username.trim(),
-          identity: { type: 'real' as const, label: username.trim() },
-          level: 1,
-          sparkCount: 0,
-        };
-        localStorage.setItem('xh_user', JSON.stringify(userData));
-        router.push('/home');
-        router.refresh();
+        return;
       }
-    } catch {
+
+      // v6.3-auth-fix3: 登录成功后，从服务器获取真实用户数据
+      console.log('[Login] 认证成功，正在获取用户数据...');
+      const meRes = await fetch('/api/users/me');
+      const meData = await meRes.json();
+
+      if (meData.success && meData.data) {
+        // v7.0: 优先使用 username（登录用户名）显示
+        const displayName = meData.data.username || meData.data.name || username.trim();
+        const realUser = {
+          id: meData.data.id,
+          name: displayName,
+          username: meData.data.username,
+          email: meData.data.email,
+          image: meData.data.image,
+          identity: { type: 'real' as const, label: displayName },
+          level: meData.data.level || 1,
+          sparkCount: meData.data.sparkCount || 0,
+        };
+        localStorage.setItem('xh_user', JSON.stringify(realUser));
+        localStorage.setItem('xh_user_id', meData.data.id);
+        console.log('[Login] 用户数据已同步到 localStorage:', realUser.id);
+      } else {
+        // v7.0-fix6: /api/users/me 获取失败时不跳转，显示错误
+        console.error('[Login] /api/users/me 获取失败:', meData);
+        setError('登录验证失败，请稍后重试');
+        return;
+      }
+
+      router.push('/home');
+      // v7.0-fix5: 移除 router.refresh()，避免与 status 变化触发的导航冲突
+    } catch (err) {
+      console.error('[Login] 登录异常:', err);
       setError('登录失败，请稍后重试');
     } finally {
       setLoading(false);
@@ -103,7 +150,7 @@ export default function LoginForm() {
               backdropFilter: 'blur(1.5px)',
             }}
             animate={{
-              y: [0, -(window?.innerHeight || 800) - b.size * 2],
+              y: [0, -windowHeight - b.size * 2],
               x: [0, b.sway, -b.sway * 0.6, b.sway * 0.8, 0],
             }}
             transition={{
@@ -152,7 +199,7 @@ export default function LoginForm() {
       {/* ====== 项目简介 ====== */}
       <div className="pt-16 pb-6 px-6 text-center relative z-10">
         <motion.div
-          initial={{ y: -20, opacity: 0 }}
+          initial={mounted ? { y: -20, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
           className="flex items-center justify-center gap-2 mb-3"
@@ -163,7 +210,7 @@ export default function LoginForm() {
         </motion.div>
 
         <motion.p
-          initial={{ y: 10, opacity: 0 }}
+          initial={mounted ? { y: 10, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.15 }}
           className="text-sm text-white/60 leading-relaxed mb-2"
@@ -171,7 +218,7 @@ export default function LoginForm() {
           让真实发光，让思想变现
         </motion.p>
         <motion.p
-          initial={{ y: 10, opacity: 0 }}
+          initial={mounted ? { y: 10, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.25 }}
           className="text-xs text-white/40 leading-relaxed max-w-[280px] mx-auto"
@@ -182,7 +229,7 @@ export default function LoginForm() {
 
       {/* ====== 登录表单 ====== */}
       <motion.form
-        initial={{ opacity: 0, y: 20 }}
+        initial={mounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         onSubmit={handleLogin}
@@ -224,7 +271,7 @@ export default function LoginForm() {
 
           {error && (
             <motion.p
-              initial={{ opacity: 0 }}
+              initial={mounted ? { opacity: 0 } : false}
               animate={{ opacity: 1 }}
               className="text-xs text-red-400 text-center"
             >
@@ -260,7 +307,7 @@ export default function LoginForm() {
       </motion.form>
 
       <div className="px-6 pb-6 text-center relative z-10">
-        <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策 · v6.0</p>
+        <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策 · v7.0</p>
       </div>
     </div>
   );

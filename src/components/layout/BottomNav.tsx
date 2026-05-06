@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Compass, Flame, BookOpen, User } from 'lucide-react';
 
@@ -14,18 +15,33 @@ const navItems = [
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { status } = useSession();
+
+  // pathname 未就绪时不显示（避免闪烁）
+  if (!pathname) return null;
+
+  // v8.0-login-fix: 登录页和根路径绝对不显示底部导航栏（最优先检查）
+  if (pathname === '/' || pathname === '/login') return null;
 
   // 隐藏底部导航的页面
-  const hideNavPaths = ['/login', '/register', '/welcome', '/onboarding'];
-  if (hideNavPaths.some((p) => pathname?.startsWith(p))) return null;
+  const hideNavPaths = ['/register', '/welcome', '/onboarding'];
+  if (hideNavPaths.includes(pathname)) return null;
+
   // 房间、匹配等页面也隐藏
-  if (pathname?.startsWith('/room/') || pathname?.startsWith('/duo') || pathname?.startsWith('/story/room/')) return null;
+  if (pathname.startsWith('/room/') || pathname.startsWith('/duo') || pathname.startsWith('/story/room/')) return null;
+
+  // Session加载中时不显示
+  if (status === 'loading') return null;
+
+  // 未登录状态下不显示底部导航栏
+  if (status === 'unauthenticated') return null;
 
   const activeItem = navItems.find((item) => pathname === item.path || pathname?.startsWith(item.path + '/')) || navItems[0];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[#0c0c0e]/90 backdrop-blur-xl safe-area-pb">
-      <div className="flex items-center justify-around h-14">
+      {/* v6.0-fix: 最外层容器添加 max-width + 居中，确保导航栏宽度适配移动端 */}
+      <div className="max-w-[480px] mx-auto w-full flex items-center justify-around h-14">
         {navItems.map((item) => {
           const isActive = activeItem.key === item.key;
           const Icon = item.icon;

@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Users, Theater, Mountain, Heart } from 'lucide-react';
+import { User, Users, Theater, Mountain, Flame } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const modes = [
@@ -50,7 +50,7 @@ const modes = [
     id: 'couple',
     title: '密友空间',
     desc: '双人小世界',
-    icon: Heart,
+    icon: Flame,
     color: '#fd79a8',
     bgColor: 'from-pink-500/20 to-rose-500/20',
     borderColor: 'border-pink-500/30',
@@ -60,7 +60,10 @@ const modes = [
 
 export default function ModeDock() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const handleModeClick = (mode: typeof modes[0]) => {
     if (!mode.available) {
@@ -97,7 +100,7 @@ export default function ModeDock() {
           return (
             <motion.button
               key={mode.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={mounted ? { opacity: 0, y: 20 } : false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.08 }}
               whileHover={mode.available ? { scale: 1.05, y: -2 } : {}}

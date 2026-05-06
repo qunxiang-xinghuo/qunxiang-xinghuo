@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
@@ -26,7 +27,7 @@ export async function POST(
     const existingCollection = await db.brainholeCollection.findUnique({
       where: {
         userId_brainholeId: {
-          userId: session.user.id,
+          userId,
           brainholeId: id,
         },
       },
@@ -38,7 +39,7 @@ export async function POST(
 
     const collection = await db.brainholeCollection.create({
       data: {
-        userId: session.user.id,
+        userId,
         brainholeId: id,
       },
     });
@@ -63,15 +64,16 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
     const collection = await db.brainholeCollection.findUnique({
       where: {
         userId_brainholeId: {
-          userId: session.user.id,
+          userId,
           brainholeId: id,
         },
       },
@@ -84,7 +86,7 @@ export async function DELETE(
     await db.brainholeCollection.delete({
       where: {
         userId_brainholeId: {
-          userId: session.user.id,
+          userId,
           brainholeId: id,
         },
       },

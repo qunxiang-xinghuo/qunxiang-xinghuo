@@ -1,17 +1,29 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Brainhole } from '@/components/brainhole/BrainholeCard';
 
 export function useCollection() {
   const [collectedBrainholes, setCollectedBrainholes] = useState<Brainhole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const fetchCollections = useCallback(async () => {
     try {
       const res = await fetch('/api/brainholes/collected');
+      if (!res.ok) {
+        console.error(`[useCollection] fetch failed: ${res.status}`);
+        if (mountedRef.current) setError(`加载收藏失败 (${res.status})`);
+        return;
+      }
       const result = await res.json();
+      if (!mountedRef.current) return;
       if (result.success && result.data?.brainholes) {
         const mapped: Brainhole[] = result.data.brainholes.map((b: any) => ({
           id: String(b.id),
@@ -30,9 +42,9 @@ export function useCollection() {
       }
     } catch (err: any) {
       console.error('[useCollection] Fetch error:', err);
-      setError(err.message);
+      if (mountedRef.current) setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, []);
 

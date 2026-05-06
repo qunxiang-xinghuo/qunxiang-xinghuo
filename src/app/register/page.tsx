@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Sparkles, Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react';
+
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,6 +15,9 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +48,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      console.log('[Register] 正在发送注册请求...');
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,15 +59,19 @@ export default function RegisterPage() {
       });
 
       const result = await res.json();
+      console.log('[Register] 注册响应:', result);
 
       if (result.success) {
-        // v4.2-fix: 注册成功 → 自动跳回登录页，并带上用户名和密码参数自动填入
-        router.push(`/?username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password)}`);
+        // v7.0: 注册成功后跳转登录页，需要手动登录
+        console.log('[Register] 注册成功，跳转登录页...');
+        router.push(`/login?username=${encodeURIComponent(username.trim())}`);
       } else {
-        setError(result.message || '注册失败');
+        // v6.3-auth-fix: 清晰显示 API 返回的错误信息
+        setError(result.message || '注册失败，请稍后重试');
       }
-    } catch {
-      setError('网络错误，请稍后重试');
+    } catch (err) {
+      console.error('[Register] 注册异常:', err);
+      setError('网络错误，请检查网络连接后重试');
     } finally {
       setLoading(false);
     }
@@ -80,7 +89,7 @@ export default function RegisterPage() {
       {/* 顶部 */}
       <div className="pt-6 px-4 flex items-center gap-3 relative z-10">
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/login')}
           className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 text-white/60" />
@@ -112,7 +121,7 @@ export default function RegisterPage() {
 
       {/* 注册表单 */}
       <motion.form
-        initial={{ opacity: 0, y: 20 }}
+        initial={mounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         onSubmit={handleRegister}
@@ -170,7 +179,7 @@ export default function RegisterPage() {
           {/* 错误提示 */}
           {error && (
             <motion.p
-              initial={{ opacity: 0 }}
+              initial={mounted ? { opacity: 0 } : false}
               animate={{ opacity: 1 }}
               className="text-xs text-red-400 text-center"
             >
@@ -199,7 +208,7 @@ export default function RegisterPage() {
         <div className="mt-8 text-center">
           <button
             type="button"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/login')}
             className="text-sm text-white/40 hover:text-[#e2b04a] transition-colors"
           >
             已有账号？<span className="text-[#e2b04a]/80 hover:text-[#e2b04a]">去登录</span>

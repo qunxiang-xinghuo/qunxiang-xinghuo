@@ -1,38 +1,81 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { db as prisma } from "@/lib/db";
 import { apiResponse } from "@/lib/utils";
 
 /**
  * GET /api/sparks/public
- * 公开火花墙（RoomMessage中 isSpark=true 的记录），按时间倒序
- * Query: ?limit=50
+ * 公开火花墙（Asset中 isPublic=true 的记录）
+ * Query: ?limit=50&sort=latest|hottest
+ * sort=latest: 按发布时间降序（默认）
+ * sort=hottest: 按热度值降序
  */
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 100);
+    const rawLimit = parseInt(searchParams.get("limit") || "50", 10);
+    const limit = Number.isNaN(rawLimit) ? 50 : Math.min(Math.max(rawLimit, 1), 100);
+    const sort = searchParams.get("sort") || "latest"; // latest | hottest
+    const category = searchParams.get("category"); // 职业分类筛选
 
-    const messages = await prisma.roomMessage.findMany({
-      where: { isSpark: true },
-      orderBy: { createdAt: "desc" },
+    const orderBy = sort === "hottest"
+      ? [{ hotScore: "desc" as const }, { createdAt: "desc" as const }]
+      : [{ createdAt: "desc" as const }];
+
+    // 获取当前用户ID（用于判断 likedByMe）
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    const guestId = request.headers.get("x-guest-id");
+    const effectiveUserId = userId || guestId;
+
+    // v8.1: 构建 where 条件，支持职业分类筛选
+    const where: any = { isPublic: true };
+    if (category && category !== "all") {
+      where.brainhole = {
+        category: {
+          contains: category,
+          mode: "insensitive",
+        },
+      };
+    }
+
+    const assets = await prisma.asset.findMany({
+      where,
+      orderBy,
       take: limit,
       include: {
-        room: {
-          select: {
-            brainhole: { select: { title: true } },
-          },
-        },
+        brainhole: { select: { title: true } },
+        room: { select: { id: true } },
       },
     });
 
-    const list = messages.map((m) => ({
-      id: m.id,
-      content: m.content,
-      heat: 0, // RoomMessage没有heat字段
-      createdAt: m.createdAt.toISOString(),
-      identity: m.identity || "匿名",
-      brainholeTitle: m.room?.brainhole?.title || "",
-      messageId: m.id,
+    // 如果用户已登录，查询该用户对所有这些火花的点赞状态
+    let likedAssetIds = new Set<string>();
+    if (effectiveUserId && assets.length > 0) {
+      const likes = await prisma.assetLike.findMany({
+        where: {
+          assetId: { in: assets.map((a) => a.id) },
+          userId: effectiveUserId,
+        },
+        select: { assetId: true },
+      });
+      likedAssetIds = new Set(likes.map((l) => l.assetId));
+    }
+
+    const list = assets.map((a) => ({
+      id: a.id,
+      content: a.content || a.summary || "",
+      title: a.title,
+      hotScore: a.hotScore || 0,
+      createdAt: a.createdAt.toISOString(),
+      identity: a.identity || "匿名",
+      brainholeTitle: a.brainhole?.title || a.title || "",
+      sparkCount: a.sparkCount || 0,
+      messageCount: a.messageCount || 0,
+      roomId: a.room?.id || null,
+      likedByMe: likedAssetIds.has(a.id),
+      isMySpark: effectiveUserId ? a.userId === effectiveUserId : false,
     }));
 
     return NextResponse.json(apiResponse({ list }));

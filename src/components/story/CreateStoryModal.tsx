@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, Sparkles, BookOpen, Theater, Flame, Lightbulb, Heart, Zap, Globe, ChevronRight, Users } from 'lucide-react';
+import { X, Plus, Trash2, Sparkles, BookOpen, Theater, Flame, Lightbulb, Zap, Globe, ChevronRight, Users } from 'lucide-react';
 
 interface RoleInput {
   name: string;
@@ -26,7 +26,7 @@ interface StoryTemplate {
 
 const TEMPLATES: StoryTemplate[] = [
   {
-    id: 'medical', name: '医疗急救', icon: Heart, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20',
+    id: 'medical', name: '医疗急救', icon: Flame, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20',
     worldview: '凌晨2点的市立三甲医院急诊科。值班医生刚刚处理完一位心梗患者，120又送来两个重伤病人。血库值班员打来电话：匹配型血只剩最后一袋。',
     conflict: '两个病人同时需要输血，但血库只剩一袋。一个是酒驾肇事者，一个是被他撞伤的行人。医生必须在5分钟内做出决定。',
     roles: [
@@ -61,7 +61,7 @@ const TEMPLATES: StoryTemplate[] = [
     ],
   },
   {
-    id: 'romance', name: '爱情纠葛', icon: Heart, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20',
+    id: 'romance', name: '爱情纠葛', icon: Flame, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20',
     worldview: '北京海淀区，一对结婚八年的夫妻为了让孩子进入重点小学，决定假离婚。丈夫负责买学区房，妻子带着孩子搬回娘家。',
     conflict: '房产证办下来那天，妻子发现丈夫在购房合同上写了另一个女人的名字——那是他的初恋，也是房产中介。而妻子的娘家拆迁款，已经被她哥哥偷偷转走了。',
     roles: [
@@ -112,6 +112,7 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
   const [roles, setRoles] = useState<RoleInput[]>([]);
   const [minActors, setMinActors] = useState(2);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const selectTemplate = (t: StoryTemplate) => {
     setSelectedTemplate(t);
@@ -131,14 +132,15 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
 
   const handleSubmit = async () => {
     if (!title.trim() || !worldview.trim() || !conflict.trim()) {
-      alert('请填写完整的故事信息');
+      setError('请填写完整的故事信息');
       return;
     }
     const validRoles = roles.filter((r) => r.name.trim());
-    if (validRoles.length === 0) { alert('至少需要一个角色'); return; }
-    if (minActors > validRoles.length) { alert('最少启动人数不能大于角色总数'); return; }
+    if (validRoles.length === 0) { setError('至少需要一个角色'); return; }
+    if (minActors > validRoles.length) { setError('最少启动人数不能大于角色总数'); return; }
 
     setLoading(true);
+    setError('');
     try {
       const res = await fetch('/api/stories', {
         method: 'POST',
@@ -153,8 +155,8 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
       });
       const result = await res.json();
       if (result.success) { onCreated(); onClose(); }
-      else { alert(result.error?.message || '创建失败'); }
-    } catch { alert('网络错误'); }
+      else { setError(result.error?.message || '创建失败'); }
+    } catch { setError('网络错误'); }
     finally { setLoading(false); }
   };
 
@@ -165,6 +167,13 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
         <motion.div className="relative w-full max-w-md bg-[#0f1525] rounded-t-3xl sm:rounded-3xl overflow-hidden border border-slate-700/20 shadow-2xl max-h-[90vh] flex flex-col"
           initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
+
+          {/* 错误提示 */}
+          {error && (
+            <div className="shrink-0 px-5 py-2 bg-red-500/10 border-b border-red-500/20">
+              <p className="text-xs text-red-400 text-center">{error}</p>
+            </div>
+          )}
 
           {/* 头部 */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700/15 shrink-0">

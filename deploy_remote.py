@@ -1,16 +1,100 @@
 #!/usr/bin/env python3
-"""v6.0 生产环境一键部署脚本（paramiko SSH密码认证）"""
+"""v6.0 生产环境一键部署脚本（paramiko SSH密钥/密码认证）
+
+使用方法:
+    方式1: SSH密钥认证（优先）
+        确保本地 ~/.ssh/id_ed25519 或 ~/.ssh/id_rsa 存在且服务器已授权
+        python deploy_remote.py
+    
+    方式2: 密码认证（fallback）
+        set DEPLOY_PASSWORD=你的密码
+        python deploy_remote.py
+    
+    方式3: 运行时交互式输入密码
+        python deploy_remote.py
+        > 请输入服务器密码: 
+"""
 import paramiko
 import sys
 import io
 import time
+import os
+import getpass
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 HOST = "81.70.59.228"
 USER = "root"
-PASSWORD = "F!D)7n_mc8Mq}bx="
 DEPLOY_DIR = "/www/wwwroot/qunxiang-xinghuo"
+
+
+def load_private_key():
+    """尝试加载本地SSH私钥"""
+    # 项目目录下的腾讯云密钥（优先）
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_keys = [
+        os.path.join(script_dir, "qunxiang.pem"),
+    ]
+    # 系统默认密钥
+    home = os.path.expanduser("~")
+    system_keys = [
+        os.path.join(home, ".ssh", "id_ed25519"),
+        os.path.join(home, ".ssh", "id_rsa"),
+    ]
+
+    for path in project_keys + system_keys:
+        if os.path.exists(path):
+            try:
+                # 尝试 rsa
+                if path.endswith(".pem") or path.endswith("_rsa"):
+                    return paramiko.RSAKey.from_private_key_file(path)
+                # 尝试 ed25519
+                if path.endswith("ed25519"):
+                    return paramiko.Ed25519Key.from_private_key_file(path)
+            except Exception as e:
+                print(f"[密钥] 加载 {path} 失败: {e}")
+    return None
+
+
+def get_password():
+    """从环境变量或交互式输入获取密码"""
+    password = os.environ.get("DEPLOY_PASSWORD")
+    if password:
+        return password
+    return getpass.getpass("> 请输入服务器密码: ")
+
+
+def connect_server():
+    """连接服务器：优先密钥认证，fallback密码认证"""
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    # 方式1: 尝试SSH密钥认证
+    pkey = load_private_key()
+    if pkey:
+        try:
+            print("[连接] 尝试SSH密钥认证...")
+            client.connect(HOST, username=USER, pkey=pkey, timeout=30, banner_timeout=30)
+            print("[✓] SSH密钥认证成功")
+            return client
+        except Exception as e:
+            print(f"[密钥] 认证失败: {e}")
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    # 方式2: 密码认证
+    try:
+        password = get_password()
+        print("[连接] 尝试密码认证...")
+        client.connect(HOST, username=USER, password=password, timeout=30, banner_timeout=30)
+        print("[✓] 密码认证成功")
+        return client
+    except Exception as e:
+        print(f"[✗] 连接失败: {e}")
+        print("[提示] 1) 确认SSH密钥已添加到服务器authorized_keys")
+        print("       2) 或检查密码是否正确")
+        print("       3) 或通过宝塔面板Web终端手动部署")
+        sys.exit(1)
 
 
 def ssh_cmd(client, cmd, timeout=300):
@@ -49,17 +133,8 @@ def main():
     print(f"分支: dev")
     print("=" * 60)
 
-    # 连接服务器（密码认证）
-    print("\n[连接] SSH连接服务器...")
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    try:
-        client.connect(HOST, username=USER, password=PASSWORD, timeout=30, banner_timeout=30)
-        print("[✓] SSH连接成功")
-    except Exception as e:
-        print(f"[✗] SSH连接失败: {e}")
-        print("[提示] 服务器SSH可能间歇性无响应，请等待1-2分钟后重试，或通过宝塔面板Web终端手动部署")
-        sys.exit(1)
+    # 连接服务器
+    client = connect_server()
 
     # 1. Git强制同步
     print("\n[1/8] Git强制同步...")

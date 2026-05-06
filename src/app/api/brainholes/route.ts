@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { brainholeCreateSchema, brainholeQuerySchema } from "@/lib/validators/brainhole";
+import { ZodError } from "zod";
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     
     // 解析查询参数
     const { searchParams } = new URL(request.url);
@@ -115,6 +117,9 @@ export async function GET(request: NextRequest) {
       })
     );
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(apiError("VALIDATION_ERROR", error.issues[0]?.message || "参数校验失败"), { status: 400 });
+    }
     console.error("获取脑洞列表失败:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取脑洞列表失败"), { status: 500 });
   }
@@ -122,52 +127,64 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
+    }
     const validatedData = brainholeCreateSchema.parse(body);
 
-    // 创建脑洞
-    const brainhole = await db.brainhole.create({
-      data: {
-        title: validatedData.title,
-        scenario: validatedData.scenario,
-        contextTime: validatedData.contextTime,
-        contextLocation: validatedData.contextLocation,
-        contextCharacters: validatedData.contextCharacters,
-        difficulty: validatedData.difficulty,
-        authorId: session.user.id,
-        status: "pending",
-        source: "user",
-      },
-    });
-
-    // 创建标签关联
-    if (validatedData.tags && validatedData.tags.length > 0) {
-      // 首先确保标签存在
-      const tagPromises = validatedData.tags.map(async (tagName) => {
-        const tag = await db.tag.upsert({
-          where: { name: tagName },
-          update: {},
-          create: { name: tagName },
-        });
-
-        await db.brainholeTag.create({
-          data: {
-            brainholeId: brainhole.id,
-            tagId: tag.id,
-          },
-        });
+    // v7.0-test8: 使用事务包裹脑洞创建和标签关联
+    const brainhole = await db.$transaction(async (tx) => {
+      const created = await tx.brainhole.create({
+        data: {
+          title: validatedData.title,
+          scenario: validatedData.scenario,
+          contextTime: validatedData.contextTime,
+          contextLocation: validatedData.contextLocation,
+          contextCharacters: validatedData.contextCharacters,
+          difficulty: validatedData.difficulty,
+          authorId: userId,
+          status: "pending",
+          source: "user",
+        },
       });
 
-      await Promise.all(tagPromises);
-    }
+      if (validatedData.tags && validatedData.tags.length > 0) {
+        for (const tagName of validatedData.tags) {
+          const tag = await tx.tag.upsert({
+            where: { name: tagName },
+            update: {},
+            create: { name: tagName },
+          });
+
+          await tx.brainholeTag.create({
+            data: {
+              brainholeId: created.id,
+              tagId: tag.id,
+            },
+          });
+        }
+      }
+
+      return created;
+    });
 
     return NextResponse.json(apiResponse(brainhole), { status: 201 });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(apiError("VALIDATION_ERROR", error.issues[0]?.message || "请求体格式错误"), { status: 400 });
+    }
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
+    }
     console.error("创建脑洞失败:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建脑洞失败"), { status: 500 });
   }

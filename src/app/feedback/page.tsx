@@ -9,8 +9,12 @@ export default function FeedbackPage() {
   const [reactionCount, setReactionCount] = React.useState(0);
 
   React.useEffect(() => {
-    const reactions = JSON.parse(localStorage.getItem('xh_reactions') || '[]');
-    setReactionCount(reactions.length);
+    try {
+      const reactions = JSON.parse(localStorage.getItem('xh_reactions') || '[]');
+      setReactionCount(Array.isArray(reactions) ? reactions.length : 0);
+    } catch {
+      setReactionCount(0);
+    }
   }, []);
 
   return (

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { getCommentList, createComment, deleteComment } from "@/lib/zhihu-api";
 
 /**
@@ -7,6 +8,11 @@ import { getCommentList, createComment, deleteComment } from "@/lib/zhihu-api";
  */
 export async function GET(req: NextRequest) {
   try {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
+      return NextResponse.json({ status: 1, msg: "未登录", data: null }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const contentToken = searchParams.get("contentToken");
     const contentType = searchParams.get("contentType") as "pin" | "comment";
@@ -35,6 +41,11 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
+      return NextResponse.json({ status: 1, msg: "未登录", data: null }, { status: 401 });
+    }
     const body = await req.json();
     const { contentToken, contentType, content } = body;
 
@@ -60,6 +71,11 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
+      return NextResponse.json({ status: 1, msg: "未登录", data: null }, { status: 401 });
+    }
     const body = await req.json();
     const { commentId } = body;
 

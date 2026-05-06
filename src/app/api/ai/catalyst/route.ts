@@ -49,6 +49,8 @@ ${contextMessages}
     const apiKey = process.env.DEEPSEEK_API_KEY;
     if (apiKey) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -64,7 +66,9 @@ ${contextMessages}
             temperature: 0.9,
             max_tokens: 150,
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
         if (res.ok) {
           const result = await res.json();
           const content = result.choices?.[0]?.message?.content || "";
@@ -106,15 +110,8 @@ ${contextMessages}
     }).filter(p => p.length > 0);
 
     return NextResponse.json(apiResponse({ prompts, source }));
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Catalyst] Fatal error:", error);
-    return NextResponse.json(apiResponse({
-      prompts: [
-        "能多说一点吗？",
-        "如果是你，会怎么处理？",
-        "当时你是什么感受？",
-      ],
-      source: "fallback",
-    }));
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", error instanceof Error ? error.message : "AI催化生成失败"), { status: 500 });
   }
 }

@@ -31,6 +31,7 @@ const mimeTypes: Record<string, string> = {
 
 app.prepare().then(() => {
   const server = createServer(async (req, res) => {
+    console.log('[Server] Request:', req.url, 'host=', req.headers.host)
     try {
       // v5.3-fix: 显式处理 _next/static 静态资源（App Router+自定义server兼容）
       if (req.url && req.url.startsWith('/_next/')) {
@@ -41,6 +42,18 @@ app.prepare().then(() => {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
           fs.createReadStream(staticPath).pipe(res)
           return
+        }
+      }
+
+      // v7.0-fix7: 对 /spectate 进行服务端登录检查兜底（中间件对此路由执行异常）
+      if (req.url === '/spectate' || req.url?.startsWith('/spectate?')) {
+        const cookie = req.headers.cookie || '';
+        const hasSession = cookie.includes('next-auth.session-token');
+        if (!hasSession) {
+          res.statusCode = 307;
+          res.setHeader('Location', '/login');
+          res.end();
+          return;
         }
       }
 

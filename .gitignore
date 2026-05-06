@@ -35,3 +35,19 @@ DEPLOYMENT_SECRETS.md
 .env.local
 .env.production
 
+# Python deployment scripts with credentials (old versions)
+# NOTE: Only deploy_remote.py is kept (desensitized), all others removed
+*_deploy_*.py
+*_upload_*.py
+*_check_*.py
+*_verify_*.py
+*_fix_*.py
+*_diagnose_*.py
+*_rebuild_*.py
+
+# Credential files
+*.pem
+*.key
+secrets.*
+*credential*
+

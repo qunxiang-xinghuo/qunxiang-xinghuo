@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
@@ -24,6 +24,7 @@ function MultiWaitingContent() {
   const [matchId, setMatchId] = useState<string | null>(initialMatchId);
   const [matchData, setMatchData] = useState<any>(null);
   const [signalWaves, setSignalWaves] = useState(0);
+  const navTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 获取脑洞信息
   useEffect(() => {
@@ -44,7 +45,7 @@ function MultiWaitingContent() {
         setMatchData(data);
         if (data.status === 'matched' && data.roomId) {
           setPhase('matched');
-          setTimeout(() => router.push(`/room/${data.roomId}`), 1200);
+          navTimeoutRef.current = setTimeout(() => router.push(`/room/${data.roomId}`), 1200);
           return true;
         }
       }
@@ -84,7 +85,7 @@ function MultiWaitingContent() {
       });
       const result = await res.json();
       if (result.success && result.data?.roomId) {
-        setTimeout(() => router.push(`/room/${result.data.roomId}`), 1500);
+        navTimeoutRef.current = setTimeout(() => router.push(`/room/${result.data.roomId}`), 1500);
       } else {
         router.push('/room/1');
       }
@@ -92,6 +93,11 @@ function MultiWaitingContent() {
       router.push('/room/1');
     }
   }, [brainhole, router]);
+
+  // 清理导航timeout
+  useEffect(() => {
+    return () => { if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current); };
+  }, []);
 
   // 计时器 + 阶段降级 + 信号波
   useEffect(() => {

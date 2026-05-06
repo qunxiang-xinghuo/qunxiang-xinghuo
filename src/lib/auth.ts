@@ -36,8 +36,47 @@ declare module "next-auth/jwt" {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db) as any,
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
+    // v6.3-auth-fix3: JWT 有效期 24 小时，避免长期会话残留
+    maxAge: 24 * 60 * 60,
+    // 每 6 小时更新一次 session
+    updateAge: 6 * 60 * 60,
+  },
+  jwt: {
+    // JWT 签名密钥（fallback 到 NEXTAUTH_SECRET）
+    secret: process.env.NEXTAUTH_SECRET,
+  },
+  // v7.0-fix5: cookie 设为 session cookie（关闭浏览器即失效），
+  // 同时 JWT 仍保持 24 小时服务端有效期
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: 'next-auth.callback-url',
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
   },
   pages: {
     signIn: "/login",

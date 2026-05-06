@@ -69,12 +69,21 @@ export function useSocket() {
     socketRef.current?.emit('typing', { roomId, userId, identity })
   }, [])
 
+  // v6.1: 观众点赞
+  const sendLike = useCallback((roomId: string, userId: string, identity: string) => {
+    socketRef.current?.emit('send-like', { roomId, userId, identity })
+  }, [])
+
   const on = useCallback(<T = unknown>(event: string, handler: (data: T) => void) => {
     socketRef.current?.on(event, handler as (data: unknown) => void)
   }, [])
 
   const off = useCallback(<T = unknown>(event: string, handler: (data: T) => void) => {
     socketRef.current?.off(event, handler as (data: unknown) => void)
+  }, [])
+
+  const removeAllListeners = useCallback((event: string) => {
+    socketRef.current?.removeAllListeners(event)
   }, [])
 
   return {
@@ -85,7 +94,9 @@ export function useSocket() {
     sendMessage,
     markSpark,
     notifyTyping,
+    sendLike,
     on,
     off,
+    removeAllListeners,
   }
 }

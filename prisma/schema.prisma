@@ -45,9 +45,10 @@ model User {
   username      String?   @unique
   password      String?
   level         Int       @default(1)
-  sparkCount    Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  sparkCount      Int       @default(0)
+  tokenRevokedAt  DateTime? // v8.0: 登出时设置，用于服务器端 token 失效
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   accounts         Account[]
   sessions         Session[]
@@ -61,6 +62,7 @@ model User {
   collections      BrainholeCollection[]
   voteCasts        VoteCast[]
   assets           Asset[]
+  roomComments     RoomComment[]
 }
 
 model UserIdentity {
@@ -215,6 +217,7 @@ model Room {
   maxRound     Int?
   currentRound Int       @default(0)
   scene        String?
+  inviteCode   String?   @unique // v6.2: 邀请码（6位数字）
   createdAt    DateTime  @default(now())
   closedAt     DateTime?
 
@@ -225,9 +228,11 @@ model Room {
   votes         Vote[]
   inspirations  InspirationItem[]
   assets        Asset[]
+  comments      RoomComment[]
 
   @@index([status, type])
   @@index([brainholeId])
+  @@index([inviteCode])
 }
 
 model RoomParticipant {
@@ -330,6 +335,38 @@ model InspirationItem {
   @@index([roomId])
 }
 
+// ==================== 个人疗愈 ====================
+
+model HealingSession {
+  id        String   @id @default(cuid())
+  userId    String
+  status    String   @default("active") // active | closed
+  title     String?
+  topic     String?  // 用户自由输入的话题/情绪标签
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  closedAt  DateTime?
+
+  messages HealingMessage[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model HealingMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  senderId  String   // userId or 'agent_healer'
+  content   String   // AES-256-GCM 加密后的密文（base64）
+  identity  String
+  isAi      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  session HealingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
 // ==================== 故事草稿 ====================
 
 model StoryDraft {
@@ -359,17 +396,50 @@ model Asset {
   brainholeId  String?
   title        String
   summary      String?
+  content      String?  // v6.0: 精彩对白片段内容
+  identity     String?  // v6.0: 作者身份标签
   messageCount Int      @default(0)
   sparkCount   Int      @default(0)
   isPublic     Boolean  @default(false)
+  hotScore     Int      @default(0)  // v6.0: 热度值
   createdAt    DateTime @default(now())
 
   user      User       @relation(fields: [userId], references: [id])
   brainhole Brainhole? @relation(fields: [brainholeId], references: [id])
   room      Room?      @relation(fields: [roomId], references: [id])
+  likes     AssetLike[]
 
   @@index([userId, createdAt])
   @@index([isPublic, createdAt])
+  @@index([hotScore, createdAt])
+}
+
+// v8.1: 房间评论
+model RoomComment {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+}
+
+// v6.4: 火花点赞记录
+model AssetLike {
+  id        String   @id @default(cuid())
+  assetId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, userId])
+  @@index([assetId])
+  @@index([userId])
 }
 
 

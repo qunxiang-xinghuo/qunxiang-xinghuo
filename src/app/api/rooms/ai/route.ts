@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
+import { z } from "zod";
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function POST(request: NextRequest) {
   try {
     console.log("[AI Room API] ========== 开始创建AI房间 ==========");
 
-    const session = await getServerSession(authOptions);
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
-    const userId = session?.user?.id || guestId || `guest-${Date.now()}`;
-    console.log("[AI Room API] userId:", userId, "session存在:", !!session, "guestId:", guestId);
+    if (!userId) {
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
+    }
+    console.log("[AI Room API] userId:", userId, "token存在:", !!token, "guestId:", guestId);
 
     let body;
     try {
@@ -22,12 +26,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
     }
 
-    const { brainholeId, identity } = body;
+    const createAiRoomSchema = z.object({
+      brainholeId: z.string().optional(),
+      identity: z.string().min(1, "身份不能为空").max(100, "身份不能超过100字"),
+      agents: z.array(z.object({
+        name: z.string().min(1).max(50),
+        persona: z.string().min(1).max(50),
+      })).max(5, "最多5个Agent").optional(),
+    });
 
-    if (!identity) {
-      console.error("[AI Room API] 缺少identity参数");
-      return NextResponse.json(apiError("BAD_REQUEST", "缺少身份参数(identity)"), { status: 400 });
+    const validation = createAiRoomSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(apiError("VALIDATION_ERROR", validation.error.issues[0]?.message || "参数格式错误"), { status: 400 });
     }
+
+    const { brainholeId, identity, agents: agentConfigs } = validation.data;
+
+    // v6.1: 多Agent协作支持
+    const agents = Array.isArray(agentConfigs) && agentConfigs.length > 0
+      ? agentConfigs
+      : [{ name: '刘看山', persona: 'catalyst' }];
 
     // v4.7-fix: 确保用户记录在User表中存在（Prisma外键约束要求）
     console.log("[AI Room API] 检查/创建用户记录...");
@@ -43,24 +61,32 @@ export async function POST(request: NextRequest) {
       });
       console.log("[AI Room API] 用户记录已确认:", userId);
     } catch (userErr: any) {
-      console.error("[AI Room API] 用户记录创建失败:", userErr.message);
-      // 继续尝试，也许用户已存在
+      // v7.0-test2: 仅吞掉唯一约束冲突（用户已存在），其他错误向上抛出
+      if (userErr.code === 'P2002') {
+        console.log("[AI Room API] 用户已存在，继续:", userId);
+      } else {
+        console.error("[AI Room API] 用户记录创建失败:", userErr.message);
+        throw userErr;
+      }
     }
 
-    // v4.7-fix: 确保AI用户记录在User表中存在
-    try {
-      await db.user.upsert({
-        where: { id: "liu_kanshan_ai" },
-        update: {},
-        create: {
-          id: "liu_kanshan_ai",
-          name: "刘看山",
-          email: "liu_kanshan_ai@system.local",
-        },
-      });
-      console.log("[AI Room API] AI用户记录已确认: liu_kanshan_ai");
-    } catch (aiUserErr: any) {
-      console.error("[AI Room API] AI用户记录创建失败:", aiUserErr.message);
+    // v6.1: 确保所有AI Agent用户记录在User表中存在
+    for (const agent of agents) {
+      const agentUserId = `agent_${agent.persona}`;
+      try {
+        await db.user.upsert({
+          where: { id: agentUserId },
+          update: {},
+          create: {
+            id: agentUserId,
+            name: agent.name,
+            email: `${agentUserId}@system.local`,
+          },
+        });
+        console.log("[AI Room API] AI Agent用户记录已确认:", agentUserId);
+      } catch (aiUserErr: any) {
+        console.error("[AI Room API] AI Agent用户记录创建失败:", aiUserErr.message);
+      }
     }
 
     // 如果没有指定脑洞，随机抽取一个
@@ -78,7 +104,7 @@ export async function POST(request: NextRequest) {
         console.log("[AI Room API] 使用指定脑洞:", brainholeTitle);
       } else {
         console.warn("[AI Room API] 指定脑洞不存在:", finalBrainholeId);
-        finalBrainholeId = null;
+        finalBrainholeId = undefined;
       }
     }
 
@@ -137,27 +163,30 @@ export async function POST(request: NextRequest) {
     });
     console.log("[AI Room API] 用户参与者添加成功");
 
-    // 添加AI参与者（刘看山）
-    console.log("[AI Room API] 添加AI参与者...");
-    await db.roomParticipant.create({
-      data: {
-        roomId: room.id,
-        userId: "liu_kanshan_ai",
-        identity: "刘看山",
-        role: "actor",
-        isOnline: true,
-      },
-    });
-    console.log("[AI Room API] AI参与者添加成功");
+    // v6.1: 添加AI Agent参与者
+    console.log("[AI Room API] 添加AI Agent参与者...");
+    for (const agent of agents) {
+      await db.roomParticipant.create({
+        data: {
+          roomId: room.id,
+          userId: `agent_${agent.persona}`,
+          identity: agent.name,
+          role: "ai_agent",
+          isOnline: true,
+        },
+      });
+      console.log("[AI Room API] AI Agent添加成功:", agent.name, `agent_${agent.persona}`);
+    }
 
-    // v4.8-fix: 更自然的欢迎消息
+    // v6.1: 第一个Agent的欢迎消息
     console.log("[AI Room API] 添加欢迎消息...");
+    const welcomeAgent = agents[0];
     await db.roomMessage.create({
       data: {
         roomId: room.id,
-        senderId: "liu_kanshan_ai",
+        senderId: `agent_${welcomeAgent.persona}`,
         content: `"${brainholeTitle}"...这个话题我正好有点想法。你先说，我听着。`,
-        identity: "刘看山",
+        identity: welcomeAgent.name,
         isAiPrompt: false,
       },
     });
@@ -171,6 +200,7 @@ export async function POST(request: NextRequest) {
       brainholeScenario,
       brainholeId: finalBrainholeId,
       userId,
+      agents,
     }), { status: 201 });
   } catch (error: any) {
     console.error("[AI Room API] ========== 创建AI房间失败 ==========");

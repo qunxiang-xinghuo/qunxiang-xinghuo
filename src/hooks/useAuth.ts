@@ -21,21 +21,25 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. 优先从 localStorage 读取
-    const savedUser = localStorage.getItem('xh_user');
-    const savedIdentity = localStorage.getItem('xh_identity');
+    let isMounted = true;
 
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-        setLoading(false);
-        return;
-      } catch {
+    // v6.3-auth-fix3: session 明确为未认证时，无条件清除本地残留数据
+    if (sessionStatus === 'unauthenticated') {
+      const savedUser = localStorage.getItem('xh_user');
+      const savedUserId = localStorage.getItem('xh_user_id');
+      const savedIdentity = localStorage.getItem('xh_identity');
+
+      if (savedUser || savedUserId || savedIdentity) {
+        console.log('[useAuth] Session 已失效，清除所有本地残留用户数据');
         localStorage.removeItem('xh_user');
+        localStorage.removeItem('xh_identity');
+        localStorage.removeItem('xh_user_id');
       }
+      if (isMounted) { setUser(null); setLoading(false); }
+      return;
     }
 
-    // 2. 其次从 NextAuth session 读取
+    // 1. 优先从 NextAuth session 读取（最可信）
     if (sessionStatus === 'authenticated' && session?.user) {
       const authUser: User = {
         id: session.user.id || 'user-' + Date.now(),
@@ -48,13 +52,26 @@ export function useAuth() {
         level: session.user.level || 1,
         sparkCount: session.user.sparkCount || 0,
       };
-      setUser(authUser);
-      localStorage.setItem('xh_user', JSON.stringify(authUser));
-      setLoading(false);
+      if (isMounted) { setUser(authUser); localStorage.setItem('xh_user', JSON.stringify(authUser)); setLoading(false); }
       return;
     }
 
-    // 3. 最后从 identity 创建临时用户
+    // 2. session 还在加载中，用 localStorage 做临时兜底
+    if (sessionStatus === 'loading') {
+      const savedUser = localStorage.getItem('xh_user');
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser);
+          if (isMounted) { setUser(parsed); setLoading(false); }
+          return;
+        } catch {
+          localStorage.removeItem('xh_user');
+        }
+      }
+    }
+
+    // 3. 最后从 identity 创建临时用户（仅用于匿名模式）
+    const savedIdentity = localStorage.getItem('xh_identity');
     if (savedIdentity) {
       try {
         const identity = JSON.parse(savedIdentity);
@@ -65,15 +82,15 @@ export function useAuth() {
           level: 1,
           sparkCount: 0,
         };
-        setUser(tempUser);
-        setLoading(false);
+        if (isMounted) { setUser(tempUser); setLoading(false); }
         return;
       } catch {
         localStorage.removeItem('xh_identity');
       }
     }
 
-    setLoading(false);
+    if (isMounted) setLoading(false);
+    return () => { isMounted = false; };
   }, [session, sessionStatus]);
 
   const saveIdentity = (identity: User['identity']) => {
@@ -135,6 +152,7 @@ export function useAuth() {
     setUser(null);
     localStorage.removeItem('xh_user');
     localStorage.removeItem('xh_identity');
+    localStorage.removeItem('xh_user_id');
   };
 
   return {

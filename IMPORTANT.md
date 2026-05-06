@@ -1,185 +1,210 @@
-# 🔐 群像·星火 重要信息记录
+# 群像·星火 — 重要操作记录
 
-> 原则：每次100% context前，关键信息必须记录在此。犯过的问题不再犯。
+## v8.0 登录系统强制守卫修复 — 部署教程
+
+> 最后更新：2026-05-06
 
 ---
 
-## 一、服务器信息
+### 🔴 关键问题1：代码源不对
 
-| 项目 | 值 |
-|------|-----|
-| IP | `81.70.59.228` |
-| 系统 | 腾讯云 OpenCloudOS 9.4 |
-| 用户 | `root` |
-| 密码 | `F!D)7n_mc8Mq}bx=` |
-| SSH端口 | `22` |
-| 部署路径 | `/www/wwwroot/qunxiang-xinghuo` |
-| PM2进程名 | `qunxiang-xinghuo` |
-| 面板 | 宝塔面板（路径特征 `/www/wwwroot`） |
+你之前执行的命令：
+```bash
+git pull origin dev   # ❌ 错误！origin 是 GitHub，代码不是最新的
+```
 
-## 二、部署命令（一键复制）
+**正确命令**：
+```bash
+git pull fqunxiang dev   # ✅ 正确！fqunxiang 是自建服务器，有最新 v8.0 修复
+```
+
+---
+
+### 🔴 关键问题2：SSH 密钥权限
+
+如果你遇到：
+```
+git@fqunxiang.x404.online: Permission denied (publickey).
+```
+
+**原因**：服务器上没有配置访问 `fqunxiang` 的 SSH 私钥。
+
+**解决**：使用 deploy.sh 中配置的 SSH 命令：
+```bash
+# 方法1：设置环境变量后拉取
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+
+# 方法2：直接用 SSH 命令拉取
+GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222' git pull fqunxiang dev
+
+# 方法3：如果用不了 SSH，改用 HTTPS（需要密码）
+# git pull https://fqunxiang.x404.online:2222/qunxiang/qunxiang-xinghuo.git dev
+```
+
+---
+
+### ✅ 正确的完整部署步骤（在服务器上执行）
 
 ```bash
-cd /www/wwwroot/qunxiang-xinghuo \
-  && git fetch origin dev \
-  && git reset --hard origin/dev \
-  && git clean -fd \
-  && npm install \
-  && npx prisma generate \
-  && npx prisma db push \
-  && NODE_ENV=production npm run build \
-  && pm2 restart qunxiang-xinghuo \
-  && pm2 save
+# 1. 进入项目目录
+cd /www/wwwroot/qunxiang-xinghuo
+
+# 2. 从正确的远程拉取最新代码（fqunxiang，不是 origin）
+git pull fqunxiang dev
+
+# 3. 完全清除 Next.js 构建缓存（防止任何缓存残留）
+rm -rf .next
+
+# 4. 安装依赖（如果有新增包）
+npm install
+
+# 5. 重新构建
+npm run build
+
+# 6. 重启 PM2 进程
+pm2 restart all
+
+# 7. 确认服务状态
+pm2 status
 ```
 
-> 含 Prisma schema 变更时必须执行 `npx prisma db push`！
+---
 
-**本地paramiko部署脚本**：`deploy_remote.py`（Python + paramiko，密码认证）
+### 📋 验证登录守卫是否生效
 
+**方法1：用 curl 测试（无 cookie）**
 ```bash
-python deploy_remote.py
+# 未登录访问受保护页面 → 应该返回 307 重定向到 /login
+curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" --cookie "" http://localhost/home
+curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" --cookie "" http://localhost/spectate
+curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" --cookie "" http://localhost/library
+
+# 预期输出：
+# 307 /login
+# 307 /login
+# 307 /login
 ```
 
-## 三、Git仓库
+**方法2：用浏览器测试**
+1. 打开浏览器的无痕/隐私模式
+2. 访问 `http://81.70.59.228/home`
+3. 必须自动跳转到登录页，且**看不到任何页面内容**（空白后直接跳转）
+4. 登录页上**绝对不能有底部导航栏**
 
-| 项目 | 值 |
-|------|-----|
-| 远程 | `github.com:qunxiang-xinghuo/qunxiang-xinghuo` |
-| 当前分支 | `dev` |
-| 本地路径 | `C:\Users\Dell\qunxiang-xinghuo` |
+---
 
-## 四、环境变量（服务器 `.env`）
+### 🔧 常见问题排查
 
-```
-DEEPSEEK_API_KEY="sk-181c8aa2e8f1469d9a60698f6d79d71d"
-ZHIHU_API_KEY="xrUmjOP1pferLLYrQufOIrvlbT3tFvct"
-DATABASE_URL="file:./dev.db"
-```
-
-## 五、已知部署问题与解决方案
-
-### 问题1：服务器GitHub HTTPS连接超时
-- **现象**：`git pull origin dev` 卡住135秒失败
-- **根因**：服务器工作目录有大量未提交的本地修改（`M`/`??`标记），导致merge困难
-- **解决**：`git reset --hard origin/dev && git clean -fd` 强制同步（放弃服务器本地修改）
-- **教训**：服务器代码永远以GitHub的`dev`分支为唯一真理源
-
-### 问题2：Windows控制台Unicode编码错误
-- **现象**：`UnicodeEncodeError: 'gbk' codec can't encode character '\u2713'`
-- **根因**：Windows PowerShell默认GBK编码，npm输出的✓字符无法显示
-- **解决**：Python脚本中 `sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')`
-- **教训**：跨平台部署脚本必须处理编码问题
-
-### 问题3：SSH密钥认证失败 → 回退密码认证
-- **现象**：`id_ed25519` 公钥被服务器拒绝，paramiko报错 `AuthenticationException`
-- **根因**：服务器上 `~/.ssh/authorized_keys` 可能未包含本地公钥，或sshd配置变更
-- **解决**：`deploy_remote.py` 使用密码 `F!D)7n_mc8Mq}bx=` 通过paramiko.connect()
-- **教训**：密钥和密码双备份，脚本优先尝试密钥、fallback到密码
-
-### 问题4：SSH连接超时（2026-05-03间歇性）
-- **现象**：ping正常(20ms)，端口22通，但SSH握手卡住30~300秒超时
-- **根因**：服务器SSH服务间歇性无响应（可能是连接数打满或sshd进程异常）
-- **解决**：等待数分钟后重试；或通过宝塔面板Web终端执行命令
-- **教训**：SSH不是100%可靠，必须保留宝塔面板作为备用通道
-
-### 问题5：页面空白（v5.3最严重bug，v5.5复发）
-- **现象**：部署后访问线上页面显示空白/只有loading spinner
-- **根因1（直接原因）**：App Router + 自定义server.ts组合下，Next.js `handle()` 无法正确serve生产build的静态资源（`/_next/static/chunks/*`），所有JS/CSS返回404
-- **根因2（深层原因）**：`output: 'standalone'` 模式下，standalone/server.js也未自动包含static文件；`server.ts` + `tsx` 在生产模式下静态文件服务失效
-- **根因3（路径错误-v5.5复发）**：server.ts中 `path.join(cwd, '.next', req.url)` 导致路径为 `.next/_next/static/...`（多了一个`_next`层级），指向不存在的目录
-- **根因4（表象误导）**：BubbleCloud等客户端组件在SSR时显示loading spinner，客户端JS无法加载导致永远卡住，看起来像"空白"
-- **解决**：修改 `server.ts`，显式添加 `/_next/` 静态文件路由，使用 `req.url.replace('/_next/', '')` 正确拼接路径
-- **教训**：
-  - App Router + 自定义server需显式处理 `_next/static` 路由
-  - **部署后第一件事（铁律）**：curl验证 `_next/static/chunks/*.js` 是否200
-  - **关键修复代码不要轻易改动**——server.ts静态资源处理是生死线
-  - 永远不要假设Next.js会自动处理好所有静态资源
-  - **验证命令**：`JS=$(ls .next/static/chunks/*.js | head -1 | sed 's|.*/chunks/||') && curl -sI http://localhost:3000/_next/static/chunks/$JS`
-
-## 六、技术栈版本锁定
-
-| 技术 | 版本 |
-|------|------|
-| Next.js | 16.2.4 (Turbopack) |
-| TypeScript | ~5.7 |
-| Tailwind CSS | v4 |
-| Prisma | 7.8.0 |
-| next-auth | 4.24.14 |
-| Socket.IO | ~4.x |
-
-## 七、刘看山官方形象（已验证）
-
-- **URL**：`https://pic1.zhimg.com/da8e974dc.jpg`
-- **尺寸**：640x640
-- **类型**：知乎官方卡通北极狐
-- **文件**：`src/components/layout/LiuKanshanAvatar.tsx`
-- **回退**：`onError` → CSS简笔画
-
-## 八、TDD文档位置（用户常找不到）
-
-| 文档 | 实际路径 | 说明 |
-|------|---------|------|
-| **TDD v6.0** | `docs/qunxiangxinhuo-TDD-v6.0.md` | v6.0全面重构需求文档（当前版本） |
-| TDD v5.0 | `docs/qunxiangxinhuo-TDD-v5.0.md` | 泡泡脑洞+四级匹配（历史版本） |
-| TDD v4.5 | `TDD-v4.5-泡泡脑洞系统.md` | 泡泡系统技术细节 |
-| TDD v1.0~v4.3 | `docs/qunxiangxinhuo-TDD-v*.md` | 历史版本 |
-
-> 用户找不到TDD？它在 `docs/` 子目录里，不在根目录。
-
-## 九、刘看山形象资源
-
-| 资源 | 路径 | 用途 |
+| 问题 | 原因 | 解决 |
 |------|------|------|
-| 官方图片 | `public/liukanshan.jpg` | 所有页面共用 |
-| 组件 | `src/components/layout/LiuKanshanAvatar.tsx` | 等待页/超时页/故事页 |
-| 浮动按钮 | `src/components/layout/LiuKanshanFloat.tsx` | 首页右下角浮动（当前未引用） |
-| 欢迎弹窗 | `src/components/layout/LiuKanshanWelcome.tsx` | 首页新用户引导（当前未引用） |
-
-## 十、关键路由速查
-
-| 功能 | 路由 |
-|------|------|
-| 登录页 | `/` (根路径) |
-| 发现页（TOP3+火花+模式入口） | `/home` |
-| 火花页（公开火花墙） | `/library` |
-| 故事大厅 | `/story-hall` |
-| 我的页 | `/profile` |
-| 双人模式匹配 | `/duo-match` |
-| 双人等待页 | `/duo-waiting` |
-| 双人/AI对白室 | `/room/[id]` |
-| 知乎热搜 | `/zhihu-search` |
-| 知乎直答 | `/zhihu-zhida` |
-
-## 十一、v6.0 全面重构速查
-
-### 11.1 11项需求清单
-| # | 需求 | 状态 |
-|---|------|------|
-| 1 | 登录页增加项目简介 | ✅ |
-| 2 | 发现页：取消泡泡→TOP3排行榜+火花展示+4模式入口 | ✅ |
-| 3 | 底部导航改为4Tab | ✅ |
-| 4 | 火花页（原素材库）→公开火花墙 | ✅ |
-| 5 | 故事页：快速匹配/我发起的/其他人的 | ✅ |
-| 6 | 我的页：头像左上+名称放大 | ✅ |
-| 7 | 对白室极简化 | ✅ |
-| 8 | AI催化升级：DeepSeek+知乎直答双API | ✅ |
-| 9 | 双人匹配修复：15秒→刘看山AI | ✅ |
-| 10 | 脑洞降低门槛：日常场景50字以内 | ✅ |
-| 11 | 文档更新+本地自检+Git推送 | ✅ |
-
-### 11.2 新增API
-| API | 说明 |
-|-----|------|
-| `POST /api/ai/catalyst` | AI动态催化问题 |
-| `GET /api/sparks/public` | 公开火花墙 |
-| `GET /api/sparks/mine` | 我的火花 |
-| `GET /api/stories/mine` | 我的故事 |
-
-### 11.3 登录页装饰泡泡
-- 7个透明泡泡，右下角缓慢上升
-- radial-gradient实现肥皂泡质感
-- framer-motion驱动，不同延迟错开
+| 未登录还能看到页面内容 | AppShell 守卫失效 | 检查 `src/components/layout/AppShell.tsx` 是否存在 |
+| 登录页有底部导航栏 | BottomNav 未隐藏 | 检查 `src/components/layout/BottomNav.tsx` 是否有 `/login` 判断 |
+| 退出登录后还能访问 | Token 未服务器端失效 | 检查 `prisma/schema.prisma` 是否有 `tokenRevokedAt` 字段 |
+| 构建失败 | TypeScript 错误 | 执行 `npm run build` 查看具体错误 |
+| PM2 启动失败 | 端口占用 | `pm2 delete all && pm2 start npm --name "qunxiang-xinghuo" -- start` |
 
 ---
 
-> 最后更新：2026-05-03 v6.0 全面重构+登录页美化 部署完成 ✅
+### 📁 文件变更清单（v8.0）
+
+```
+modified:   middleware.ts                          # 添加 no-store 头
+modified:   next.config.ts                         # /spectate 禁用缓存
+modified:   prisma/schema.prisma                    # 新增 tokenRevokedAt
+modified:   scripts/deploy.sh                       # 完全清除 .next + Nginx 重启
+modified:   src/app/api/users/me/route.ts           # Token 撤销检查
+modified:   src/app/home/page.tsx                   # useRequireAuth 门禁
+modified:   src/app/library/page.tsx                # useRequireAuth 门禁
+modified:   src/app/profile/page.tsx                # useRequireAuth + 登出增强
+modified:   src/app/settings/page.tsx               # useRequireAuth 门禁
+modified:   src/app/spectate/page.tsx               # 服务端守卫 + 客户端重定向
+modified:   src/app/spectate/SpectateClient.tsx     # useRequireAuth 门禁
+modified:   src/components/layout/AppShell.tsx       # 渲染级空白屏守卫
+modified:   src/components/layout/BottomNav.tsx      # /login 最优先返回 null
+new file:   src/app/api/auth/logout/route.ts        # 服务器端登出 API
+new file:   src/hooks/useRequireAuth.ts             # 统一认证门禁 hook
+new file:   src/lib/auth-utils.ts                   # Token 撤销辅助函数
+```
+
+---
+
+### 🖥️ 服务器部署操作记录
+
+**2026-05-06 服务器手动部署**
+```bash
+# 1. 进入目录
+cd /www/wwwroot/qunxiang-xinghuo
+
+# 2. 设置 SSH 密钥环境变量（解决 Permission denied）
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+
+# 3. 从自建服务器拉取最新代码
+git pull fqunxiang dev
+# 结果：Already up to date
+
+# 4. 完全清除 Next.js 构建缓存
+rm -rf .next
+
+# 5. 安装依赖
+npm install
+# 结果：up to date in 4s
+
+# 6. 构建
+npm run build
+# 结果：✓ Compiled successfully in 18.2s
+#        ✓ 66 pages + 所有 API routes
+
+# 7. 重启 PM2
+pm2 restart all
+# 结果：[qunxiang-xinghuo](0) ✓ online pid=694021
+```
+
+**服务器验证测试**
+```bash
+curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" --cookie "" http://localhost/home
+# 结果：307 http://localhost/login ✅
+
+curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" --cookie "" http://localhost/spectate
+# 结果：307 http://localhost/login ✅
+```
+
+### 🧪 测试记录
+
+**2026-05-06 v8.0 最终测试**
+- 构建状态：✅ 66 pages + 所有 API routes 全部通过
+- 无 cookie 访问测试（15个受保护页面）：全部 307 → `/login`
+- 公开页面测试（/, /login, /register）：全部 200
+- API 测试：`/api/users/me` 无 cookie → 401，`/api/auth/logout` → 200
+- 服务器部署状态：✅ 已部署，PM2 online
+
+---
+
+## v8.0 TOP3 火花墙改造 — 部署记录
+
+**2026-05-06 v8.0-spark-wall 部署**
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm install
+npm run build
+pm2 restart all
+```
+
+**新增文件清单**
+- `src/app/api/sparks/top/route.ts` — TOP3 火花排行榜 API
+- `src/app/api/sparks/[id]/route.ts` — 火花详情 API
+- `src/app/spark-detail/[id]/page.tsx` — 火花详情页（服务端）
+- `src/app/spark-detail/[id]/SparkDetailClient.tsx` — 微信聊天风格展示
+
+**修改文件清单**
+- `src/app/home/page.tsx` — TOP3 从脑洞排行改为火花排行
+- `middleware.ts` — 添加 `/spark-detail` 路由保护
+
+**验证结果**
+- 构建：✅ 67 pages 全部通过
+- 公开页面：✅ / /login /register 全部 200
+- 登录守卫：✅ /home /library /profile /settings /spectate /solo-match /duo-match /healing /story-hall 全部 307→/login
+- 已知问题：✅ opacity:0 / BottomNav / findUnique / useSearchParams 无复现

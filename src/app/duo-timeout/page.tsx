@@ -14,6 +14,7 @@ function DuoTimeoutContent() {
   const matchId = searchParams.get('matchId');
   const round = parseInt(searchParams.get('round') || '1', 10);
   const [choice, setChoice] = useState<Choice | null>(null);
+  const [error, setError] = useState('');
 
   const handleChooseAI = async () => {
     setChoice('ai');
@@ -66,12 +67,12 @@ function DuoTimeoutContent() {
       } else {
         console.error('[DuoTimeout] 创建AI房间失败:', result);
         const errMsg = result.error?.message || result.message || '创建房间失败';
-        alert('创建房间失败: ' + errMsg + '，请返回首页重试');
+        setError('创建房间失败: ' + errMsg + '，请返回首页重试');
         setChoice(null);
       }
     } catch (err: any) {
       console.error('[DuoTimeout] 创建AI房间异常:', err);
-      alert('网络异常: ' + (err.message || '请检查网络连接') + '，请返回首页重试');
+      setError('网络异常: ' + (err.message || '请检查网络连接') + '，请返回首页重试');
       setChoice(null);
     }
   };
@@ -134,6 +135,16 @@ function DuoTimeoutContent() {
         </motion.div>
 
         {/* 按钮组 */}
+        {error && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-xs text-red-400 text-center bg-red-500/10 rounded-lg py-2 px-4 mb-4"
+          >
+            {error}
+          </motion.p>
+        )}
+
         <motion.div
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

@@ -1,7 +1,6 @@
 'use client';
 
-'use client';
-
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
@@ -14,6 +13,9 @@ const features = [
 ];
 
 export default function StoryPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   return (
     <div className="flex flex-col h-full page-gradient">
       <TopBar title="故事" />
@@ -21,7 +23,7 @@ export default function StoryPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 overflow-y-auto no-scrollbar">
         <div className="text-center py-8">
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={mounted ? { scale: 0.8, opacity: 0 } : false}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
           >
@@ -29,7 +31,7 @@ export default function StoryPage() {
           </motion.div>
 
           <motion.h2
-            initial={{ y: 10, opacity: 0 }}
+            initial={mounted ? { y: 10, opacity: 0 } : false}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="text-lg font-bold text-white mb-2"
@@ -37,7 +39,7 @@ export default function StoryPage() {
             故事大厅
           </motion.h2>
           <motion.p
-            initial={{ y: 10, opacity: 0 }}
+            initial={mounted ? { y: 10, opacity: 0 } : false}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="text-sm text-slate-600 mb-6"
@@ -46,7 +48,7 @@ export default function StoryPage() {
           </motion.p>
 
           <motion.div
-            initial={{ y: 10, opacity: 0 }}
+            initial={mounted ? { y: 10, opacity: 0 } : false}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
             className="flex items-center gap-2 justify-center mb-8"
@@ -61,7 +63,7 @@ export default function StoryPage() {
               return (
                 <motion.div
                   key={feature.title}
-                  initial={{ x: -20, opacity: 0 }}
+                  initial={mounted ? { x: -20, opacity: 0 } : false}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
                   className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-slate-600/20 hover:bg-white/[0.05] transition-all"

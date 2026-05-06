@@ -4,38 +4,42 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, Flame, Zap, Users, Sparkles, ChevronRight,
+  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye, Sparkles,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
-interface Brainhole {
+interface Top3Item {
   id: string;
-  title: string;
-  category: string;
-  hotScore: number;
-  heat?: number;
-  scene: string;
+  brainholeTitle: string;
+  identityPair: string;
+  sparkCount: number;
+  roomId: string | null;
 }
 
 export default function HomePage() {
   const router = useRouter();
-  const [top3, setTop3] = useState<Brainhole[]>([]);
-  const [sparks, setSparks] = useState<any[]>([]);
+  const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
+  const [top3, setTop3] = useState<Top3Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // v8.0-login-fix: 页面级认证门禁
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     async function init() {
       try {
-        // 获取今日最热 TOP3
-        const res = await fetch('/api/brainholes/bubble?limit=10');
+        const res = await fetch('/api/sparks/top?limit=3');
         const data = await res.json();
         if (data.data?.list) {
-          setTop3(data.data.list.slice(0, 3));
+          setTop3(data.data.list);
         }
-        // 获取最新火花片段
-        const sparkRes = await fetch('/api/sparks/public?limit=6');
-        const sparkData = await sparkRes.json();
-        setSparks(sparkData.data?.list || []);
       } catch (e) {
         console.error('首页加载失败:', e);
       } finally {
@@ -47,40 +51,44 @@ export default function HomePage() {
 
   const modes = [
     {
-      key: 'duo',
-      title: '双人模式',
-      desc: '与陌生人配对，即兴对话',
-      icon: Users,
-      color: 'from-[#e2b04a]/20 to-orange-500/20',
-      iconColor: 'text-[#e2b04a]',
-      path: '/duo-match',
-    },
-    {
-      key: 'story',
-      title: '故事大厅',
-      desc: '多人共创故事',
-      icon: Zap,
-      color: 'from-[#74b9ff]/20 to-blue-500/20',
-      iconColor: 'text-[#74b9ff]',
-      path: '/story-hall',
-    },
-    {
-      key: 'random',
-      title: '随机匹配',
-      desc: '一键开始，无需选择',
-      icon: Sparkles,
-      color: 'from-[#a29bfe]/20 to-purple-500/20',
-      iconColor: 'text-[#a29bfe]',
-      path: '/duo-match?random=true',
-    },
-    {
-      key: 'solo',
-      title: 'AI 对练',
+      key: 'ai',
+      title: '人机交互模式',
       desc: '与刘看山一对一对话',
-      icon: Flame,
+      icon: Bot,
       color: 'from-[#00b894]/20 to-emerald-500/20',
       iconColor: 'text-[#00b894]',
       path: '/solo-match',
+      comingSoon: false,
+    },
+    {
+      key: 'duo',
+      title: '双人对白模式',
+      desc: '与陌生人配对，即兴对话',
+      icon: MessageCircle,
+      color: 'from-[#e2b04a]/20 to-orange-500/20',
+      iconColor: 'text-[#e2b04a]',
+      path: '/duo-match',
+      comingSoon: false,
+    },
+    {
+      key: 'multi',
+      title: '多人组队模式',
+      desc: '多人共创故事',
+      icon: Users,
+      color: 'from-[#74b9ff]/20 to-blue-500/20',
+      iconColor: 'text-[#74b9ff]',
+      path: '/story-hall',
+      comingSoon: true,
+    },
+    {
+      key: 'spectate',
+      title: '观看模式',
+      desc: '实时围观公开房间对白',
+      icon: Eye,
+      color: 'from-[#ff6b6b]/20 to-red-500/20',
+      iconColor: 'text-[#ff6b6b]',
+      path: '/spectate',
+      comingSoon: false,
     },
   ];
 
@@ -89,77 +97,62 @@ export default function HomePage() {
       <PageHeader title="发现" subtitle="今日灵感" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* 今日最热 TOP3 */}
+        {/* v8.1: TOP3 极简文字列表 */}
         <section className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-[#e2b04a]" />
-            <h2 className="text-sm font-semibold text-white/90">今日最热</h2>
+            <h2 className="text-sm font-semibold text-white/90">今日最热火花</h2>
+            <span className="text-[10px] text-white/20 ml-1">已完结对白精选</span>
           </div>
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />
+                <div key={i} className="h-14 rounded-xl bg-white/5 animate-pulse" />
               ))}
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {top3.map((item, idx) => (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={mounted ? { opacity: 0, y: 8 } : false}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  onClick={() => router.push(`/duo-match?brainholeId=${item.id}`)}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all cursor-pointer"
+                  transition={{ delay: idx * 0.08 }}
+                  onClick={() => item.roomId && router.push(`/room/${item.roomId}`)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                    item.roomId
+                      ? 'hover:bg-white/[0.04] active:scale-[0.99] cursor-pointer'
+                      : 'opacity-50 cursor-default'
+                  }`}
                 >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                  {/* 排名 */}
+                  <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                     idx === 0 ? 'bg-[#e2b04a]/20 text-[#e2b04a]' :
-                    idx === 1 ? 'bg-white/10 text-white/70' :
-                    'bg-[#74b9ff]/10 text-[#74b9ff]'
+                    idx === 1 ? 'bg-white/10 text-white/60' :
+                    'bg-[#74b9ff]/10 text-[#74b9ff]/70'
                   }`}>
                     {idx + 1}
                   </div>
+                  {/* 极简信息 */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white/90 font-medium truncate">{item.title}</p>
-                    <p className="text-[11px] text-white/40 truncate mt-0.5">{item.scene || item.category}</p>
+                    <p className="text-[13px] text-white/80 truncate font-medium">{item.brainholeTitle}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[11px] text-white/30">{item.identityPair}</span>
+                      <span className="text-[10px] text-white/15">·</span>
+                      <span className="flex items-center gap-0.5 text-[11px] text-[#e2b04a]/40">
+                        <Flame className="w-3 h-3" />
+                        {item.sparkCount}
+                      </span>
+                    </div>
                   </div>
-                  <Flame className="w-3.5 h-3.5 text-[#e2b04a]/60" />
-                  <span className="text-[11px] text-white/30 flex-shrink-0">{item.heat || item.hotScore || 0}</span>
-                  <ChevronRight className="w-4 h-4 text-white/20" />
+                  {item.roomId && (
+                    <ChevronRight className="w-4 h-4 text-white/15 flex-shrink-0" />
+                  )}
                 </motion.div>
               ))}
             </div>
           )}
         </section>
-
-        {/* 火花展示 */}
-        {sparks.length > 0 && (
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#74b9ff]" />
-                <h2 className="text-sm font-semibold text-white/90">最新火花</h2>
-              </div>
-              <button onClick={() => router.push('/library')} className="text-[11px] text-white/30 hover:text-[#e2b04a] transition-colors">
-                查看更多
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {sparks.slice(0, 4).map((spark, idx) => (
-                <motion.div
-                  key={spark.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.08 }}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5"
-                >
-                  <p className="text-xs text-white/70 leading-relaxed line-clamp-3">{spark.content}</p>
-                  <p className="text-[10px] text-white/25 mt-2 truncate">{spark.identity || '匿名用户'}</p>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* 四大模式入口 */}
         <section className="mb-4">
@@ -170,12 +163,23 @@ export default function HomePage() {
               return (
                 <motion.button
                   key={mode.key}
-                  initial={{ opacity: 0, y: 15 }}
+                  initial={mounted ? { opacity: 0, y: 15 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + idx * 0.08 }}
-                  onClick={() => router.push(mode.path)}
+                  onClick={() => {
+                    if (mode.comingSoon) {
+                      setShowComingSoon(mode.title);
+                    } else {
+                      router.push(mode.path);
+                    }
+                  }}
                   className={`relative overflow-hidden p-4 rounded-xl bg-gradient-to-br ${mode.color} border border-white/5 text-left active:scale-[0.96] transition-all group`}
                 >
+                  {mode.comingSoon && (
+                    <span className="absolute top-2 right-2 text-[9px] bg-white/10 text-white/40 px-1.5 py-0.5 rounded-full">
+                      即将上线
+                    </span>
+                  )}
                   <Icon className={`w-5 h-5 ${mode.iconColor} mb-2`} />
                   <p className="text-sm font-semibold text-white/90">{mode.title}</p>
                   <p className="text-[11px] text-white/40 mt-0.5">{mode.desc}</p>
@@ -185,6 +189,35 @@ export default function HomePage() {
           </div>
         </section>
       </div>
+
+      {/* Coming Soon 弹层 */}
+      {showComingSoon && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowComingSoon(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-white/10 max-w-[280px] w-full text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Flame className="w-8 h-8 text-[#e2b04a]/60 mx-auto mb-3" />
+            <p className="text-base font-semibold text-white/90 mb-1">{showComingSoon}</p>
+            <p className="text-sm text-white/40 mb-4">即将开放，敬请期待</p>
+            <button
+              onClick={() => setShowComingSoon(null)}
+              className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/20"
+            >
+              知道了
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

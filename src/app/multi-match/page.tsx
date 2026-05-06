@@ -65,6 +65,7 @@ function MultiMatchContent() {
   const [customLabel, setCustomLabel] = useState('');
   const [aiGenerated, setAiGenerated] = useState('');
   const [isMatching, setIsMatching] = useState(false);
+  const [matchError, setMatchError] = useState('');
 
   // 加载脑洞
   useEffect(() => {
@@ -142,11 +143,11 @@ function MultiMatchContent() {
         localStorage.setItem('xh_multi_match_id', result.data.matchId);
         router.push(`/multi-waiting?matchId=${result.data.matchId}`);
       } else {
-        alert(result.message || '匹配请求失败');
+        setMatchError(result.message || '匹配请求失败');
         setIsMatching(false);
       }
     } catch (err) {
-      alert('网络错误，请重试');
+      setMatchError('网络错误，请重试');
       setIsMatching(false);
     }
   };
@@ -312,8 +313,11 @@ function MultiMatchContent() {
               ))}
             </div>
 
+            {matchError && (
+              <p className="text-xs text-red-400 text-center bg-red-500/10 rounded-lg py-2 mb-3">{matchError}</p>
+            )}
             <div className="flex gap-2.5">
-              <button onClick={() => setShowIdentity(false)}
+              <button onClick={() => { setShowIdentity(false); setMatchError(''); }}
                 className="flex-1 py-3 rounded-xl bg-slate-700/30 text-slate-400 text-sm font-medium hover:bg-slate-700/50 transition-colors">
                 取消
               </button>

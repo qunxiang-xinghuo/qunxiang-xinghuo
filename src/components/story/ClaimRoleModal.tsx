@@ -25,9 +25,11 @@ export default function ClaimRoleModal({
   const [identityTag, setIdentityTag] = useState('');
   const [performanceDirection, setPerformanceDirection] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await fetch(`/api/stories/${storyId}/roles/${roleId}/claim`, {
         method: 'POST',
@@ -43,10 +45,10 @@ export default function ClaimRoleModal({
         onClaimed();
         onClose();
       } else {
-        alert(result.error?.message || '认领失败');
+        setError(result.error?.message || '认领失败');
       }
     } catch (err) {
-      alert('网络错误');
+      setError('网络错误');
     } finally {
       setLoading(false);
     }
@@ -75,6 +77,12 @@ export default function ClaimRoleModal({
                 <X className="w-4 h-4 text-white/60" />
               </button>
             </div>
+
+            {error && (
+              <div className="bg-red-500/10 rounded-xl p-3 border border-red-500/20 mb-4">
+                <p className="text-xs text-red-400 text-center">{error}</p>
+              </div>
+            )}
 
             <div className="bg-xh-gold/10 rounded-xl p-3 border border-xh-gold/20 mb-4">
               <div className="flex items-center gap-2 mb-1">

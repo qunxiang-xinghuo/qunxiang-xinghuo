@@ -19,7 +19,8 @@ export default function ZhihuSearchPage() {
     if (activeTab === 'hot') {
       setLoading(true);
       setError('');
-      fetch('/api/zhihu/hot-list?limit=10')
+      const controller = new AbortController();
+      fetch('/api/zhihu/hot-list?limit=10', { signal: controller.signal })
         .then(r => r.json())
         .then(json => {
           if (json.success) setResults(json.data.items || []);
@@ -27,6 +28,7 @@ export default function ZhihuSearchPage() {
         })
         .catch(() => setError('网络错误'))
         .finally(() => setLoading(false));
+      return () => controller.abort();
     }
   }, [activeTab]);
 

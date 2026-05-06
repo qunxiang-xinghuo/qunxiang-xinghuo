@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
     // 获取用户的反应、火花和故事草稿
-    const [reactions, sparks, storyDrafts] = await Promise.all([
+    const [reactions, sparks, storyDrafts, totalReactions, totalSparks, totalStoryDrafts] = await Promise.all([
       db.reaction.findMany({
-        where: { userId: session.user.id },
+        where: { userId },
         include: {
           brainhole: {
             select: {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
       }),
       db.reaction.findMany({
         where: { 
-          userId: session.user.id,
+          userId,
           isSpark: true,
         },
         include: {
@@ -45,21 +46,20 @@ export async function GET(request: NextRequest) {
         take: 20,
       }),
       db.storyDraft.findMany({
-        where: { userId: session.user.id },
+        where: { userId },
         orderBy: { updatedAt: "desc" },
         take: 10,
       }),
+      db.reaction.count({ where: { userId } }),
+      db.reaction.count({ where: { userId, isSpark: true } }),
+      db.storyDraft.count({ where: { userId } }),
     ]);
 
     return NextResponse.json(apiResponse({
       reactions,
       sparks,
       storyDrafts,
-      stats: {
-        totalReactions: await db.reaction.count({ where: { userId: session.user.id } }),
-        totalSparks: await db.reaction.count({ where: { userId: session.user.id, isSpark: true } }),
-        totalStoryDrafts: await db.storyDraft.count({ where: { userId: session.user.id } }),
-      },
+      stats: { totalReactions, totalSparks, totalStoryDrafts },
     }));
   } catch (error) {
     console.error("获取个人素材库失败:", error);

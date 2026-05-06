@@ -84,8 +84,11 @@ export default function StoryDetailPage() {
 
   useEffect(() => { setCurrentUserId(localStorage.getItem('xh_user_id') || ''); }, []);
 
+  const [loadError, setLoadError] = useState('');
+
   const loadStory = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     if (storyId.startsWith('demo-')) {
       const demo = DEMO_STORIES[storyId];
       if (demo) { setStory(demo); setLoading(false); return; }
@@ -93,8 +96,12 @@ export default function StoryDetailPage() {
     try {
       const res = await fetch(`/api/stories/${storyId}`);
       const result = await res.json();
-      if (result.success && result.data?.story) setStory(result.data.story);
-    } catch { console.error('Load story failed'); }
+      if (result.success && result.data?.story) {
+        setStory(result.data.story);
+      } else {
+        setLoadError(result.error?.message || '剧本加载失败');
+      }
+    } catch { setLoadError('网络错误，请重试'); }
     finally { setLoading(false); }
   }, [storyId]);
 
@@ -116,7 +123,8 @@ export default function StoryDetailPage() {
       });
       const result = await res.json();
       if (result.success) loadStory();
-    } catch {}
+      else setLoadError(result.error?.message || '审核失败');
+    } catch { setLoadError('网络错误，审核失败'); }
     setReviewing(null);
   };
 
@@ -127,7 +135,8 @@ export default function StoryDetailPage() {
       const res = await fetch(`/api/stories/${storyId}/start`, { method: 'POST' });
       const result = await res.json();
       if (result.success) loadStory();
-    } catch {}
+      else setLoadError(result.error?.message || '启动失败');
+    } catch { setLoadError('网络错误，启动失败'); }
     setStarting(false);
   };
 
@@ -147,7 +156,14 @@ export default function StoryDetailPage() {
       <div className="flex flex-col h-full page-gradient">
         <TopBar title="剧本详情" showBack onBack={() => router.back()} />
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-slate-500 text-sm">剧本不存在</p>
+          {loadError ? (
+            <div className="text-center">
+              <p className="text-red-400 text-sm mb-2">{loadError}</p>
+              <button onClick={loadStory} className="text-xs text-xh-gold hover:underline">重试</button>
+            </div>
+          ) : (
+            <p className="text-slate-500 text-sm">剧本不存在</p>
+          )}
         </div>
       </div>
     );

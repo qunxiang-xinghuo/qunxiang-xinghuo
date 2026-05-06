@@ -8,6 +8,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    if (!id || id.length > 100) {
+      return NextResponse.json(apiError("BAD_REQUEST", "无效的ID"), { status: 400 });
+    }
     const brainhole = await db.brainhole.findUnique({
       where: { id },
       include: {

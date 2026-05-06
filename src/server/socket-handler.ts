@@ -1,11 +1,11 @@
 /**
  * Socket.io 事件处理器
  *
- * 处理客户端连接、房间加入/离开、消息转发等事件。
- * v5.0: 新增故事大厅多人对白室事件
+ * v6.2-fix6: 移除文字广播，改为静默 viewer count 更新（抖音直播间式围观体验）
  */
 
 import { Server as SocketIOServer, Socket } from 'socket.io'
+import { db } from '@/lib/db'
 
 interface JoinRoomData {
   roomId: string
@@ -20,13 +20,25 @@ interface LeaveRoomData {
 
 interface SendMessageData {
   roomId: string
-  message: unknown
+  message: {
+    id: string
+    senderId: string
+    content: string
+    identity?: string
+    createdAt: string
+  }
 }
 
 interface MarkSparkData {
   roomId: string
   messageId: string
   markedBy: string
+}
+
+interface SendLikeData {
+  roomId: string
+  userId: string
+  identity: string
 }
 
 // v5.0: 故事大厅事件数据类型
@@ -53,44 +65,112 @@ interface BranchVoteData {
   votedBy: string
 }
 
+/**
+ * 获取房间的在线人数并广播
+ * 包括 actor + spectator
+ */
+async function broadcastViewerCount(io: SocketIOServer, roomId: string) {
+  try {
+    const count = await db.roomParticipant.count({
+      where: {
+        roomId,
+        isOnline: true,
+      },
+    });
+    io.to(roomId).emit('room-viewer-count', { count, roomId });
+  } catch (err: any) {
+    console.error('[Socket] broadcastViewerCount failed:', err.message);
+  }
+}
+
 export function registerSocketHandlers(io: SocketIOServer): void {
   io.on('connection', (socket: Socket) => {
     console.log('[Socket] Connected:', socket.id)
 
+    // v6.3: 跟踪该 socket 加入的所有房间及对应 userId
+    const joinedRooms = new Map<string, string>() // roomId -> userId
+
     // ==================== 原有房间事件 ====================
 
-    // 加入房间
-    socket.on('join-room', ({ roomId, userId, identity }: JoinRoomData) => {
+    // 加入房间 —— v6.2-fix6: 不再广播 user-joined 文字消息，改为静默更新 viewer count
+    socket.on('join-room', async ({ roomId, userId, identity }: JoinRoomData) => {
       socket.join(roomId)
-      socket.to(roomId).emit('user-joined', {
-        userId,
-        identity,
-        socketId: socket.id,
-        timestamp: Date.now(),
-      })
+      joinedRooms.set(roomId, userId)
       console.log(`[Socket] User ${userId} (${identity}) joined room ${roomId}`)
+
+      // 更新或创建 participant，标记为在线
+      try {
+        await db.roomParticipant.upsert({
+          where: {
+            roomId_userId: { roomId, userId },
+          },
+          update: {
+            isOnline: true,
+            leftAt: null,
+            identity: identity || '匿名',
+          },
+          create: {
+            roomId,
+            userId,
+            identity: identity || '匿名',
+            role: 'actor',
+            isOnline: true,
+          },
+        })
+      } catch (err: any) {
+        console.error('[Socket] join-room DB update failed:', err.message)
+      }
+
+      // v6.2-fix6: 静默广播房间在线人数（不再发送 "Xxx 加入了房间" 文字提示）
+      await broadcastViewerCount(io, roomId)
     })
 
-    // 离开房间
-    socket.on('leave-room', ({ roomId, userId }: LeaveRoomData) => {
+    // 离开房间 —— v6.2-fix6: 同上，静默更新 viewer count
+    // v7.0-fix7: 向对方广播 opponent-left 事件
+    socket.on('leave-room', async ({ roomId, userId }: LeaveRoomData) => {
       socket.leave(roomId)
-      socket.to(roomId).emit('user-left', {
-        userId,
-        timestamp: Date.now(),
-      })
+      joinedRooms.delete(roomId)
       console.log(`[Socket] User ${userId} left room ${roomId}`)
+
+      // 标记 participant 为离线
+      try {
+        await db.roomParticipant.updateMany({
+          where: { roomId, userId },
+          data: {
+            isOnline: false,
+            leftAt: new Date(),
+          },
+        })
+      } catch (err: any) {
+        console.error('[Socket] leave-room DB update failed:', err.message)
+      }
+
+      // v7.0-fix7: 向房间内其他人广播对方已离开
+      socket.to(roomId).emit('opponent-left', { userId, roomId, timestamp: Date.now() })
+
+      // v6.2-fix6: 静默广播房间在线人数
+      await broadcastViewerCount(io, roomId)
     })
 
-    // 转发消息（消息已存入数据库，此处仅做实时广播）
+    // 转发消息 —— v6.1-fix: 排除发送者避免重复
     socket.on('send-message', ({ roomId, message }: SendMessageData) => {
-      io.to(roomId).emit('new-message', message)
+      socket.to(roomId).emit('new-message', message)
     })
 
     // 火花标记广播
     socket.on('mark-spark', ({ roomId, messageId, markedBy }: MarkSparkData) => {
-      io.to(roomId).emit('spark-marked', {
+      socket.to(roomId).emit('spark-marked', {
         messageId,
         markedBy,
+        timestamp: Date.now(),
+      })
+    })
+
+    // 点赞 —— v6.1: 观众互动
+    socket.on('send-like', ({ roomId, userId, identity }: SendLikeData) => {
+      socket.to(roomId).emit('new-like', {
+        userId,
+        identity,
         timestamp: Date.now(),
       })
     })
@@ -177,9 +257,28 @@ export function registerSocketHandlers(io: SocketIOServer): void {
       socket.to(roomKey).emit('story-user-typing', { userId, identity })
     })
 
-    // 断开连接
-    socket.on('disconnect', (reason: string) => {
+    // 断开连接 —— v6.3: 标记离线并静默更新 viewer count
+    socket.on('disconnect', async (reason: string) => {
       console.log('[Socket] Disconnected:', socket.id, reason)
+
+      // 遍历该 socket 跟踪的所有房间，标记 participant 为离线
+      for (const [roomId, userId] of joinedRooms.entries()) {
+        try {
+          await db.roomParticipant.updateMany({
+            where: { roomId, userId },
+            data: {
+              isOnline: false,
+              leftAt: new Date(),
+            },
+          })
+        } catch (err: any) {
+          console.error('[Socket] disconnect DB update failed:', err.message)
+        }
+        // v7.0-fix7: 用户意外断开（关闭浏览器/断网）时，向对方广播 opponent-left
+        socket.to(roomId).emit('opponent-left', { userId, roomId, timestamp: Date.now() })
+        await broadcastViewerCount(io, roomId)
+      }
+      joinedRooms.clear()
     })
   })
 }

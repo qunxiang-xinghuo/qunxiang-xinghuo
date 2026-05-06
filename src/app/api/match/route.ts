@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { apiResponse, apiError } from "@/lib/utils";
 import { matchRequestSchema } from "@/lib/validators/match";
 import { findMatch } from "@/server/match-engine";
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function POST(request: NextRequest) {
   try {
     console.log("[MatchAPI v6.0] ========== 收到匹配请求 ==========");
     console.log("[MatchAPI] 请求方法:", request.method);
     console.log("[MatchAPI] 请求URL:", request.url);
 
-    const session = await getServerSession(authOptions);
-    // v4.4-fix: 支持guest用户
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    // v6.1-fix: 支持guest用户，但不再自动生成guest ID（必须由客户端提供）
     const guestId = request.headers.get("x-guest-id");
-    const userId = session?.user?.id || guestId || `guest-${Date.now()}`;
-    console.log("[MatchAPI] userId:", userId, "session存在:", !!session, "guestId:", guestId);
+    if (!userId) {
+      console.error("[MatchAPI] 缺少用户身份：未登录且无 x-guest-id header");
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录或提供用户ID"), { status: 401 });
+    }
+    console.log("[MatchAPI] userId:", userId, "token存在:", !!token, "guestId:", guestId);
 
     let body;
     try {

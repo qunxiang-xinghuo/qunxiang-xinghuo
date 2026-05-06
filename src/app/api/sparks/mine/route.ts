@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { db as prisma } from "@/lib/db";
 import { apiResponse } from "@/lib/utils";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 /**
  * GET /api/sparks/mine
- * 我的火花片段（RoomMessage中 isSpark=true 且 senderId=我的记录）
+ * 我的火花（个人所有对白记录）
+ * Query: ?sort=latest|hottest
+ * sort=latest: 按发布时间降序（默认）
+ * sort=hottest: 按热度值降序
  */
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id;
+        const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
     const effectiveUserId = userId || guestId;
 
@@ -19,30 +22,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(apiResponse({ list: [] }));
     }
 
-    const messages = await prisma.roomMessage.findMany({
-      where: {
-        isSpark: true,
-        senderId: effectiveUserId,
-      },
-      orderBy: { createdAt: "desc" },
+    const { searchParams } = new URL(request.url);
+    const sort = searchParams.get("sort") || "latest"; // latest | hottest
+
+    const orderBy = sort === "hottest"
+      ? [{ hotScore: "desc" as const }, { createdAt: "desc" as const }]
+      : [{ createdAt: "desc" as const }];
+
+    const assets = await prisma.asset.findMany({
+      where: { userId: effectiveUserId },
+      orderBy,
       take: 100,
       include: {
-        room: {
-          select: {
-            brainhole: { select: { title: true } },
-          },
-        },
+        brainhole: { select: { title: true } },
+        room: { select: { id: true } },
       },
     });
 
-    const list = messages.map((m) => ({
-      id: m.id,
-      content: m.content,
-      heat: 0,
-      createdAt: m.createdAt.toISOString(),
-      identity: m.identity || "匿名",
-      brainholeTitle: m.room?.brainhole?.title || "",
-      messageId: m.id,
+    const list = assets.map((a) => ({
+      id: a.id,
+      content: a.content || a.summary || "",
+      title: a.title,
+      hotScore: a.hotScore || 0,
+      createdAt: a.createdAt.toISOString(),
+      identity: a.identity || "匿名",
+      brainholeTitle: a.brainhole?.title || a.title || "",
+      isPublic: a.isPublic,
+      sparkCount: a.sparkCount || 0,
+      messageCount: a.messageCount || 0,
+      roomId: a.room?.id || null,
+      likedByMe: false, // 自己的火花，不允许点赞
+      isMySpark: true,
     }));
 
     return NextResponse.json(apiResponse({ list }));

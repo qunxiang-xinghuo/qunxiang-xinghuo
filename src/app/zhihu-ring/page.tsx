@@ -87,7 +87,7 @@ export default function ZhihuRingPage() {
       setPublishForm({ title: "", content: "" });
       await fetchRing();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "发布失败");
+      setError(err instanceof Error ? err.message : "发布失败");
     } finally {
       setPublishing(false);
     }
@@ -131,7 +131,7 @@ export default function ZhihuRingPage() {
       setCommentingPinId(null);
       await loadComments(pinId);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "评论失败");
+      setError(err instanceof Error ? err.message : "评论失败");
     }
   };
 

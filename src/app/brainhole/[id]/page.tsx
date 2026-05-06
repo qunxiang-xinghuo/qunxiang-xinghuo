@@ -30,9 +30,14 @@ export default function BrainholeDetailPage() {
 
   useEffect(() => {
     setSelectedPromptIndex(Math.floor(Math.random() * aiPrompts.length));
-    const savedReactions = localStorage.getItem('xh_reactions');
-    if (savedReactions) {
-      setReactionCount(JSON.parse(savedReactions).length);
+    try {
+      const savedReactions = localStorage.getItem('xh_reactions');
+      if (savedReactions) {
+        const parsed = JSON.parse(savedReactions);
+        setReactionCount(Array.isArray(parsed) ? parsed.length : 0);
+      }
+    } catch {
+      setReactionCount(0);
     }
   }, [brainholeId]);
 
@@ -42,18 +47,28 @@ export default function BrainholeDetailPage() {
     }
   }, [transcript]);
 
-  const handleSubmit = () => {
-    if (!reactionContent.trim() || !user || !brainhole) return;
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
-    submitReaction({
-      brainholeId,
-      identityLabel: user.identity.label,
-      content: reactionContent.trim(),
-      aiPrompt: aiPrompts[selectedPromptIndex],
-    });
+  const handleSubmit = async () => {
+    if (!reactionContent.trim() || !user || !brainhole || submitting) return;
 
-    setReactionCount(prev => prev + 1);
-    setPageState('feedback');
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      await submitReaction({
+        brainholeId,
+        identityLabel: user.identity.label,
+        content: reactionContent.trim(),
+        aiPrompt: aiPrompts[selectedPromptIndex],
+      });
+      setReactionCount(prev => prev + 1);
+      setPageState('feedback');
+    } catch (err) {
+      setSubmitError('提交失败，请重试');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleContinue = () => {
@@ -127,7 +142,7 @@ export default function BrainholeDetailPage() {
               继续探索下一个脑洞
             </button>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/login')}
               className="w-full flex items-center justify-center gap-2 bg-gray-800 text-gray-400 py-4 rounded-xl font-medium hover:text-white hover:bg-gray-700 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,6 +210,9 @@ export default function BrainholeDetailPage() {
             {reactionContent.length} 字
           </div>
         </div>
+        {submitError && (
+          <p className="text-xs text-red-400 text-center mb-2">{submitError}</p>
+        )}
         <div className="flex items-center justify-between py-3">
           <button
             onClick={isRecording ? stopRecording : startRecording}
@@ -220,15 +238,19 @@ export default function BrainholeDetailPage() {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!reactionContent.trim()}
+            disabled={!reactionContent.trim() || submitting}
             className={`flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-all ${
-              reactionContent.trim()
+              reactionContent.trim() && !submitting
                 ? 'bg-gradient-to-r from-xh-accent to-rose-600 text-white shadow-lg'
                 : 'bg-gray-800 text-gray-500 cursor-not-allowed'
             }`}
           >
-            <Send className="w-4 h-4" />
-            <span>记录这个反应</span>
+            {submitting ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            <span>{submitting ? '提交中...' : '记录这个反应'}</span>
           </button>
         </div>
       </div>

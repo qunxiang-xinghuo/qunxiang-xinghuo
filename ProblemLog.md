@@ -1,583 +1,201 @@
-# 问题记录与修复日志
+# 群像·星火 — 问题排查记录
 
-## v6.0-fix2 泡泡彻底修复——稳定id持久化+点击直接匹配+收藏页 (2026-05-02)
-
-### 根因诊断：为什么点击泡泡显示"脑洞不存在"
-
-**三层根因链：**
-```
-泡泡API生成临时id: ds-${Date.now()}-${index}
-  → upsert到数据库（每次请求id不同，数据库积累大量重复记录）
-  → 用户点击泡泡跳转 /brainhole/${临时id}
-  → brainhole详情页用 useBrainhole hook 调用 /api/brainholes
-  → /api/brainholes 返回数据库中的记录（但临时id不在列表中，因为hook只加载一次）
-  → getBrainholeById(临时id) 返回 undefined
-  → 页面显示"脑洞不存在"
-```
-
-**根因1（直接）：** 泡泡API用 `Date.now()` 生成临时id，每次请求都不同，导致数据库中同一标题有多条重复记录
-**根因2（深层）：** brainhole详情页依赖 `useBrainhole` hook 的本地缓存，不是直接API查询
-**根因3（设计）：** 泡泡点击跳转详情页，路径太长，且详情页不是必要的
-
-### 修复方案
-
-**1. 泡泡API——稳定id持久化**
-- fallback数据使用预定义稳定id：`fb-medical-001`、`fb-workplace-001` 等
-- 知乎热榜/DeepSeek/搜索生成的数据，先查询数据库是否已有同标题记录
-  - 有 → 返回已有记录的稳定id
-  - 无 → `prisma.create()` 生成cuid()稳定id
-- 查询时排除旧临时id：`NOT { id: { startsWith: "zh-hot-" } }`
-
-**2. 泡泡点击——直接匹配**
-- 点击泡泡不再跳转 `/brainhole/${id}`（详情页路径废弃）
-- 点击直接进入 `duo-match?brainholeId=xxx&from=bubble`
-- Hover浮层只显示「匹配」按钮，不再有「详情」按钮
-
-**3. 泡泡视觉效果——真实泡泡**
-- 增加高光层：`radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25) 0%, transparent 50%)`
-- 增加底部折射：`radial-gradient(ellipse, rgba(255,255,255,0.12) 0%, transparent 70%)`
-- 移除参与人数徽章（用户不需要数字）
-
-**4. 素材库——增加「我的收藏」标签页**
-- 新增第三个标签页：「我的收藏」（Heart图标）
-- 调用 `/api/brainholes/collected` 获取收藏列表
-- 点击收藏的脑洞直接进入匹配流程
-
-**5. 匹配引擎——从已参与脑洞匹配**
-- 优先匹配选择了「已参与brainhole」的等待用户
-- 「已参与」定义：有matchRequest/reaction/collection记录的brainhole
-- 兜底：任意等待用户 + 随机已参与brainhole
-
-### 文件变更
-- `src/app/api/brainholes/bubble/route.ts`：稳定id持久化 + 排除旧临时id
-- `src/components/bubble-cloud/Bubble.tsx`：真实泡泡质感 + 移除badge
-- `src/components/bubble-cloud/BubbleCloud.tsx`：点击直接匹配
-- `src/components/bubble-cloud/types.ts`：移除engagedCount
-- `src/server/match-engine.ts`：从已参与脑洞匹配
-- `src/app/library/page.tsx`：增加「我的收藏」标签页
-
-### 验证
-- Build：47/47 ✅
-- 泡泡API返回稳定cuid：`cmolmtf9n002g9bb2tikii71e` ✅
-- 静态JS：200 ✅
-- 首页：200 ✅
-- PM2：online ✅
+## v8.0 登录系统修复过程中的关键问题
 
 ---
 
-## v6.0 泡泡脑洞版——四级智能匹配+社交信号+一键匹配 (2026-05-02)
+### 问题1：PowerShell Invoke-WebRequest 自动保持 Cookie
 
-### 50年产品经理 + 美术经理 + 技术经理视角重设计
+**现象**：
+- 测试 `/spectate` 时返回 200（已登录状态的页面内容）
+- 误以为 Next.js PPR 缓存绕过了守卫
+- 花了大量时间排查 Nginx 缓存、PPR 配置、Next.js 预渲染
 
-**产品问题诊断：**
-1. 泡泡→详情→选模式→选身份→等待 = 5步才能匹配，流失率60%+
-2. 15秒纯等待，用户不知道系统在做什么，焦虑感强
-3. 同brainhole没人就硬等，没有B计划
-4. 泡泡无社交信号：不知道这个脑洞有几个人在玩
+**根因**：
+- PowerShell 的 `Invoke-WebRequest` 命令会自动保持 session cookie
+- 之前的 `/api/auth/logout` 测试请求在服务器端设置了 `next-auth.session-token` cookie
+- 后续所有 `Invoke-WebRequest` 测试都自动携带了这个 cookie
+- 服务器看到 cookie 后认为用户已登录，所以返回了页面内容而不是 307 重定向
 
-**美术问题诊断：**
-1. 等待页只有"正在搜索..."文案，没有进度可视化
-2. 泡泡Hover浮层只有"进入"按钮，没有直接匹配入口
-3. 超时页文案单一，没有给用户"系统尽力了"的感知
-
-**技术问题诊断：**
-1. 匹配引擎只有"同brainhole"一种策略，无降级
-2. 泡泡API不返回参与人数，前端无法显示社交信号
-3. 匹配成功不返回strategy，前端无法展示匹配逻辑
-
-### 重设计内容
-
-**1. 泡泡系统——社交信号+一键匹配**
-- 泡泡显示"参与人数徽章"（右上角绿色圆点，>2人时显示）
-- Hover浮层增加金色"⚡立即匹配"按钮（最醒目位置）
-- 点击"立即匹配" → 直接进入 `duo-match?brainholeId=xxx&from=bubble`
-- 点击泡泡本体 → 仍跳转详情页（保留浏览路径）
-- 浮层显示"X人在线"社交信号
-
-**2. 匹配引擎——四级降级策略**
-- 阶段1（0-3秒）：同brainhole精确匹配 → strategy="same_brainhole"
-- 阶段2（3-6秒）：同分类兴趣匹配 → strategy="same_category"
-- 阶段3（6-10秒）：任意用户 + 已参与的热门brainhole → strategy="random_engaged"
-- 阶段4（10-15秒）：扩大搜索 + 分配热门brainhole等待 → strategy="waiting_for_any"
-- 每阶段都返回 strategy + brainholeId + brainholeTitle
-
-**3. 等待页——策略进度可视化**
-- 4级策略指示灯（Target→BrainCircuit→Globe→Search）
-- 策略进度条（彩色渐变）
-- 实时文案随阶段变化
-- 匹配成功时显示策略名称（"同话题匹配成功"）
-
-**4. 超时页——降级策略感知**
-- 文案改为"四级匹配策略已用尽"
-- 列出已尝试的策略：同话题→同类兴趣→热门话题→扩大搜索
-- 按钮文案优化："与刘看山对戏"/"继续扩大搜索"
-
-**5. 身份选择页——从泡泡来的优化**
-- 顶部显示预选brainhole卡片（金色边框）
-- 标题改为"确认身份，即刻对撞"
-- 按钮带箭头图标
-
-### 文件变更
-- `src/server/match-engine.ts`：重写四级降级策略
-- `src/app/api/match/route.ts`：返回strategy + brainholeTitle
-- `src/app/api/brainholes/bubble/route.ts`：增加参与人数统计
-- `src/components/bubble-cloud/types.ts`：增加matchCount/reactionCount/engagedCount
-- `src/components/bubble-cloud/Bubble.tsx`：参与人数徽章 + 立即匹配按钮
-- `src/components/bubble-cloud/BubbleCloud.tsx`：onMatch回调
-- `src/app/duo-match/page.tsx`：支持from=bubble + 预选卡片
-- `src/app/duo-waiting/page.tsx`：策略进度可视化
-- `src/app/duo-timeout/page.tsx`：降级策略文案
-- `src/app/home/page.tsx`：模式文案 + 版本号
-
-### Build验证
-- Build：47/47 ✅
-- 无TypeScript错误 ✅
-
----
-
-## v5.8-fix 故事大厅彻底重设计——6种剧本模板+隐藏秘密+海报卡片 (2026-05-02)
-
-### 50年产品经理 + 20年编辑 + 作者视角重设计
-
-**产品问题诊断：**
-- 创建门槛太高：用户需要自己想世界观+冲突+角色，80%用户望而却步
-- 角色太扁平：只有名字+描述，缺少戏剧张力
-- 卡片信息过载：世界观+冲突+进度挤在一起，像表格不像剧本
-- 缺乏"钩子"：没有一句话吸引用户点击的卖点
-- 冷启动空窗：新用户进来看到空列表直接离开
-
-**编辑/作者视角诊断：**
-- 角色缺少"人物弧光"：没有秘密、动机、内心冲突
-- 缺少"剧本感"：不像在参与戏剧，像在填表单
-- 没有"试读"体验：用户不知道这个故事好不好玩
-
-### 重设计内容
-
-**1. 创建故事——6种剧本模板**
-- 第一步选模板：医疗急救/职场风云/悬疑密室/爱情纠葛/科幻末世/家庭伦理
-- 每个模板预置完整世界观+冲突+5-6个角色
-- 角色包含：**名字** + **描述** + **演绎要求** + **隐藏秘密** + **核心动机**
-- 用户只需改标题和微调，创作门槛从100降到10
-
-**2. 故事大厅——大幅海报卡片**
-- 顶部状态色条（recruiting=emerald/ongoing=gold/completed=blue）
-- 大标题 + **hook一句话**（编辑精选的卖点）
-- 类型标签（医疗/职场/悬疑/爱情/科幻/家庭）
-- 底部：导演/进度条/对白数/创建日期
-- 统计栏：剧本总数/招募中/我的剧本
-
-**3. 故事详情——沉浸式剧本**
-- 剧目海报头部：渐变背景 + 状态badge + hook
-- 第一幕·开场白（世界观卡片）+ 核心冲突卡片
-- 演员招募进度条
-- **角色秘密开关**：点击"查看秘密"显示每个角色的隐藏秘密和核心动机
-- 角色状态：待认领/试镜中/已入组/未通过（戏剧化命名）
-- 导演审核 = "试镜通过"
-- 启动故事 = "开拍"
-
-**4. 范例故事升级**
-- 6个完整范例，每个都有hook+秘密+动机
-- demo-1《急诊室》：最后一袋血救谁
-- demo-2《裁员名单》：好友在名单上+藏着黑料
-- demo-3《学区房》：假离婚发现丈夫出轨
-- demo-4《网红医生》：800万粉丝承诺免费治疗
-- demo-5《暴风雪密室》：六人困山顶，老板死在反锁厨房
-- demo-6《诺亚号》：资源只够500人，普通人淘汰概率100%
-
-### 部署问题
-- 服务器GitHub fetch超时 → 改为SFTP直接上传关键文件
-- 服务器git reset --hard origin/dev 会覆盖SFTP上传的文件
-- **解决**：先SFTP上传，然后直接build（不git reset）
-
-### 验证
-- 本地Build：47/47 ✅
-- 服务器Build：47/47 ✅
-- 首页 `/home`：200 ✅
-- 故事大厅 `/story-hall`：200 ✅
-- 范例详情 `/story-hall/demo-1`：200 ✅
-- 创建弹窗包含"剧本模板"：2处 ✅
-- 详情页包含"隐藏秘密"：3处 ✅
-- 大厅页包含"hook"：8处 ✅
-- 静态JS/CSS：200 ✅
-- PM2：online ✅
-
----
-
-## v5.8 泡泡彻底修复+范例故事+50年PM重设计 (2026-05-02)
-
-### 根因诊断：泡泡里的脑洞为什么还是没有？（三层根因）
-
-**第一层：API limit参数bug（已修复但未部署）**
-- 本地代码已修复：`Math.min(Math.max(parseInt(...), 1), 30)`
-- 但 `server_build.py` **没有执行 `git reset --hard origin/dev`**！
-- 服务器上跑的还是 `v5.4` 的旧代码，limit bug仍然存在
-- **修复server_build.py**：改为SFTP上传 + 远程git reset + build + restart
-
-**第二层：前端布局不可靠**
-- 旧BubbleCloud使用 `absolute` 定位 + `Math.random()` 计算位置
-- SSR时 `window` 未定义，containerWidth 固定为430，布局不稳定
-- home page容器高度300px < BubbleCloud内部420px，导致裁剪
-- **修复**：改用 `flex-wrap` 布局，移除absolute定位，高度自适应
-
-**第三层：前端容错不足**
-- API返回非200时直接 `setBubbles([])`，显示"暂无热门内容"
-- **修复**：增加 `generateEmergencyFallback()` 函数，API失败时显示12个保底脑洞
-
-### 修改内容
-- **泡泡API** (`api/brainholes/bubble/route.ts`)：
-  - limit参数彻底修复 + 异常处理增强 + emergency_fallback保底
-  - 每个API调用独立try-catch，任一失败不影响其他
-- **泡泡前端** (`bubble-cloud/BubbleCloud.tsx` + `Bubble.tsx`)：
-  - 从absolute蜂窝布局改为flex-wrap流式布局
-  - 增加emergency fallback数据（12个精选脑洞）
-  - 增加"点击刷新"按钮
-- **首页** (`home/page.tsx`)：
-  - 泡泡区域改为自适应高度，移除固定300px限制
-  - 渐变遮罩只覆盖底部，不裁剪泡泡
-- **故事大厅** (`story-hall/page.tsx`)：
-  - 内置5个范例故事（40年专业编辑+作者视角）
-  - 范例故事有完整世界观、核心冲突、角色设定
-  - 无真实故事时自动显示范例
-  - 范例卡片带"范例"蓝色badge
-- **故事详情** (`story-hall/[storyId]/page.tsx`)：
-  - 支持范例故事详情展示（demo-1 / demo-2）
-  - 范例故事提示区：说明+返回大厅/发起故事按钮
-  - 每个角色有详细的人物描述和演绎要求
-
-### 验证
-- 本地Build：47/47 ✅
-- 服务器Build：47/47 ✅
-- 首页 `/home`：200 ✅
-- 故事大厅 `/story-hall`：200 ✅
-- 泡泡API `/api/brainholes/bubble?limit=20`：**返回20个真实知乎热榜数据** ✅
-- 静态JS `_buildManifest.js`：200 ✅
-- 静态Chunk JS：200 ✅
-- PM2状态：online, uptime 4s ✅
-
----
-
-## v5.7-fix 泡泡消失+多人组队重设计+故事对白室精致化 (2026-05-02)
-
-### 根因诊断：泡泡里的脑洞为什么消失？
-
-**第一层：API limit参数bug**
-- `src/app/api/brainholes/bubble/route.ts` 第245行：
-  ```ts
-  const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "30", 10), 30), 1);
-  // Math.max(20, 30) = 30; Math.min(30, 1) = 1 → 永远返回1！
+**解决**：
+- 使用 .NET `HttpWebRequest` 并创建全新的 `CookieContainer` 进行无 cookie 测试
+- 命令示例：
+  ```powershell
+  $request = [System.Net.HttpWebRequest]::Create("http://81.70.59.228/spectate")
+  $request.AllowAutoRedirect = $false
+  $request.CookieContainer = New-Object System.Net.CookieContainer
+  $response = $request.GetResponse()
   ```
-- **修复**：`Math.min(Math.max(parseInt(...), 1), 30)`
 
-**第二层：API全渠道失败时返回500**
-- 知乎热榜API、DeepSeek API、知乎搜索API全部失败时
-- 数据库fallback也失败 → 返回500
-- 前端收到非success响应 → `setBubbles([])` → 显示"暂无热门内容"
-- **预防**：fallback数据始终生成30条，确保不会空返回
-
-### 修改内容
-- **泡泡API修复**：limit参数从永远1改为正确计算(1-30)
-- **多人组队入口** (`multiplayer/page.tsx`)：
-  - 从纯占位"开发中"升级为真正的群像共创剧场入口
-  - 四大功能特性展示（3-8人群像/导演控场/剧情投票/实时对白）
-  - 双入口卡片：故事大厅（金色）+ 快速组队（紫色）
-  - 5步群像共创流程说明
-- **多人匹配页** (`multi-match/page.tsx`)：
-  - slate色彩体系全面替换旧深色主题
-  - 调用 `/api/brainholes/bubble` 获取脑洞（修复了旧版调用不存在的 `/api/brainholes`）
-  - 分类色卡片式脑洞列表（8种分类色映射）
-  - 内嵌身份选择弹窗（知乎身份/AI随机/自定义角色）
-- **多人等待页** (`multi-waiting/page.tsx`)：
-  - 参考双人等待页设计：雷达扫描背景+刘看山旋转环+信号波
-  - 60秒倒计时+3阶段降级指示条（多人→双人→AI）
-  - 阶段图标动画+进度条+剩余时间
-- **故事对白室精致化** (`story-hall/[storyId]/room/page.tsx`)：
-  - 消息气泡增加小尾巴（三角装饰），金色/暗色/导演色三种样式
-  - 角色身份标签+导演皇冠badge+时间戳
-  - textarea输入框自动增高（参考ChatRoom组件）
-  - 导演控场按钮更精致（暂停/继续带border色区分）
-  - 分支/灵感侧边栏样式升级
-  - 保存素材+结束对白按钮
-
-### 验证
-- 本地Build：47/47 ✅
-- 服务器Build：47/47 ✅
-- 首页 `/home`：200 ✅
-- 故事大厅 `/story-hall`：200 ✅
-- 多人组队 `/multiplayer`：200 ✅
-- 泡泡API `/api/brainholes/bubble`：返回数据 ✅
-- 静态JS/CSS：200 ✅
+**教训**：
+- HTTP 客户端工具的 cookie 行为必须了解清楚
+- 认证相关的测试必须使用干净的 session
+- 遇到"缓存"问题时，先确认不是 cookie 导致的假阳性
 
 ---
 
-## v5.7 故事大厅重设计 (2026-05-02)
+### 问题2：Next.js PPR (Partial Prerendering) 预渲染
 
-### 修改内容
-- **故事大厅广场**（`story-hall/page.tsx`）：
-  - 海报式故事卡片：左侧状态竖条（recruiting=emerald/ongoing=gold/completed=blue）+状态图标+标签文字
-  - 标题行：大字标题+导演皇冠角标（isMyStory时显示）
-  - 世界观摘要：两行截断
-  - 核心冲突预览：Flame图标+冲突文字
-  - 动画进度条：从左到右渐变填充动画，满员时emerald渐变
-  - 底部元信息：对白数+创建日期+ArrowRight进入指示
-  - 空状态：Theater图标+引导文案
-  - 入场动画：stagger fadeIn + translateY
-- **故事详情页**（`story-hall/[storyId]/page.tsx`）：
-  - 剧目海报头部：渐变背景卡片+状态badge+导演皇冠+大标题
-  - 统计数字行：角色数/对白数/已就位/创建日期 四大数字
-  - 世界观/核心冲突分区卡：带图标标签的分隔区块
-  - 演员表角色卡：首字母头像+名称+状态badge+认领者信息（身份标签/演绎方向）
-  - 导演审核：通过/拒绝并排按钮
-  - 启动故事：emerald渐变仪式感大按钮
-  - 进入对白室：金色渐变仪式感大按钮
-  - 锁定提示：所有角色审核通过前显示
+**现象**：
+- `/spectate` 响应头中有 `x-nextjs-prerender: 1,1`
+- 以为这是导致守卫失效的原因
 
-### 验证
-- 本地Build：47/47 ✅
-- 服务器Build：47/47 ✅
-- 首页：200 ✅
-- 故事大厅：200 ✅
-- 静态资源：200 ✅
+**根因**：
+- Next.js 16 + Turbopack 默认使用 PPR（部分预渲染）
+- 即使 `force-dynamic`，PPR 仍会在构建时生成静态外壳
+- 但这**不影响守卫逻辑**，因为服务端组件在实际请求时仍会执行
+- 有 cookie 的请求会执行服务端组件 → 返回页面内容
+- 无 cookie 的请求会执行 `redirect('/login')` → 返回 307
 
----
+**尝试的解决方案**：
+1. `export const dynamic = 'force-dynamic'` — 已存在
+2. `export const fetchCache = 'force-no-store'` — 已添加
+3. `export const experimental_ppr = false` — 无效
+4. `export const ppr = false` — NextConfig 中不支持（非实验性）
+5. `unstable_noStore()` — 已添加
 
-## v5.7 全面重设计：泡泡Hover浮层+双人等待页+对白室 (2026-05-02)
-
-### 修改内容
-- **泡泡Hover浮层**（TDD v5.0核心要求）：
-  - 悬停显示完整脑洞卡片：分类标签+难度徽章+标题+scenario摘要+热度分+进入按钮
-  - 动画：fadeIn + translateY(-10px) + scale，200ms
-  - 小三角箭头指向泡泡
-  - 分类色映射完整（8种系统分类+4种来源分类）
-- **双人等待页重设计**：
-  - 雷达扫描背景动画（扩散圆环）
-  - 刘看山周围旋转虚线圆环
-  - 匹配倒计时延长至15秒
-  - 信号波计数动态显示
-  - 状态标签：信号正常/已发起匹配
-  - 匹配成功动画：绿色对勾+进度条
-- **对白室精致化**：
-  - 消息气泡增加小尾巴（三角装饰）
-  - 我方气泡：金色渐变背景
-  - 对方气泡： slate暗色背景
-  - 输入框自动增高（textarea自适应高度）
-  - 空房间引导提示
-  - 顶部信息区卡片化设计
-
-### 验证
-- 本地Build：47/47 ✅
-- 服务器Build：47/47 ✅
-- 泡泡API：30个脑洞 ✅
-- 静态资源：JS 200，CSS 200 ✅
+**最终方案**：
+-  spectate 未登录时返回客户端重定向 HTML：
+  ```tsx
+  if (!sessionToken) {
+    return (
+      <html>
+        <head>
+          <script>window.location.replace("/login")</script>
+          <noscript><meta httpEquiv="refresh" content="0;url=/login" /></noscript>
+        </head>
+        <body />
+      </html>
+    );
+  }
+  ```
+- 这样即使 PPR 预渲染了此页面，客户端加载后也会立即跳转
 
 ---
 
-## v5.6-fix 泡泡不显示 (2026-05-02)
+### 问题3：Git 远程仓库混淆
 
-### 现象
-部署v5.6后，首页泡泡区域显示"暂无热门内容"或空白。
+**现象**：
+- 本地推送到了 `fqunxiang` 远程
+- 用户在服务器上执行了 `git pull origin dev`
+- 服务器代码没有更新到最新
 
-### 根因（三层）
-1. **API端点错误**：`BubbleCloud.tsx` 调用 `/api/bubbles?source=${source}`，但服务器上不存在此端点
-2. **数据格式不匹配**：组件期望 `{id, text, type, hotScore}`，但实际API返回 `{id, title, scenario, category, hotScore, ...}`
-3. **跳转路由错误**：组件点击跳转到 `/story-hall/${id}` 等，但脑洞数据应跳转到 `/brainhole/${id}`
+**根因**：
+- 项目有两个远程：`origin` (GitHub) 和 `fqunxiang` (自建服务器 x404.online:2222)
+- Webhook 自动部署是从 `fqunxiang` 拉取的
+- 用户手动操作时使用了 `origin`
 
-### 修复
-1. `BubbleCloud.tsx`：改为调用 `/api/brainholes/bubble?limit=20`
-2. `types.ts`：接口字段改为 `title, scenario, category, difficulty, source`
-3. `Bubble.tsx`：显示 `title`（截断适配泡泡大小），点击跳转 `/brainhole/${id}`
-4. 增加分类色映射（medical/legal/workplace等8种分类色）
-
-### 验证
-- 本地Build：47/47 ✅
-- 服务器Build：47/47 ✅
-- 泡泡API：`curl /api/brainholes/bubble?limit=5` → 返回30个脑洞 ✅
-- 静态资源：JS 200，CSS 200 ✅
-
-### 教训
-- **API端点必须与后端实际路由一致**，不能凭假设写前端调用
-- 修改数据流时，必须同时检查：API端点、请求参数、响应格式、字段映射、跳转路由
-- 部署后不仅要curl静态资源，还要curl关键API验证数据返回
+**解决**：
+- 服务器上必须使用 `git pull fqunxiang dev`
+- 或者在服务器上设置默认远程为 `fqunxiang`
 
 ---
 
-## v5.6 UI重设计部署 (2026-05-02)
+### 问题4：deploy.sh 缓存清除不足
 
-### 修改内容
-- **全局样式**: 页面收窄（桌面端max-width:430px居中）+ 新设计Token + 泡泡CSS升级
-- **泡泡美化**: 蜂窝式布局、更大更饱满(36-60px)、丰富分类色、更强玻璃质感
-- **首页**: 大气标题区+Flame图标、更大泡泡区、模式卡片左侧色带装饰
-- **故事大厅广场**: 卡片顶部色带、导演皇冠角标、核心冲突预览、更大进度条
-- **故事详情**: 金色顶部装饰条、导演皇冠标识、角色首字母头像、角色卡左侧状态指示条
-- **个人中心**: 大幅渐变背景、24px头像+金色边框、独立统计卡片、彩色图标菜单
+**现象**：
+- 部署后 `/spectate` 仍然返回旧响应
+- `rm -rf .next/cache` 不够彻底
 
-### 部署问题
-- GitHub fetch超时 → SFTP上传备选
-- 首次build失败：服务器文件未更新（git pull覆盖）→ 确认SFTP上传后build
-- Turbopack静态文件名是随机hash → 验证时查找实际存在的文件
+**根因**：
+- Next.js `output: 'standalone'` 模式下，构建产物分布在多个目录
+- `.next/cache` 只清除了缓存目录，但 `.next/standalone` 中可能仍有旧文件
+- Nginx `proxy_cache` 可能缓存了响应
 
----
-
-## v5.5-fix 页面空白复发 (2026-04-29)
-
-### 根因
-`server.ts`中`path.join(cwd, '.next', req.url)`导致`.next/_next/static/`错误路径。
-
-### 修复
-改为`req.url.replace('/_next/', '')`，去掉多余`_next`层级。
+**解决**：
+- 将 `rm -rf .next/cache` 改为 `rm -rf .next`（完全清除）
+- Nginx 重启改为 `nginx -s stop && nginx`（不是 reload）
+- 添加多个常见 Nginx proxy_cache 目录的清除
 
 ---
 
-## v5.5 UI重设计 (2026-04-29)
+### 问题5：Prisma migrate drift
 
-### 根因
-统一slate色彩体系，全面更新TopBar/BottomNav/home/story-hall/duo-match/library/profile。
+**现象**：
+- 添加 `tokenRevokedAt` 字段后，`prisma migrate dev` 失败
+- 提示 "Drift detected" 并要求重置数据库
 
-### 验证
-Build 47/47通过，部署成功。
-# 问题记录与修复日志
+**根因**：
+- 之前的 schema 变更没有通过迁移管理，而是直接使用了 `prisma db push`
+- 导致迁移历史和实际数据库 schema 不一致
 
-## v6.0 全面重构——11项硬性要求落地 (2026-05-03)
-
-### 变更清单
-
-1. **登录页增加项目简介**
-   - 增加slogan："让真实发光，让思想变现"
-   - 增加副标题："在这里，你不再是别人故事的看客，而是创造自己故事的主角"
-
-2. **发现页重构：取消泡泡 → TOP3排行榜+火花展示+4模式入口**
-   - 移除BubbleCloud组件引用
-   - 新增"今日最热"TOP3排行榜（调用 `/api/brainholes/bubble`）
-   - 新增"最新火花"展示（调用 `/api/sparks/public`）
-   - 4模式入口：双人模式/故事大厅/随机匹配/AI对练
-
-3. **底部导航改为4Tab**
-   - 发现 / 火花 / 故事 / 我的
-   - 图标：Compass/Flame/BookOpen/User
-
-4. **火花页（原素材库）→ 公开火花墙**
-   - 公开火花Tab：所有标记为火花的对白片段
-   - 我的火花Tab：我标记的火花
-   - 按时间倒序排列
-
-5. **故事页重构**
-   - 快速匹配+发起故事 顶部按钮
-   - 3Tab：快速匹配 / 我发起的 / 其他人的
-   - 展示故事卡片（类型/标题/隐藏秘密/参与人数/热度）
-
-6. **我的页重构**
-   - 头像左上+名称放大
-   - 统计：火花/故事/匹配数
-   - 功能菜单：我的火花/我的故事/设置
-   - 移除私密模式
-
-7. **对白室极简化**
-   - 顶部：返回按钮+标题+在线状态
-   - AI催化区：横向滚动问题标签
-   - 消息列表：左右对齐气泡
-   - 底部：输入框+发送按钮
-   - 移除：脑洞信息区/保存素材/结束按钮/围观人数/火花墙
-
-8. **AI催化升级**
-   - 新API `/api/ai/catalyst`：DeepSeek+知乎直答双API
-   - 基于对话上下文+身份标签动态生成3个开放性问题
-   - 30秒自动刷新
-   - 点击问题自动填入输入框
-
-9. **双人匹配修复**
-   - 15秒超时后不再跳转duo-timeout页面
-   - 直接显示"与刘看山对话"按钮+"再次尝试匹配"按钮
-   - 点击刘看山按钮直接调用 `/api/rooms/ai` 创建AI房间并跳转
-
-10. **脑洞降低门槛**
-    - 简化版日常场景：深夜便利店/地铁上遇到奇怪的人/邻居家的快递等12个场景
-    - 50字以内，简单易懂
-    - 排除旧临时id（ds-/zh-hot-/zh-search-/temp-）
-
-11. **新增API**
-    - `POST /api/ai/catalyst` - AI动态催化问题
-    - `GET /api/sparks/public` - 公开火花墙
-    - `GET /api/sparks/mine` - 我的火花
-    - `GET /api/stories/mine` - 我的故事
-
-### 构建结果
-- Build: 47/47 路由全部通过
-- 静态JS文件正常
+**解决**：
+- 开发环境使用 `prisma db push` 直接推送 schema 变更（不创建迁移）
+- 生产环境使用 `prisma migrate deploy` 应用已有的迁移
 
 ---
 
+### 问题6：服务器 SSH 密钥权限 denied
 
-## v6.0-login-fix 登录页美化——移除新手提示+装饰性透明泡泡 (2026-05-03)
+**现象**：
+- 服务器上执行 `git pull fqunxiang dev`
+- 报错：`Permission denied (publickey)`
 
-### 变更内容
+**根因**：
+- 服务器上没有配置访问 `fqunxiang.x404.online:2222` 的 SSH 私钥
+- deploy.sh 中通过 `GIT_SSH_COMMAND` 环境变量指定了私钥路径
+- 手动执行时没有设置这个环境变量
 
-1. **移除新手提示泡泡**
-   - 登录页不存在引用 LiuKanshanWelcome / LiuKanshanFloat 的代码
-   - 这两个组件已无人引用，属于历史遗留死代码，保留不删除以防未来复用
-
-2. **添加装饰性透明泡泡**
-   - 位置：页面右下角区域 (`absolute inset-0 overflow-hidden pointer-events-none`)
-   - 数量：7个泡泡，直径20px~56px随机分布
-   - 质感：真实肥皂泡效果
-     - `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18), rgba(255,255,255,0.04) 55%, transparent)`
-     - 微弱白色border `rgba(255,255,255,0.12)`
-     - 高光点：左上角椭圆白点，模拟光源反射
-     - 底部微折射：右下角椭圆淡白点
-     - 无鲜艳五彩颜色，整体晶莹剔透
-   - 动画：
-     - Y轴：缓慢上升到底部消失，duration 9s~14s，循环无限
-     - X轴：轻微左右摇摆，sway 6px~18px，easeInOut
-     - 每个泡泡不同delay（0~5.5s），错开上升节奏
-   - 技术：framer-motion `animate` + CSS `backdrop-filter: blur(1.5px)`
-
-### 构建结果
-- Build: 47/47 路由全部通过
+**解决**：
+```bash
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+```
 
 ---
 
+### 问题7：服务器手动部署 git pull 失败
 
-## v6.0-deploy v6.0 全面重构+文档更新 服务器部署成功 (2026-05-03)
+**现象**：
+- 服务器上执行 `git pull fqunxiang dev`
+- 报错：`Permission denied (publickey)`
 
-### 部署过程
+**根因**：
+- 手动执行时没有设置 `GIT_SSH_COMMAND` 环境变量
+- deploy.sh 脚本中配置了 SSH 私钥路径，但手动执行时未生效
 
-使用 `deploy_remote.py` paramiko密码认证部署：
+**解决**：
+```bash
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+```
 
-| 步骤 | 结果 | 耗时 |
-|------|------|------|
-| SSH连接 | ✅ 成功 | 即时 |
-| Git fetch origin dev | ✅ 成功 | - |
-| git reset --hard origin/dev | ✅ 成功 | - |
-| npm install | ✅ 成功 | 4s |
-| npx prisma generate | ✅ 成功 | - |
-| npx prisma db push | ✅ 成功 | 数据库已同步 |
-| rm -rf .next | ✅ 成功 | - |
-| NODE_ENV=production npm run build | ✅ 47/47通过 | 13.9s编译+10.3s类型检查 |
-| 静态JS验证 | ✅ 200 OK | 生死线通过 |
-| pm2 restart qunxiang-xinghuo | ✅ online | - |
-| pm2 save | ✅ 成功 | - |
+**后续**：
+- 拉取成功，显示 `Already up to date`
+- 执行 `rm -rf .next && npm run build && pm2 restart all`
+- 构建成功（66 pages），PM2 重启成功
+- curl 验证：`/home` → 307 `/login`，`/spectate` → 307 `/login` ✅
 
-### 验证结果
+---
 
+## 修复时间线
+
+| 时间 | 事件 |
+|------|------|
+| 2026-05-06 01:00 | 开始 v8.0 登录系统修复 |
+| 2026-05-06 01:30 | AppShell 渲染级守卫完成 |
+| 2026-05-06 02:00 | useRequireAuth hook + 页面级门禁完成 |
+| 2026-05-06 02:15 | 服务器端登出 API + tokenRevokedAt 完成 |
+| 2026-05-06 02:30 | 误以为 `/spectate` 有缓存 bug（实际是 cookie 陷阱） |
+| 2026-05-06 02:45 | 发现 Invoke-WebRequest cookie 问题 |
+| 2026-05-06 02:50 | 无 cookie 测试全部通过！15个页面全部 307→/login |
+| 2026-05-06 03:00 | 最终提交并推送，更新文档 |
+| 2026-05-06 13:00 | v8.0 TOP3火花墙改造开始 |
+| 2026-05-06 13:30 | 新建 /api/sparks/top + /api/sparks/[id] + /spark-detail/[id] |
+| 2026-05-06 14:00 | 修改 /home/page.tsx TOP3 为火花排行榜 |
+| 2026-05-06 14:30 | 构建通过 67 pages，全项目自检通过 |
+
+---
+
+## v8.0 TOP3 火花墙改造问题记录
+
+**记录**：v8.0 TOP3 火花墙改造 — 未发现新问题 ✅
+
+**自检结果**：
 | 检查项 | 结果 |
 |--------|------|
-| curl /home | 15915 字节 |
-| curl /story-hall | 13655 字节 |
-| curl /api/brainholes/bubble | 包含 "list" |
-| curl /api/sparks/public | 包含 "list" |
-| PM2 status | online, pid=1893784, mem=71.3mb |
-| 静态JS | 200 OK |
-
-### 关键结论
-
-- **SSH间歇性问题已恢复**：之前30~300秒超时，本次连接即时成功。判断为服务器SSH服务偶发性负载问题
-- **密码认证可靠**：`F!D)7n_mc8Mq}bx=` 通过paramiko稳定连接
-- **Build 47/47**：服务器本地Build与本地Windows Build结果一致
-- **静态资源生死线通过**：`/_next/static/chunks/*.js` 返回200，页面不会空白
-
-### 预防措施
-
-1. deploy_remote.py 已集成静态资源生死线检查，Build失败或静态资源404时自动中止
-2. 保留密码+密钥双认证备份
-3. SSH超时增加重试逻辑（未来改进）
-
----
-
+| SSR opacity:0 | ✅ 无复现 |
+| 底部导航栏在登录页 | ✅ 无复现 |
+| findUnique 误用 | ✅ 无复现（where 条件均为 @id 字段） |
+| useSearchParams 未包裹 Suspense | ✅ 无复现（LoginForm 被 page.tsx Suspense 包裹） |
+| 消息重复显示 | ✅ 无需测试（仅 UI 改造，未改动消息逻辑） |

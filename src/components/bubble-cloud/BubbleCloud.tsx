@@ -32,7 +32,9 @@ export default function BubbleCloud({ limit = 20 }: BubbleCloudProps) {
   const router = useRouter();
   const [bubbles, setBubbles] = useState<BubbleItem[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => { fetchBubbles(); }, []);
 
   const fetchBubbles = useCallback(async () => {
@@ -92,7 +94,7 @@ export default function BubbleCloud({ limit = 20 }: BubbleCloudProps) {
       {bubbles.map((bubble, index) => (
         <motion.div
           key={bubble.id}
-          initial={{ opacity: 0, scale: 0 }}
+          initial={mounted ? { opacity: 0, scale: 0 } : false}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: 'spring', stiffness: 180, damping: 14, delay: index * 0.04 }}
         >

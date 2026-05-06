@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
 import { markSpark } from "@/server/room-manager";
@@ -10,13 +9,15 @@ const markSparkSchema = z.object({
   messageId: z.string().cuid("无效的消息ID"),
 });
 
+// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
@@ -31,13 +32,13 @@ export async function POST(
     const { roomId } = await params;
 
     // 标记火花
-    const updatedMessage = await markSpark(roomId, messageId, session.user.id);
+    const updatedMessage = await markSpark(roomId, messageId, userId);
 
     // 通过 Socket.io 实时广播
     try {
       broadcastToRoom(roomId, "spark-marked", {
         messageId,
-        markedBy: session.user.id,
+        markedBy: userId,
         timestamp: Date.now(),
       })
     } catch {

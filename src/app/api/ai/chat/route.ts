@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiResponse, apiError } from "@/lib/utils";
 import { zhidaChat } from "@/lib/zhihu-dev-api";
+import { getPersona } from "@/lib/ai/personas";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -65,22 +66,26 @@ const LIUKANSHAN_SYSTEM_PROMPT = `你是刘看山，一只生活在北极的北�
  *
  * Body: {
  *   messages: [{role: "user", content: "..."}, {role: "assistant", content: "..."}],
- *   topic: "话题标题"
+ *   topic: "话题标题",
+ *   persona: "catalyst" | "creative" | "healer" | "mediator"  (可选，默认 catalyst)
  * }
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, topic } = body;
+    const { messages, topic, persona: personaKey } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
-        apiError("messages 不能为空", "VALIDATION_ERROR"),
+        apiError("VALIDATION_ERROR", "messages 不能为空"),
         { status: 400 }
       );
     }
 
-    const systemPrompt = LIUKANSHAN_SYSTEM_PROMPT.replace("{topic}", topic || "一个有趣的话题");
+    // v6.1: 支持多角色切换
+    const persona = getPersona(personaKey);
+    const systemPrompt = persona.systemPrompt.replace("{topic}", topic || "一个有趣的话题");
+    console.log("[AI Chat] 使用角色:", persona.name, "key:", personaKey || "catalyst");
     console.log("[AI Chat] 收到请求, topic:", topic, "history长度:", messages.length);
 
     // ==================== DeepSeek API ====================
@@ -96,6 +101,8 @@ export async function POST(request: NextRequest) {
         ];
         console.log("[AI Chat] 调用 DeepSeek API...");
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -108,7 +115,9 @@ export async function POST(request: NextRequest) {
             temperature: 0.85,
             max_tokens: 200,
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         if (res.ok) {
           const result = await res.json();
@@ -141,7 +150,11 @@ export async function POST(request: NextRequest) {
       ];
       console.log("[AI Chat] 调用 知乎直答 API...");
 
-      const zhidaResult = await zhidaChat(zhidaMessages, "zhida-thinking-1p5");
+      // v7.0-test17: 知乎直答添加15秒超时
+      const zhidaController = new AbortController();
+      const zhidaTimeout = setTimeout(() => zhidaController.abort(), 15000);
+      const zhidaResult = await zhidaChat(zhidaMessages, "zhida-thinking-1p5", zhidaController.signal);
+      clearTimeout(zhidaTimeout);
       zhidaContent = zhidaResult.choices?.[0]?.message?.content || "";
       zhidaOk = !!zhidaContent;
       console.log("[AI Chat] 知乎直答 成功, 内容长度:", zhidaContent.length);
@@ -183,13 +196,11 @@ export async function POST(request: NextRequest) {
         source,
       })
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AI Chat] 致命错误:", error);
     return NextResponse.json(
-      apiResponse({
-        content: "（对方正在思考...）",
-        source: "fallback",
-      })
+      apiError("INTERNAL_SERVER_ERROR", error instanceof Error ? error.message : "AI回复生成失败"),
+      { status: 500 }
     );
   }
 }
