@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Eye, Users, MessageCircle, ChevronRight, ArrowLeft, Radio } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface PublicRoom {
   id: string;
@@ -30,25 +31,15 @@ interface PublicRoom {
 
 export default function SpectatePage() {
   const router = useRouter();
+  const { isAuthenticated } = useRequireAuth();
   const { status: sessionStatus } = useSession();
   const [rooms, setRooms] = useState<PublicRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // v7.0-fix7: 客户端兜底重定向（Nginx缓存导致中间件对此路由执行异常）
-  useEffect(() => {
-    if (sessionStatus === 'unauthenticated') {
-      router.replace('/login');
-    }
-  }, [sessionStatus, router]);
-
-  if (sessionStatus === 'loading' || sessionStatus === 'unauthenticated') {
-    return (
-      <div className="flex flex-col h-full items-center justify-center page-gradient">
-        <div className="w-8 h-8 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin mb-4" />
-        <p className="text-sm text-white/30">加载中...</p>
-      </div>
-    );
+  // v8.0-login-fix: 统一认证门禁
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
   }
 
   useEffect(() => {

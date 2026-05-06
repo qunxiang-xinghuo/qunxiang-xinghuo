@@ -32,16 +32,27 @@ export async function middleware(request: NextRequest) {
   // 已登录用户访问登录页/注册页 → 重定向到首页
   if (isLoggedIn && PUBLIC_PATHS.includes(pathname)) {
     console.log('[Middleware] 已登录用户访问', pathname, '→ 重定向到 /home');
-    return NextResponse.redirect(new URL('/home', request.url));
+    const response = NextResponse.redirect(new URL('/home', request.url));
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    return response;
   }
 
   // 未登录用户访问非公开页面 → 重定向到登录页
   if (!isLoggedIn && !PUBLIC_PATHS.includes(pathname)) {
     console.log('[Middleware] 未登录用户访问', pathname, '→ 重定向到 /login');
-    return NextResponse.redirect(new URL('/login', request.url));
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    return response;
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  return response;
 }
 
 // v6.3-auth-fix3: 使用更可靠的 matcher，匹配所有页面路径
