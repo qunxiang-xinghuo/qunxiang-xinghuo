@@ -1006,3 +1006,137 @@ modified:   src/app/api/auth/register/route.ts  # 增强错误处理
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`
 > 最后更新：2026-05-06 v8.0 登录/注册服务器错误修复完成 ✅
+
+---
+
+## 二十一、v8.0 登录/注册 cookie secure 修复（2026-05-06 追加）
+
+### 21.1 问题现象
+
+- 注册成功 ✅
+- 登录失败 ❌（`/api/users/me` 返回未登录）
+- 服务器日志显示 `authorize` 返回用户成功，但 session 未建立
+
+### 21.2 根因分析（第6轮自测）
+
+| 检查项 | 结果 |
+|--------|------|
+| `authorize` 返回用户对象 | ✅ 正常 |
+| JWT callback 写入 token | ✅ 正常 |
+| session callback 恢复 | ✅ 正常 |
+| **cookie `secure: true`** | ❌ **HTTP 环境下浏览器拒绝发送** |
+
+**根因**：生产环境使用 HTTP（非 HTTPS），NextAuth cookie `secure: true` 时，浏览器**不会**将 cookie 发送给 HTTP 站点。导致 `signIn` 成功后 cookie 被设置但后续请求不携带，session 无法建立。
+
+### 21.3 修复方案
+
+```ts
+// src/lib/auth.ts
+cookies: {
+  sessionToken: {
+    name: `next-auth.session-token`,
+    options: {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: false, // ← 原为 true，HTTP 环境必须 false
+    },
+  },
+},
+```
+
+### 21.4 验证结果
+
+- 注册新账号 ✅
+- 新账号登录 ✅
+- 登录后跳转 `/home` 并显示用户名 ✅
+
+---
+
+## 二十二、v8.0 发现页 TOP3 火花 + 数据库路径统一（2026-05-06 追加）
+
+### 22.1 发现页 TOP3 火花缺失
+
+**现象**：发现页 `/home` 的"今日最热火花"列表为空，显示骨架屏后无数据。
+
+**根因**：`home/page.tsx` 调用 `/api/sparks/top?limit=3`，但该 API 路由文件 `src/app/api/sparks/top/route.ts` 缺失（v8.1 改造时未创建）。
+
+**修复**：新建 `/api/sparks/top` API 路由：
+- 从 `Asset` 表按 `hotScore` 降序取前 3 条
+- 关联 `brainhole`（标题）和 `room`（参与者身份对）
+- 返回 `{ id, brainholeTitle, identityPair, sparkCount, roomId }`
+
+**文件**：`src/app/api/sparks/top/route.ts`（新建）
+
+### 22.2 生产数据库路径混乱
+
+**现象**：
+- 根目录 `dev.db`：0 字节（空文件）
+- `prisma/dev.db`：2.4MB（旧数据）
+- `.env` 指向 `prisma/dev.db`
+- `src/lib/db.ts` 回退到 `file:./dev.db`
+
+**解决**（已完成）：
+1. `src/lib/db.ts` 统一使用 `file:./dev.db`
+2. `.env` 统一为 `DATABASE_URL="file:./dev.db"`
+3. 生产环境需执行：
+   ```bash
+   cd /www/wwwroot/qunxiang-xinghuo
+   # 备份旧数据（如需迁移）
+   cp prisma/dev.db prisma/dev.db.backup
+   # 删除旧文件避免混淆
+   rm prisma/dev.db
+   # 确保根目录 dev.db 是正确数据库
+   sqlite3 dev.db ".tables"
+   ```
+
+### 22.3 文件变更清单
+
+```
+new file:   src/app/api/sparks/top/route.ts        # TOP3 火花排行榜 API
+modified:   src/lib/auth.ts                        # cookie secure=false
+```
+
+### 22.4 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-top3-fix | 2026-05-06 | ✅ 通过 | 71/71 |
+
+---
+
+## 二十三、后续迭代需求汇总（TDD 标注）
+
+以下需求已在 TDD §18.2 中标注，待后续版本实现：
+
+### 23.1 线索卡机制
+- **状态**：⏳ 待后续迭代（大工作量）
+- **说明**：在对白过程中，用户可通过特定条件（如消息数达到阈值、关键词触发）获得"线索卡"，逐步解锁故事隐藏信息。需新增 `StoryClue` 模型 + 前端 UI。
+
+### 23.2 结局分支（需 AI 情绪分析）
+- **状态**：⏳ 待后续迭代（需 AI 情绪分析）
+- **说明**：根据用户在对白中的情绪倾向（通过 AI 分析消息情感），生成不同结局分支（如"真相大白"/"遗憾收场"/"意外反转"）。需接入情感分析 API + 结局分支表。
+
+### 23.3 埋点系统
+- **状态**：⏳ 需接入 analytics
+- **说明**：统计用户行为（页面停留、点击热区、漏斗转化），支持自研或接入第三方（如 Plausible/umami）。需设计事件 schema + 上报 SDK。
+
+### 23.4 用户激励（徽章/积分）
+- **状态**：⏳ 需新表 + 前端展示
+- **说明**：
+  - 徽章系统：首次完成故事、累计火花数、连续登录等成就徽章
+  - 积分系统：参与对白、获得点赞、发表评论获得积分
+  - 需新增 `Badge` / `UserBadge` / `PointLog` 模型
+
+### 23.5 运营后台
+- **状态**：⏳ 需运营后台
+- **说明**：
+  - 内容管理：故事增删改、审核用户提交的故事
+  - 用户管理：查看用户数据、禁言/封号
+  - 数据统计：DAU/留存/转化率
+  - 需独立的 admin 路由 + 权限控制
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 发现页 TOP3 + 数据库路径统一 + 后续需求标注完成 ✅

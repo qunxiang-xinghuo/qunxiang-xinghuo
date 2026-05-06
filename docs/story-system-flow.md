@@ -280,9 +280,11 @@ flowchart TD
 | 1 | 消息发送失败无用户反馈 | P1 | ⏳ 待实现 Toast |
 | 2 | 轮询 POST 有副作用 | P2 | ⏳ 待改为 GET /match-status |
 | 3 | 拆分 room page 为子组件 | P2 | ⏳ 待重构 |
-| 4 | 埋点系统 | P3 | ⏳ 需接入 analytics |
-| 5 | 线索卡机制 | P3 | ⏳ 待后续迭代 |
-| 6 | 结局分支 | P3 | ⏳ 需 AI 情绪分析 |
+| 4 | 埋点系统 | P3 | ⏳ 需接入 analytics（TDD §23.3） |
+| 5 | 线索卡机制 | P3 | ⏳ 待后续迭代（TDD §23.1） |
+| 6 | 结局分支 | P3 | ⏳ 需 AI 情绪分析（TDD §23.2） |
+| 7 | 用户激励（徽章/积分） | P3 | ⏳ 需新表 + 前端展示（TDD §23.4） |
+| 8 | 运营后台 | P3 | ⏳ 需 admin 路由 + 权限（TDD §23.5） |
 
 ---
 
@@ -360,8 +362,40 @@ next-auth v4.24.14
 | 2 | 生产环境 db 单例未缓存 | 始终设置 `globalForPrisma.prisma = db` |
 | 3 | `authorize` 无 try/catch | 添加异常捕获，返回 null |
 | 4 | `NEXTAUTH_SECRET` 无 fallback | 添加 fallback 密钥 |
+| 5 | cookie `secure=true` 在 HTTP 环境不发送 | 改为 `secure: false` |
+
+### B.4 登录流程完整时序（含 cookie 修复后）
+
+```
+用户输入用户名/密码
+    │
+    ▼
+LoginForm.tsx → signIn('credentials', { username, password, redirect: false })
+    │
+    ▼
+/api/auth/[...nextauth] → CredentialsProvider.authorize(credentials)
+    │
+    ├── db.user.findFirst → 查找用户
+    ├── bcrypt.compare → 验证密码
+    └── 返回 { id, name, email, username, level, sparkCount }
+    │
+    ▼
+JWT 签名 + 设置 cookie（secure: false，HTTP 兼容）
+    │
+    ▼
+LoginForm 获取成功 → fetch('/api/users/me')
+    │
+    ▼
+浏览器发送请求（携带 cookie）→ /api/users/me
+    │
+    ▼
+getToken({ req, secret }) → 验证 JWT → 返回用户数据
+    │
+    ▼
+localStorage.setItem('xh_user', ...) → router.push('/home')
+```
 
 ---
 
 > 文档位置：`docs/story-system-flow.md`
-> 最后更新：2026-05-06 认证系统架构补充 ✅
+> 最后更新：2026-05-06 认证系统架构 + cookie 修复补充 ✅

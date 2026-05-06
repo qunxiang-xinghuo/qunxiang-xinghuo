@@ -485,3 +485,71 @@ modified:   src/app/api/auth/register/route.ts  # 错误处理增强
 ```
 
 ---
+
+## v8.0 登录 cookie secure 修复 + 发现页 TOP3 恢复 + 数据库路径统一
+
+> 更新：2026-05-06
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 修复文件清单
+
+```
+modified:   src/lib/auth.ts                      # cookie secure=false（HTTP 环境兼容）
+new file:   src/app/api/sparks/top/route.ts      # TOP3 火花排行榜 API
+```
+
+### 问题1：登录成功但会话未建立（cookie secure 陷阱）
+
+**根因**：生产环境使用 HTTP，`secure: true` 的 cookie 被浏览器拒绝发送。
+
+**修复**：`src/lib/auth.ts` 中 cookie options 的 `secure` 改为 `false`。
+
+**验证**：注册 → 登录 → 跳转 `/home` → 显示用户名 ✅
+
+### 问题2：发现页 TOP3 火花列表为空
+
+**根因**：`/api/sparks/top` API 路由缺失（v8.1 改造时未创建）。
+
+**修复**：新建 `src/app/api/sparks/top/route.ts`，从 Asset 表按 hotScore 降序取前 3。
+
+**验证**：登录后访问 `/home` → "今日最热火花"显示 TOP3 数据 ✅
+
+### 问题3：生产数据库路径混乱
+
+**现状**：
+- 根目录 `dev.db`：实际使用（516KB+）
+- `prisma/dev.db`：旧数据（2.4MB），需清理
+
+**解决**：
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+# 备份（如需要保留旧数据）
+cp prisma/dev.db prisma/dev.db.backup.$(date +%Y%m%d)
+# 删除旧文件
+rm -f prisma/dev.db
+# 确认根目录 dev.db 正常
+sqlite3 dev.db ".tables"
+```
+
+### 后续迭代需求（已在 TDD 中标注）
+
+| 需求 | 状态 | 说明 |
+|------|------|------|
+| 线索卡机制 | ⏳ 待迭代 | 需新增 StoryClue 模型 + UI |
+| 结局分支 | ⏳ 待迭代 | 需 AI 情绪分析 API |
+| 埋点系统 | ⏳ 待迭代 | 需接入 analytics |
+| 用户激励（徽章/积分） | ⏳ 待迭代 | 需 Badge/PointLog 模型 |
+| 运营后台 | ⏳ 待迭代 | 需 admin 路由 + 权限 |
+
+---
+
+---

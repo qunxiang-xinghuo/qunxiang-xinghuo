@@ -761,5 +761,96 @@ export const authOptions = {
 | 2026-05-06 | 全方位建议实现（种子/催化/分类/动画） |
 | 2026-05-06 | 生产部署成功 |
 | 2026-05-06 | **登录/注册服务器错误修复** |
+| 2026-05-06 | **登录 cookie secure + TOP3 火花 + 数据库路径统一** |
+
+---
+
+## v8.0 登录 cookie secure 修复 — 问题记录
+
+### 问题16：登录成功但会话未建立
+
+**现象**：
+- 注册成功 ✅
+- 登录失败 ❌（`/api/users/me` 返回未登录）
+- 服务器日志显示 `authorize` 返回用户成功
+
+**排查过程（第6轮自测）**：
+
+| 检查项 | 结果 |
+|--------|------|
+| `authorize` 返回用户对象 | ✅ 正常 |
+| JWT callback 写入 token | ✅ 正常 |
+| session callback 恢复 | ✅ 正常 |
+| **cookie `secure: true`** | ❌ HTTP 环境下浏览器拒绝发送 |
+
+**根因**：
+- 生产环境使用 HTTP（非 HTTPS）
+- NextAuth cookie options 中 `secure: true`
+- 浏览器安全策略：secure cookie 只发送给 HTTPS 站点
+- `signIn` 成功后 cookie 被设置，但后续请求不携带
+- `getToken` 读取不到 cookie → 认为未登录
+
+**解决**：
+```ts
+// src/lib/auth.ts
+cookies: {
+  sessionToken: {
+    options: {
+      // ...
+      secure: false, // ← 原为 true
+    },
+  },
+},
+```
+
+**验证**：注册 → 登录 → `/home` 显示用户名 ✅
+
+---
+
+## v8.0 发现页 TOP3 火花缺失 — 问题记录
+
+### 问题17：发现页 "今日最热火花"为空
+
+**现象**：
+- 登录后访问 `/home`
+- "今日最热火花"区域显示骨架屏后无数据
+- 列表为空
+
+**根因**：
+- `home/page.tsx` 调用 `/api/sparks/top?limit=3`
+- 但 `src/app/api/sparks/top/route.ts` 文件不存在
+- API 返回 404，前端 `data.data?.list` 为 undefined
+
+**解决**：新建 `/api/sparks/top` 路由：
+```ts
+// GET /api/sparks/top?limit=3
+// 从 Asset 表按 hotScore 降序取前 N 条
+// 关联 brainhole.title 和 room.participants.identity
+```
+
+**验证**：`/home` 显示 TOP3 火花数据 ✅
+
+---
+
+## v8.0 生产数据库路径混乱 — 问题记录
+
+### 问题18：dev.db 路径不一致
+
+**现象**：
+- 根目录 `dev.db`：实际使用（516KB，有种子数据）
+- `prisma/dev.db`：旧数据（2.4MB），未被使用但存在
+- 历史原因：早期使用 `prisma/dev.db`，后改为根目录
+
+**现状（已修复）**：
+- `src/lib/db.ts`：统一 `file:./dev.db`
+- `.env`：统一 `DATABASE_URL="file:./dev.db"`
+
+**生产环境清理步骤**：
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+cp prisma/dev.db prisma/dev.db.backup.$(date +%Y%m%d)
+rm -f prisma/dev.db
+sqlite3 dev.db ".tables"  # 验证正常
+```
 
 ---
