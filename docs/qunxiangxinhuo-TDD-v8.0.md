@@ -405,3 +405,46 @@ if (dbUser?.tokenRevokedAt) {
   - `/api/users/me` 无 cookie → 401 ✅
   - `/api/auth/logout` POST → 200 ✅
 - **直接端口测试（:3000）**：所有受保护页面 307 → `/login` ✅
+
+---
+
+## 十一、TOP3 火花墙改造（v8.0-spark-wall）
+
+### 11.1 功能描述
+发现页 `/home` 的"今日最热 TOP3"从脑洞排行榜改为**已完结对白的火花排行榜**。
+
+### 11.2 数据流
+```
+发现页 /home
+  → fetch /api/sparks/top?limit=3
+    → Asset.findMany({ isPublic: true, orderBy: hotScore desc })
+      → 关联 brainhole（标题、分类）
+      → 关联 room（参与者身份、消息预览）
+    → 返回 TOP3 火花数据
+  → 点击卡片 → /spark-detail/:id
+    → fetch /api/sparks/:id
+      → Asset + Room（完整消息记录）
+    → SparkDetailClient 微信聊天风格展示
+```
+
+### 11.3 API 路由
+| 路由 | 方法 | 功能 |
+|------|------|------|
+| `/api/sparks/top` | GET | TOP3 火花排行榜（query: limit=3） |
+| `/api/sparks/:id` | GET | 火花详情 + 关联房间完整对白 |
+
+### 11.4 页面路由
+| 路由 | 功能 |
+|------|------|
+| `/home` | 发现页，展示 TOP3 火花排行榜 |
+| `/spark-detail/:id` | 火花详情，微信聊天风格展示完整对白 |
+
+### 11.5 改造文件清单
+```
+modified:   middleware.ts                          # 添加 /spark-detail 路由保护
+modified:   src/app/home/page.tsx                  # TOP3 改为火花排行榜
+new file:   src/app/api/sparks/top/route.ts        # TOP3 火花 API
+new file:   src/app/api/sparks/[id]/route.ts       # 火花详情 API
+new file:   src/app/spark-detail/[id]/page.tsx     # 火花详情服务端入口
+new file:   src/app/spark-detail/[id]/SparkDetailClient.tsx  # 微信聊天风格展示
+```

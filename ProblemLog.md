@@ -180,3 +180,22 @@ git pull fqunxiang dev
 | 2026-05-06 02:45 | 发现 Invoke-WebRequest cookie 问题 |
 | 2026-05-06 02:50 | 无 cookie 测试全部通过！15个页面全部 307→/login |
 | 2026-05-06 03:00 | 最终提交并推送，更新文档 |
+| 2026-05-06 13:00 | v8.0 TOP3火花墙改造开始 |
+| 2026-05-06 13:30 | 新建 /api/sparks/top + /api/sparks/[id] + /spark-detail/[id] |
+| 2026-05-06 14:00 | 修改 /home/page.tsx TOP3 为火花排行榜 |
+| 2026-05-06 14:30 | 构建通过 67 pages，全项目自检通过 |
+
+---
+
+## v8.0 TOP3 火花墙改造问题记录
+
+**记录**：v8.0 TOP3 火花墙改造 — 未发现新问题 ✅
+
+**自检结果**：
+| 检查项 | 结果 |
+|--------|------|
+| SSR opacity:0 | ✅ 无复现 |
+| 底部导航栏在登录页 | ✅ 无复现 |
+| findUnique 误用 | ✅ 无复现（where 条件均为 @id 字段） |
+| useSearchParams 未包裹 Suspense | ✅ 无复现（LoginForm 被 page.tsx Suspense 包裹） |
+| 消息重复显示 | ✅ 无需测试（仅 UI 改造，未改动消息逻辑） |

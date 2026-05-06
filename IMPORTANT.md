@@ -177,3 +177,34 @@ curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" --cookie "" http://l
 - 公开页面测试（/, /login, /register）：全部 200
 - API 测试：`/api/users/me` 无 cookie → 401，`/api/auth/logout` → 200
 - 服务器部署状态：✅ 已部署，PM2 online
+
+---
+
+## v8.0 TOP3 火花墙改造 — 部署记录
+
+**2026-05-06 v8.0-spark-wall 部署**
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm install
+npm run build
+pm2 restart all
+```
+
+**新增文件清单**
+- `src/app/api/sparks/top/route.ts` — TOP3 火花排行榜 API
+- `src/app/api/sparks/[id]/route.ts` — 火花详情 API
+- `src/app/spark-detail/[id]/page.tsx` — 火花详情页（服务端）
+- `src/app/spark-detail/[id]/SparkDetailClient.tsx` — 微信聊天风格展示
+
+**修改文件清单**
+- `src/app/home/page.tsx` — TOP3 从脑洞排行改为火花排行
+- `middleware.ts` — 添加 `/spark-detail` 路由保护
+
+**验证结果**
+- 构建：✅ 67 pages 全部通过
+- 公开页面：✅ / /login /register 全部 200
+- 登录守卫：✅ /home /library /profile /settings /spectate /solo-match /duo-match /healing /story-hall 全部 307→/login
+- 已知问题：✅ opacity:0 / BottomNav / findUnique / useSearchParams 无复现
