@@ -37,8 +37,16 @@ npm run build >> "$LOG_FILE" 2>&1
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Restarting PM2..." >> "$LOG_FILE"
 pm2 restart qunxiang-xinghuo >> "$LOG_FILE" 2>&1 || pm2 start npm --name "qunxiang-xinghuo" -- start >> "$LOG_FILE" 2>&1
 
-# v7.0-fix7: 重启 Nginx 清除可能存在的页面缓存
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Reloading Nginx..." >> "$LOG_FILE"
-/www/server/nginx/sbin/nginx -s reload >> "$LOG_FILE" 2>&1 || true
+# v8.0-login-fix: 完全重启 Nginx 清除所有缓存（reload 不会清除缓存文件）
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Stopping Nginx..." >> "$LOG_FILE"
+/www/server/nginx/sbin/nginx -s stop >> "$LOG_FILE" 2>&1 || true
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Nginx..." >> "$LOG_FILE"
+/www/server/nginx/sbin/nginx >> "$LOG_FILE" 2>&1 || true
+
+# 尝试清除 Nginx proxy_cache 目录
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Clearing Nginx cache..." >> "$LOG_FILE"
+rm -rf /www/server/nginx/proxy_cache_dir/* >> "$LOG_FILE" 2>&1 || true
+rm -rf /www/server/nginx/proxy_cache/* >> "$LOG_FILE" 2>&1 || true
+rm -rf /tmp/nginx_cache/* >> "$LOG_FILE" 2>&1 || true
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ===== Deploy Complete =====" >> "$LOG_FILE"
