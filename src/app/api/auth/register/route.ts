@@ -83,6 +83,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 数据库连接错误
+    if (error.message?.includes('database') || error.message?.includes('connection')) {
+      return NextResponse.json(
+        { success: false, message: "数据库连接失败，请稍后重试" },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, message: "服务器错误，请稍后重试" },
       { status: 500 }

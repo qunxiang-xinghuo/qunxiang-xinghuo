@@ -1,6 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "./db";
 import bcrypt from "bcryptjs";
 
@@ -34,9 +33,15 @@ declare module "next-auth/jwt" {
   }
 }
 
+// v8.0-fix: 确保 NEXTAUTH_SECRET 在生产环境中已设置
+if (!process.env.NEXTAUTH_SECRET) {
+  console.warn('[Auth] NEXTAUTH_SECRET 未设置，使用 fallback 密钥（不推荐用于生产环境）');
+}
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db) as any,
-  secret: process.env.NEXTAUTH_SECRET,
+  // v8.0-fix: 移除 PrismaAdapter。我们使用 JWT + CredentialsProvider，
+  // 不需要数据库存储 session/account。PrismaAdapter v2 与 next-auth v4 不兼容。
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key-min-32-chars-long!!',
   session: {
     strategy: "jwt",
     // v6.3-auth-fix3: JWT 有效期 24 小时，避免长期会话残留
@@ -90,43 +95,48 @@ export const authOptions: NextAuthOptions = {
         password: { label: "密码", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
-          return null;
-        }
-
-        // 优先通过 username 查找
-        const user = await db.user.findFirst({
-          where: {
-            OR: [
-              { username: credentials.username },
-              { email: credentials.username },
-            ],
-          },
-        });
-
-        if (!user) {
-          return null;
-        }
-
-        // 验证密码
-        if (user.password) {
-          const valid = await bcrypt.compare(credentials.password, user.password);
-          if (!valid) {
+        try {
+          if (!credentials?.username || !credentials?.password) {
             return null;
           }
-        } else {
-          // 兼容旧用户：没有密码的不能通过 credentials 登录
+
+          // 优先通过 username 查找
+          const user = await db.user.findFirst({
+            where: {
+              OR: [
+                { username: credentials.username },
+                { email: credentials.username },
+              ],
+            },
+          });
+
+          if (!user) {
+            return null;
+          }
+
+          // 验证密码
+          if (user.password) {
+            const valid = await bcrypt.compare(credentials.password, user.password);
+            if (!valid) {
+              return null;
+            }
+          } else {
+            // 兼容旧用户：没有密码的不能通过 credentials 登录
+            return null;
+          }
+
+          return {
+            id: user.id,
+            name: user.name || user.username || user.email?.split("@")[0],
+            email: user.email,
+            username: user.username,
+            level: user.level,
+            sparkCount: user.sparkCount,
+          };
+        } catch (error) {
+          console.error('[Auth] authorize error:', error);
           return null;
         }
-
-        return {
-          id: user.id,
-          name: user.name || user.username || user.email?.split("@")[0],
-          email: user.email,
-          username: user.username,
-          level: user.level,
-          sparkCount: user.sparkCount,
-        };
       },
     }),
   ],

@@ -12,6 +12,6 @@ function createPrismaClient() {
   return new PrismaClient({ adapter });
 }
 
+// v8.0-fix: 始终使用全局单例，避免生产环境重复创建连接
 export const db = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+globalForPrisma.prisma = db;
