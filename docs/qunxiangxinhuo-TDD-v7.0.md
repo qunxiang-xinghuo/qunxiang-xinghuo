@@ -295,3 +295,79 @@
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v7.0.md`  
 > 最后更新：2026-05-05 v7.0-fix7 全部修复完成 ✅
+
+---
+
+## 十、v8.0 登录系统强制守卫修复
+
+### 10.1 问题描述
+**核心问题**：`useSession()` loading 状态期间（200-500ms），AppShell 仅在 `useEffect` 中做重定向，组件渲染层面未阻止 `children` 渲染，导致受保护页面内容在守卫完成前短暂闪现（"守卫窗口期"）。
+
+### 10.2 修复方案（多层防御）
+
+#### Layer 1: Edge 中间件 (`middleware.ts`)
+- 已覆盖所有页面路由 matcher
+- 未登录访问非公开页 → `/login`
+- 已登录访问公开页 → `/home`
+
+#### Layer 2: 布局渲染级守卫 (`AppShell.tsx`) — 核心修复
+```tsx
+// session 加载中 + 非公开页面 → 返回空白屏（不渲染 children，不渲染 BottomNav）
+if (sessionStatus === 'loading' && !isPublicPage) {
+  return <BlankScreen />;
+}
+// session 已确认未登录 + 非公开页面 → 返回空白屏（等待跳转完成）
+if (sessionStatus === 'unauthenticated' && !isPublicPage) {
+  return <BlankScreen />;
+}
+```
+
+#### Layer 3: 页面级门禁 (`useRequireAuth` hook)
+- 新文件：`src/hooks/useRequireAuth.ts`
+- 在核心受保护页面顶部调用：未登录时返回空白页
+- 已应用页面：`/home`, `/library`, `/profile`, `/settings`
+
+#### Layer 4: 底部导航栏 (`BottomNav.tsx`)
+- 最顶部检查：`pathname === '/' || pathname === '/login'` → `return null`
+- `status === 'loading'` → `return null`
+- `status === 'unauthenticated'` → `return null`
+
+### 10.3 服务器端 Token 失效
+
+#### 数据库变更
+- `User` 模型新增 `tokenRevokedAt DateTime?`
+
+#### 登出流程 (`/api/auth/logout`)
+1. 客户端调用 `POST /api/auth/logout` → 后端更新 `tokenRevokedAt = now()`
+2. 清除 localStorage / sessionStorage
+3. `signOut({ redirect: false })` 清除 cookie
+4. `window.location.replace('/login')` 硬刷新
+
+#### Token 撤销检查 (`/api/users/me`)
+```tsx
+if (dbUser?.tokenRevokedAt) {
+  const tokenIatMs = token.iat ? token.iat * 1000 : 0;
+  if (tokenIatMs < dbUser.tokenRevokedAt.getTime()) {
+    return 401 Unauthorized;
+  }
+}
+```
+
+### 10.4 修复文件清单
+| 文件 | 变更 |
+|------|------|
+| `src/components/layout/AppShell.tsx` | 渲染级门禁守卫（核心） |
+| `src/components/layout/BottomNav.tsx` | `/login` 最优先检查 |
+| `src/hooks/useRequireAuth.ts` | 新建：统一认证门禁 hook |
+| `src/app/home/page.tsx` | 页面级门禁 |
+| `src/app/library/page.tsx` | 页面级门禁 |
+| `src/app/profile/page.tsx` | 页面级门禁 + 登出流程增强 |
+| `src/app/settings/page.tsx` | 页面级门禁 |
+| `src/app/api/auth/logout/route.ts` | 新建：服务器端登出 API |
+| `src/app/api/users/me/route.ts` | Token 撤销检查 |
+| `src/lib/auth-utils.ts` | 新建：Token 撤销辅助函数 |
+| `prisma/schema.prisma` | `User.tokenRevokedAt` |
+
+### 10.5 验证结果
+- **构建状态**：✅ 66 pages + 所有 API routes 全部通过
+- **测试循环**：v8.0-login-fix (本地构建验证通过)

@@ -7,6 +7,7 @@ import {
   Flame, Clock, ChevronRight,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface Spark {
   id: string;
@@ -27,12 +28,18 @@ type TabType = 'latest' | 'hottest';
 
 export default function SparksPage() {
   const router = useRouter();
+  const { isAuthenticated } = useRequireAuth();
   const [sparks, setSparks] = useState<Spark[]>([]);
   const [tab, setTab] = useState<TabType>('latest');
   const [loading, setLoading] = useState(true);
   const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
   const [guestId, setGuestId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
 
   useEffect(() => { setMounted(true); }, []);
 

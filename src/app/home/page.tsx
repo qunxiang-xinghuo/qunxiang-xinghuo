@@ -7,6 +7,7 @@ import {
   TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface Brainhole {
   id: string;
@@ -19,10 +20,16 @@ interface Brainhole {
 
 export default function HomePage() {
   const router = useRouter();
+  const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
   const [top3, setTop3] = useState<Brainhole[]>([]);
   const [loading, setLoading] = useState(true);
   const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
 
   useEffect(() => { setMounted(true); }, []);
 

@@ -45,9 +45,10 @@ model User {
   username      String?   @unique
   password      String?
   level         Int       @default(1)
-  sparkCount    Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  sparkCount      Int       @default(0)
+  tokenRevokedAt  DateTime? // v8.0: 登出时设置，用于服务器端 token 失效
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   accounts         Account[]
   sessions         Session[]

@@ -7,6 +7,7 @@ import {
   ArrowLeft, Camera, User, Lock, AlertCircle, Eye, EyeOff, X,
 } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface UserData {
   id: string;
@@ -57,11 +58,17 @@ function UserAvatar({ user, size = 48 }: { user: UserData | null; size?: number 
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { isAuthenticated } = useRequireAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
 
   // 弹窗控制
   const [showUsernameModal, setShowUsernameModal] = useState(false);

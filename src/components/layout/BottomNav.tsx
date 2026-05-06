@@ -20,11 +20,11 @@ export default function BottomNav() {
   // pathname 未就绪时不显示（避免闪烁）
   if (!pathname) return null;
 
-  // 登录页绝对不显示底部导航栏（双重保险）
-  if (pathname === '/') return null;
+  // v8.0-login-fix: 登录页和根路径绝对不显示底部导航栏（最优先检查）
+  if (pathname === '/' || pathname === '/login') return null;
 
   // 隐藏底部导航的页面
-  const hideNavPaths = ['/login', '/register', '/welcome', '/onboarding'];
+  const hideNavPaths = ['/register', '/welcome', '/onboarding'];
   if (hideNavPaths.includes(pathname)) return null;
 
   // 房间、匹配等页面也隐藏

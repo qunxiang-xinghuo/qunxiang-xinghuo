@@ -7,6 +7,7 @@ import { signOut } from 'next-auth/react';
 import {
   Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins, Heart,
 } from 'lucide-react';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface UserData {
   id: string;
@@ -49,9 +50,15 @@ function UserAvatar({ user, size = 64 }: { user: UserData | null; size?: number 
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { isAuthenticated } = useRequireAuth();
   const [user, setUser] = useState<UserData | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+
+  // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -180,20 +187,28 @@ export default function ProfilePage() {
         <div className="mt-8 pb-6">
           <button
             onClick={async () => {
-              // v7.0-fix6: 先清除所有本地数据，再调用 signOut，最后硬刷新
-              // 顺序：localStorage → signOut(清除HTTPOnly cookie) → 硬刷新
+              // v8.0-login-fix: 完整登出流程
+              // 1. 通知后端 token 失效
+              try {
+                await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+              } catch (e) {
+                console.error('[Logout] 后端登出通知失败:', e);
+              }
+
+              // 2. 清除所有本地数据
               localStorage.removeItem('xh_user');
               localStorage.removeItem('xh_identity');
               localStorage.removeItem('xh_user_id');
               sessionStorage.clear();
 
+              // 3. 清除 next-auth session cookie
               try {
                 await signOut({ redirect: false });
               } catch (e) {
                 console.error('[Logout] signOut 失败:', e);
               }
 
-              // 使用 replace 避免历史记录残留，确保彻底回到登录页
+              // 4. 硬刷新回到登录页（避免历史残留）
               window.location.replace('/login');
             }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-500/20 text-red-400/60 text-sm hover:bg-red-500/5 transition-colors"
