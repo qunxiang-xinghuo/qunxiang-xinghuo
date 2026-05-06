@@ -21,7 +21,7 @@
 ### 部署步骤
 
 ```bash
-cd /var/www/qunxiang-xinghuo
+cd /www/wwwroot/qunxiang-xinghuo
 export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
 git pull fqunxiang dev
 rm -rf .next
