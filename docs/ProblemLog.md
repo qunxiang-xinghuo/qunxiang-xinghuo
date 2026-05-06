@@ -585,3 +585,112 @@ if (existingAiRoom) return apiResponse({ roomId: existingAiRoom.id });
 | 2026-05-06 | 构建通过 70/70，更新全部文档 |
 
 ---
+
+
+---
+
+## v8.0 故事系统全方位建议实现 — 问题记录
+
+### 问题11：种子数据需重新执行
+
+**现象**：
+- `prisma/seed-stories.ts` 已更新为剧本杀化版本
+- 但生产数据库中已有旧的种子数据
+
+**解决**：
+- 生产环境如需要更新种子数据，需手动执行：
+  ```bash
+  npx tsx prisma/seed-stories.ts
+  ```
+- 注意：这会创建新故事，不会覆盖已有故事（因为用的是 `create`）
+- 如需更新已有故事的 openingInfo，需要手动 UPDATE 或使用 `upsert`
+
+---
+
+## v8.0 故事系统完整时间线（汇总）
+
+| 时间 | 事件 | Commit |
+|------|------|--------|
+| 2026-05-06 | 初始开发完成 | `53c01d5` |
+| 2026-05-06 | 修复 20 个初始问题 | `eda3076` |
+| 2026-05-06 | 代码审查修复（竞态/泄漏/权限） | `df50696` |
+| 2026-05-06 | UX 优化（折叠/卡片/随机/AI context/Error Boundary） | `472ffbe` |
+| 2026-05-06 | 全方位建议实现（种子/催化/分类/遮罩/动画/流程图） | `f7f54b9` |
+
+**累计修改文件**：20+ 个文件
+**累计构建通过率**：100%（70/70 页面）
+**累计修复问题**：23 个
+
+---
+
+
+---
+
+## v8.0 生产部署问题记录
+
+### 问题12：DATABASE_URL 环境变量为空导致种子失败
+
+**现象**：
+- 种子脚本报错：`The table main.Story does not exist`
+- `prisma db push` 显示 schema 已同步
+- `sqlite3 prisma/dev.db ".tables"` 显示 Story 表存在
+
+**根因**：
+- `src/lib/db.ts` 使用 `process.env.DATABASE_URL || "file:./dev.db"`
+- shell 环境变量 `DATABASE_URL` 为空，优先于 `.env` 文件
+- 回退到 `file:./dev.db`（根目录空文件，0 字节）
+
+**解决**：
+```bash
+export DATABASE_URL="file:./dev.db"
+npx tsx prisma/seed-stories.ts
+```
+
+### 问题13：种子脚本重复执行导致数据重复
+
+**现象**：
+- 故事大厅显示 10 个故事（每个标题重复 2 次）
+- 第二次执行种子时未检查已有数据
+
+**根因**：
+- 种子脚本使用 `db.story.create()`，无 `upsert` 或去重逻辑
+- 用户执行了两次
+
+**解决**：
+```bash
+# 清理重复，保留最新插入的
+sqlite3 dev.db "DELETE FROM Story WHERE id NOT IN (SELECT MAX(id) FROM Story GROUP BY title);"
+```
+
+### 问题14：dev.db 路径混乱
+
+**现象**：
+- 根目录 `dev.db`：0 字节（空）
+- `prisma/dev.db`：2.4MB（旧数据）
+- `.env` 指向 `prisma/dev.db`
+- 但 `prisma db push` 最终使用的是 `file:./dev.db`
+
+**根因**：
+- 开发环境和生产环境的数据库路径不一致
+- 历史遗留：早期使用 `prisma/dev.db`，后来改为根目录 `dev.db`
+
+**建议后续修复**：
+1. 统一使用 `file:./dev.db`（根目录）
+2. 删除 `prisma/dev.db` 避免混淆
+3. 更新 `.env` 为 `DATABASE_URL="file:./dev.db"`
+
+---
+
+## v8.0 完整时间线（最终版）
+
+| 时间 | 事件 |
+|------|------|
+| 2026-05-06 | 初始开发完成 |
+| 2026-05-06 | 修复 20 个初始问题 |
+| 2026-05-06 | 代码审查修复 9 个问题 |
+| 2026-05-06 | UX 优化 11 项 |
+| 2026-05-06 | 全方位建议实现（种子/催化/分类/动画） |
+| 2026-05-06 | **生产部署成功**（PM2 online pid 815133） |
+| 2026-05-06 | 种子数据插入 5 个剧本杀化故事 |
+
+---

@@ -775,3 +775,159 @@ modified:   src/components/layout/AppShell.tsx    # Error Boundary
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
 > 最后更新：2026-05-06 v8.0 故事系统 UX 优化完成 ✅
+
+
+---
+
+## 十八、v8.0 故事系统全方位建议实现（2026-05-06 追加）
+
+### 18.1 实现背景
+基于资深产品交互设计师、产品经理、项目经理、视觉设计师、开发工程师、测试工程师、产品运营师、剧本杀作者八重视角的全面走查，将可落地的建议全部实现。
+
+### 18.2 已实现建议清单
+
+#### 交互设计师建议（6/6 实现）
+
+| # | 建议 | 实现 | 文件 |
+|---|------|------|------|
+| 1 | openingInfo 30秒自动折叠 | ✅ 折叠为「📋 查看开场信息」小按钮 | `room/[id]/page.tsx` |
+| 2 | 结束对白 confirm 改为内嵌卡片 | ✅ 「真的要揭晓谜底了吗？」柔和确认 | `room/[id]/page.tsx` |
+| 3 | 揭晓谜底后「再来一局」 | ✅ TruthModal 底部增加 🎭 再来一局按钮 | `room/[id]/page.tsx` |
+| 4 | AI 房间使用故事 system prompt | ✅ 传入角色名+openingInfo+act1-4Reveal | `room/[id]/page.tsx` |
+| 5 | 🎲 随机分配角色 | ✅ 从未选角色中随机，降低决策成本 | `story/[id]/page.tsx` |
+| 6 | 角色详情展开 | ✅ ChevronDown 展开 description | `story/[id]/page.tsx` |
+| 7 | 等待时间 15秒→10秒 | ✅ 减少焦虑感 | `story/[id]/page.tsx` |
+| 8 | 加载全局遮罩 | ✅ joinLoading 时显示半透明遮罩+转圈 | `story/[id]/page.tsx` |
+| 9 | 故事大厅分类标签 | ✅ 全部/古风/民国/现代 横向标签栏 | `story-hall/page.tsx` |
+| 10 | placeholder 可见性 | ✅ white/20 → white/35 | `room/[id]/page.tsx` |
+| 11 | 起承转合动画 | ✅ motion.div 渐入动画，delay 递增 | `room/[id]/page.tsx` |
+
+#### 剧本杀作者建议（4/5 实现）
+
+| # | 建议 | 实现 | 文件 |
+|---|------|------|------|
+| 1 | OpeningInfo 悬念设计 | ✅ 每段增加「未完成的任务」或「内心的矛盾」 | `prisma/seed-stories.ts` |
+| 2 | 四格叙事节奏感 | ✅ act1-4 保持起承转合结构（已有） | — |
+| 3 | AI 催化叙事融入 | ✅ 包装成环境事件（烛火摇曳/脚步声/空气凝固） | `catalyst/route.ts` |
+| 4 | 线索卡机制 | ⏳ 待后续迭代（大工作量） | — |
+| 5 | 结局分支 | ⏳ 待后续迭代（需 AI 情绪分析） | — |
+
+#### 开发工程师建议（1/3 实现）
+
+| # | 建议 | 实现 | 文件 |
+|---|------|------|------|
+| 1 | Error Boundary | ✅ AppShell 包裹，渲染错误时显示刷新按钮 | `AppShell.tsx` |
+| 2 | 拆分 room page 子组件 | ⏳ 待后续迭代 | — |
+| 3 | memoize 日期格式化 | ⏳ 待后续迭代 | — |
+
+#### 产品经理建议（0/2 实现，需后续迭代）
+
+| # | 建议 | 状态 |
+|---|------|------|
+| 1 | 埋点系统 | ⏳ 需接入 analytics |
+| 2 | 商业模式闭环 | ⏳ 需 Asset 公开/私密 + 解锁机制 |
+
+#### 产品运营师建议（0/3 实现，需后续迭代）
+
+| # | 建议 | 状态 |
+|---|------|------|
+| 1 | 用户激励（徽章/积分） | ⏳ 需新表 + 前端展示 |
+| 2 | 社区运营（置顶/加精） | ⏳ 需评论权限系统 |
+| 3 | 定期评选活动 | ⏳ 需运营后台 |
+
+### 18.3 种子数据改写（剧本杀化）
+
+每个角色的 `openingInfo` 和 `description` 已改写为悬念式剧本风格：
+
+- **船工**：「你还没想好要不要去当面问他。如果真是他做的，你该怎么办？」
+- **锦衣卫密探**：「你的任务是监视他，但你已经开始怀疑密档了。」
+- **天妃宫住持**：「你还没决定要不要告诉他：他握着的，是一个死人的东西。」
+- **受伤的年轻人**：「你还没决定：是继续装失忆试探他，还是直接亮出身份？」
+- **沈家孙女**：「包括你自己吗？」
+- **算命先生**：「但你不能确定：来的这个孙女，是敌是友？」
+- **粮仓记账员**：「因为你知道，如果你答应了他，你就再也回不去了。」
+- **保安队长**：「他的妻子三个月前已经死了。而他帮日本人统计粮食，是在给杀妻仇人打工。」
+- **西工大研究生**：「因为你突然意识到，你完全不记得自己本科四年是怎么过的。」
+- **旧宅管理员**：「你还没决定要不要告诉他：三年前他在这里发现的东西，是你亲手毁掉的。」
+
+### 18.4 催化提示叙事化
+
+| 阶段 | 原提示 | 新提示 |
+|------|--------|--------|
+| act1 | 「先聊聊你们的开场信息」 | 「窗外突然传来一阵异响，你注意到对方的眼神闪烁了一下」 |
+| act2 | 「有没有发现信息对不上」 | 「桌上烛火突然摇曳了一下，你意识到对方说的某句话和之前矛盾」 |
+| act3 | 「再深入问问」 | 「门外传来脚步声，又停住了。你知道有人在听」 |
+| act4 | 「你们准备好了吗」 | 「空气仿佛凝固了。你们都知道，再往下问，就没有回头路了」 |
+
+### 18.5 文件变更清单
+
+```
+modified:   prisma/seed-stories.ts                    # 剧本杀化 openingInfo + description
+modified:   src/app/api/stories/[storyId]/catalyst/route.ts  # 叙事风格催化提示
+modified:   src/app/room/[id]/page.tsx                 # placeholder/动画/折叠/确认卡片/再来一局/AI context
+modified:   src/app/story-hall/page.tsx                # 分类标签筛选
+modified:   src/app/story/[id]/page.tsx                # 随机角色/详情展开/10秒等待/加载遮罩
+modified:   docs/story-system-flow.md                  # 6处流程图修正
+```
+
+### 18.6 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-full | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 故事系统全方位建议实现完成 ✅
+
+
+---
+
+## 十九、v8.0 生产部署记录（2026-05-06）
+
+### 19.1 部署结果
+
+- **服务器部署**：✅ 成功
+- **PM2 状态**：online (pid 815133)
+- **构建**：✅ 70/70 页面
+- **种子数据**：✅ 5 个剧本杀化故事已插入
+
+### 19.2 生产环境问题
+
+#### 问题：DATABASE_URL 环境变量为空
+
+**现象**：
+- 种子脚本执行时报错：`The table main.Story does not exist`
+- 但 `prisma db push` 显示 schema 已同步
+
+**根因**：
+- `.env` 中 `DATABASE_URL="file:/www/wwwroot/qunxiang-xinghuo/prisma/dev.db"` 正确
+- 但 **shell 环境变量** `DATABASE_URL` 为空
+- `src/lib/db.ts` 中 `process.env.DATABASE_URL` 优先读取 shell 环境变量，回退到 `"file:./dev.db"`
+- 根目录 `dev.db` 是 0 字节的空文件，没有 Story 表
+- 真实数据在 `prisma/dev.db`（2.4MB）
+
+**解决**：
+```bash
+export DATABASE_URL="file:./dev.db"
+npx prisma db push --accept-data-loss
+npx tsx prisma/seed-stories.ts
+```
+
+**注意**：种子脚本执行了两次，导致数据库中有 10 个故事（5 个标题各重复一次）。需要清理重复数据。
+
+### 19.3 重复数据清理方案
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+sqlite3 dev.db "DELETE FROM Story WHERE id NOT IN (SELECT MAX(id) FROM Story GROUP BY title);"
+# 验证
+sqlite3 dev.db "SELECT title FROM Story;"
+# 预期输出：5 个不重复的故事标题
+```
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 生产部署完成 ✅

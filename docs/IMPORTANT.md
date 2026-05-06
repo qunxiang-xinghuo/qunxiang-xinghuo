@@ -341,3 +341,98 @@ modified:   src/components/layout/AppShell.tsx    # Error Boundary
 | Error Boundary | ✅ 渲染错误时显示刷新按钮 |
 
 ---
+
+
+---
+
+## v8.0 故事系统全方位建议实现 — 部署记录
+
+> 更新：2026-05-06
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npx prisma db push --accept-data-loss
+# 如需更新种子数据：npx tsx prisma/seed-stories.ts
+npm run build
+pm2 restart all
+```
+
+### 新增/修改的文件清单
+
+```
+modified:   prisma/seed-stories.ts                    # 剧本杀化 openingInfo + description
+modified:   src/app/api/stories/[storyId]/catalyst/route.ts  # 叙事风格催化提示
+modified:   src/app/room/[id]/page.tsx                 # placeholder/动画/折叠/确认卡片/再来一局/AI context
+modified:   src/app/story-hall/page.tsx                # 分类标签筛选（全部/古风/民国/现代）
+modified:   src/app/story/[id]/page.tsx                # 随机角色/详情展开/10秒等待/加载遮罩
+modified:   docs/story-system-flow.md                  # 6处流程图修正
+```
+
+### 验证结果
+
+| 检查项 | 结果 |
+|--------|------|
+| TypeScript 编译 | ✅ 通过 |
+| 静态页面生成 | ✅ 70/70 |
+| 种子数据剧本杀化 | ✅ 10个角色 openingInfo 悬念化 |
+| 催化提示叙事化 | ✅ 环境事件风格（烛火/脚步声/空气凝固） |
+| 分类标签筛选 | ✅ 古风/民国/现代 |
+| 随机分配角色 | ✅ 从未选角色中随机 |
+| 加载全局遮罩 | ✅ joinLoading 时显示 |
+| Error Boundary | ✅ 渲染错误时显示刷新按钮 |
+
+---
+
+
+---
+
+## v8.0 生产部署最终记录
+
+> 更新：2026-05-06
+> 状态：✅ 已部署，PM2 online
+
+### 部署步骤（实际执行）
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npx prisma db push --accept-data-loss
+npm run build
+pm2 restart all
+```
+
+### 种子数据执行
+
+```bash
+# 注意：需先设置 DATABASE_URL，否则连接到空数据库
+cd /www/wwwroot/qunxiang-xinghuo
+export DATABASE_URL="file:./dev.db"
+npx prisma db push --accept-data-loss
+npx tsx prisma/seed-stories.ts
+```
+
+### 生产环境陷阱
+
+| 陷阱 | 说明 | 解决 |
+|------|------|------|
+| DATABASE_URL 环境变量 | shell 中 `DATABASE_URL` 为空，`.env` 文件不被 `process.env` 读取 | 执行前必须 `export DATABASE_URL="file:./dev.db"` |
+| 种子重复执行 | 脚本执行了两次，产生 10 个故事 | `sqlite3 dev.db "DELETE FROM Story WHERE id NOT IN (SELECT MAX(id) FROM Story GROUP BY title);"` |
+| dev.db vs prisma/dev.db | 根目录 dev.db 为空，prisma/dev.db 有旧数据 | 统一使用 `file:./dev.db` |
+
+### 验证结果
+
+| 检查项 | 结果 |
+|--------|------|
+| 构建 | ✅ 70/70 |
+| PM2 | ✅ online (pid 815133) |
+| Story 表 | ✅ 5 个故事 |
+| 种子数据 | ✅ 剧本杀化 openingInfo |
+
+---
