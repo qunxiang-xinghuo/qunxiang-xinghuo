@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Lock, Users, Clock, Sparkles, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Lock, Users, Clock, Sparkles, MessageCircle, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface StoryRole {
@@ -42,6 +42,7 @@ export default function StoryDetailPage() {
   const [joinLoading, setJoinLoading] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     fetch(`/api/stories/${storyId}`)
@@ -53,9 +54,10 @@ export default function StoryDetailPage() {
       .finally(() => setLoading(false));
   }, [storyId]);
 
-  // 倒计时逻辑
+  // 倒计时逻辑 + 轮询检查匹配状态
   useEffect(() => {
     if (!showWaiting || matchResult !== 'waiting') return;
+    // 倒计时
     timerRef.current = setInterval(() => {
       setWaitingSeconds((prev) => {
         if (prev <= 1) {
@@ -66,10 +68,29 @@ export default function StoryDetailPage() {
         return prev - 1;
       });
     }, 1000);
+    // 轮询检查匹配状态（每3秒）
+    pollRef.current = setInterval(async () => {
+      if (!selectedRoleId || !storyId) return;
+      try {
+        const res = await fetch(`/api/stories/${storyId}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roleId: selectedRoleId }),
+        });
+        const data = await res.json();
+        if (data.success && data.data?.status === 'matched') {
+          setMatchedRoomId(data.data.roomId);
+          setMatchResult('matched');
+          if (timerRef.current) clearInterval(timerRef.current);
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
+      } catch (e) {}
+    }, 3000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [showWaiting, matchResult]);
+  }, [showWaiting, matchResult, selectedRoleId, storyId]);
 
   const handleSelectRole = async (roleId: string) => {
     if (!authUser) return;
@@ -123,6 +144,14 @@ export default function StoryDetailPage() {
   const handleContinueWaiting = () => {
     setMatchResult('waiting');
     setWaitingSeconds(15);
+  };
+
+  const handleCloseWaiting = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (pollRef.current) clearInterval(pollRef.current);
+    setShowWaiting(false);
+    setMatchResult('waiting');
+    setSelectedRoleId(null);
   };
 
   const handleEnterRoom = () => {
@@ -241,12 +270,18 @@ export default function StoryDetailPage() {
                   <div className="w-12 h-12 rounded-full border-2 border-[#e2b04a]/30 border-t-[#e2b04a] animate-spin mx-auto mb-4" />
                   <p className="text-base font-semibold text-white/90 mb-1">正在匹配搭档...</p>
                   <p className="text-sm text-white/40 mb-4">{waitingSeconds} 秒后揭晓</p>
-                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden mb-4">
                     <div
                       className="h-full bg-[#e2b04a]/50 rounded-full transition-all duration-1000"
                       style={{ width: `${(waitingSeconds / 15) * 100}%` }}
                     />
                   </div>
+                  <button
+                    onClick={handleCloseWaiting}
+                    className="text-xs text-white/20 hover:text-white/40 transition-colors"
+                  >
+                    ❌ 关闭，重新选择
+                  </button>
                 </>
               )}
 
@@ -283,6 +318,12 @@ export default function StoryDetailPage() {
                       className="w-full py-2.5 rounded-xl bg-white/[0.03] text-white/40 text-sm border border-white/5 hover:bg-white/[0.06] transition-colors"
                     >
                       继续等待
+                    </button>
+                    <button
+                      onClick={handleCloseWaiting}
+                      className="w-full py-2.5 rounded-xl bg-white/[0.03] text-white/30 text-sm border border-white/5 hover:bg-white/[0.06] transition-colors"
+                    >
+                      返回选角色
                     </button>
                   </div>
                 </>

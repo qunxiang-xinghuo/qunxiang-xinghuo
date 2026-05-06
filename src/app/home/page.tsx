@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye, Sparkles,
+  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye, Sparkles, ScrollText,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
@@ -152,6 +152,23 @@ export default function HomePage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* 我的故事快捷入口 */}
+        <section className="mb-4">
+          <button
+            onClick={() => router.push('/my-stories')}
+            className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.99] transition-all"
+          >
+            <div className="w-9 h-9 rounded-lg bg-[#e2b04a]/10 flex items-center justify-center">
+              <ScrollText className="w-4 h-4 text-[#e2b04a]/60" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-medium text-white/80">我的故事</p>
+              <p className="text-[11px] text-white/30">查看你参与和发起的故事</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-white/15" />
+          </button>
         </section>
 
         {/* 四大模式入口 */}

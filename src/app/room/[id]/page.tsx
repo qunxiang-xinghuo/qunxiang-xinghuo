@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Eye,
+  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Eye, Lock, X,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
@@ -56,10 +56,14 @@ export default function RoomPage() {
   // AI 催化
   const [aiPrompt, setAiPrompt] = useState('');
   const [showAiPrompt, setShowAiPrompt] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [showTruth, setShowTruth] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isProcessingAI = useRef(false);
+  const catalystCalledRef = useRef<Set<number>>(new Set());
 
   // 当前用户ID
   const userId = authUser?.id || (typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null);
@@ -150,18 +154,19 @@ export default function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, userId, myRoleName, roomStatus]);
 
-  // AI 催化（按消息数）
+  // AI 催化（按消息数）— 使用 ref 标记已调用
   useEffect(() => {
     if (!story || !roomId || roomStatus === 'closed') return;
     const msgCount = messages.length;
-    if (msgCount >= 6 && msgCount % 5 === 0) {
+    if (msgCount >= 6 && msgCount % 5 === 0 && !catalystCalledRef.current.has(msgCount)) {
+      catalystCalledRef.current.add(msgCount);
       fetch(`/api/stories/${story.id}/catalyst?roomId=${roomId}`)
         .then((r) => r.json())
         .then((data) => {
           if (data.success && data.data?.prompt) {
             setAiPrompt(data.data.prompt);
             setShowAiPrompt(true);
-            setTimeout(() => setShowAiPrompt(false), 10000);
+            setTimeout(() => setShowAiPrompt(false), 15000);
           }
         })
         .catch(() => {});
@@ -259,7 +264,25 @@ export default function RoomPage() {
     finally { setCommentDeletingId(null); }
   };
 
-  const isReadonly = roomStatus === 'closed';
+  const handleFinish = async () => {
+    if (finishing || finished) return;
+    setFinishing(true);
+    try {
+      const res = await fetch(`/api/rooms/${roomId}/finish`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setFinished(true);
+        setRoomStatus('closed');
+        if (data.data?.truth) setShowTruth(true);
+      }
+    } catch (e) {
+      console.error('结束失败:', e);
+    } finally {
+      setFinishing(false);
+    }
+  };
+
+  const isReadonly = roomStatus === 'closed' || finished;
   const displayTitle = story?.title || '对白室';
   const displaySubtitle = story?.eraBackground || '';
 
@@ -380,6 +403,25 @@ export default function RoomPage() {
       {/* 输入区（仅 active 状态显示） */}
       {!isReadonly && (
         <div className="shrink-0 p-3 border-t border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
+          {/* 结束对白按钮 */}
+          <div className="flex items-center justify-between mb-2 px-1">
+            <button
+              onClick={() => {
+                if (confirm('结束这场对白？\n\n结束后：\n· 对白会被保存为你的资产\n· 完整谜底将被揭晓\n· 房间变为只读，可以发表评论')) {
+                  handleFinish();
+                }
+              }}
+              disabled={finishing || messages.length < 3}
+              className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full transition-colors ${
+                messages.length < 3
+                  ? 'bg-white/[0.02] text-white/15 border border-white/5 cursor-not-allowed'
+                  : 'bg-red-500/10 text-red-400/60 border border-red-500/20 hover:bg-red-500/15'
+              }`}
+            >
+              {finishing ? '保存中...' : '🏁 结束对白'}
+            </button>
+            <span className="text-[10px] text-white/15">{messages.length} 条消息</span>
+          </div>
           <div className="flex items-end gap-2">
             <div className="flex-1 bg-white/[0.05] rounded-2xl border border-white/10 px-4 py-2.5 focus-within:border-[#e2b04a]/30 transition-colors">
               <input
@@ -398,6 +440,76 @@ export default function RoomPage() {
             >
               <Send className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 揭晓谜底弹窗 */}
+      {showTruth && story && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-[#e2b04a]/20 max-w-[340px] w-full"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-[#e2b04a]">谜底揭晓</h3>
+              <button onClick={() => setShowTruth(false)} className="p-1 rounded hover:bg-white/5">
+                <X className="w-4 h-4 text-white/30" />
+              </button>
+            </div>
+            <div className="space-y-3 mb-4">
+              {[
+                { label: '起', text: story.act1Reveal },
+                { label: '承', text: story.act2Reveal },
+                { label: '转', text: story.act3Reveal },
+                { label: '合', text: story.act4Truth },
+              ].map((item) => (
+                <div key={item.label} className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
+                  <span className="text-xs font-bold text-[#e2b04a]/60">{item.label}</span>
+                  <p className="text-xs text-white/50 leading-relaxed mt-1">{item.text}</p>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowTruth(false)}
+              className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/25"
+            >
+              知道了
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* 四格展示（只读模式） */}
+      {isReadonly && story && (
+        <div className="shrink-0 px-4 py-3 border-b border-white/5">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="w-3.5 h-3.5 text-[#e2b04a]/40" />
+            <span className="text-xs text-[#e2b04a]/40">完整故事线</span>
+            <button
+              onClick={() => setShowTruth(true)}
+              className="text-[10px] text-[#e2b04a]/60 underline ml-auto"
+            >
+              查看谜底
+            </button>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[
+              { label: '起', text: story.act1Reveal, color: 'text-[#e2b04a]/50' },
+              { label: '承', text: story.act2Reveal, color: 'text-white/30' },
+              { label: '转', text: story.act3Reveal, color: 'text-white/30' },
+              { label: '合', text: story.act4Truth, color: 'text-white/30' },
+            ].map((item) => (
+              <div key={item.label} className="p-1.5 rounded-md bg-white/[0.02] border border-white/5">
+                <span className={`text-[10px] font-bold ${item.color}`}>{item.label}</span>
+                <p className="text-[9px] text-white/20 leading-relaxed mt-0.5 line-clamp-3">{item.text}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

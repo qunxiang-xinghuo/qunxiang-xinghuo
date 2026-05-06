@@ -45,6 +45,32 @@ export async function POST(
       return NextResponse.json(apiError("CONFLICT", "该角色已被选择"), { status: 409 });
     }
 
+    // 清理用户在该故事中已claim的其他角色
+    await db.storyRole.updateMany({
+      where: { storyId, claimedBy: userId, id: { not: roleId } },
+      data: { claimedBy: null, claimedAt: null, claimStatus: "unclaimed" },
+    });
+
+    // 检查是否已有活跃房间
+    const existingRoom = await db.room.findFirst({
+      where: { storyId, status: "active" },
+    });
+    if (existingRoom) {
+      // 检查用户是否已在该房间的参与者中
+      const existingParticipant = await db.roomParticipant.findFirst({
+        where: { roomId: existingRoom.id, userId },
+      });
+      if (existingParticipant) {
+        return NextResponse.json(apiResponse({
+          status: "matched",
+          roomId: existingRoom.id,
+          storyId: story.id,
+          roleName: role.name,
+          openingInfo: role.openingInfo || "",
+        }));
+      }
+    }
+
     await db.storyRole.update({
       where: { id: roleId },
       data: { claimedBy: userId, claimedAt: new Date(), claimStatus: "active" },
