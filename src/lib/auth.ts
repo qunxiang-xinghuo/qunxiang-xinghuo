@@ -55,6 +55,7 @@ export const authOptions: NextAuthOptions = {
   },
   // v7.0-fix5: cookie 设为 session cookie（关闭浏览器即失效），
   // 同时 JWT 仍保持 24 小时服务端有效期
+  // v8.0-fix: 生产环境使用 HTTP（非 HTTPS），secure 必须设为 false
   cookies: {
     sessionToken: {
       name: 'next-auth.session-token',
@@ -62,7 +63,7 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,
       },
     },
     callbackUrl: {
@@ -70,7 +71,7 @@ export const authOptions: NextAuthOptions = {
       options: {
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,
       },
     },
     csrfToken: {
@@ -79,7 +80,7 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,
       },
     },
   },
@@ -96,7 +97,9 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
+          console.log('[Auth] authorize called, username:', credentials?.username);
           if (!credentials?.username || !credentials?.password) {
+            console.log('[Auth] missing credentials');
             return null;
           }
 
@@ -111,20 +114,26 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!user) {
+            console.log('[Auth] user not found:', credentials.username);
             return null;
           }
+          console.log('[Auth] user found:', user.id, 'hasPassword:', !!user.password);
 
           // 验证密码
           if (user.password) {
+            console.log('[Auth] comparing password...');
             const valid = await bcrypt.compare(credentials.password, user.password);
+            console.log('[Auth] password valid:', valid);
             if (!valid) {
               return null;
             }
           } else {
             // 兼容旧用户：没有密码的不能通过 credentials 登录
+            console.log('[Auth] user has no password');
             return null;
           }
 
+          console.log('[Auth] authorize success, userId:', user.id);
           return {
             id: user.id,
             name: user.name || user.username || user.email?.split("@")[0],
