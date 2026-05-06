@@ -144,6 +144,30 @@ git pull fqunxiang dev
 
 ---
 
+### 问题7：服务器手动部署 git pull 失败
+
+**现象**：
+- 服务器上执行 `git pull fqunxiang dev`
+- 报错：`Permission denied (publickey)`
+
+**根因**：
+- 手动执行时没有设置 `GIT_SSH_COMMAND` 环境变量
+- deploy.sh 脚本中配置了 SSH 私钥路径，但手动执行时未生效
+
+**解决**：
+```bash
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+```
+
+**后续**：
+- 拉取成功，显示 `Already up to date`
+- 执行 `rm -rf .next && npm run build && pm2 restart all`
+- 构建成功（66 pages），PM2 重启成功
+- curl 验证：`/home` → 307 `/login`，`/spectate` → 307 `/login` ✅
+
+---
+
 ## 修复时间线
 
 | 时间 | 事件 |

@@ -129,6 +129,46 @@ new file:   src/lib/auth-utils.ts                   # Token 撤销辅助函数
 
 ---
 
+### 🖥️ 服务器部署操作记录
+
+**2026-05-06 服务器手动部署**
+```bash
+# 1. 进入目录
+cd /www/wwwroot/qunxiang-xinghuo
+
+# 2. 设置 SSH 密钥环境变量（解决 Permission denied）
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+
+# 3. 从自建服务器拉取最新代码
+git pull fqunxiang dev
+# 结果：Already up to date
+
+# 4. 完全清除 Next.js 构建缓存
+rm -rf .next
+
+# 5. 安装依赖
+npm install
+# 结果：up to date in 4s
+
+# 6. 构建
+npm run build
+# 结果：✓ Compiled successfully in 18.2s
+#        ✓ 66 pages + 所有 API routes
+
+# 7. 重启 PM2
+pm2 restart all
+# 结果：[qunxiang-xinghuo](0) ✓ online pid=694021
+```
+
+**服务器验证测试**
+```bash
+curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" --cookie "" http://localhost/home
+# 结果：307 http://localhost/login ✅
+
+curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" --cookie "" http://localhost/spectate
+# 结果：307 http://localhost/login ✅
+```
+
 ### 🧪 测试记录
 
 **2026-05-06 v8.0 最终测试**
@@ -136,3 +176,4 @@ new file:   src/lib/auth-utils.ts                   # Token 撤销辅助函数
 - 无 cookie 访问测试（15个受保护页面）：全部 307 → `/login`
 - 公开页面测试（/, /login, /register）：全部 200
 - API 测试：`/api/users/me` 无 cookie → 401，`/api/auth/logout` → 200
+- 服务器部署状态：✅ 已部署，PM2 online
