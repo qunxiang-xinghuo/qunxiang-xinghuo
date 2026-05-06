@@ -125,6 +125,25 @@
 
 ---
 
+### 问题6：服务器 SSH 密钥权限 denied
+
+**现象**：
+- 服务器上执行 `git pull fqunxiang dev`
+- 报错：`Permission denied (publickey)`
+
+**根因**：
+- 服务器上没有配置访问 `fqunxiang.x404.online:2222` 的 SSH 私钥
+- deploy.sh 中通过 `GIT_SSH_COMMAND` 环境变量指定了私钥路径
+- 手动执行时没有设置这个环境变量
+
+**解决**：
+```bash
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+```
+
+---
+
 ## 修复时间线
 
 | 时间 | 事件 |

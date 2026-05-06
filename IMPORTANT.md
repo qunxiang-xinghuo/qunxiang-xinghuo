@@ -6,7 +6,7 @@
 
 ---
 
-### 🔴 关键问题：代码源不对
+### 🔴 关键问题1：代码源不对
 
 你之前执行的命令：
 ```bash
@@ -16,6 +16,30 @@ git pull origin dev   # ❌ 错误！origin 是 GitHub，代码不是最新的
 **正确命令**：
 ```bash
 git pull fqunxiang dev   # ✅ 正确！fqunxiang 是自建服务器，有最新 v8.0 修复
+```
+
+---
+
+### 🔴 关键问题2：SSH 密钥权限
+
+如果你遇到：
+```
+git@fqunxiang.x404.online: Permission denied (publickey).
+```
+
+**原因**：服务器上没有配置访问 `fqunxiang` 的 SSH 私钥。
+
+**解决**：使用 deploy.sh 中配置的 SSH 命令：
+```bash
+# 方法1：设置环境变量后拉取
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+
+# 方法2：直接用 SSH 命令拉取
+GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222' git pull fqunxiang dev
+
+# 方法3：如果用不了 SSH，改用 HTTPS（需要密码）
+# git pull https://fqunxiang.x404.online:2222/qunxiang/qunxiang-xinghuo.git dev
 ```
 
 ---

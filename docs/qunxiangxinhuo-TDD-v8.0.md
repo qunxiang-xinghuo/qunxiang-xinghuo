@@ -293,8 +293,8 @@
 
 ---
 
-> 文档位置：`docs/qunxiangxinhuo-TDD-v7.0.md`  
-> 最后更新：2026-05-05 v7.0-fix7 全部修复完成 ✅
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0-login-fix 登录守卫系统全面修复完成 ✅
 
 ---
 
