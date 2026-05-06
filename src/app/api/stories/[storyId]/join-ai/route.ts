@@ -36,6 +36,24 @@ export async function POST(
       return NextResponse.json(apiError("BAD_REQUEST", "角色不存在"), { status: 400 });
     }
 
+    // 检查是否已有该用户的活跃 AI 房间（防重复创建）
+    const existingAiRoom = await db.room.findFirst({
+      where: {
+        storyId: story.id,
+        isAiRoom: true,
+        status: "active",
+        participants: { some: { userId, role: "actor" } },
+      },
+    });
+    if (existingAiRoom) {
+      return NextResponse.json(apiResponse({
+        roomId: existingAiRoom.id,
+        storyId: story.id,
+        roleName: userRole.name,
+        openingInfo: userRole.openingInfo || "",
+      }));
+    }
+
     const aiRole = story.roles.find((r) => r.id !== roleId);
     const aiName = aiRole?.name || "刘看山";
 

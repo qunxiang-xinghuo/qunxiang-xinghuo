@@ -27,6 +27,14 @@ export async function GET(
       return NextResponse.json(apiError("NOT_FOUND", "故事不存在"), { status: 404 });
     }
 
+    // 验证 room 是否属于该 story
+    const room = await db.room.findFirst({
+      where: { id: roomId, storyId },
+    });
+    if (!room) {
+      return NextResponse.json(apiError("NOT_FOUND", "房间不属于该故事"), { status: 404 });
+    }
+
     const msgCount = await db.roomMessage.count({ where: { roomId } });
 
     let prompt = "";

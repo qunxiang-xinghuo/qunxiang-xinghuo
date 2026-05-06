@@ -648,3 +648,88 @@ new file:   src/app/api/stories/[storyId]/catalyst/route.ts
 2. **路由冲突**：`/api/stories/[id]` 与 `/api/stories/[storyId]` 冲突，已合并到 `[storyId]` 下
 3. **生产环境 migrate deploy P3005**：数据库未 baseline，需使用 `prisma db push`
 4. **SSH 自动部署失败**：服务器端口 2222 超时 / 22 权限拒绝，需手动部署
+
+
+---
+
+## 十六、v8.0 故事系统代码审查修复（2026-05-06 追加）
+
+### 16.1 审查背景
+在 v8.0 故事系统开发完成后，进行了资深测试工程师 + 资深技术员的全面代码审查，发现并修复了 **20+ 个代码审查问题**，涵盖竞态条件、内存泄漏、数据一致性、权限控制等。
+
+### 16.2 修复问题清单
+
+#### API 层修复（5 个关键问题）
+
+| # | 文件 | 问题 | 修复方案 | 严重程度 |
+|---|------|------|---------|---------|
+| 1 | `rooms/[roomId]/finish` | 重复调用 finish 会因 Asset.roomId @unique 约束崩溃 | 添加幂等检查：`status==='closed'` 时直接返回已有 assetId；使用 `$transaction` 原子执行 update+create | 🔴 Critical |
+| 2 | `rooms/[roomId]/finish` | 观众(spectator)可触发结束 | 添加 `me.role === 'spectator'` 拒绝 | 🟡 Warning |
+| 3 | `stories/[storyId]/join` | role claim 竞态条件：两个请求同时检查 `claimedBy===null`，都通过，后一个覆盖前一个 | 使用乐观锁：`update({ where: { id: roleId, claimedBy: null } })`，P2025 时返回 409 | 🔴 Critical |
+| 4 | `stories/[storyId]/join` | 未检查用户是否已在该故事活跃房间中，可重复创建 | 先查 `roomParticipant` where `room.storyId=xxx AND status=active` | 🔴 Critical |
+| 5 | `stories/[storyId]/join` | 匹配时可能重复创建房间（两个用户同时触发） | 创建房间前先查 `participants.every` 是否已有配对房间 | 🔴 Critical |
+| 6 | `stories/[storyId]/catalyst` | 不验证 room 是否属于 story，可传入任意 roomId | 添加 `db.room.findFirst({ where: { id: roomId, storyId } })` | 🔴 Critical |
+| 7 | `stories/[storyId]/join-ai` | 可无限创建 AI 房间 | 添加检查：该用户在该故事是否已有活跃 AI 房间 | 🔴 Critical |
+| 8 | `stories/[storyId]/join` | 未验证 story 状态（closed/completed 仍可加入） | 添加 `story.status` 检查 | 🟡 Warning |
+
+#### 前端层修复（5 个关键问题）
+
+| # | 文件 | 问题 | 修复方案 | 严重程度 |
+|---|------|------|---------|---------|
+| 9 | `room/[id]/page.tsx` | AI 催化 `setTimeout` 未清理，组件卸载后 setState 警告 | `useRef` 存储 timeout ID，effect cleanup 中 `clearTimeout` | 🔴 Critical |
+| 10 | `room/[id]/page.tsx` | `removeAllListeners('new-message')` 清除全局 socket 的所有监听器 | 改为 `off('new-message', handleNewMessage)` 只移除当前 handler | 🔴 Critical |
+| 11 | `room/[id]/page.tsx` | Socket `joinRoom` 在 `myRoleName` 从空到值时触发两次 | 添加 `hasJoinedRef` + `!myRoleName` 提前 return | 🔴 Critical |
+| 12 | `room/[id]/page.tsx` | `msg.userId.startsWith('agent_')` 可能 crash（null/undefined） | 改为 `msg.userId?.startsWith('agent_') &#124;&#124; false` | 🔴 Critical |
+| 13 | `story/[id]/page.tsx` | 轮询 POST `/join` 每3秒调用，有副作用（重复 claim/创建） | 添加 `pollInProgress` ref 防并发 | 🔴 Critical |
+| 14 | `room/[id]/page.tsx` | 房间 fetch 无 AbortController，快速切换房间时数据错乱 | 添加 `AbortController`，cleanup 中 abort | 🟡 Warning |
+| 15 | `room/[id]/page.tsx` | `useCallback` deps 不完整（`sendMessage` 未包含） | 补全依赖数组 | 🟡 Warning |
+
+#### v8.0 初始 20 个问题（用户确认的设计决策后修复）
+
+| # | 问题 | 状态 |
+|---|------|------|
+| 1 | 房间无结束机制 | ✅ 添加 🏁 结束对白按钮 + `/api/rooms/{id}/finish` |
+| 2 | 匹配后用户A不知道 | ✅ 轮询自动检测 matched 状态 |
+| 3 | 催化剂调用过于频繁 | ✅ `catalystCalledRef` Set 防重复 |
+| 4 | AI房间开场冲突 | ✅ `isAiRoom &#124;&#124; type==='story_ai'` 双重判断 |
+| 5 | 无「我的故事」入口 | ✅ `/home` 发现页添加快捷入口 |
+| 6 | 等待弹窗无关闭/返回 | ✅ 添加 ❌ 关闭、↩ 返回选角色按钮 |
+| 7 | 等待状态丢失 | ✅ 轮询自动恢复 |
+| 8 | 旧角色claim未清理 | ✅ join API 清理旧记录 |
+| 9 | Room API权限403 | ✅ finish API 兼容 storyId 场景 |
+| 10 | 无揭晓谜底按钮 | ✅ 结束按钮确认后揭晓起承转合 |
+| 11 | 只读不显示四格 | ✅ room page 展示四格 + 评论区 |
+| 12 | 角色选择无loading | ✅ 添加 loading 状态 |
+| 13 | isAi判断不严谨 | ✅ 双重校验 |
+
+### 16.3 设计决策确认（7项）
+
+1. **故事大厅样式**：列表式（保持现有）
+2. **结束按钮位置**：输入区上方「🏁 结束对白」
+3. **揭晓时机**：手动点击后一次性揭晓起承转合
+4. **只读模式**：完整四格 + 对白记录 + 评论区
+5. **等待弹窗**：新增「❌ 关闭」「返回选角色」
+6. **超时后**：「和刘看山玩」「继续等待」「返回选角色」
+7. **我的故事入口**：`/home` 发现页
+
+### 16.4 文件变更清单（本次修复）
+
+```
+modified:   src/app/api/rooms/[roomId]/finish/route.ts      # 幂等+事务+权限
+modified:   src/app/api/stories/[storyId]/join/route.ts     # 乐观锁+防重复房间
+modified:   src/app/api/stories/[storyId]/join-ai/route.ts  # 防重复AI房间
+modified:   src/app/api/stories/[storyId]/catalyst/route.ts # room-story验证
+modified:   src/app/room/[id]/page.tsx                      # 内存泄漏+socket+防御
+modified:   src/app/story/[id]/page.tsx                     # 轮询防并发
+```
+
+### 16.5 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0 story-fix | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 故事系统代码审查修复完成 ✅

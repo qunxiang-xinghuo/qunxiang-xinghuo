@@ -64,6 +64,8 @@ export default function RoomPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const isProcessingAI = useRef(false);
   const catalystCalledRef = useRef<Set<number>>(new Set());
+  const aiPromptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasJoinedRef = useRef(false);
 
   // 当前用户ID
   const userId = authUser?.id || (typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null);
@@ -73,7 +75,9 @@ export default function RoomPage() {
 
   // 加载房间信息
   useEffect(() => {
-    fetch(`/api/rooms/${roomId}`)
+    if (!roomId) return;
+    const ctrl = new AbortController();
+    fetch(`/api/rooms/${roomId}`, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((res) => {
         if (res.success && res.data) {
@@ -112,8 +116,11 @@ export default function RoomPage() {
           }
         }
       })
-      .catch((err) => console.error('[Room] Fetch error:', err))
+      .catch((err) => {
+        if (err.name !== 'AbortError') console.error('[Room] Fetch error:', err);
+      })
       .finally(() => setIsLoading(false));
+    return () => ctrl.abort();
   }, [roomId, userId]);
 
   // 加载评论
@@ -129,8 +136,11 @@ export default function RoomPage() {
   // WebSocket
   useEffect(() => {
     if (!roomId || !userId || roomStatus === 'closed') return;
+    if (!myRoleName) return; // 等待角色信息加载完成后再加入
+    if (hasJoinedRef.current) return; // 防止重复加入
+    hasJoinedRef.current = true;
+
     joinRoom(roomId, userId, myRoleName || '我');
-    removeAllListeners('new-message');
 
     const handleNewMessage = (data: any) => {
       const raw = data.message || data;
@@ -150,9 +160,9 @@ export default function RoomPage() {
     return () => {
       off('new-message', handleNewMessage);
       leaveRoom(roomId, userId);
+      hasJoinedRef.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, userId, myRoleName, roomStatus]);
+  }, [roomId, userId, myRoleName, roomStatus, joinRoom, leaveRoom, on, off]);
 
   // AI 催化（按消息数）— 使用 ref 标记已调用
   useEffect(() => {
@@ -166,11 +176,16 @@ export default function RoomPage() {
           if (data.success && data.data?.prompt) {
             setAiPrompt(data.data.prompt);
             setShowAiPrompt(true);
-            setTimeout(() => setShowAiPrompt(false), 15000);
+            // 清理之前的定时器
+            if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);
+            aiPromptTimerRef.current = setTimeout(() => setShowAiPrompt(false), 15000);
           }
         })
         .catch(() => {});
     }
+    return () => {
+      if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);
+    };
   }, [messages.length, story, roomId, roomStatus]);
 
   // AI 房间自动回复
@@ -360,7 +375,7 @@ export default function RoomPage() {
         )}
         {messages.map((msg) => {
           const isMe = msg.userId === userId || msg.userId === 'me';
-          const isAi = msg.userId.startsWith('agent_');
+          const isAi = msg.userId?.startsWith('agent_') || false;
           return (
             <div key={msg.id} className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               <div className={`flex-shrink-0 ${isMe ? 'ml-2' : 'mr-2'}`}>

@@ -43,6 +43,7 @@ export default function StoryDetailPage() {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollInProgress = useRef(false);
 
   useEffect(() => {
     fetch(`/api/stories/${storyId}`)
@@ -68,9 +69,10 @@ export default function StoryDetailPage() {
         return prev - 1;
       });
     }, 1000);
-    // 轮询检查匹配状态（每3秒）
+    // 轮询检查匹配状态（每3秒）— 防重复调用
     pollRef.current = setInterval(async () => {
-      if (!selectedRoleId || !storyId) return;
+      if (!selectedRoleId || !storyId || pollInProgress.current) return;
+      pollInProgress.current = true;
       try {
         const res = await fetch(`/api/stories/${storyId}/join`, {
           method: 'POST',
@@ -84,7 +86,9 @@ export default function StoryDetailPage() {
           if (timerRef.current) clearInterval(timerRef.current);
           if (pollRef.current) clearInterval(pollRef.current);
         }
-      } catch (e) {}
+      } catch (e) {} finally {
+        pollInProgress.current = false;
+      }
     }, 3000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);

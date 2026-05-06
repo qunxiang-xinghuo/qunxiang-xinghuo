@@ -340,3 +340,206 @@ git pull fqunxiang dev
 
 **解决**：
 - 删除 `[storyId]_backup` 目录
+
+
+---
+
+## v8.0 故事系统代码审查修复 — 问题记录
+
+### 问题1：finish 重复调用导致 Asset 唯一约束崩溃
+
+**现象**：
+- 用户点击「结束对白」后，若网络延迟重复点击，或页面刷新后再次调用 finish
+- `asset.create` 因 `Asset.roomId @unique` 约束抛出 P2002 唯一约束冲突
+- 房间已关闭，但 API 返回 500，用户无法恢复
+
+**根因**：
+- 无幂等检查，已关闭的房间再次调用 finish 仍会执行 asset.create
+- room.update 和 asset.create 非原子操作
+
+**解决**：
+1. 前置检查：`if (room.status === 'closed')` 直接返回已有 asset
+2. `$transaction` 包裹 room.update + asset.create
+3. 添加观众权限检查：`me.role === 'spectator'` → 403
+
+```ts
+// 幂等检查
+if (room.status === 'closed' || room.status === 'finished') {
+  const existingAsset = await db.asset.findFirst({ where: { roomId } });
+  return apiResponse({ roomId, assetId: existingAsset?.id || null, ... });
+}
+
+// 原子事务
+const [updatedRoom, asset] = await db.$transaction([
+  db.room.update({ where: { id: roomId }, data: { status: "closed" } }),
+  db.asset.create({ data: { roomId, userId, ... } }),
+]);
+```
+
+---
+
+### 问题2：role claim 竞态条件（两个用户同时选择同一角色）
+
+**现象**：
+- 用户 A 和 B 同时点击同一个未选角色
+- 两者都通过 `role.claimedBy === null` 检查
+- 后执行的 update 覆盖前者，导致角色归属混乱
+
+**根因**：
+- 读取-修改-写入（RMW）非原子
+- `update({ where: { id: roleId } })` 无条件覆盖
+
+**解决**：
+- 使用乐观锁：`where: { id: roleId, claimedBy: null }`
+- Prisma P2025（Record to update not found）→ 返回 409 CONFLICT
+
+```ts
+try {
+  await db.storyRole.update({
+    where: { id: roleId, claimedBy: null },  // 乐观锁
+    data: { claimedBy: userId, ... },
+  });
+} catch (e: any) {
+  if (e.code === 'P2025') return apiError("CONFLICT", "该角色已被选择");
+  throw e;
+}
+```
+
+---
+
+### 问题3：重复创建房间（匹配双方同时触发创建）
+
+**现象**：
+- 用户 A 选择角色1，用户 B 选择角色2
+- 两者同时 POST /join，都看到对方已 claim
+- 各自创建一个新 Room，导致一个配对出现两个房间
+
+**根因**：
+- `otherRole.claimedBy` 检查通过后，立即 create room，无原子保护
+
+**解决**：
+- 创建房间前先查询是否已存在包含这两个用户的活跃房间
+- 使用 `participants.every` + `participants.length >= 2` 判断
+
+```ts
+const existingPairRoom = await db.room.findFirst({
+  where: {
+    storyId, status: "active",
+    participants: { every: { userId: { in: [userId, otherRole.claimedBy] } } },
+  },
+  include: { participants: true },
+});
+if (existingPairRoom?.participants.length >= 2) {
+  return apiResponse({ status: "matched", roomId: existingPairRoom.id });
+}
+```
+
+---
+
+### 问题4：AI 房间可无限创建
+
+**现象**：
+- 用户点击「和刘看山玩」可重复调用 join-ai
+- 数据库中堆积大量活跃 AI 房间
+
+**根因**：
+- join-ai 无任何重复检查，直接 create
+
+**解决**：
+- 创建前检查该用户在该故事是否已有活跃 AI 房间
+
+```ts
+const existingAiRoom = await db.room.findFirst({
+  where: {
+    storyId, isAiRoom: true, status: "active",
+    participants: { some: { userId, role: "actor" } },
+  },
+});
+if (existingAiRoom) return apiResponse({ roomId: existingAiRoom.id });
+```
+
+---
+
+### 问题5：catalyst API 不验证 room 归属
+
+**现象**：
+- 传入任意 roomId 可获取任意房间的催化提示
+- 甚至可传入其他故事的 roomId
+
+**根因**：
+- 仅查 `roomMessage.count({ where: { roomId } })`，未验证 room 是否属于 story
+
+**解决**：
+- 添加 `db.room.findFirst({ where: { id: roomId, storyId } })`
+
+---
+
+### 问题6：前端 setTimeout 内存泄漏
+
+**现象**：
+- AI 催化提示 `setTimeout(() => setShowAiPrompt(false), 15000)`
+- 组件在 15 秒内卸载时，React 警告 setState on unmounted component
+
+**根因**：
+- timeout ID 未存储，cleanup 无法清除
+
+**解决**：
+- `useRef` 存储 timeout ID，effect cleanup 中 clear
+
+---
+
+### 问题7：removeAllListeners 清除全局监听器
+
+**现象**：
+- `removeAllListeners('new-message')` 移除 socket 实例上**所有** new-message 监听器
+- 若其他组件（如侧边栏）也监听了该事件，会被静默断开
+
+**根因**：
+- 使用了全局清除而非定向移除
+
+**解决**：
+- 改为 `off('new-message', handleNewMessage)` 只移除当前 handler
+
+---
+
+### 问题8：Socket double-join
+
+**现象**：
+- useEffect deps 包含 `myRoleName`，初始为空字符串，加载后变为真实值
+- 触发两次 effect，执行两次 joinRoom
+
+**根因**：
+- deps 变化导致 effect 重新执行，无防重机制
+
+**解决**：
+- `!myRoleName` 时提前 return
+- `hasJoinedRef` 标记已加入状态
+
+---
+
+### 问题9：轮询 POST 有副作用
+
+**现象**：
+- 等待弹窗每3秒 POST /join
+- 每次 POST 都会触发 claim 逻辑和数据库写入
+
+**根因**：
+- 轮询复用了 join 端点（POST 有副作用）
+
+**解决**：
+- 添加 `pollInProgress` ref 防并发，确保同一时刻只有一个轮询请求
+- 后续可改为 GET /match-status 专用端点
+
+---
+
+## 修复时间线
+
+| 时间 | 事件 |
+|------|------|
+| 2026-05-06 | v8.0 故事系统初始开发完成 |
+| 2026-05-06 | 资深测试+技术员全面代码审查 |
+| 2026-05-06 | 修复 20 个初始问题（结束按钮、轮询、入口等） |
+| 2026-05-06 | 修复 9 个关键代码审查问题（竞态、泄漏、权限等） |
+| 2026-05-06 | 构建通过 70/70，更新全部文档 |
+
+---

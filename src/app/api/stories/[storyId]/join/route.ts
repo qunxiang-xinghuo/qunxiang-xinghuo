@@ -41,8 +41,9 @@ export async function POST(
       return NextResponse.json(apiError("BAD_REQUEST", "角色不存在"), { status: 400 });
     }
 
-    if (role.claimedBy && role.claimedBy !== userId) {
-      return NextResponse.json(apiError("CONFLICT", "该角色已被选择"), { status: 409 });
+    // 检查故事是否可加入
+    if (story.status === 'closed' || story.status === 'completed') {
+      return NextResponse.json(apiError("BAD_REQUEST", "该故事已结束"), { status: 400 });
     }
 
     // 清理用户在该故事中已claim的其他角色
@@ -51,34 +52,71 @@ export async function POST(
       data: { claimedBy: null, claimedAt: null, claimStatus: "unclaimed" },
     });
 
-    // 检查是否已有活跃房间
-    const existingRoom = await db.room.findFirst({
-      where: { storyId, status: "active" },
+    // 检查用户是否已在该故事的活跃房间中
+    const myActiveParticipant = await db.roomParticipant.findFirst({
+      where: { userId, room: { storyId, status: "active" } },
+      include: { room: true },
     });
-    if (existingRoom) {
-      // 检查用户是否已在该房间的参与者中
-      const existingParticipant = await db.roomParticipant.findFirst({
-        where: { roomId: existingRoom.id, userId },
+    if (myActiveParticipant) {
+      return NextResponse.json(apiResponse({
+        status: "matched",
+        roomId: myActiveParticipant.room.id,
+        storyId: story.id,
+        roleName: role.name,
+        openingInfo: role.openingInfo || "",
+      }));
+    }
+
+    // 乐观锁：尝试 claim 角色（只有 claimedBy 为 null 时才成功）
+    let claimedRole;
+    try {
+      claimedRole = await db.storyRole.update({
+        where: { id: roleId, claimedBy: null },
+        data: { claimedBy: userId, claimedAt: new Date(), claimStatus: "active" },
       });
-      if (existingParticipant) {
+    } catch (e: any) {
+      // P2025 = Record to update not found（已被他人 claim）
+      if (e.code === 'P2025') {
+        return NextResponse.json(apiError("CONFLICT", "该角色已被选择"), { status: 409 });
+      }
+      throw e;
+    }
+
+    // 重新查询其他角色（在事务后获取最新状态）
+    const otherRole = await db.storyRole.findFirst({
+      where: {
+        storyId,
+        id: { not: roleId },
+        AND: [
+          { claimedBy: { not: null } },
+          { claimedBy: { not: userId } },
+        ],
+      },
+      orderBy: { claimedAt: 'asc' },
+    });
+
+    if (otherRole?.claimedBy) {
+      // 检查是否已存在包含这两个用户的房间（防重复）
+      const existingPairRoom = await db.room.findFirst({
+        where: {
+          storyId,
+          status: "active",
+          participants: {
+            every: { userId: { in: [userId, otherRole.claimedBy] } },
+          },
+        },
+        include: { participants: true },
+      });
+      if (existingPairRoom && existingPairRoom.participants.length >= 2) {
         return NextResponse.json(apiResponse({
           status: "matched",
-          roomId: existingRoom.id,
+          roomId: existingPairRoom.id,
           storyId: story.id,
           roleName: role.name,
           openingInfo: role.openingInfo || "",
         }));
       }
-    }
 
-    await db.storyRole.update({
-      where: { id: roleId },
-      data: { claimedBy: userId, claimedAt: new Date(), claimStatus: "active" },
-    });
-
-    const otherRole = story.roles.find((r) => r.id !== roleId && r.claimedBy && r.claimedBy !== userId);
-
-    if (otherRole?.claimedBy) {
       const room = await db.room.create({
         data: {
           storyId: story.id,

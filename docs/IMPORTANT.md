@@ -254,3 +254,48 @@ pm2 restart all
 - 公开页面：✅ / /login /register 全部 200
 - 登录守卫：✅ /home /library /profile /settings /spectate /solo-match /duo-match /healing /story-hall 全部 307→/login
 - 已知问题：✅ opacity:0 / BottomNav / findUnique / useSearchParams 无复现
+
+
+---
+
+## v8.0 故事系统代码审查修复 — 部署记录
+
+> 更新：2026-05-06
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npx prisma db push --accept-data-loss   # 生产环境（无 migration baseline）
+npm run build
+pm2 restart all
+```
+
+### 新增/修改的文件清单
+
+```
+modified:   src/app/api/rooms/[roomId]/finish/route.ts      # 幂等检查+事务+观众权限
+modified:   src/app/api/stories/[storyId]/join/route.ts     # 乐观锁+活跃房间检查+防重复房间
+modified:   src/app/api/stories/[storyId]/join-ai/route.ts  # 防重复AI房间
+modified:   src/app/api/stories/[storyId]/catalyst/route.ts # room-story关联验证
+modified:   src/app/room/[id]/page.tsx                      # setTimeout清理+off替代removeAllListeners+hasJoinedRef+防御式编程+AbortController
+modified:   src/app/story/[id]/page.tsx                     # 轮询防并发pollInProgress
+modified:   src/app/home/page.tsx                           # 我的故事入口（前期已提交）
+```
+
+### 验证结果
+
+| 检查项 | 结果 |
+|--------|------|
+| TypeScript 编译 | ✅ 通过 |
+| 静态页面生成 | ✅ 70/70 |
+| API 路由 | ✅ 全部通过 |
+| 竞态条件修复 | ✅ join 乐观锁 + finish 事务 |
+| 内存泄漏修复 | ✅ setTimeout 清理 + AbortController |
+| 防御式编程 | ✅ userId?.startsWith + 观众权限 |
+| 幂等性 | ✅ finish 重复调用安全 |
+
+---

@@ -33,33 +33,47 @@ export async function POST(
       return NextResponse.json(apiError("NOT_FOUND", "房间不存在"), { status: 404 });
     }
 
-    // 检查是否是参与者
-    const isParticipant = room.participants.some((p) => p.userId === userId);
-    if (!isParticipant) {
+    // 检查是否是参与者（且是演员角色，不是观众）
+    const me = room.participants.find((p) => p.userId === userId);
+    if (!me) {
       return NextResponse.json(apiError("FORBIDDEN", "不是房间参与者"), { status: 403 });
     }
+    if (me.role === 'spectator') {
+      return NextResponse.json(apiError("FORBIDDEN", "观众不能结束对白"), { status: 403 });
+    }
 
-    // 关闭房间
-    await db.room.update({
-      where: { id: roomId },
-      data: { status: "closed", closedAt: new Date() },
-    });
-
-    // 创建资产（保存对白）
-    const content = room.messages.map((m) => `${m.identity}: ${m.content}`).join("\n");
-    const asset = await db.asset.create({
-      data: {
-        userId,
+    // 已关闭的房间直接返回（幂等）
+    if (room.status === 'closed' || room.status === 'finished') {
+      const existingAsset = await db.asset.findFirst({ where: { roomId } });
+      return NextResponse.json(apiResponse({
         roomId,
-        title: room.story?.title || "故事对白",
-        summary: room.story?.storySummary || "",
-        content: content.slice(0, 5000),
-        identity: room.participants.find((p) => p.userId === userId)?.identity || "匿名",
-        messageCount: room.messages.length,
-        sparkCount: room.messages.filter((m) => m.isSpark).length,
-        isPublic: false,
-      },
-    });
+        assetId: existingAsset?.id || null,
+        status: room.status,
+        truth: room.story?.act4Truth || null,
+      }));
+    }
+
+    // 关闭房间 + 创建资产（原子事务）
+    const content = room.messages.map((m) => `${m.identity}: ${m.content}`).join("\n");
+    const [updatedRoom, asset] = await db.$transaction([
+      db.room.update({
+        where: { id: roomId },
+        data: { status: "closed", closedAt: new Date() },
+      }),
+      db.asset.create({
+        data: {
+          userId,
+          roomId,
+          title: room.story?.title || "故事对白",
+          summary: room.story?.storySummary || "",
+          content: content.slice(0, 5000),
+          identity: me.identity || "匿名",
+          messageCount: room.messages.length,
+          sparkCount: room.messages.filter((m) => m.isSpark).length,
+          isPublic: false,
+        },
+      }),
+    ]);
 
     return NextResponse.json(apiResponse({
       roomId,
