@@ -26,7 +26,10 @@ export async function middleware(request: NextRequest) {
 
   const isLoggedIn = !!token;
 
-  // v7.0-fix7: 强制 spectate 路由经过中间件
+  // v8.0-login-fix: spectate 路由调试
+  if (pathname === '/spectate' || pathname.startsWith('/spectate/')) {
+    console.log('[Middleware-Spectate]', pathname, 'isLoggedIn=', isLoggedIn);
+  }
   console.log('[Middleware]', pathname, 'isLoggedIn=', isLoggedIn, 'token=', token ? 'yes' : 'no');
 
   // 已登录用户访问登录页/注册页 → 重定向到首页
@@ -46,6 +49,7 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
+    response.headers.set('X-Middleware-Guard', 'redirect-to-login');
     return response;
   }
 
