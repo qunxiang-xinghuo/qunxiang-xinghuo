@@ -43,10 +43,27 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] Stopping Nginx..." >> "$LOG_FILE"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Nginx..." >> "$LOG_FILE"
 /www/server/nginx/sbin/nginx >> "$LOG_FILE" 2>&1 || true
 
-# 尝试清除 Nginx proxy_cache 目录
+# v8.0-login-fix: 尝试清除 Nginx 所有可能的 proxy_cache 目录
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Clearing Nginx cache..." >> "$LOG_FILE"
-rm -rf /www/server/nginx/proxy_cache_dir/* >> "$LOG_FILE" 2>&1 || true
-rm -rf /www/server/nginx/proxy_cache/* >> "$LOG_FILE" 2>&1 || true
-rm -rf /tmp/nginx_cache/* >> "$LOG_FILE" 2>&1 || true
+for cache_dir in \
+  /www/server/nginx/proxy_cache_dir \
+  /www/server/nginx/proxy_cache \
+  /www/server/nginx/cache \
+  /www/server/nginx/proxy_temp_dir \
+  /www/server/nginx/proxy_temp \
+  /tmp/nginx_cache \
+  /tmp/nginx_proxy \
+  /var/cache/nginx \
+  /data/nginx/cache \
+  /usr/local/nginx/cache \
+  /run/nginx-cache \
+  /www/server/nginx/conf/proxy_cache \
+  /www/server/panel/vhost/nginx/cache
+do
+  if [ -d "$cache_dir" ]; then
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Clearing $cache_dir" >> "$LOG_FILE"
+    rm -rf "$cache_dir"/* >> "$LOG_FILE" 2>&1 || true
+  fi
+done
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ===== Deploy Complete =====" >> "$LOG_FILE"
