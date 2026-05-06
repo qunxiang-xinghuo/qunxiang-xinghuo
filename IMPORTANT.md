@@ -32,10 +32,17 @@ cd /www/wwwroot/qunxiang-xinghuo
 export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
 git pull fqunxiang dev
 rm -rf .next
-npx prisma migrate deploy   # 生产环境
+npx prisma db push --accept-data-loss   # 生产环境（无 migration baseline）
 npm run build
 pm2 restart all
 ```
+
+### 部署验证记录
+
+| 时间 | 版本 | 构建 | 页面数 | PM2 |
+|------|------|------|--------|-----|
+| 2026-05-06 | v8.1+v8.1b | ✅ | 68/68 | ✅ online |
+| 2026-05-06 | v8.0 story | ✅ | 70/70 | ✅ online (pid 772606) |
 
 ---
 
