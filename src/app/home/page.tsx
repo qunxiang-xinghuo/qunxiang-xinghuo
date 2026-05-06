@@ -2,38 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye, Sparkles,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
-interface SparkItem {
+interface Top3Item {
   id: string;
-  title: string;
-  content: string;
-  hotScore: number;
-  createdAt: string;
-  identity: string;
-  identityPair: string;
   brainholeTitle: string;
-  brainholeCategory: string;
-  roomId: string | null;
-  messageCount: number;
+  identityPair: string;
   sparkCount: number;
-  previewMessages: { content: string; identity: string }[];
+  roomId: string | null;
 }
 
 export default function HomePage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
-  const [top3, setTop3] = useState<SparkItem[]>([]);
+  const [top3, setTop3] = useState<Top3Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
+  // v8.0-login-fix: 页面级认证门禁
   if (!isAuthenticated) {
     return <div className="h-screen bg-xh-primary" />;
   }
@@ -43,7 +35,6 @@ export default function HomePage() {
   useEffect(() => {
     async function init() {
       try {
-        // v8.0: TOP3 改为火花排行榜
         const res = await fetch('/api/sparks/top?limit=3');
         const data = await res.json();
         if (data.data?.list) {
@@ -58,7 +49,6 @@ export default function HomePage() {
     init();
   }, []);
 
-  // v6.2-fix6: 四大模式入口更新
   const modes = [
     {
       key: 'ai',
@@ -107,7 +97,7 @@ export default function HomePage() {
       <PageHeader title="发现" subtitle="今日灵感" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* v8.0: 今日最热 TOP3 火花排行榜 */}
+        {/* v8.1: TOP3 极简文字列表 */}
         <section className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-[#e2b04a]" />
@@ -117,63 +107,47 @@ export default function HomePage() {
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 rounded-xl bg-white/5 animate-pulse" />
+                <div key={i} className="h-14 rounded-xl bg-white/5 animate-pulse" />
               ))}
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {top3.map((item, idx) => (
                 <motion.div
                   key={item.id}
-                  initial={mounted ? { opacity: 0, y: 10 } : false}
+                  initial={mounted ? { opacity: 0, y: 8 } : false}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  onClick={() => router.push(`/spark-detail/${item.id}`)}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all cursor-pointer"
+                  transition={{ delay: idx * 0.08 }}
+                  onClick={() => item.roomId && router.push(`/room/${item.roomId}`)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                    item.roomId
+                      ? 'hover:bg-white/[0.04] active:scale-[0.99] cursor-pointer'
+                      : 'opacity-50 cursor-default'
+                  }`}
                 >
-                  <div className="flex items-start gap-3">
-                    {/* 排名 */}
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 ${
-                      idx === 0 ? 'bg-[#e2b04a]/20 text-[#e2b04a]' :
-                      idx === 1 ? 'bg-white/10 text-white/70' :
-                      'bg-[#74b9ff]/10 text-[#74b9ff]'
-                    }`}>
-                      {idx + 1}
-                    </div>
-                    {/* 内容 */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-[11px] text-[#e2b04a]/60 font-medium">{item.brainholeTitle}</p>
-                        <span className="text-[10px] text-white/20">·</span>
-                        <p className="text-[10px] text-white/30">{item.identityPair}</p>
-                      </div>
-                      {/* 预览消息 */}
-                      {item.previewMessages.length > 0 && (
-                        <div className="space-y-1 mb-1.5">
-                          {item.previewMessages.map((msg, mIdx) => (
-                            <p key={mIdx} className="text-xs text-white/50 truncate">
-                              <span className="text-white/30">{msg.identity}:</span> {msg.content}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                      {/* 底部信息 */}
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1 text-[10px] text-white/20">
-                          <Flame className="w-3 h-3 text-[#e2b04a]/40" />
-                          {item.hotScore}
-                        </span>
-                        <span className="flex items-center gap-1 text-[10px] text-white/20">
-                          <MessageCircle className="w-3 h-3" />
-                          {item.messageCount}条
-                        </span>
-                        <span className="text-[10px] text-white/15">
-                          {new Date(item.createdAt).toLocaleDateString('zh-CN')}
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-white/20 flex-shrink-0 mt-2" />
+                  {/* 排名 */}
+                  <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                    idx === 0 ? 'bg-[#e2b04a]/20 text-[#e2b04a]' :
+                    idx === 1 ? 'bg-white/10 text-white/60' :
+                    'bg-[#74b9ff]/10 text-[#74b9ff]/70'
+                  }`}>
+                    {idx + 1}
                   </div>
+                  {/* 极简信息 */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] text-white/80 truncate font-medium">{item.brainholeTitle}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[11px] text-white/30">{item.identityPair}</span>
+                      <span className="text-[10px] text-white/15">·</span>
+                      <span className="flex items-center gap-0.5 text-[11px] text-[#e2b04a]/40">
+                        <Flame className="w-3 h-3" />
+                        {item.sparkCount}
+                      </span>
+                    </div>
+                  </div>
+                  {item.roomId && (
+                    <ChevronRight className="w-4 h-4 text-white/15 flex-shrink-0" />
+                  )}
                 </motion.div>
               ))}
             </div>
@@ -217,35 +191,33 @@ export default function HomePage() {
       </div>
 
       {/* Coming Soon 弹层 */}
-      <AnimatePresence>
-        {showComingSoon && (
+      {showComingSoon && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowComingSoon(null)}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowComingSoon(null)}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-white/10 max-w-[280px] w-full text-center"
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-white/10 max-w-[280px] w-full text-center"
-              onClick={(e) => e.stopPropagation()}
+            <Flame className="w-8 h-8 text-[#e2b04a]/60 mx-auto mb-3" />
+            <p className="text-base font-semibold text-white/90 mb-1">{showComingSoon}</p>
+            <p className="text-sm text-white/40 mb-4">即将开放，敬请期待</p>
+            <button
+              onClick={() => setShowComingSoon(null)}
+              className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/20"
             >
-              <Flame className="w-8 h-8 text-[#e2b04a]/60 mx-auto mb-3" />
-              <p className="text-base font-semibold text-white/90 mb-1">{showComingSoon}</p>
-              <p className="text-sm text-white/40 mb-4">即将开放，敬请期待</p>
-              <button
-                onClick={() => setShowComingSoon(null)}
-                className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/20"
-              >
-                知道了
-              </button>
-            </motion.div>
+              知道了
+            </button>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </motion.div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Bookmark, Sparkles, Eye, MessageSquare, Heart } from 'lucide-react';
+import { X, Bookmark, Sparkles, Eye, MessageSquare, Flame } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface BrainholeDetail {
@@ -139,7 +139,7 @@ export default function BubbleDetailModal({ brainholeId, onClose }: BubbleDetail
                     {brainhole.reactionCount}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Heart className="w-3.5 h-3.5" />
+                    <Flame className="w-3.5 h-3.5" />
                     {brainhole.collectionCount}
                   </span>
                 </div>

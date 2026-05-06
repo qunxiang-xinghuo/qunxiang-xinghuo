@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Send, Heart, Lock, ArrowLeft, Globe, Sparkles } from 'lucide-react';
+import { Send, Flame, Lock, ArrowLeft, Globe, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
@@ -162,7 +162,7 @@ export default function HealingSessionPage() {
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Heart className="w-8 h-8 text-white/10 mb-3" />
+            <Flame className="w-8 h-8 text-white/10 mb-3" />
             <p className="text-sm text-white/30">刘看山正在等待你</p>
           </div>
         ) : (
@@ -181,7 +181,7 @@ export default function HealingSessionPage() {
                     <LiuKanshanAvatar size="sm" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center">
-                      <Heart className="w-4 h-4 text-rose-400" />
+                      <Flame className="w-4 h-4 text-rose-400" />
                     </div>
                   )}
                 </div>

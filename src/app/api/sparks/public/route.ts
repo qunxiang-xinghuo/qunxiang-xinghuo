@@ -17,19 +17,31 @@ export async function GET(request: NextRequest) {
     const rawLimit = parseInt(searchParams.get("limit") || "50", 10);
     const limit = Number.isNaN(rawLimit) ? 50 : Math.min(Math.max(rawLimit, 1), 100);
     const sort = searchParams.get("sort") || "latest"; // latest | hottest
+    const category = searchParams.get("category"); // 职业分类筛选
 
     const orderBy = sort === "hottest"
       ? [{ hotScore: "desc" as const }, { createdAt: "desc" as const }]
       : [{ createdAt: "desc" as const }];
 
     // 获取当前用户ID（用于判断 likedByMe）
-        const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
     const effectiveUserId = userId || guestId;
 
+    // v8.1: 构建 where 条件，支持职业分类筛选
+    const where: any = { isPublic: true };
+    if (category && category !== "all") {
+      where.brainhole = {
+        category: {
+          contains: category,
+          mode: "insensitive",
+        },
+      };
+    }
+
     const assets = await prisma.asset.findMany({
-      where: { isPublic: true },
+      where,
       orderBy,
       take: limit,
       include: {

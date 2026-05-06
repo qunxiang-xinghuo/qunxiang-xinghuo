@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { signOut } from 'next-auth/react';
 import {
-  Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins, Heart,
+  Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -125,7 +125,7 @@ export default function ProfilePage() {
 
   const menuItems = [
     { icon: Coins, label: '我的收益', desc: '盐粒收益明细', path: '/earnings' },
-    { icon: Heart, label: '个人疗愈', desc: '私密对话空间', path: '/healing' },
+    { icon: Flame, label: '个人疗愈', desc: '私密对话空间', path: '/healing' },
     { icon: Flame, label: '我的火花', desc: '管理你的灵感片段', path: '/profile/sparks' },
     { icon: BookOpen, label: '我的故事', desc: '参与的故事记录', path: '/story-hall' },
     { icon: Settings, label: '设置', desc: '账号与偏好', path: '/settings' },

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Send, Sparkles, ArrowLeft, Flame, XCircle, Eye } from 'lucide-react';
+import {
+  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/hooks/useAuth';
 import Image from 'next/image';
 
@@ -17,67 +18,40 @@ interface Message {
   isSpark?: boolean;
 }
 
-interface AiAgent {
-  userId: string;
-  name: string;
-  persona: string;
+interface CommentItem {
+  id: string;
+  content: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    image: string | null;
+  };
 }
 
-// v6.0: 微信聊天风格对白室
+// v8.1: 对白详情页 — 只读模式 + 评论区
 export default function RoomPage() {
   const params = useParams();
   const router = useRouter();
   const roomId = params.id as string;
   const { user: authUser } = useAuth();
-  const [savedIdentity, setSavedIdentity] = useState<string | null>(null);
-  const [savedUserId, setSavedUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setSavedIdentity(localStorage.getItem('xh_duo_identity'));
-    setSavedUserId(localStorage.getItem('xh_user_id'));
-  }, []);
-
-  // v6.1-fix: 使用稳定的 savedUserId，不生成新的 guest ID
-  const stableUserId = savedUserId || (savedIdentity ? 'guest-local' : null);
-  const user = authUser || (savedIdentity ? {
-    id: stableUserId || 'guest-local',
-    name: savedIdentity,
-    identity: { type: 'custom' as const, label: savedIdentity },
-  } : null);
-  const { isConnected, joinRoom, leaveRoom, sendMessage, sendLike, on, off, removeAllListeners } = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
-  const [aiPrompts, setAiPrompts] = useState<string[]>([]);
   const [brainholeTitle, setBrainholeTitle] = useState('');
   const [brainholeScenario, setBrainholeScenario] = useState('');
-  const [myIdentity, setMyIdentity] = useState('我');
-  const [isAiRoom, setIsAiRoom] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [partnerTyping, setPartnerTyping] = useState(false);
-  const [savingAsset, setSavingAsset] = useState(false);
-  const [assetSaved, setAssetSaved] = useState(false);
-  const [userRole, setUserRole] = useState<'actor' | 'spectator'>('actor');
-  const [likeCount, setLikeCount] = useState(0);
-  const [viewerCount, setViewerCount] = useState(0); // v6.3: 在线人数
-  const [aiAgents, setAiAgents] = useState<AiAgent[]>([]);
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [opponentLeftNotice, setOpponentLeftNotice] = useState(false);
-  const isProcessingAI = useRef(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const timersRef = useRef<number[]>([]);
+  const [identities, setIdentities] = useState<Record<string, string>>({});
 
-  // 滚动到底部
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // 评论区状态
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [commentInput, setCommentInput] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [commentDeletingId, setCommentDeletingId] = useState<string | null>(null);
+  const [commentsLoading, setCommentsLoading] = useState(true);
 
-  // 加载房间信息
+  // 加载房间信息和消息
   useEffect(() => {
-    const guestId = typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null;
-    const localIdentity = typeof window !== 'undefined' ? localStorage.getItem('xh_duo_identity') : null;
-    fetch(`/api/rooms/${roomId}`, { headers: guestId ? { 'x-guest-id': guestId } : {} })
+    fetch(`/api/rooms/${roomId}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -89,13 +63,10 @@ export default function RoomPage() {
             setBrainholeTitle(room.brainhole.title);
             setBrainholeScenario(room.brainhole.scenario || '');
           }
-          setIsAiRoom(room.type === 'ai_duet');
-          if (localIdentity) setMyIdentity(localIdentity);
-
           if (room.messages && Array.isArray(room.messages)) {
             const history: Message[] = room.messages.map((m: any) => ({
               id: m.id,
-              userId: m.senderId,
+              userId: m.senderId || m.userId,
               content: m.content,
               timestamp: new Date(m.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
               identity: m.identity,
@@ -103,428 +74,153 @@ export default function RoomPage() {
             }));
             setMessages(history);
           }
-
-          // v6.1: 检测当前用户角色 + 提取AI Agents
+          // 收集参与者身份映射
+          const idMap: Record<string, string> = {};
           if (room.participants && Array.isArray(room.participants)) {
-            const me = room.participants.find((p: any) => p.userId === stableUserId);
-            if (me?.role === 'spectator') {
-              setUserRole('spectator');
-            }
-            const agents: AiAgent[] = room.participants
-              .filter((p: any) => p.role === 'ai_agent')
-              .map((p: any) => ({
-                userId: p.userId,
-                name: p.identity || 'AI',
-                persona: p.userId.replace('agent_', ''),
-              }));
-            if (agents.length > 0) setAiAgents(agents);
-            // 兼容旧房间：没有 ai_agent 但 type=ai_duet，使用默认刘看山
-            else if (room.type === 'ai_duet') {
-              setAiAgents([{ userId: 'agent_catalyst', name: '刘看山', persona: 'catalyst' }]);
-            }
+            room.participants.forEach((p: any) => {
+              if (p.userId && p.identity) idMap[p.userId] = p.identity;
+            });
           }
+          setIdentities(idMap);
         }
       })
-      .catch((err) => console.error('[Room] Fetch room error:', err))
+      .catch((err) => console.error('[Room] Fetch error:', err))
       .finally(() => setIsLoading(false));
-  }, [roomId, user?.id]);
-
-  // AI 动态催化问题（30秒推送一次）
-  useEffect(() => {
-    if (!brainholeTitle) return;
-    loadAiPrompts();
-    const interval = setInterval(loadAiPrompts, 30000);
-    return () => clearInterval(interval);
-  }, [brainholeTitle, messages]);
-
-  async function loadAiPrompts() {
-    try {
-      const lastMessages = messages.slice(-6).map(m => ({
-        role: m.userId === user?.id ? 'user' : 'assistant',
-        content: m.content,
-      }));
-      const res = await fetch('/api/ai/catalyst', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: brainholeTitle,
-          messages: lastMessages,
-          identity: myIdentity,
-        }),
-      });
-      if (!res.ok) {
-        console.error(`[Room] AI催化失败: ${res.status}`);
-        return;
-      }
-      const data = await res.json();
-      if (data.data?.prompts) {
-        setAiPrompts(data.data.prompts);
-      }
-    } catch (e) {
-      console.error('AI催化加载失败:', e);
-    }
-  }
-
-  // v6.1: 多Agent轮流回复
-  const generateAIReply = useCallback(async (userMessage: string) => {
-    if (isProcessingAI.current) return;
-    isProcessingAI.current = true;
-    const agents = aiAgents.length > 0 ? aiAgents : [{ userId: 'agent_catalyst', name: '刘看山', persona: 'catalyst' }];
-    try {
-      for (let i = 0; i < agents.length; i++) {
-        const agent = agents[i];
-        setPartnerTyping(true);
-        const historyMessages = messages.slice(-10).map((msg) => ({
-          role: msg.userId === user?.id ? ('user' as const) : ('assistant' as const),
-          content: msg.content,
-        }));
-        const res = await fetch('/api/ai/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [...historyMessages, { role: 'user', content: userMessage }],
-            topic: brainholeTitle || '一个有趣的话题',
-            persona: agent.persona,
-          }),
-        });
-        const result = await res.json();
-        const delay = 800 + Math.random() * 1200 + i * 600; // 错开回复时间
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        const aiMsg: Message = {
-          id: `ai-${agent.persona}-${Date.now()}-${i}`,
-          userId: agent.userId,
-          content: result.data?.content || '嗯，我能感受到你话里的分量。愿意多说说吗？',
-          timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          identity: agent.name,
-        };
-        setMessages((prev) => [...prev, aiMsg]);
-      }
-    } catch (err: any) {
-      console.error('[Room] AI回复生成失败:', err);
-      setSendError('AI回复失败，请稍后重试');
-      const t = window.setTimeout(() => setSendError(null), 3000);
-      timersRef.current.push(t);
-    } finally {
-      setPartnerTyping(false);
-      isProcessingAI.current = false;
-    }
-  }, [brainholeTitle, messages, user?.id, aiAgents]);
-
-  // v7.0-fix7: 使用 ref 存储动态 user/identity，避免 useEffect 因对象引用变化而频繁重注册
-  const userRef = useRef(user);
-  userRef.current = user;
-
-  // WebSocket
-  useEffect(() => {
-    if (!roomId || !stableUserId) return;
-    const identity = myIdentity || userRef.current?.identity?.label || '匿名';
-    joinRoom(roomId, stableUserId, identity);
-
-    // v7.0-fix7: 先清理所有旧监听器，防止重复注册导致消息重复显示
-    removeAllListeners('new-message');
-    removeAllListeners('user-typing');
-    removeAllListeners('new-like');
-    removeAllListeners('room-viewer-count');
-    removeAllListeners('opponent-left');
-
-    // v6.1-fix: 新增去重逻辑 + 支持多种广播格式
-    // v7.0-fix7: 额外过滤自己发送的消息（已通过乐观更新添加）
-    const handleNewMessage = (data: any) => {
-      const raw = data.message || data;
-      const msgId = raw.id || `msg-${Date.now()}`;
-      const senderId = raw.senderId || raw.userId;
-
-      // 忽略自己发送的消息（已通过乐观更新添加）
-      if (senderId === stableUserId) return;
-
-      setMessages((prev) => {
-        // 去重：消息ID已存在则忽略
-        if (prev.some((m) => m.id === msgId)) return prev;
-        const msg: Message = {
-          id: msgId,
-          userId: senderId,
-          content: raw.content,
-          timestamp: new Date(raw.createdAt || Date.now()).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          identity: raw.identity,
-        };
-        return [...prev, msg];
-      });
-    };
-    const handleTyping = () => {
-      setPartnerTyping(true);
-      const t = window.setTimeout(() => setPartnerTyping(false), 2000);
-      timersRef.current.push(t);
-    };
-    const handleNewLike = () => {
-      setLikeCount((prev) => prev + 1);
-      const t = window.setTimeout(() => setLikeCount((prev) => Math.max(0, prev - 1)), 1500);
-      timersRef.current.push(t);
-    };
-
-    // v6.3: 监听房间在线人数（静默更新）
-    const handleViewerCount = (data: { count: number; roomId: string }) => {
-      if (data.roomId === roomId) setViewerCount(data.count);
-    };
-
-    // v7.0-fix7: 监听对方离开事件（非阻塞式提示）
-    const handleOpponentLeft = (data: { userId: string; roomId: string }) => {
-      if (data.roomId === roomId) {
-        setOpponentLeftNotice(true);
-        const t = window.setTimeout(() => {
-          setOpponentLeftNotice(false);
-          router.push('/home');
-        }, 2500);
-        timersRef.current.push(t);
-      }
-    };
-
-    on('new-message', handleNewMessage);
-    on('user-typing', handleTyping);
-    on('new-like', handleNewLike);
-    on('room-viewer-count', handleViewerCount);
-    on('opponent-left', handleOpponentLeft);
-
-    return () => {
-      off('new-message', handleNewMessage);
-      off('user-typing', handleTyping);
-      off('new-like', handleNewLike);
-      off('room-viewer-count', handleViewerCount);
-      off('opponent-left', handleOpponentLeft);
-      leaveRoom(roomId, stableUserId);
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, stableUserId, myIdentity]);
-
-  const handleSend = useCallback(async () => {
-    if (!inputValue.trim()) return;
-    const content = inputValue.trim();
-    setInputValue('');
-    if (inputRef.current) inputRef.current.style.height = 'auto';
-
-    const msgId = `msg-${Date.now()}`;
-    const msg: Message = {
-      id: msgId,
-      userId: user?.id || 'me',
-      content,
-      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      identity: myIdentity,
-    };
-    // 乐观添加（即时反馈）
-    setMessages((prev) => [...prev, msg]);
-
-    // v6.1-fix: 调用HTTP API持久化消息，同时通过socket广播给其他参与者
-    try {
-      const guestId = localStorage.getItem('xh_user_id');
-      const res = await fetch(`/api/rooms/${roomId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(guestId ? { 'x-guest-id': guestId } : {}),
-        },
-        body: JSON.stringify({ content, identity: myIdentity }),
-      });
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error('[Room] 消息保存失败:', errText);
-        setSendError('消息发送失败，请检查网络');
-        setTimeout(() => setSendError(null), 3000);
-      }
-    } catch (err) {
-      console.error('[Room] 消息保存异常:', err);
-      setSendError('网络异常，消息可能未保存');
-      setTimeout(() => setSendError(null), 3000);
-    }
-
-    // 兼容：仍通过socket广播（用于非HTTP保存的旧路径）
-    sendMessage(roomId, { id: msgId, senderId: user?.id || 'me', content, createdAt: new Date().toISOString() });
-
-    if (isAiRoom) generateAIReply(content);
-  }, [roomId, user, myIdentity, isAiRoom, inputValue, sendMessage, generateAIReply]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputValue(e.target.value);
-    e.target.style.height = 'auto';
-    e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px';
-  };
-
-  // 标记为火花
-  const markAsSpark = useCallback(async (messageId: string) => {
-    try {
-      await fetch(`/api/rooms/${roomId}/spark`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageId }),
-      });
-      setMessages((prev) => prev.map((m) => m.id === messageId ? { ...m, isSpark: true } : m));
-    } catch (e) {
-      console.error('标记火花失败:', e);
-    }
   }, [roomId]);
 
-  // 结束对白并保存
-  // v7.0-fix7: 先发送 leave-room 事件通知对方，再保存 asset
-  const handleEndChat = useCallback(async () => {
-    if (savingAsset || assetSaved) return;
-    setSavingAsset(true);
+  // 加载评论
+  useEffect(() => {
+    if (!roomId) return;
+    setCommentsLoading(true);
+    fetch(`/api/room-comments?roomId=${roomId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setComments(data.data?.list || []);
+      })
+      .catch((err) => console.error('[Comments] Load error:', err))
+      .finally(() => setCommentsLoading(false));
+  }, [roomId]);
+
+  // 提交评论
+  const submitComment = async () => {
+    const content = commentInput.trim();
+    if (!content || content.length > 500) return;
+    setCommentLoading(true);
     try {
-      // v7.0-fix7: 先通知对方已离开
-      leaveRoom(roomId, stableUserId || 'guest');
-
-      const guestId = localStorage.getItem('xh_user_id');
-      const res = await fetch('/api/assets', {
+      const res = await fetch('/api/room-comments', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(guestId ? { 'x-guest-id': guestId } : {}),
-        },
-        body: JSON.stringify({ roomId }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, content }),
       });
-      const result = await res.json();
-      if (result.success || result.data?.asset) {
-        setAssetSaved(true);
-        router.push('/library');
+      const data = await res.json();
+      if (data.success && data.data?.comment) {
+        setComments((prev) => [data.data.comment, ...prev]);
+        setCommentInput('');
       }
-    } catch (err) {
-      console.error('保存失败:', err);
+    } catch (e) {
+      console.error('[Comments] Submit error:', e);
     } finally {
-      setSavingAsset(false);
+      setCommentLoading(false);
     }
-  }, [roomId, savingAsset, assetSaved, router, leaveRoom]);
+  };
 
-  // 获取用户头像组件
-  const UserAvatar = ({ isMe }: { isMe: boolean }) => (
-    <div className={`flex-shrink-0 ${isMe ? 'ml-2' : 'mr-2'}`}>
-      {isMe ? (
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/20 flex items-center justify-center">
-          <span className="text-xs text-[#e2b04a] font-bold">我</span>
-        </div>
-      ) : (
-        <div className="w-8 h-8 rounded-lg overflow-hidden border border-[#74b9ff]/20 bg-gradient-to-br from-[#74b9ff]/10 to-blue-500/10">
-          <Image src="/liukanshan.jpg" alt="刘看山" width={32} height={32} className="object-cover" sizes="32px" />
-        </div>
-      )}
-    </div>
-  );
+  // 删除评论
+  const deleteComment = async (commentId: string) => {
+    setCommentDeletingId(commentId);
+    try {
+      const res = await fetch(`/api/room-comments/${commentId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      }
+    } catch (e) {
+      console.error('[Comments] Delete error:', e);
+    } finally {
+      setCommentDeletingId(null);
+    }
+  };
+
+  // 判断消息发送者身份
+  const getSenderLabel = (msg: Message) => {
+    if (identities[msg.userId]) return identities[msg.userId];
+    if (msg.identity) return msg.identity;
+    return '匿名';
+  };
+
+  // 按 userId 分组判断左右
+  const uniqueUsers = Array.from(new Set(messages.map((m) => m.userId)));
+  const meUserId = uniqueUsers[0] || 'me'; // 第一个用户放右边
 
   if (isLoading) {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient">
         <div className="w-8 h-8 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin mb-4" />
-        <p className="text-sm text-white/30">正在加载对白室...</p>
+        <p className="text-sm text-white/30">正在加载对白...</p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full page-gradient">
-      {/* 对方离开通知条 */}
-      {opponentLeftNotice && (
-        <div className="shrink-0 px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-center">
-          <p className="text-xs text-red-400">对方已结束对白，即将返回发现页...</p>
-        </div>
-      )}
-
-      {/* 顶部标题栏 + 脑洞信息 */}
+      {/* 顶部标题栏 */}
       <div className="shrink-0 border-b border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 py-3">
           <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1 min-w-0">
-            {/* v7.0-fix7: 脑洞标题加大、加粗、金色、完整显示 */}
-            <h1 className="text-xl font-bold text-[#e2b04a] break-words leading-tight">{brainholeTitle || '对白室'}</h1>
+            <h1 className="text-lg font-bold text-[#e2b04a] break-words leading-tight">{brainholeTitle || '对白详情'}</h1>
             {brainholeScenario && (
-              <p className="text-sm text-[#e2b04a]/70 break-words mt-1 leading-relaxed">{brainholeScenario}</p>
+              <p className="text-xs text-[#e2b04a]/60 break-words mt-0.5 leading-relaxed">{brainholeScenario}</p>
             )}
           </div>
-          <div className="flex items-center gap-3">
-            {/* v6.3: 在线人数 */}
-            <div className="flex items-center gap-1 text-[11px] text-white/40">
-              <Eye className="w-3.5 h-3.5" />
-              <span>{viewerCount}</span>
-            </div>
-            {isConnected ? (
-              <span className="flex items-center gap-1 text-[10px] text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                在线
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-[10px] text-amber-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                连接中
-              </span>
-            )}
+          <div className="flex items-center gap-1.5 text-[11px] text-white/30">
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span>{messages.length}</span>
           </div>
         </div>
       </div>
 
-      {/* AI 催化区 */}
-      {aiPrompts.length > 0 && (
-        <div className="shrink-0 px-4 py-2 border-b border-white/5">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <Sparkles className="w-3 h-3 text-[#e2b04a]/60" />
-            <span className="text-[10px] text-white/30">AI 催化</span>
-          </div>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            {aiPrompts.map((prompt, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  setInputValue(prompt);
-                  inputRef.current?.focus();
-                }}
-                className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#e2b04a]/8 border border-[#e2b04a]/15 text-[11px] text-[#e2b04a]/80 hover:bg-[#e2b04a]/15 transition-colors whitespace-nowrap"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 消息列表 —— 微信聊天风格 */}
+      {/* 消息列表 — 微信聊天风格 */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Sparkles className="w-8 h-8 text-white/10 mb-3" />
-            <p className="text-sm text-white/30">对白室已就绪</p>
-            <p className="text-xs text-white/20 mt-1">写下你的第一句话，开启这场对撞</p>
+            <p className="text-sm text-white/30">暂无对白内容</p>
           </div>
         )}
         {messages.map((msg) => {
-          const isMe = msg.userId === user?.id || msg.userId === 'me';
-          const isAiAgent = aiAgents.some((a) => a.userId === msg.userId) || msg.userId === 'liu_kanshan_ai';
+          const isRight = msg.userId === meUserId;
+          const senderLabel = getSenderLabel(msg);
           return (
-            <div key={msg.id} className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-              <UserAvatar isMe={isMe} />
-              <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[70%]`}>
-                {/* 姓名标签 */}
-                <span className="text-[10px] text-white/25 mb-1 px-1">
-                  {isMe ? (user?.name || '我') : (isAiAgent ? (msg.identity || 'AI') : (msg.identity || '对方'))}
-                </span>
-                {/* 消息气泡 */}
+            <div key={msg.id} className={`flex ${isRight ? 'flex-row-reverse' : 'flex-row'}`}>
+              {/* 头像 */}
+              <div className={`flex-shrink-0 ${isRight ? 'ml-2' : 'mr-2'}`}>
+                {isRight ? (
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/20 flex items-center justify-center">
+                    <span className="text-xs text-[#e2b04a] font-bold">{senderLabel.charAt(0)}</span>
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#74b9ff]/10 to-blue-500/10 border border-[#74b9ff]/20 flex items-center justify-center">
+                    <span className="text-xs text-[#74b9ff] font-bold">{senderLabel.charAt(0)}</span>
+                  </div>
+                )}
+              </div>
+              {/* 气泡 */}
+              <div className={`flex flex-col ${isRight ? 'items-end' : 'items-start'} max-w-[72%]`}>
+                <span className="text-[10px] text-white/25 mb-1 px-1">{senderLabel}</span>
                 <div className={`relative px-3.5 py-2.5 rounded-2xl ${
-                  isMe
-                    ? 'bg-[#e2b04a]/15 border border-[#e2b04a]/20 text-white/90 rounded-br-md'
-                    : 'bg-white/[0.05] border border-white/5 text-white/80 rounded-bl-md'
+                  msg.isSpark
+                    ? 'bg-[#e2b04a]/8 border-2 border-[#e2b04a]/40 text-white/90 shadow-[0_0_12px_rgba(226,176,74,0.12)]'
+                    : isRight
+                      ? 'bg-[#e2b04a]/15 border border-[#e2b04a]/20 text-white/90 rounded-br-md'
+                      : 'bg-white/[0.05] border border-white/5 text-white/80 rounded-bl-md'
                 }`}>
                   <p className="text-sm leading-relaxed">{msg.content}</p>
-                  <div className={`flex items-center gap-2 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    <span className={`text-[10px] ${isMe ? 'text-[#e2b04a]/30' : 'text-white/20'}`}>
+                  <div className={`flex items-center gap-2 mt-1 ${isRight ? 'justify-end' : 'justify-start'}`}>
+                    <span className={`text-[10px] ${isRight ? 'text-[#e2b04a]/30' : 'text-white/20'}`}>
                       {msg.timestamp}
                     </span>
-                    {/* 火花标记按钮 */}
-                    {!isMe && !msg.isSpark && (
-                      <button
-                        onClick={() => markAsSpark(msg.id)}
-                        className="text-[10px] text-white/15 hover:text-[#e2b04a] transition-colors flex items-center gap-0.5"
-                      >
-                        <Flame className="w-3 h-3" />
-                        火花
-                      </button>
-                    )}
                     {msg.isSpark && (
                       <span className="text-[10px] text-[#e2b04a] flex items-center gap-0.5">
                         <Flame className="w-3 h-3" />
@@ -537,115 +233,98 @@ export default function RoomPage() {
             </div>
           );
         })}
-        {partnerTyping && (
-          <div className="flex flex-row">
-            <UserAvatar isMe={false} />
-            <div className="flex flex-col items-start max-w-[70%]">
-              <span className="text-[10px] text-white/25 mb-1 px-1">刘看山</span>
-              <div className="px-3.5 py-2.5 rounded-2xl bg-white/[0.05] border border-white/5 rounded-bl-md">
-                <div className="flex gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* 输入区 + 结束按钮 / 观众模式 */}
-      <div className="shrink-0 p-3 border-t border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
-        {/* 发送错误提示 */}
-        {sendError && (
-          <div className="mb-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
-            <p className="text-[11px] text-red-400">{sendError}</p>
+      {/* 评论区 */}
+      <div className="shrink-0 border-t border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
+        <div className="px-4 py-3">
+          {/* 评论标题 */}
+          <div className="flex items-center gap-2 mb-2">
+            <MessageCircle className="w-3.5 h-3.5 text-white/30" />
+            <span className="text-xs text-white/40">评论 ({comments.length})</span>
           </div>
-        )}
 
-        {/* 点赞动画 */}
-        {likeCount > 0 && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 pointer-events-none">
-            {Array.from({ length: likeCount }).map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 1, y: 0, scale: 1 }}
-                animate={{ opacity: 0, y: -60, scale: 1.5 }}
-                transition={{ duration: 1, delay: i * 0.1 }}
-                className="absolute text-[#e2b04a] text-xl"
-              >
-                ❤️
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        {userRole === 'spectator' ? (
-          /* 观众模式 */
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-[#74b9ff]/60 bg-[#74b9ff]/10 px-2 py-1 rounded-full border border-[#74b9ff]/20">
-                👁 观众模式
-              </span>
-              <span className="text-[10px] text-white/20 flex items-center gap-1">
-                <Eye className="w-3 h-3" />
-                {viewerCount}
-              </span>
-              <span className="text-[10px] text-white/20">{messages.length} 条消息</span>
+          {/* 评论输入 */}
+          <div className="flex items-end gap-2 mb-3">
+            <div className="flex-1 bg-white/[0.05] rounded-xl border border-white/10 px-3 py-2 focus-within:border-[#e2b04a]/30 transition-colors">
+              <input
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                placeholder="写下你的看法..."
+                maxLength={500}
+                className="w-full bg-transparent text-sm text-white/90 placeholder-white/20 focus:outline-none caret-[#e2b04a]"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); }
+                }}
+              />
             </div>
             <button
-              onClick={() => {
-                sendLike(roomId, stableUserId || 'guest', myIdentity);
-                setLikeCount((prev) => prev + 1);
-                setTimeout(() => setLikeCount((prev) => Math.max(0, prev - 1)), 1500);
-              }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#e2b04a]/10 text-[#e2b04a] border border-[#e2b04a]/20 text-xs hover:bg-[#e2b04a]/20 active:scale-95 transition-all"
+              onClick={submitComment}
+              disabled={!commentInput.trim() || commentLoading}
+              className="p-2.5 rounded-xl transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 hover:bg-[#e2b04a]/25 active:scale-95"
             >
-              ❤️ 点赞
+              {commentLoading ? (
+                <span className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin block" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
             </button>
           </div>
-        ) : (
-          <>
-            {/* 结束按钮 */}
-            <div className="flex items-center justify-between mb-2 px-1">
-              <button
-                onClick={handleEndChat}
-                disabled={savingAsset || assetSaved}
-                className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full transition-colors ${
-                  assetSaved ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400/60 border border-red-500/20 hover:bg-red-500/15'
-                }`}
-              >
-                <XCircle className="w-3 h-3" />
-                {savingAsset ? '保存中...' : assetSaved ? '已保存' : '结束对白'}
-              </button>
-              <span className="text-[10px] text-white/15">{messages.length} 条消息</span>
-            </div>
 
-            <div className="flex items-end gap-2">
-              <div className="flex-1 bg-white/[0.05] rounded-2xl border border-white/10 px-4 py-2.5 focus-within:border-[#e2b04a]/30 transition-colors">
-                <textarea
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={handleInputChange}
-                  placeholder="写下你的反应..."
-                  rows={1}
-                  className="w-full bg-transparent text-sm text-white/90 placeholder-white/20 resize-none focus:outline-none max-h-24 caret-[#e2b04a]"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
-                  }}
-                />
+          {/* 评论列表 */}
+          <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+            {commentsLoading ? (
+              <div className="flex justify-center py-2">
+                <span className="w-4 h-4 border border-white/20 border-t-[#e2b04a] rounded-full animate-spin" />
               </div>
-              <button
-                onClick={handleSend}
-                disabled={!inputValue.trim()}
-                className="p-3 rounded-full transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 hover:bg-[#e2b04a]/25 active:scale-95"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </>
-        )}
+            ) : comments.length === 0 ? (
+              <p className="text-[11px] text-white/15 text-center py-2">还没有评论，来抢沙发吧</p>
+            ) : (
+              comments.map((c) => {
+                const isMine = authUser?.id === c.user.id;
+                return (
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-start gap-2 py-1.5"
+                  >
+                    {/* 头像 */}
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-white/10 to-white/5 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                      {c.user.image ? (
+                        <Image src={c.user.image} alt="" width={24} height={24} className="object-cover" />
+                      ) : (
+                        <span className="text-[10px] text-white/40">{(c.user.name || '匿').charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-white/50 font-medium">{c.user.name}</span>
+                        <span className="text-[10px] text-white/15">
+                          {new Date(c.createdAt).toLocaleDateString('zh-CN')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-white/70 leading-relaxed mt-0.5">{c.content}</p>
+                    </div>
+                    {isMine && (
+                      <button
+                        onClick={() => deleteComment(c.id)}
+                        disabled={commentDeletingId === c.id}
+                        className="p-1 rounded hover:bg-white/5 text-white/15 hover:text-red-400 transition-colors flex-shrink-0"
+                      >
+                        {commentDeletingId === c.id ? (
+                          <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin block" />
+                        ) : (
+                          <Trash2 className="w-3 h-3" />
+                        )}
+                      </button>
+                    )}
+                  </motion.div>
+                );
+              })
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

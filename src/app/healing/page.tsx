@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Heart, Plus, MessageCircle, Lock, Clock, ArrowRight } from 'lucide-react';
+import { Flame, Plus, MessageCircle, Lock, Clock, ArrowRight } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 
 interface HealingSessionItem {
@@ -96,7 +96,7 @@ export default function HealingPage() {
           className="card-elevated p-4 border-l-2 border-rose-400/50"
         >
           <div className="flex items-center gap-2 mb-2">
-            <Heart className="w-4 h-4 text-rose-400" />
+            <Flame className="w-4 h-4 text-rose-400" />
             <span className="text-xs text-rose-400/70 font-medium">绝对私密</span>
             <Lock className="w-3 h-3 text-rose-400/50 ml-auto" />
           </div>
@@ -142,7 +142,7 @@ export default function HealingPage() {
           </div>
         ) : sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Heart className="w-8 h-8 text-white/10 mb-3" />
+            <Flame className="w-8 h-8 text-white/10 mb-3" />
             <p className="text-sm text-white/30">暂无对话记录</p>
             <p className="text-xs text-white/20 mt-1">点击上方按钮，开启你的第一次疗愈对话</p>
           </div>

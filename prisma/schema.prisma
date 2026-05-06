@@ -62,6 +62,7 @@ model User {
   collections      BrainholeCollection[]
   voteCasts        VoteCast[]
   assets           Asset[]
+  roomComments     RoomComment[]
 }
 
 model UserIdentity {
@@ -227,6 +228,7 @@ model Room {
   votes         Vote[]
   inspirations  InspirationItem[]
   assets        Asset[]
+  comments      RoomComment[]
 
   @@index([status, type])
   @@index([brainholeId])
@@ -410,6 +412,20 @@ model Asset {
   @@index([userId, createdAt])
   @@index([isPublic, createdAt])
   @@index([hotScore, createdAt])
+}
+
+// v8.1: 房间评论
+model RoomComment {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
 }
 
 // v6.4: 火花点赞记录

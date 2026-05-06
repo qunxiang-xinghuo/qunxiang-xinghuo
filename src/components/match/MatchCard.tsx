@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Book, Heart } from 'lucide-react';
+import { Book, Flame } from 'lucide-react';
 import { Brainhole } from '../brainhole/BrainholeCard';
 
 interface MatchCardProps {
@@ -28,7 +28,7 @@ export default function MatchCard({ brainhole, isSelected, onSelect, className =
         </span>
         {isSelected && (
           <span className="text-xs text-xh-gold flex items-center gap-1">
-            <Heart className="w-3 h-3 fill-current" />
+            <Flame className="w-3 h-3 fill-current" />
             已选中
           </span>
         )}

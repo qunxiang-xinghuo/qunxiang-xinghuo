@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Flame, Clock, ChevronRight,
+  Flame, Clock, ChevronRight, Stethoscope, Scale, GraduationCap, Truck, Cpu, Coffee,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
@@ -25,18 +25,29 @@ interface Spark {
 }
 
 type TabType = 'latest' | 'hottest';
+type CategoryType = 'all' | '医疗' | '法律' | '教育' | '服务' | '技术' | '生活';
+
+const CATEGORIES: { key: CategoryType; label: string; icon: React.ElementType }[] = [
+  { key: 'all', label: '全部', icon: Flame },
+  { key: '医疗', label: '医疗', icon: Stethoscope },
+  { key: '法律', label: '法律', icon: Scale },
+  { key: '教育', label: '教育', icon: GraduationCap },
+  { key: '服务', label: '服务', icon: Truck },
+  { key: '技术', label: '技术', icon: Cpu },
+  { key: '生活', label: '生活', icon: Coffee },
+];
 
 export default function SparksPage() {
   const router = useRouter();
   const { isAuthenticated } = useRequireAuth();
   const [sparks, setSparks] = useState<Spark[]>([]);
   const [tab, setTab] = useState<TabType>('latest');
+  const [category, setCategory] = useState<CategoryType>('all');
   const [loading, setLoading] = useState(true);
   const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
   const [guestId, setGuestId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
   if (!isAuthenticated) {
     return <div className="h-screen bg-xh-primary" />;
   }
@@ -47,12 +58,12 @@ export default function SparksPage() {
     setGuestId(localStorage.getItem('xh_user_id'));
   }, []);
 
-  // 加载公开火花墙数据
   const loadSparks = useCallback(async () => {
     setLoading(true);
     try {
       const gid = guestId || localStorage.getItem('xh_user_id');
-      const res = await fetch(`/api/sparks/public?limit=50&sort=${tab}`, {
+      const catParam = category !== 'all' ? `&category=${encodeURIComponent(category)}` : '';
+      const res = await fetch(`/api/sparks/public?limit=50&sort=${tab}${catParam}`, {
         headers: gid ? { 'x-guest-id': gid } : {},
       });
       const data = await res.json();
@@ -62,16 +73,15 @@ export default function SparksPage() {
     } finally {
       setLoading(false);
     }
-  }, [tab, guestId]);
+  }, [tab, category, guestId]);
 
   useEffect(() => {
     loadSparks();
   }, [loadSparks]);
 
-  // 点赞/取消点赞
   const toggleLike = async (spark: Spark) => {
     if (likeLoadingId === spark.id) return;
-    if (spark.isMySpark) return; // 不能给自己的火花点赞
+    if (spark.isMySpark) return;
 
     setLikeLoadingId(spark.id);
     try {
@@ -87,7 +97,6 @@ export default function SparksPage() {
       if (result.success) {
         const newLiked = result.data?.liked;
         const newHotScore = result.data?.hotScore ?? spark.hotScore;
-
         setSparks((prev) =>
           prev.map((s) =>
             s.id === spark.id
@@ -103,7 +112,6 @@ export default function SparksPage() {
     }
   };
 
-  // 点击火花查看详情
   const handleSparkClick = (spark: Spark) => {
     if (spark.roomId) {
       router.push(`/room/${spark.roomId}`);
@@ -115,7 +123,29 @@ export default function SparksPage() {
       <PageHeader title="火花" subtitle="灵感碰撞的瞬间" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-2">
-        {/* Tab 切换：最新火花 / 最热火花（故事页样式）*/}
+        {/* v8.1: 职业分类横向标签栏 */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3 pb-1 -mx-4 px-4">
+          {CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const active = category === cat.key;
+            return (
+              <button
+                key={cat.key}
+                onClick={() => setCategory(cat.key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
+                  active
+                    ? 'bg-[#e2b04a]/15 text-[#e2b04a] border-[#e2b04a]/25'
+                    : 'bg-white/[0.03] text-white/40 border-white/5 hover:bg-white/[0.06] hover:text-white/60'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tab 切换 */}
         <div className="flex gap-4 mb-4 border-b border-white/5 pb-3">
           {[
             { key: 'latest', label: '最新火花' },
@@ -147,10 +177,10 @@ export default function SparksPage() {
               <div className="flex flex-col items-center justify-center py-20">
                 <Flame className="w-10 h-10 text-white/10 mb-3" />
                 <p className="text-sm text-white/30">
-                  {tab === 'latest' ? '还没有最新火花' : '还没有最热火花'}
+                  {category === 'all' ? (tab === 'latest' ? '还没有最新火花' : '还没有最热火花') : `暂无「${category}」分类的火花`}
                 </p>
                 <p className="text-xs text-white/20 mt-1">
-                  {tab === 'latest' ? '去对白中点击「火花」标记你的灵感' : '给喜欢的火花点赞，让它登上热榜'}
+                  {category === 'all' ? '去对白中点击「火花」标记你的灵感' : '换个分类看看'}
                 </p>
               </div>
             ) : (
@@ -162,18 +192,12 @@ export default function SparksPage() {
                   transition={{ delay: idx * 0.05 }}
                   className="p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
                 >
-                  {/* 脑洞标题 */}
                   <p className="text-[11px] text-[#e2b04a]/50 mb-1.5 font-medium">{spark.brainholeTitle}</p>
 
-                  {/* 内容（可点击跳转详情） */}
-                  <div
-                    onClick={() => handleSparkClick(spark)}
-                    className="cursor-pointer"
-                  >
+                  <div onClick={() => handleSparkClick(spark)} className="cursor-pointer">
                     <p className="text-sm text-white/80 leading-relaxed line-clamp-3">{spark.content}</p>
                   </div>
 
-                  {/* 底部信息 */}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
                     <div className="flex items-center gap-3">
                       <span className="text-[11px] text-white/25">{spark.identity || '匿名'}</span>
@@ -184,7 +208,6 @@ export default function SparksPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {/* 点赞按钮 - 使用 Flame 图标 */}
                       {spark.isMySpark ? (
                         <span className="flex items-center gap-1 text-[11px] text-white/15">
                           <Flame className="w-3.5 h-3.5" />
@@ -199,20 +222,19 @@ export default function SparksPage() {
                           disabled={likeLoadingId === spark.id}
                           className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-all active:scale-95 ${
                             spark.likedByMe
-                              ? 'bg-[#ff6b6b]/15 text-[#ff6b6b] border border-[#ff6b6b]/25'
+                              ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25'
                               : 'bg-white/[0.03] text-white/30 border border-white/5 hover:bg-white/[0.06] hover:text-white/50'
                           }`}
                         >
                           {likeLoadingId === spark.id ? (
                             <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <Flame className={`w-3.5 h-3.5 ${spark.likedByMe ? 'fill-current' : ''}`} />
+                            <Flame className={`w-3.5 h-3.5 ${spark.likedByMe ? 'fill-current drop-shadow-[0_0_4px_rgba(226,176,74,0.5)]' : ''}`} />
                           )}
                           {spark.hotScore || 0}
                         </button>
                       )}
 
-                      {/* 详情箭头 */}
                       {spark.roomId && (
                         <button
                           onClick={(e) => {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Eye, Heart, MessageCircle, Flame, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Eye, Flame, MessageCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import { useSocket } from '@/hooks/useSocket';
 import Image from 'next/image';
@@ -375,7 +375,7 @@ export default function SpectateRoomPage() {
             }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#e2b04a]/10 text-[#e2b04a] border border-[#e2b04a]/20 text-xs hover:bg-[#e2b04a]/20 active:scale-95 transition-all"
           >
-            <Heart className="w-3.5 h-3.5" />
+            <Flame className="w-3.5 h-3.5" />
             点赞
           </button>
         </div>

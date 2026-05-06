@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Users, Theater, Mountain, Heart } from 'lucide-react';
+import { User, Users, Theater, Mountain, Flame } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const modes = [
@@ -50,7 +50,7 @@ const modes = [
     id: 'couple',
     title: '密友空间',
     desc: '双人小世界',
-    icon: Heart,
+    icon: Flame,
     color: '#fd79a8',
     bgColor: 'from-pink-500/20 to-rose-500/20',
     borderColor: 'border-pink-500/30',

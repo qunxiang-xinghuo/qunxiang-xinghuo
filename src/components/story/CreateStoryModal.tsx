@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, Sparkles, BookOpen, Theater, Flame, Lightbulb, Heart, Zap, Globe, ChevronRight, Users } from 'lucide-react';
+import { X, Plus, Trash2, Sparkles, BookOpen, Theater, Flame, Lightbulb, Zap, Globe, ChevronRight, Users } from 'lucide-react';
 
 interface RoleInput {
   name: string;
@@ -26,7 +26,7 @@ interface StoryTemplate {
 
 const TEMPLATES: StoryTemplate[] = [
   {
-    id: 'medical', name: '医疗急救', icon: Heart, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20',
+    id: 'medical', name: '医疗急救', icon: Flame, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20',
     worldview: '凌晨2点的市立三甲医院急诊科。值班医生刚刚处理完一位心梗患者，120又送来两个重伤病人。血库值班员打来电话：匹配型血只剩最后一袋。',
     conflict: '两个病人同时需要输血，但血库只剩一袋。一个是酒驾肇事者，一个是被他撞伤的行人。医生必须在5分钟内做出决定。',
     roles: [
@@ -61,7 +61,7 @@ const TEMPLATES: StoryTemplate[] = [
     ],
   },
   {
-    id: 'romance', name: '爱情纠葛', icon: Heart, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20',
+    id: 'romance', name: '爱情纠葛', icon: Flame, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20',
     worldview: '北京海淀区，一对结婚八年的夫妻为了让孩子进入重点小学，决定假离婚。丈夫负责买学区房，妻子带着孩子搬回娘家。',
     conflict: '房产证办下来那天，妻子发现丈夫在购房合同上写了另一个女人的名字——那是他的初恋，也是房产中介。而妻子的娘家拆迁款，已经被她哥哥偷偷转走了。',
     roles: [
