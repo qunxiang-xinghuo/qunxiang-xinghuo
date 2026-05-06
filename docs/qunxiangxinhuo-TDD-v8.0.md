@@ -733,3 +733,45 @@ modified:   src/app/story/[id]/page.tsx                     # 轮询防并发
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
 > 最后更新：2026-05-06 v8.0 故事系统代码审查修复完成 ✅
+
+
+---
+
+## 十七、v8.0 故事系统 UX 优化（2026-05-06 追加）
+
+### 17.1 优化背景
+基于资深产品交互设计师的全方位体验走查，对故事系统进行 7 项 UX 优化，覆盖「降低决策成本」「减少信息过载」「提升叙事沉浸感」「增强容错能力」四个维度。
+
+### 17.2 优化清单
+
+| # | 优化项 | 目标 | 实现方案 | 文件 |
+|---|--------|------|---------|------|
+| 1 | openingInfo 自动折叠 | 减少信息过载 | 30秒后自动折叠为「📋 查看开场信息」小按钮，点击展开 | `room/[id]/page.tsx` |
+| 2 | 结束对白确认卡片 | 替代生硬 confirm | 内嵌柔和确认卡片：「真的要揭晓谜底了吗？」+「再聊一会」「揭晓谜底」双按钮 | `room/[id]/page.tsx` |
+| 3 | 揭晓谜底后「再来一局」 | 降低流失率 | TruthModal 底部增加「🎭 再来一局」按钮，跳转 /story-hall | `room/[id]/page.tsx` |
+| 4 | AI 房间使用故事上下文 | 提升沉浸感 | generateAIReply 构建 system prompt 包含：角色名、openingInfo、act1-4Reveal，让 AI 扮演知情角色 | `room/[id]/page.tsx` |
+| 5 | 🎲 随机分配角色 | 降低决策成本 | 角色列表顶部增加「随机分配」按钮，从未被选角色中随机选一个 | `story/[id]/page.tsx` |
+| 6 | 角色详情展开 | 帮助决策 | 每个角色卡片增加 ChevronDown 展开按钮，显示 description | `story/[id]/page.tsx` |
+| 7 | 等待时间缩短 | 减少焦虑感 | 15秒 → 10秒，AI 兜底体验本身很好，不需要让用户等太久 | `story/[id]/page.tsx` |
+| 8 | 故事大厅空状态 | 避免空白迷茫 | stories 为空时显示「还没有解密故事」+ 引导去长期连载 | `story-hall/page.tsx` |
+| 9 | Error Boundary | 防止白屏崩溃 | AppShell 包裹 ErrorBoundary，渲染错误时显示「刷新页面」按钮 | `AppShell.tsx` |
+
+### 17.3 文件变更清单
+
+```
+modified:   src/app/room/[id]/page.tsx           # 折叠+确认卡片+再来一局+AI context
+modified:   src/app/story/[id]/page.tsx           # 随机角色+详情展开+10秒等待
+modified:   src/app/story-hall/page.tsx           # 空状态引导
+modified:   src/components/layout/AppShell.tsx    # Error Boundary
+```
+
+### 17.4 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-ux | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 故事系统 UX 优化完成 ✅

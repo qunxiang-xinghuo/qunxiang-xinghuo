@@ -300,6 +300,16 @@ export default function StoryDetailPage() {
         </div>
       </div>
 
+      {/* 全局加载遮罩 */}
+      {joinLoading && (
+        <div className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin mb-3" />
+            <p className="text-sm text-white/50">正在进入故事...</p>
+          </div>
+        </div>
+      )}
+
       {/* 等待匹配弹窗 */}
       <AnimatePresence>
         {showWaiting && (

@@ -504,7 +504,7 @@ export default function RoomPage() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="写下你的反应..."
-                className="w-full bg-transparent text-sm text-white/90 placeholder-white/20 focus:outline-none caret-[#e2b04a]"
+                className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#e2b04a]"
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               />
             </div>
@@ -583,15 +583,21 @@ export default function RoomPage() {
           </div>
           <div className="grid grid-cols-4 gap-1.5">
             {[
-              { label: '起', text: story.act1Reveal, color: 'text-[#e2b04a]/50' },
-              { label: '承', text: story.act2Reveal, color: 'text-white/30' },
-              { label: '转', text: story.act3Reveal, color: 'text-white/30' },
-              { label: '合', text: story.act4Truth, color: 'text-white/30' },
+              { label: '起', text: story.act1Reveal, color: 'text-[#e2b04a]/50', delay: 0 },
+              { label: '承', text: story.act2Reveal, color: 'text-white/30', delay: 0.1 },
+              { label: '转', text: story.act3Reveal, color: 'text-white/30', delay: 0.2 },
+              { label: '合', text: story.act4Truth, color: 'text-white/30', delay: 0.3 },
             ].map((item) => (
-              <div key={item.label} className="p-1.5 rounded-md bg-white/[0.02] border border-white/5">
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: item.delay, duration: 0.4 }}
+                className="p-1.5 rounded-md bg-white/[0.02] border border-white/5"
+              >
                 <span className={`text-[10px] font-bold ${item.color}`}>{item.label}</span>
                 <p className="text-[9px] text-white/20 leading-relaxed mt-0.5 line-clamp-3">{item.text}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -612,7 +618,7 @@ export default function RoomPage() {
                   onChange={(e) => setCommentInput(e.target.value)}
                   placeholder="写下你的看法..."
                   maxLength={500}
-                  className="w-full bg-transparent text-sm text-white/90 placeholder-white/20 focus:outline-none caret-[#e2b04a]"
+                  className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#e2b04a]"
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
                 />
               </div>

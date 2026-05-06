@@ -543,3 +543,45 @@ if (existingAiRoom) return apiResponse({ roomId: existingAiRoom.id });
 | 2026-05-06 | 构建通过 70/70，更新全部文档 |
 
 ---
+
+
+---
+
+## v8.0 故事系统 UX 优化 — 问题记录
+
+### 问题10：isReadonly 依赖数组时序错误
+
+**现象**：
+- `npm run build` 报错：`Block-scoped variable 'isReadonly' used before its declaration`
+
+**根因**：
+- 新加的 openingInfo 折叠 useEffect 的依赖数组中使用了 `isReadonly`
+- 但 `isReadonly` 在文件后面才声明（`const isReadonly = roomStatus === 'closed' || finished`）
+- TypeScript 不允许块级作用域变量在声明前使用
+
+**解决**：
+- 将依赖数组中的 `isReadonly` 替换为它的原始依赖：`roomStatus, finished`
+
+```ts
+// 修复前
+}, [myOpeningInfo, isReadonly]);
+
+// 修复后
+}, [myOpeningInfo, roomStatus, finished]);
+```
+
+---
+
+## v8.0 故事系统完整修复时间线
+
+| 时间 | 事件 |
+|------|------|
+| 2026-05-06 | v8.0 故事系统初始开发完成 |
+| 2026-05-06 | 资深测试+技术员全面代码审查 |
+| 2026-05-06 | 修复 20 个初始问题（结束按钮、轮询、入口等） |
+| 2026-05-06 | 修复 9 个关键代码审查问题（竞态、泄漏、权限等） |
+| 2026-05-06 | 资深产品交互设计师全方位体验走查 |
+| 2026-05-06 | 修复 UX 问题：折叠、确认卡片、随机角色、AI context、Error Boundary |
+| 2026-05-06 | 构建通过 70/70，更新全部文档 |
+
+---

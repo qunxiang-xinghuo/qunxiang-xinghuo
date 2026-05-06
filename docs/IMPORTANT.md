@@ -299,3 +299,45 @@ modified:   src/app/home/page.tsx                           # 我的故事入口
 | 幂等性 | ✅ finish 重复调用安全 |
 
 ---
+
+
+---
+
+## v8.0 故事系统 UX 优化 — 部署记录
+
+> 更新：2026-05-06
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npx prisma db push --accept-data-loss
+npm run build
+pm2 restart all
+```
+
+### 新增/修改的文件清单
+
+```
+modified:   src/app/room/[id]/page.tsx           # openingInfo 30秒折叠 + 结束确认卡片 + 再来一局 + AI story context
+modified:   src/app/story/[id]/page.tsx           # 🎲 随机角色 + 详情展开 + 10秒等待
+modified:   src/app/story-hall/page.tsx           # 空状态引导
+modified:   src/components/layout/AppShell.tsx    # Error Boundary
+```
+
+### 验证结果
+
+| 检查项 | 结果 |
+|--------|------|
+| TypeScript 编译 | ✅ 通过 |
+| 静态页面生成 | ✅ 70/70 |
+| openingInfo 折叠逻辑 | ✅ 30秒自动 + 手动展开 |
+| 结束确认卡片 | ✅ 替代 confirm |
+| 随机分配角色 | ✅ 从未选角色中随机 |
+| AI story context | ✅ system prompt 含角色+故事线 |
+| Error Boundary | ✅ 渲染错误时显示刷新按钮 |
+
+---

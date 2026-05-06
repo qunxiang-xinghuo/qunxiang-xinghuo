@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { BookOpen, Clock, Users, ChevronRight, Sparkles } from 'lucide-react';
+import { BookOpen, Clock, Users, ChevronRight, Sparkles, Filter } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -22,8 +22,18 @@ export default function StoryHallPage() {
   const router = useRouter();
   const { isAuthenticated } = useRequireAuth();
   const [stories, setStories] = useState<StoryItem[]>([]);
+  const [filteredStories, setFilteredStories] = useState<StoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>('全部');
+
+  const categories = ['全部', '古风', '民国', '现代'];
+
+  const getCategory = (era: string) => {
+    if (era.includes('明') || era.includes('古') || era.includes('朝')) return '古风';
+    if (era.includes('1937') || era.includes('民国') || era.includes('沦陷')) return '民国';
+    return '现代';
+  };
 
   if (!isAuthenticated) return <div className="h-screen bg-xh-primary" />;
 
@@ -32,10 +42,22 @@ export default function StoryHallPage() {
   useEffect(() => {
     fetch('/api/stories')
       .then((r) => r.json())
-      .then((data) => setStories(data.data?.list || []))
+      .then((data) => {
+        const list = data.data?.list || [];
+        setStories(list);
+        setFilteredStories(list);
+      })
       .catch((e) => console.error('[StoryHall] 加载失败:', e))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (activeCategory === '全部') {
+      setFilteredStories(stories);
+    } else {
+      setFilteredStories(stories.filter((s) => getCategory(s.eraBackground) === activeCategory));
+    }
+  }, [activeCategory, stories]);
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
@@ -59,11 +81,29 @@ export default function StoryHallPage() {
           </div>
         </motion.button>
 
+        {/* 分类标签 */}
+        <div className="flex items-center gap-1.5 mb-3 overflow-x-auto no-scrollbar">
+          <Filter className="w-3.5 h-3.5 text-white/20 flex-shrink-0" />
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors flex-shrink-0 ${
+                activeCategory === cat
+                  ? 'bg-[#e2b04a]/10 text-[#e2b04a]/70 border-[#e2b04a]/20'
+                  : 'bg-white/[0.02] text-white/30 border-white/5 hover:bg-white/[0.05]'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
         {/* 解密故事列表 */}
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-4 h-4 text-[#e2b04a]" />
           <h2 className="text-sm font-semibold text-white/90">解密故事</h2>
-          <span className="text-[10px] text-white/20 ml-1">两人即兴碰撞</span>
+          <span className="text-[10px] text-white/20 ml-1">{filteredStories.length} 个</span>
         </div>
 
         {loading ? (
@@ -86,7 +126,7 @@ export default function StoryHallPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {stories.map((story, idx) => (
+            {filteredStories.map((story, idx) => (
               <motion.div
                 key={story.id}
                 initial={mounted ? { opacity: 0, y: 10 } : false}
