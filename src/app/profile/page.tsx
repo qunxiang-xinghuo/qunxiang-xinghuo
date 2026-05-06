@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { signOut } from 'next-auth/react';
 import {
-  Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins,
+  Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins, ScrollText, UserCircle,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -127,7 +127,8 @@ export default function ProfilePage() {
     { icon: Coins, label: '我的收益', desc: '盐粒收益明细', path: '/earnings' },
     { icon: Flame, label: '个人疗愈', desc: '私密对话空间', path: '/healing' },
     { icon: Flame, label: '我的火花', desc: '管理你的灵感片段', path: '/profile/sparks' },
-    { icon: BookOpen, label: '我的故事', desc: '参与的故事记录', path: '/story-hall' },
+    { icon: ScrollText, label: '我发起的故事', desc: '创建和管理你的故事', path: '/my-stories?tab=created' },
+    { icon: UserCircle, label: '我参与的故事', desc: '你扮演过的角色和对白', path: '/my-stories?tab=participated' },
     { icon: Settings, label: '设置', desc: '账号与偏好', path: '/settings' },
   ];
 

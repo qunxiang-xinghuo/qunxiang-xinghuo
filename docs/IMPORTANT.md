@@ -540,6 +540,30 @@ rm -f prisma/dev.db
 sqlite3 dev.db ".tables"
 ```
 
+### 改动2：发现页第三个模式改为「多人模式」
+
+**改动**：`home/page.tsx` 第三个模式从「故事大厅」→「多人模式」
+- 路径：`/story-hall` → `/multiplayer`
+- 故事大厅入口保留在底部导航「故事」tab
+
+### 改动3：「我的故事」拆分为两个菜单项
+
+**profile 页面**：
+- 「我发起的故事」→ `/my-stories?tab=created`
+- 「我参与的故事」→ `/my-stories?tab=participated`
+
+### 改动4：发起故事到审核流程
+
+**流程设计**：
+1. 作者进入 `/story/create`
+2. 填写故事信息（标题、时代背景、分类、简介）
+3. 设定 2-6 个角色（名称、设定、开场信息）
+4. 提交后 status = `pending_review`
+5. 在「我发起的故事」列表查看审核状态
+6. 审核通过后出现在故事大厅
+
+**审核状态**：draft → pending_review → approved → recruiting → ongoing → completed
+
 ### 后续迭代需求（已在 TDD 中标注）
 
 | 需求 | 状态 | 说明 |

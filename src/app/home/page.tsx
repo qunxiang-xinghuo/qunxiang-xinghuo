@@ -72,12 +72,12 @@ export default function HomePage() {
     },
     {
       key: 'multi',
-      title: '故事大厅',
-      desc: '选择一个场景，进入角色',
+      title: '多人模式',
+      desc: '多人即兴碰撞，共创群像故事',
       icon: Users,
       color: 'from-[#74b9ff]/20 to-blue-500/20',
       iconColor: 'text-[#74b9ff]',
-      path: '/story-hall',
+      path: '/multiplayer',
       comingSoon: false,
     },
     {

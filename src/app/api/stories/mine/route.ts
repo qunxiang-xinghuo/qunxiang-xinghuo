@@ -35,6 +35,8 @@ export async function GET(request: NextRequest) {
         status: s.status,
         createdAt: s.createdAt.toISOString(),
         roleCount: s.roles.length,
+        hotScore: s.hotScore || 0,
+        isCreator: true,
       }));
     } else {
       // participated: 通过 StoryRole.claimedBy 查找
@@ -56,6 +58,8 @@ export async function GET(request: NextRequest) {
         myRole: r.name,
         createdAt: r.story.createdAt.toISOString(),
         roleCount: r.story.roles.length,
+        hotScore: r.story.hotScore || 0,
+        isCreator: r.story.creatorId === userId,
       }));
     }
 

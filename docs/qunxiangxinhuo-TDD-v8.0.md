@@ -1138,5 +1138,99 @@ modified:   src/lib/auth.ts                        # cookie secure=false
 
 ---
 
+---
+
+## 二十四、v8.0 多人模式 + 我的故事拆分 + 发起故事审核流程（2026-05-06 追加）
+
+### 24.1 发现页第三个模式改为「多人模式」
+
+**改动前**：第三个模式是「故事大厅」→ `/story-hall`
+**改动后**：第三个模式是「多人模式」→ `/multiplayer`（多人即兴碰撞愿景页）
+
+**文件**：`src/app/home/page.tsx`
+
+故事大厅入口保留在底部导航「故事」tab → `/story-hall`
+
+### 24.2 「我的故事」拆分为两个菜单项
+
+**改动前**：profile 页面只有一个「我的故事」→ `/story-hall`
+**改动后**：
+- 「我发起的故事」→ `/my-stories?tab=created`
+- 「我参与的故事」→ `/my-stories?tab=participated`
+
+**文件**：`src/app/profile/page.tsx`
+
+### 24.3 「我发起的故事」— 创建故事到审核流程
+
+#### 产品设计角度
+
+**作者发起故事流程**：
+1. 在「我发起的故事」页面点击「发起新故事」
+2. 填写故事基本信息（标题、时代背景、分类、简介）
+3. 设定角色（2-6 个），每个角色包含：名称、设定、开场信息
+4. 提交后进入「审核中」状态
+5. 审核通过后出现在故事大厅，其他用户可以参与
+
+**审核状态流转**：
+```
+draft → pending_review → approved → recruiting → ongoing → completed
+       ↑                 ↑
+    作者保存          管理员审核
+```
+
+#### 技术角度
+
+**API 设计**：
+- `POST /api/stories` — 创建故事（需登录），status = `pending_review`
+- `GET /api/stories/mine?type=created` — 返回我发起的故事（含 status、hotScore）
+- `GET /api/stories` — 列表只返回 `status in [open, recruiting, approved]`
+
+**数据模型**：复用现有 `Story` 和 `StoryRole` 模型，扩展 status 枚举值：
+- `draft` — 草稿
+- `pending_review` — 审核中
+- `approved` — 已通过（等待上线）
+- `rejected` — 未通过
+- `recruiting` — 招募中（已上线）
+- `ongoing` — 进行中
+- `completed` — 已完结
+
+**前端页面**：
+- `/story/create` — 两步表单（故事信息 → 角色设定）
+- `/my-stories?tab=created` — 我发起的故事列表 + 审核状态标签
+
+#### 作者角度
+
+**创作者体验**：
+- 简洁的两步创建流程，降低创作门槛
+- 角色「开场信息」引导作者设计信息不对称（悬念）
+- 提交后清晰的审核状态反馈
+- 审核通过后自动上线，无需额外操作
+
+### 24.4 「我参与的故事」— 角色与对白展示
+
+**功能**：
+- 列表展示参与过的故事 + 扮演的角色
+- 点击后进入 `/story/${story.id}` 故事详情页
+- 详情页展示：角色信息、进入对白室、只读模式下展示对白记录
+
+### 24.5 文件变更清单
+
+```
+modified:   src/app/home/page.tsx                  # 第三个模式改为多人模式
+modified:   src/app/profile/page.tsx               # 拆分「我的故事」为两个菜单项
+modified:   src/app/my-stories/page.tsx            # 支持 URL tab + 创建故事按钮 + 审核状态
+modified:   src/app/api/stories/route.ts           # 添加 POST 创建故事
+modified:   src/app/api/stories/mine/route.ts      # 返回 hotScore、isCreator
+new file:   src/app/story/create/page.tsx          # 发起故事表单（两步）
+```
+
+### 24.6 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-story-create | 2026-05-06 | ✅ 通过 | 72/72 |
+
+---
+
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
-> 最后更新：2026-05-06 v8.0 发现页 TOP3 + 数据库路径统一 + 后续需求标注完成 ✅
+> 最后更新：2026-05-06 v8.0 多人模式 + 故事拆分 + 发起审核流程完成 ✅
