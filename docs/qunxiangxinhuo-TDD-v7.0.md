@@ -363,11 +363,45 @@ if (dbUser?.tokenRevokedAt) {
 | `src/app/library/page.tsx` | 页面级门禁 |
 | `src/app/profile/page.tsx` | 页面级门禁 + 登出流程增强 |
 | `src/app/settings/page.tsx` | 页面级门禁 |
+| `src/app/spectate/page.tsx` | 服务端守卫 + PPR 缓存防护 |
+| `src/app/spectate/SpectateClient.tsx` | useRequireAuth 门禁 |
 | `src/app/api/auth/logout/route.ts` | 新建：服务器端登出 API |
 | `src/app/api/users/me/route.ts` | Token 撤销检查 |
 | `src/lib/auth-utils.ts` | 新建：Token 撤销辅助函数 |
 | `prisma/schema.prisma` | `User.tokenRevokedAt` |
+| `middleware.ts` | Cache-Control: no-store 头 + 调试日志 |
+| `next.config.ts` | /spectate 路由禁用缓存 headers |
+| `scripts/deploy.sh` | rm -rf .next + nginx stop/start + 清除缓存目录 |
 
-### 10.5 验证结果
+### 10.5 关键发现：Invoke-WebRequest Cookie 陷阱
+**测试过程中发现：PowerShell `Invoke-WebRequest` 会自动保持 session cookie！**
+- 前期测试中 `/spectate` 返回 200，误以为有缓存 bug
+- 实际原因：之前的 `/api/auth/logout` 请求在服务器端设置了 cookie，`Invoke-WebRequest` 在后续请求中自动携带
+- **解决方案**：使用 .NET `HttpWebRequest`（全新 `CookieContainer`）进行无 cookie 测试
+- 真实未登录场景测试全部通过 ✅
+
+### 10.6 验证结果
 - **构建状态**：✅ 66 pages + 所有 API routes 全部通过
-- **测试循环**：v8.0-login-fix (本地构建验证通过)
+- **服务器测试（无 cookie）**：
+  - `/home` → 307 `/login` ✅
+  - `/library` → 307 `/login` ✅
+  - `/profile` → 307 `/login` ✅
+  - `/settings` → 307 `/login` ✅
+  - `/spectate` → 307 `/login` ✅
+  - `/spectate/abc123` → 307 `/login` ✅
+  - `/solo-match` → 307 `/login` ✅
+  - `/duo-match` → 307 `/login` ✅
+  - `/healing` → 307 `/login` ✅
+  - `/story-hall` → 307 `/login` ✅
+  - `/identity` → 307 `/login` ✅
+  - `/feedback` → 307 `/login` ✅
+  - `/zhihu-search` → 307 `/login` ✅
+  - `/match` → 307 `/login` ✅
+  - `/messages` → 307 `/login` ✅
+  - `/` → 200 ✅
+  - `/login` → 200 ✅
+  - `/register` → 200 ✅
+- **API 测试**：
+  - `/api/users/me` 无 cookie → 401 ✅
+  - `/api/auth/logout` POST → 200 ✅
+- **直接端口测试（:3000）**：所有受保护页面 307 → `/login` ✅
