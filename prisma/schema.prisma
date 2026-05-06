@@ -56,6 +56,7 @@ model User {
   reactions        Reaction[]
   roomParticipants RoomParticipant[]
   storiesDirected  Story[]              @relation("StoryDirector")
+  createdStories   Story[]              @relation("StoryCreator")   // v8.0
   storyRoles       StoryRole[]          @relation("StoryRoleClaimer")
   stories          StoryDraft[]
   brainholes       Brainhole[]          @relation("BrainholeAuthor")
@@ -212,16 +213,19 @@ model Room {
   id           String    @id @default(cuid())
   type         String    @default("duet")
   brainholeId  String?
+  storyId      String?   // v8.0: 关联解密故事
   status       String    @default("created")
   directorId   String?
   maxRound     Int?
   currentRound Int       @default(0)
   scene        String?
   inviteCode   String?   @unique // v6.2: 邀请码（6位数字）
+  isAiRoom     Boolean   @default(false)  // v8.0: AI房间标记
   createdAt    DateTime  @default(now())
   closedAt     DateTime?
 
   brainhole     Brainhole?          @relation(fields: [brainholeId], references: [id])
+  story         Story?              @relation(fields: [storyId], references: [id])
   participants  RoomParticipant[]
   messages      RoomMessage[]
   reactions     Reaction[]
@@ -232,6 +236,7 @@ model Room {
 
   @@index([status, type])
   @@index([brainholeId])
+  @@index([storyId])
   @@index([inviteCode])
 }
 
@@ -445,41 +450,56 @@ model AssetLike {
 
 // ==================== 故事大厅 ====================
 
+// v8.0: 解密故事系统（扩展现有Story模型）
 model Story {
   id          String   @id @default(cuid())
   title       String
-  worldview   String   // 世界观背景
-  conflict    String   // 核心冲突
-  status      String   @default("recruiting") // recruiting/ongoing/completed
-  directorId  String
+  worldview   String?  // 世界观背景（旧字段保留兼容）
+  conflict    String?  // 核心冲突（旧字段保留兼容）
+  eraBackground String?  // v8.0: 时代背景
+  storySummary  String?  // v8.0: 故事简介
+  act1Reveal    String?  // v8.0: 起
+  act2Reveal    String?  // v8.0: 承
+  act3Reveal    String?  // v8.0: 转
+  act4Truth     String?  // v8.0: 合
+  status      String   @default("recruiting") // recruiting/ongoing/completed/open/closed
+  directorId  String?
   maxActors   Int      @default(5)
-  minActors   Int      @default(2)  // 最少启动人数
+  minActors   Int      @default(2)
+  maxCharacters Int    @default(2)  // v8.0: 最大角色数（解密故事用）
+  hotScore    Int      @default(0)  // v8.0: 热度值
+  creatorId   String?               // v8.0: 创建者
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  director     User       @relation("StoryDirector", fields: [directorId], references: [id])
+  director     User?       @relation("StoryDirector", fields: [directorId], references: [id])
+  creator      User?       @relation("StoryCreator", fields: [creatorId], references: [id])
   roles        StoryRole[]
   chapters     StoryChapter[]
   messages     StoryMessage[]
   inspirations StoryInspiration[]
   branches     StoryBranch[]
+  rooms        Room[]             // v8.0: 关联的对白房间
 
-  @@index([status, createdAt])
+  @@index([status, hotScore])
   @@index([directorId])
+  @@index([creatorId])
 }
 
 model StoryRole {
   id            String   @id @default(cuid())
   storyId       String
   name          String   // 角色名
-  description   String   // 角色设定
+  description   String?  // 角色设定（改为可选兼容解密故事）
+  openingInfo   String?  // v8.0: 角色开场信息（100字内）
+  sortOrder     Int      @default(0)  // v8.0: 角色排序
   requirements       String?  // 角色需求
   claimedBy          String?  // 认领者userId
   claimedAt          DateTime?
   claimReason        String?  // 认领理由/人设
-  claimStatus        String   @default("unclaimed") // unclaimed/pending/approved/rejected
-  identityTag        String?  // 身份标签（如"急诊科医生"）
-  performanceDirection String? // 演绎方向（如"理性与情感交织"）
+  claimStatus        String   @default("unclaimed") // unclaimed/pending/approved/rejected/active
+  identityTag        String?  // 身份标签
+  performanceDirection String? // 演绎方向
 
   story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
   user  User? @relation("StoryRoleClaimer", fields: [claimedBy], references: [id])

@@ -291,3 +291,52 @@ git pull fqunxiang dev
 **验证**：
 - `npm run build` 68/68 通过 ✅
 - `pm2 restart all` 成功 ✅
+
+
+---
+
+## v8.0 故事系统开发问题记录
+
+### 问题4：Prisma Client 默认数据库路径错误
+
+**现象**：
+- `npx tsx prisma/seed-stories.ts` 报错：`The table main.Story does not exist in the current database`
+
+**根因**：
+- `src/lib/db.ts` 中默认路径为 `file:./prisma/dev.db`，该文件为空（0字节）
+- 真实数据库在 `file:./dev.db`（根目录，516KB）
+- `prisma db push` 操作的是根目录的 dev.db，但种子脚本连接的是 `prisma/dev.db`
+
+**解决**：
+- 修改 `src/lib/db.ts`：`url: process.env.DATABASE_URL || "file:./dev.db"`
+
+---
+
+### 问题5：Next.js 路由冲突
+
+**现象**：
+- `npm run build` 报错：`Ambiguous route pattern "/api/stories/[*]" matches multiple routes: [id] and [storyId]`
+
+**根因**：
+- 项目中已有 `/api/stories/[storyId]` 路由（旧故事系统）
+- 新建了 `/api/stories/[id]` 路由（新解密故事系统）
+- Next.js 无法区分 `[id]` 和 `[storyId]` 动态段
+
+**解决**：
+- 删除 `[id]` 目录
+- 将新 API 功能合并到 `[storyId]` 下：join、join-ai、catalyst
+- 修改 `[storyId]/route.ts` 返回逻辑，兼容新旧两种格式
+
+---
+
+### 问题6：Next.js 备份目录被识别为路由
+
+**现象**：
+- 删除 `[id]` 后构建报错：`Type error: [storyId]_backup/branches/route` 类型不匹配
+
+**根因**：
+- 复制 `[storyId]` 到 `[storyId]_backup` 作为备份
+- Next.js App Router 将 `[storyId]_backup` 识别为有效路由目录
+
+**解决**：
+- 删除 `[storyId]_backup` 目录

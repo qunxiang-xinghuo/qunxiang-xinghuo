@@ -17,6 +17,13 @@
 | Prisma | `prisma/schema.prisma` | 新增 `RoomComment` 模型 |
 | 多人愿景页 | `src/app/multiplayer/page.tsx` | 改为纯文字愿景介绍页，无按钮 |
 | 人机改名 | `home/page.tsx`, `solo-match/page.tsx` | "人机交互模式"/"人机模式" → "和刘看山对话" |
+| 故事系统 | `prisma/schema.prisma` | Story/StoryRole/Room 扩展，5个太仓解密故事 |
+| 故事大厅 | `src/app/story-hall/page.tsx` | 故事卡片列表 + 长期连载入口 |
+| 故事详情 | `src/app/story/[id]/page.tsx` | 角色选择 + 15秒匹配 + AI兜底弹窗 |
+| 对白室 | `src/app/room/[id]/page.tsx` | 故事信息 + AI催化 + 实时/只读双模式 |
+| 我的故事 | `src/app/my-stories/page.tsx` | 我参与的 / 我发起的 |
+| 长期连载 | `src/app/story-hall/long-term/page.tsx` | 愿景介绍页 |
+| 故事API | `src/app/api/stories/[storyId]/*` | join/join-ai/catalyst/mine |
 
 ### 部署步骤
 

@@ -1,257 +1,113 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import {
-  Zap, Users, Plus, Sparkles, Flame, BookOpen, PenLine,
-} from 'lucide-react';
+import { BookOpen, Clock, Users, ChevronRight, Sparkles } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
-interface Story {
+interface StoryItem {
   id: string;
   title: string;
-  genre: string;
-  heat: number;
-  participantCount: number;
-  maxParticipants: number;
-  status: string;
-  secret: string;
-  createdAt: string;
-  creatorName?: string;
-  episodeCount?: number;
+  eraBackground: string;
+  storySummary: string;
+  hotScore: number;
+  maxCharacters: number;
+  roleCount: number;
+  roles: { id: string; name: string; claimed: boolean }[];
 }
 
-function StoryHallContent() {
+export default function StoryHallPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const urlTab = searchParams.get('tab');
-  const [tab, setTab] = useState<'match' | 'mine' | 'others' | 'serial'>(
-    (urlTab === 'serial' ? 'serial' : 'match') as any
-  );
-  const [stories, setStories] = useState<Story[]>([]);
-  const [myStories, setMyStories] = useState<Story[]>([]);
-  const [serialStories, setSerialStories] = useState<Story[]>([]);
+  const { isAuthenticated } = useRequireAuth();
+  const [stories, setStories] = useState<StoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  if (!isAuthenticated) return <div className="h-screen bg-xh-primary" />;
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    loadStories();
+    fetch('/api/stories')
+      .then((r) => r.json())
+      .then((data) => setStories(data.data?.list || []))
+      .catch((e) => console.error('[StoryHall] 加载失败:', e))
+      .finally(() => setLoading(false));
   }, []);
-
-  async function loadStories() {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/stories?status=active');
-      const data = await res.json();
-      const all = data.data?.stories || [];
-      setStories(all);
-
-      const raw = localStorage.getItem('xh_user');
-      const u = raw ? JSON.parse(raw) : null;
-      if (u) {
-        setMyStories(all.filter((s: Story) => s.creatorName === u.name));
-      }
-
-      // 长期连载：状态为 ongoing 或 episodeCount > 1 的故事
-      setSerialStories(all.filter((s: Story) =>
-        s.status === 'ongoing' || (s.episodeCount && s.episodeCount > 1)
-      ));
-    } catch (e) {
-      console.error('故事大厅加载失败:', e);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const genreColors: Record<string, string> = {
-    drama: 'from-red-500/20 to-orange-500/20',
-    romance: 'from-pink-500/20 to-rose-500/20',
-    mystery: 'from-purple-500/20 to-indigo-500/20',
-    comedy: 'from-yellow-500/20 to-amber-500/20',
-    scifi: 'from-cyan-500/20 to-blue-500/20',
-    horror: 'from-gray-500/20 to-slate-500/20',
-  };
-
-  const genreNames: Record<string, string> = {
-    drama: '现实', romance: '爱情', mystery: '悬疑',
-    comedy: '喜剧', scifi: '科幻', horror: '惊悚',
-  };
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
-      <PageHeader title="故事" subtitle="多人共创" />
+      <PageHeader title="故事大厅" subtitle="选择一个场景，进入角色" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* 顶部快速操作 */}
-        {tab === 'match' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3 mb-6"
-          >
-            <button
-              onClick={() => router.push('/story-hall/match')}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/20 text-[#e2b04a] text-sm font-medium active:scale-[0.97] transition-all"
-            >
-              <Zap className="w-4 h-4" />
-              快速匹配
-            </button>
-            <button
-              onClick={() => router.push('/story-hall/create')}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-white/80 text-sm font-medium active:scale-[0.97] transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              发起故事
-            </button>
-          </motion.div>
-        )}
+        {/* 长期连载入口 */}
+        <motion.button
+          initial={mounted ? { opacity: 0, y: 10 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => router.push('/story-hall/long-term')}
+          className="w-full mb-4 p-4 rounded-xl bg-gradient-to-r from-[#e2b04a]/10 to-transparent border border-[#e2b04a]/20 text-left active:scale-[0.99] transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <BookOpen className="w-5 h-5 text-[#e2b04a]" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-white/80">长期连载</p>
+              <p className="text-[11px] text-white/30">发起一个只有开头的故事，开放给所有人认领角色</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-white/20" />
+          </div>
+        </motion.button>
 
-        {/* Tab 切换 */}
-        <div className="flex gap-3 mb-4 border-b border-white/5 pb-3 overflow-x-auto no-scrollbar">
-          {[
-            { key: 'match', label: '快速匹配' },
-            { key: 'serial', label: '长期连载' },
-            { key: 'mine', label: '我发起的' },
-            { key: 'others', label: '其他人的' },
-          ].map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key as any)}
-              className={`text-sm font-medium transition-colors pb-1 border-b-2 whitespace-nowrap ${
-                tab === t.key
-                  ? 'text-[#e2b04a] border-[#e2b04a]'
-                  : 'text-white/30 border-transparent hover:text-white/50'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* 解密故事列表 */}
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-[#e2b04a]" />
+          <h2 className="text-sm font-semibold text-white/90">解密故事</h2>
+          <span className="text-[10px] text-white/20 ml-1">两人即兴碰撞</span>
         </div>
 
-        {/* 内容 */}
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 rounded-xl bg-white/5 animate-pulse" />
+              <div key={i} className="h-32 rounded-xl bg-white/5 animate-pulse" />
             ))}
           </div>
         ) : (
           <div className="space-y-3">
-            {tab === 'match' && (
-              <>
-                <p className="text-xs text-white/25 mb-3">点击快速匹配按钮加入正在等待的故事，或浏览下方的活跃故事</p>
-                {stories.slice(0, 6).map((story, idx) => (
-                  <StoryCard key={story.id} story={story} idx={idx} genreColors={genreColors} genreNames={genreNames} onClick={() => router.push(`/story/room/${story.id}`)} />
-                ))}
-              </>
-            )}
-            {tab === 'serial' && (
-              serialStories.length === 0 ? (
-                <EmptyState icon={BookOpen} text="暂无连载中的故事" subtext="发起一个故事，让它成为连载" />
-              ) : (
-                <>
-                  <p className="text-xs text-white/25 mb-3">这些故事正在持续更新中，随时可以加入</p>
-                  {serialStories.map((story, idx) => (
-                    <StoryCard key={story.id} story={story} idx={idx} genreColors={genreColors} genreNames={genreNames} onClick={() => router.push(`/story/room/${story.id}`)} />
-                  ))}
-                </>
-              )
-            )}
-            {tab === 'mine' && (
-              myStories.length === 0 ? (
-                <EmptyState icon={Sparkles} text="你还没有发起过故事" subtext="点击下方按钮发起第一个故事" />
-              ) : (
-                myStories.map((story, idx) => (
-                  <StoryCard key={story.id} story={story} idx={idx} genreColors={genreColors} genreNames={genreNames} onClick={() => router.push(`/story/room/${story.id}`)} />
-                ))
-              )
-            )}
-            {tab === 'others' && (
-              stories.filter(s => !myStories.find(ms => ms.id === s.id)).length === 0 ? (
-                <EmptyState icon={Users} text="暂无其他人的故事" subtext="稍后再来看看" />
-              ) : (
-                stories
-                  .filter(s => !myStories.find(ms => ms.id === s.id))
-                  .map((story, idx) => (
-                    <StoryCard key={story.id} story={story} idx={idx} genreColors={genreColors} genreNames={genreNames} onClick={() => router.push(`/story/room/${story.id}`)} />
-                  ))
-              )
-            )}
+            {stories.map((story, idx) => (
+              <motion.div
+                key={story.id}
+                initial={mounted ? { opacity: 0, y: 10 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.08 }}
+                onClick={() => router.push(`/story/${story.id}`)}
+                className="p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-white/90 mb-1">{story.title}</h3>
+                    <p className="text-[11px] text-[#e2b04a]/50 mb-2 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {story.eraBackground}
+                    </p>
+                    <p className="text-xs text-white/40 leading-relaxed line-clamp-2 mb-2">{story.storySummary}</p>
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1 text-[10px] text-white/20">
+                        <Users className="w-3 h-3" />
+                        {story.roleCount} 个角色
+                      </span>
+                      <span className="text-[10px] text-white/15">
+                        {story.roles.filter((r) => r.claimed).length}/{story.maxCharacters} 人已选
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/15 flex-shrink-0 mt-1" />
+                </div>
+              </motion.div>
+            ))}
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-export default function StoryHallPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex flex-col min-h-full page-gradient items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white/10 border-t-[#e2b04a] rounded-full animate-spin" />
-      </div>
-    }>
-      <StoryHallContent />
-    </Suspense>
-  );
-}
-
-function StoryCard({ story, idx, genreColors, genreNames, onClick }: {
-  story: Story; idx: number;
-  genreColors: Record<string, string>;
-  genreNames: Record<string, string>;
-  onClick: () => void;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: idx * 0.06 }}
-      onClick={onClick}
-      className="relative overflow-hidden p-4 rounded-xl bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all cursor-pointer"
-    >
-      <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${genreColors[story.genre] || genreColors.drama} rounded-bl-3xl opacity-30`} />
-      <div className="relative">
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/50 border border-white/5">
-            {genreNames[story.genre] || '其他'}
-          </span>
-          {(story.status === 'ongoing' || (story.episodeCount && story.episodeCount > 1)) && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#e2b04a]/10 text-[#e2b04a]/70 border border-[#e2b04a]/20">
-              连载中
-            </span>
-          )}
-          <span className="text-[10px] text-white/25">{story.creatorName || '匿名'}</span>
-        </div>
-        <h3 className="text-sm font-semibold text-white/90 mb-1">{story.title}</h3>
-        <p className="text-xs text-white/30 line-clamp-1 mb-3">{story.secret}</p>
-        <div className="flex items-center gap-3 text-[11px] text-white/25">
-          <span className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            {story.participantCount}/{story.maxParticipants}
-          </span>
-          <span className="flex items-center gap-1">
-            <Flame className="w-3 h-3 text-[#e2b04a]/40" />
-            {story.heat}
-          </span>
-          {story.episodeCount && story.episodeCount > 1 && (
-            <span className="flex items-center gap-1 text-[#74b9ff]/50">
-              <PenLine className="w-3 h-3" />
-              第{story.episodeCount}话
-            </span>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function EmptyState({ icon: Icon, text, subtext }: { icon: any; text: string; subtext: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16">
-      <Icon className="w-10 h-10 text-white/10 mb-3" />
-      <p className="text-sm text-white/30">{text}</p>
-      <p className="text-xs text-white/20 mt-1">{subtext}</p>
     </div>
   );
 }

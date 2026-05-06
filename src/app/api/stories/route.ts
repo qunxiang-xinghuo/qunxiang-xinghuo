@@ -1,125 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
-import { apiResponse, apiError } from "@/lib/utils";
+import { apiResponse } from "@/lib/utils";
 
-// GET /api/stories - 获取故事列表
-// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
+/**
+ * GET /api/stories
+ * 故事列表（解密故事）
+ * 返回：标题、时代背景、简介、角色数。不返回 act 内容。
+ */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status") || undefined;
-    const limit = parseInt(searchParams.get("limit") || "50", 10);
-
     const stories = await db.story.findMany({
-      where: status ? { status } : undefined,
-      orderBy: { createdAt: "desc" },
-      take: limit,
+      where: {
+        status: { in: ["open", "recruiting"] },
+        act1Reveal: { not: null }, // v8.0: 只返回有解密内容的
+      },
+      orderBy: [{ hotScore: "desc" as const }, { createdAt: "desc" as const }],
       include: {
-        director: { select: { id: true, name: true } },
         roles: {
-          select: { id: true, name: true, claimedBy: true, claimStatus: true },
+          select: { id: true, name: true, claimedBy: true, openingInfo: true },
+          orderBy: { sortOrder: "asc" as const },
         },
-        _count: {
-          select: { messages: true },
-        },
+        _count: { select: { roles: true } },
       },
     });
 
-    // 格式化响应
-    const formatted = stories.map((s) => ({
+    const list = stories.map((s) => ({
       id: s.id,
       title: s.title,
-      worldview: s.worldview,
-      conflict: s.conflict,
-      status: s.status,
-      director: s.director,
-      maxActors: s.maxActors,
-      totalRoles: s.roles.length,
-      claimedRoles: s.roles.filter((r) => r.claimedBy).length,
-      approvedRoles: s.roles.filter((r) => r.claimStatus === 'approved').length,
-      messageCount: s._count.messages,
-      createdAt: s.createdAt,
+      eraBackground: s.eraBackground || "",
+      storySummary: s.storySummary || "",
+      hotScore: s.hotScore || 0,
+      maxCharacters: s.maxCharacters || 2,
+      roleCount: s._count.roles,
+      roles: s.roles.map((r) => ({
+        id: r.id,
+        name: r.name,
+        openingInfo: r.openingInfo || "",
+        claimed: !!r.claimedBy,
+      })),
     }));
 
-    return NextResponse.json(apiResponse({ stories: formatted }));
-  } catch (error: any) {
-    console.error("[Stories GET] Error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取故事列表失败"), { status: 500 });
-  }
-}
-
-// POST /api/stories - 创建新故事
-export async function POST(request: NextRequest) {
-  try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-    const guestId = request.headers.get("x-guest-id");
-    if (!userId) {
-      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
-    }
-
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
-    }
-
-    const { title, worldview, conflict, roles, maxActors = 5, minActors = 2 } = body;
-
-    if (!title || !worldview || !conflict) {
-      return NextResponse.json(apiError("BAD_REQUEST", "缺少必要参数: title, worldview, conflict"), { status: 400 });
-    }
-    if (!Array.isArray(roles) || roles.length === 0) {
-      return NextResponse.json(apiError("BAD_REQUEST", "至少需要一个角色"), { status: 400 });
-    }
-
-    // 确保用户在User表中存在
-    await db.user.upsert({
-      where: { id: userId },
-      update: {},
-      create: {
-        id: userId,
-        name: "故事发起人",
-        email: `${userId}@guest.local`,
-      },
-    });
-
-    // 创建故事 + 角色 + 第一章节
-    const story = await db.story.create({
-      data: {
-        title,
-        worldview,
-        conflict,
-        directorId: userId,
-        maxActors,
-        minActors: Math.max(2, minActors),
-        roles: {
-          create: roles.map((r: any) => ({
-            name: r.name,
-            description: r.description || "",
-            requirements: r.requirements || null,
-          })),
-        },
-        chapters: {
-          create: {
-            title: "第一章：序章",
-            goal: "引入世界观和主要角色",
-            order: 0,
-            status: "active",
-          },
-        },
-      },
-      include: {
-        roles: true,
-        chapters: true,
-      },
-    });
-
-    return NextResponse.json(apiResponse({ story }), { status: 201 });
-  } catch (error: any) {
-    console.error("[Stories POST] Error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建故事失败: " + error.message), { status: 500 });
+    return NextResponse.json(apiResponse({ list }));
+  } catch (error) {
+    console.error("[Stories List] Error:", error);
+    return NextResponse.json(apiResponse({ list: [] }));
   }
 }

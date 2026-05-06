@@ -21,17 +21,11 @@ export async function GET(
           include: {
             user: { select: { id: true, name: true } },
           },
+          orderBy: { sortOrder: "asc" },
         },
-        chapters: {
-          orderBy: { order: "asc" },
-        },
-        messages: {
-          orderBy: { createdAt: "asc" },
-          take: 100,
-        },
-        _count: {
-          select: { messages: true, inspirations: true },
-        },
+        chapters: { orderBy: { order: "asc" } },
+        messages: { orderBy: { createdAt: "asc" }, take: 100 },
+        _count: { select: { messages: true, inspirations: true } },
       },
     });
 
@@ -39,6 +33,32 @@ export async function GET(
       return NextResponse.json(apiError("NOT_FOUND", "故事不存在"), { status: 404 });
     }
 
+    // v8.0: 如果是解密故事（有 eraBackground），返回简化格式
+    if (story.eraBackground) {
+      return NextResponse.json(apiResponse({
+        id: story.id,
+        title: story.title,
+        eraBackground: story.eraBackground || "",
+        storySummary: story.storySummary || "",
+        act1Reveal: story.act1Reveal || "",
+        act2Reveal: story.act2Reveal || "",
+        act3Reveal: story.act3Reveal || "",
+        act4Truth: story.act4Truth || "",
+        maxCharacters: story.maxCharacters || 2,
+        hotScore: story.hotScore || 0,
+        status: story.status,
+        roles: story.roles.map((r) => ({
+          id: r.id,
+          name: r.name,
+          openingInfo: r.openingInfo || "",
+          description: r.description || "",
+          claimed: !!r.claimedBy,
+          claimedBy: r.claimedBy,
+        })),
+      }));
+    }
+
+    // 旧格式：返回完整故事对象
     return NextResponse.json(apiResponse({ story }));
   } catch (error: any) {
     console.error("[StoryDetail GET] Error:", error);

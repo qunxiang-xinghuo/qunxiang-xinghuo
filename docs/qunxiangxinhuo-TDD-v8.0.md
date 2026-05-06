@@ -548,3 +548,103 @@ new file:   src/app/spark-detail/[id]/SparkDetailClient.tsx  # 微信聊天风�
 | v8.0 | 2026-05-06 | ✅ 通过 | 68/68 |
 | v8.1 | 2026-05-06 | ✅ 通过 | 68/68 |
 | v8.1b | 2026-05-06 | ✅ 通过 | 68/68 |
+
+
+---
+
+## 十四、v8.0 故事系统完整开发
+
+### 14.1 设计理念
+
+**叙事性轨迹 + AI兜底**
+
+| 角色 | 能看到 | 看不到 |
+|------|--------|--------|
+| 角色A | 自己的身份、开场信息 | 角色B的信息、完整故事线 |
+| 角色B | 自己的身份、开场信息 | 角色A的信息、完整故事线 |
+| AI刘看山 | 完整故事线（起承转合） | — |
+
+**四格解密结构**：起→承→转→合，用户只解锁「起」，承转合在对话中逐步揭示。
+
+**AI兜底**：15秒未匹配到真人→弹窗询问是否和刘看山玩。
+
+### 14.2 数据库设计
+
+扩展现有 `Story` / `StoryRole` / `Room` 模型：
+
+| 模型 | 新增字段 | 说明 |
+|------|----------|------|
+| Story | `eraBackground`, `storySummary`, `act1Reveal`~`act4Truth`, `maxCharacters`, `hotScore`, `creatorId` | 解密故事内容 |
+| StoryRole | `openingInfo`, `sortOrder` | 角色开场信息 |
+| Room | `storyId`, `isAiRoom` | 关联故事、AI房间标记 |
+| User | `createdStories` | 创建的故事关系 |
+
+### 14.3 种子数据（5个太仓解密故事）
+
+1. 最后的起锚地 — 明永乐三年，郑和下西洋前夜
+2. 天妃宫的不速之客 — 明洪武三十一年，朱元璋驾崩前夜
+3. 丝竹世家的最后一曲 — 1937年，日军逼近苏州
+4. 麻将的秘密 — 1937年，南京沦陷后
+5. 牛郎织女降生地 — 2026年，西工大
+
+### 14.4 API 路由
+
+| 路由 | 方法 | 功能 |
+|------|------|------|
+| `/api/stories` | GET | 故事列表（标题、时代背景、简介、角色数） |
+| `/api/stories/[storyId]` | GET | 故事详情 + 角色列表 + openingInfo |
+| `/api/stories/[storyId]/join` | POST | 选角色加入，匹配或等待 |
+| `/api/stories/[storyId]/join-ai` | POST | 创建AI房间，刘看山扮演另一角色 |
+| `/api/stories/[storyId]/catalyst` | GET | 按消息数返回对应阶段催化提示 |
+| `/api/stories/mine` | GET | `?type=created` / `?type=participated` |
+
+### 14.5 前端页面
+
+| 路由 | 功能 |
+|------|------|
+| `/story-hall` | 故事大厅：故事卡片列表 + 长期连载入口 |
+| `/story/[id]` | 故事详情：时代背景、简介、起（解锁）、承转合（锁住）、角色选择、等待匹配弹窗、AI兜底弹窗 |
+| `/room/[id]` | 对白室：顶部故事标题+时代背景+角色名、openingInfo提示、AI催化提示、实时聊天/只读模式切换、评论区 |
+| `/my-stories` | 我的故事：我参与的 / 我发起的 |
+| `/story-hall/long-term` | 长期连载愿景介绍页 |
+
+### 14.6 Room 页面模式切换
+
+| 房间状态 | 模式 | 功能 |
+|----------|------|------|
+| `active` | 实时聊天 | WebSocket、输入框、AI催化、AI房间自动回复 |
+| `closed` | 只读浏览 | 消息列表、评论区（GET/POST/DELETE） |
+
+### 14.7 文件变更清单
+
+```
+modified:   prisma/schema.prisma                 # Story/StoryRole/Room 扩展
+new file:   prisma/seed-stories.ts               # 5个太仓解密故事种子
+modified:   src/lib/db.ts                        # 默认数据库路径修正
+modified:   src/server/room-manager.ts           # 添加 story include
+modified:   src/app/home/page.tsx                # 入口改为「故事大厅」「和刘看山对话」
+new file:   src/app/story-hall/page.tsx          # 故事大厅
+new file:   src/app/story-hall/long-term/page.tsx # 长期连载愿景页
+new file:   src/app/story/[id]/page.tsx          # 故事详情+角色选择+弹窗
+new file:   src/app/my-stories/page.tsx          # 我的故事
+modified:   src/app/room/[id]/page.tsx           # 支持故事系统+实时/只读双模式
+modified:   src/app/api/stories/[storyId]/route.ts # 合并解密故事字段
+new file:   src/app/api/stories/[storyId]/join/route.ts
+new file:   src/app/api/stories/[storyId]/join-ai/route.ts
+new file:   src/app/api/stories/[storyId]/catalyst/route.ts
+```
+
+### 14.8 构建验证
+
+| 版本 | 日期 | 结果 | 页面数 |
+|------|------|------|--------|
+| v8.0 story | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+## 十五、已知问题与注意事项
+
+1. **Prisma db push 路径问题**：`src/lib/db.ts` 默认路径原为 `file:./prisma/dev.db`（空文件），已修正为 `file:./dev.db`
+2. **路由冲突**：`/api/stories/[id]` 与 `/api/stories/[storyId]` 冲突，已合并到 `[storyId]` 下
+3. **生产环境 migrate deploy P3005**：数据库未 baseline，需使用 `prisma db push`
+4. **SSH 自动部署失败**：服务器端口 2222 超时 / 22 权限拒绝，需手动部署
