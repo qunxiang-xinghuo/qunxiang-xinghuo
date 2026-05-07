@@ -13,8 +13,6 @@ services:
         DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
     container_name: ${CONTAINER_NAME:-xinghuo-app}
     init: true
-    ports:
-      - "${PORT:-3000}:3000"
     env_file:
       - .env
     environment:
