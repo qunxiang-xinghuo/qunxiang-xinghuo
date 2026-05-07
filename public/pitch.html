@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>群像·星火 — 路演演示</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a1628;
+      overflow: hidden;
+      color: #1a2332;
+    }
+
+    /* ===== 幻灯片容器 ===== */
+    .slide-container {
+      width: 100vw; height: 100vh;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .slide {
+      position: absolute;
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      padding: 60px 80px;
+      opacity: 0;
+      transform: translateX(100px) scale(0.95);
+      transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      pointer-events: all;
+    }
+    .slide.prev {
+      opacity: 0;
+      transform: translateX(-100px) scale(0.95);
+    }
+
+    /* ===== 背景系统 ===== */
+    .bg-layer {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, #f0f7ff 0%, #e8f0fe 40%, #dbeafe 100%);
+    }
+    .bg-dots {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, #3b82f680 0.5px, transparent 0.5px);
+      background-size: 32px 32px;
+      opacity: 0.4;
+    }
+    .bg-glow {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      animation: float 8s ease-in-out infinite;
+    }
+    .bg-glow-1 { width: 500px; height: 500px; background: #60a5fa; top: -10%; left: -5%; animation-delay: 0s; }
+    .bg-glow-2 { width: 400px; height: 400px; background: #93c5fd; bottom: -10%; right: -5%; animation-delay: -3s; }
+    .bg-glow-3 { width: 300px; height: 300px; background: #bfdbfe; top: 40%; left: 50%; animation-delay: -5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(20px, -20px) scale(1.05); }
+      66% { transform: translate(-10px, 15px) scale(0.95); }
+    }
+
+    /* ===== 内容卡片 ===== */
+    .content-card {
+      position: relative;
+      max-width: 1100px; width: 100%;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 24px;
+      padding: 56px 64px;
+      box-shadow: 0 20px 60px rgba(59,130,246,0.12), 0 0 0 1px rgba(255,255,255,0.4) inset;
+    }
+
+    /* ===== 排版 ===== */
+    .slide-num {
+      position: absolute; top: 28px; right: 36px;
+      font-size: 13px; font-weight: 500;
+      color: #93a3b8; letter-spacing: 2px;
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 16px; border-radius: 100px;
+      font-size: 13px; font-weight: 500;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+      margin-bottom: 24px;
+    }
+    .badge svg { width: 14px; height: 14px; }
+
+    h1 {
+      font-size: 52px; font-weight: 900;
+      line-height: 1.15; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #1e3a5f, #3b82f6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    h2 {
+      font-size: 40px; font-weight: 800;
+      line-height: 1.2; letter-spacing: -0.3px;
+      color: #1e3a5f; margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 20px; font-weight: 400;
+      color: #5a7a9a; margin-top: 16px; line-height: 1.6;
+    }
+
+    .slogan {
+      font-size: 22px; font-weight: 500;
+      color: #3b82f6; margin-top: 32px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .slogan::before, .slogan::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, transparent, #bfdbfe);
+    }
+    .slogan::after {
+      background: linear-gradient(90deg, #bfdbfe, transparent);
+    }
+
+    /* ===== 图标系统 ===== */
+    .icon-wrap {
+      width: 64px; height: 64px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      box-shadow: 0 8px 24px rgba(59,130,246,0.25);
+      margin-bottom: 20px;
+    }
+    .icon-wrap svg { width: 32px; height: 32px; color: #fff; }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px; margin-top: 32px;
+    }
+    .feature-item {
+      padding: 28px; border-radius: 16px;
+      background: rgba(255,255,255,0.5);
+      border: 1px solid rgba(255,255,255,0.8);
+      transition: all 0.3s ease;
+    }
+    .feature-item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(59,130,246,0.12);
+      background: rgba(255,255,255,0.8);
+    }
+    .feature-item .fi-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      margin-bottom: 14px;
+    }
+    .feature-item .fi-icon svg { width: 20px; height: 20px; color: #2563eb; }
+    .feature-item h4 {
+      font-size: 17px; font-weight: 700; color: #1e3a5f; margin-bottom: 8px;
+    }
+    .feature-item p {
+      font-size: 14px; color: #5a7a9a; line-height: 1.65;
+    }
+
+    /* ===== 痛点页特殊样式 ===== */
+    .pain-list {
+      display: flex; flex-direction: column; gap: 16px; margin-top: 28px;
+    }
+    .pain-item {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 20px 24px; border-radius: 14px;
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.7);
+      transition: all 0.3s ease;
+    }
+    .pain-item:hover {
+      background: rgba(255,255,255,0.85);
+      transform: translateX(6px);
+    }
+    .pain-num {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #ef4444, #f87171);
+      color: #fff; font-size: 15px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .pain-item h4 { font-size: 17px; font-weight: 700; color: #1e3a5f; margin-bottom: 4px; }
+    .pain-item p { font-size: 14px; color: #5a7a9a; line-height: 1.6; }
+
+    /* ===== 技术亮点特殊样式 ===== */
+    .tech-flow {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; margin-top: 32px; flex-wrap: wrap;
+    }
+    .tech-node {
+      padding: 20px 28px; border-radius: 16px;
+      background: linear-gradient(135deg, #1e3a5f, #2563eb);
+      color: #fff; text-align: center;
+      min-width: 160px;
+      box-shadow: 0 8px 24px rgba(37,99,235,0.25);
+    }
+    .tech-node h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .tech-node p { font-size: 13px; opacity: 0.85; line-height: 1.5; }
+    .tech-arrow {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.8);
+      color: #2563eb; font-size: 18px; font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    /* ===== 结束页 ===== */
+    .end-page {
+      text-align: center;
+    }
+    .end-page .logo-big {
+      width: 96px; height: 96px; border-radius: 24px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 32px;
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      box-shadow: 0 16px 48px rgba(59,130,246,0.3);
+    }
+    .end-page .logo-big svg { width: 48px; height: 48px; color: #fff; }
+    .end-page h1 { margin-bottom: 16px; }
+    .end-page .url {
+      font-size: 18px; color: #3b82f6; font-weight: 500;
+      margin-top: 24px; letter-spacing: 1px;
+    }
+    .end-page .thanks {
+      font-size: 28px; font-weight: 700;
+      color: #1e3a5f; margin-top: 40px;
+      display: flex; align-items: center; justify-content: center; gap: 16px;
+    }
+
+    /* ===== 导航控制 ===== */
+    .nav-btn {
+      position: fixed; top: 50%; transform: translateY(-50%);
+      width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.8);
+      color: #3b82f6; font-size: 20px; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      transition: all 0.3s ease; z-index: 100;
+      user-select: none;
+    }
+    .nav-btn:hover {
+      background: #fff; transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 8px 24px rgba(59,130,246,0.2);
+    }
+    .nav-btn.prev-btn { left: 24px; }
+    .nav-btn.next-btn { right: 24px; }
+    .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+    .dots-bar {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px; z-index: 100;
+      padding: 10px 18px; border-radius: 100px;
+      background: rgba(255,255,255,0.6); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.8);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #cbd5e1; cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .dot.active { background: #3b82f6; width: 28px; border-radius: 5px; }
+    .dot:hover { background: #93c5fd; }
+
+    .progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 200;
+    }
+
+    .hint {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      font-size: 12px; color: #93a3b8; letter-spacing: 1px;
+      opacity: 0.7; z-index: 100;
+      animation: hintPulse 3s ease-in-out infinite;
+    }
+    @keyframes hintPulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+
+    /* ===== 响应式 ===== */
+    @media (max-width: 900px) {
+      .slide { padding: 40px 24px; }
+      .content-card { padding: 36px 28px; }
+      h1 { font-size: 36px; }
+      h2 { font-size: 28px; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .tech-flow { flex-direction: column; }
+      .tech-arrow { transform: rotate(90deg); }
+    }
+
+    /* ===== 入场动画 ===== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in > * {
+      opacity: 0;
+      animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .animate-in > *:nth-child(1) { animation-delay: 0.05s; }
+    .animate-in > *:nth-child(2) { animation-delay: 0.12s; }
+    .animate-in > *:nth-child(3) { animation-delay: 0.19s; }
+    .animate-in > *:nth-child(4) { animation-delay: 0.26s; }
+    .animate-in > *:nth-child(5) { animation-delay: 0.33s; }
+    .animate-in > *:nth-child(6) { animation-delay: 0.40s; }
+  </style>
+</head>
+<body>
+
+  <div class="progress-bar" id="progressBar"></div>
+
+  <div class="slide-container" id="slideContainer">
+
+    <!-- ===== 第1页：封面 ===== -->
+    <div class="slide active" data-index="0">
+      <div class="bg-layer"></div>
+      <div class="bg-dots"></div>
+      <div class="bg-glow bg-glow-1"></div>
+      <div class="bg-glow bg-glow-2"></div>
+      <div class="bg-glow bg-glow-3"></div>
+      <div class="content-card" style="text-align:center; max-width: 800px;">
+        <div class="animate-in">
+          <div style="width:80px;height:80px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;background:linear-gradient(135deg,#3b82f6,#60a5fa);box-shadow:0 12px 40px rgba(59,130,246,0.3);">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+          </div>
+          <h1 style="font-size:64px; margin-bottom: 8px;">群像·星火</h1>
+          <p style="font-size:18px; color:#5a7a9a; letter-spacing:8px; margin-bottom: 32px;">QUNXIANG · XINGHUO</p>
+          <div class="slogan">让真实发光，让思想变现</div>
+          <p style="font-size:15px; color:#93a3b8; margin-top: 40px; line-height: 1.8;">
+            下一代互动叙事创作平台<br>
+            用角色扮演和AI催化，让每个人都有创作好故事的能力
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 第2页：痛点 ===== -->
+    <div class="slide" data-index="1">
+      <div class="bg-layer"></div>
+      <div class="bg-dots"></div>
+      <div class="bg-glow bg-glow-1"></div>
+      <div class="bg-glow bg-glow-2"></div>
+      <div class="content-card">
+        <div class="slide-num">02 / 06</div>
+        <div class="animate-in">
+          <div class="badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+            创作者痛点
+          </div>
+          <h2>好想法，卡在第一步</h2>
+          <p class="subtitle">90% 的创作者有精彩的想法，但只有 10% 能把它变成完整的故事</p>
+          <div class="pain-list">
+            <div class="pain-item">
+              <div class="pain-num">01</div>
+              <div>
+                <h4>专业门槛太高</h4>
+                <p>编剧、导演、世界观设定……需要掌握大量专业技能，普通人望而却步</p>
+              </div>
+            </div>
+            <div class="pain-item">
+              <div class="pain-num">02</div>
+              <div>
+                <h4>创作是孤独的</h4>
+                <p>一个人想剧情容易陷入瓶颈，缺乏即时的反馈和碰撞</p>
+              </div>
+            </div>
+            <div class="pain-item">
+              <div class="pain-num">03</div>
+              <div>
+                <h4>从想法到作品路径太长</h4>
+                <p>有了灵感还要学习工具、搭建流程，创意在过程中被消耗殆尽</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 第3页：产品玩法 ===== -->
+    <div class="slide" data-index="2">
+      <div class="bg-layer"></div>
+      <div class="bg-dots"></div>
+      <div class="bg-glow bg-glow-1"></div>
+      <div class="bg-glow bg-glow-2"></div>
+      <div class="content-card">
+        <div class="slide-num">03 / 06</div>
+        <div class="animate-in">
+          <div class="badge" style="background:linear-gradient(135deg,#10b981,#34d399);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            产品玩法
+          </div>
+          <h2>故事模式：玩出来的创作</h2>
+          <p class="subtitle">不需要先学会创作，边玩边写，故事自然生长</p>
+          <div class="feature-grid">
+            <div class="feature-item">
+              <div class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+              <h4>双人解密</h4>
+              <p>匹配陌生搭档，各自扮演不同角色，信息不对称中自然产生戏剧张力</p>
+            </div>
+            <div class="feature-item">
+              <div class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+              <h4>角色扮演</h4>
+              <p>每个角色拥有专属开场信息和秘密任务，代入感拉满</p>
+            </div>
+            <div class="feature-item">
+              <div class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+              <h4>AI 动态催化</h4>
+              <p>刘看山在关键节点抛出追问和环境事件，推动剧情向下一幕发展</p>
+            </div>
+            <div class="feature-item">
+              <div class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+              <h4>四幕结构</h4>
+              <p>起承转合的经典叙事框架，AI 根据当前幕次调整催化策略</p>
+            </div>
+            <div class="feature-item">
+              <div class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+              <h4>火花标记</h4>
+              <p>玩家标记精彩对白，沉淀为可复用的故事资产</p>
+            </div>
+            <div class="feature-item">
+              <div class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <h4>一键成稿</h4>
+              <p>对白结束后自动生成剧本格式故事，降低创作门槛</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 第4页：产品愿景 ===== -->
+    <div class="slide" data-index="3">
+      <div class="bg-layer"></div>
+      <div class="bg-dots"></div>
+      <div class="bg-glow bg-glow-1"></div>
+      <div class="bg-glow bg-glow-2"></div>
+      <div class="content-card" style="text-align:center;">
+        <div class="slide-num">04 / 06</div>
+        <div class="animate-in">
+          <div class="badge" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            产品愿景
+          </div>
+          <h2 style="font-size:48px;">从玩故事<br>到写故事</h2>
+          <p class="subtitle" style="font-size:22px; margin-top:20px;">人人都是创作者</p>
+          <div style="display:flex; justify-content:center; gap:40px; margin-top:48px; flex-wrap:wrap;">
+            <div style="text-align:center; max-width:220px;">
+              <div style="width:72px;height:72px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);box-shadow:0 8px 24px rgba(59,130,246,0.15);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              </div>
+              <h4 style="font-size:17px; color:#1e3a5f; margin-bottom:8px;">降低门槛</h4>
+              <p style="font-size:14px; color:#5a7a9a; line-height:1.6;">不需要专业背景，有想法就能开始</p>
+            </div>
+            <div style="text-align:center; max-width:220px;">
+              <div style="width:72px;height:72px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);box-shadow:0 8px 24px rgba(59,130,246,0.15);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <h4 style="font-size:17px; color:#1e3a5f; margin-bottom:8px;">协作共创</h4>
+              <p style="font-size:14px; color:#5a7a9a; line-height:1.6;">多人实时碰撞，让1+1>2</p>
+            </div>
+            <div style="text-align:center; max-width:220px;">
+              <div style="width:72px;height:72px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);box-shadow:0 8px 24px rgba(59,130,246,0.15);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              <h4 style="font-size:17px; color:#1e3a5f; margin-bottom:8px;">持续进化</h4>
+              <p style="font-size:14px; color:#5a7a9a; line-height:1.6;">AI学习每次交互，越用越懂你</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 第5页：技术亮点 ===== -->
+    <div class="slide" data-index="4">
+      <div class="bg-layer"></div>
+      <div class="bg-dots"></div>
+      <div class="bg-glow bg-glow-1"></div>
+      <div class="bg-glow bg-glow-2"></div>
+      <div class="content-card">
+        <div class="slide-num">05 / 06</div>
+        <div class="animate-in">
+          <div class="badge" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            技术亮点
+          </div>
+          <h2>刘看山 AI Agent</h2>
+          <p class="subtitle">不是聊天机器人，是会推动剧情的智能催化剂</p>
+          <div class="tech-flow">
+            <div class="tech-node">
+              <h4>DeepSeek</h4>
+              <p>深度推理<br>角色扮演引擎</p>
+            </div>
+            <div class="tech-arrow">→</div>
+            <div class="tech-node" style="background:linear-gradient(135deg,#3b82f6,#60a5fa);">
+              <h4>知乎直答</h4>
+              <p>知识增强<br>场景真实性校验</p>
+            </div>
+            <div class="tech-arrow">→</div>
+            <div class="tech-node" style="background:linear-gradient(135deg,#10b981,#34d399);">
+              <h4>动态催化</h4>
+              <p>根据幕次和进度<br>选择最佳追问时机</p>
+            </div>
+            <div class="tech-arrow">→</div>
+            <div class="tech-node" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);">
+              <h4>刘看山</h4>
+              <p>北极狐人格<br>温暖狡黠的DM</p>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; margin-top:32px;">
+            <div class="feature-item">
+              <h4 style="color:#2563eb;">双API冗余架构</h4>
+              <p>DeepSeek + 知乎直答同时调用，选择最佳回复，单点故障自动降级</p>
+            </div>
+            <div class="feature-item">
+              <h4 style="color:#2563eb;">四幕推进算法</h4>
+              <p>根据消息数智能判断当前幕次，自动调整催化策略和追问方向</p>
+            </div>
+            <div class="feature-item">
+              <h4 style="color:#2563eb;">实时学习系统</h4>
+              <p>记录每次AI交互效果，自动优化最佳催化时机和提问模板</p>
+            </div>
+            <div class="feature-item">
+              <h4 style="color:#2563eb;">人格一致性</h4>
+              <p>刘看山有完整角色设定：北极狐、75cm、爱吃鳕鱼、偶尔问"为什么"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 第6页：结束页 ===== -->
+    <div class="slide" data-index="5">
+      <div class="bg-layer"></div>
+      <div class="bg-dots"></div>
+      <div class="bg-glow bg-glow-1"></div>
+      <div class="bg-glow bg-glow-2"></div>
+      <div class="content-card end-page" style="max-width: 700px;">
+        <div class="animate-in">
+          <div class="logo-big">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+          </div>
+          <h1 style="font-size:48px;">群像·星火</h1>
+          <p style="font-size:18px; color:#5a7a9a; letter-spacing:6px;">QUNXIANG · XINGHUO</p>
+          <div class="url">www.xinghuo.app</div>
+          <div class="thanks">
+            <span style="display:inline-block;width:40px;height:2px;background:linear-gradient(90deg,transparent,#bfdbfe);"></span>
+            谢谢观看
+            <span style="display:inline-block;width:40px;height:2px;background:linear-gradient(90deg,#bfdbfe,transparent);"></span>
+          </div>
+          <p style="font-size:14px; color:#93a3b8; margin-top: 32px; line-height: 1.8;">
+            让真实发光，让思想变现<br>
+            人人都是创作者的时代，从这里开始
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 导航按钮 -->
+  <button class="nav-btn prev-btn" id="prevBtn" onclick="goPrev()">❮</button>
+  <button class="nav-btn next-btn" id="nextBtn" onclick="goNext()">❯</button>
+
+  <!-- 指示点 -->
+  <div class="dots-bar" id="dotsBar"></div>
+
+  <!-- 提示 -->
+  <div class="hint" id="hint">按 ← → 键或点击按钮切换</div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const total = slides.length;
+    let current = 0;
+    let isAnimating = false;
+
+    // 初始化指示点
+    const dotsBar = document.getElementById('dotsBar');
+    for (let i = 0; i < total; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (i === 0 ? ' active' : '');
+      dot.onclick = () => goTo(i);
+      dotsBar.appendChild(dot);
+    }
+
+    function updateUI() {
+      slides.forEach((slide, i) => {
+        slide.classList.remove('active', 'prev');
+        if (i === current) slide.classList.add('active');
+        else if (i < current) slide.classList.add('prev');
+      });
+
+      document.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === current);
+      });
+
+      document.getElementById('prevBtn').disabled = current === 0;
+      document.getElementById('nextBtn').disabled = current === total - 1;
+
+      document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
+
+      // 隐藏提示
+      if (current > 0) {
+        document.getElementById('hint').style.opacity = '0';
+      }
+    }
+
+    function goTo(index) {
+      if (isAnimating || index === current || index < 0 || index >= total) return;
+      isAnimating = true;
+      current = index;
+      updateUI();
+      setTimeout(() => { isAnimating = false; }, 700);
+    }
+
+    function goNext() {
+      if (current < total - 1) goTo(current + 1);
+    }
+
+    function goPrev() {
+      if (current > 0) goTo(current - 1);
+    }
+
+    // 键盘控制
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        goTo(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        goTo(total - 1);
+      }
+    });
+
+    // 触摸滑动支持
+    let touchStartX = 0;
+    let touchEndX = 0;
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      const diff = touchStartX - touchEndX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) goNext();
+        else goPrev();
+      }
+    }, { passive: true });
+
+    // 滚轮支持
+    let wheelTimeout;
+    document.addEventListener('wheel', (e) => {
+      clearTimeout(wheelTimeout);
+      wheelTimeout = setTimeout(() => {
+        if (e.deltaY > 30) goNext();
+        else if (e.deltaY < -30) goPrev();
+      }, 50);
+    }, { passive: true });
+
+    updateUI();
+  </script>
+</body>
+</html>

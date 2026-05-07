@@ -234,6 +234,7 @@ export default function RoomPage() {
       catalystCalledRef.current.add(msgCount);
 
       // v8.0-catalyst-universal: 支持故事模式和脑洞模式
+      let abortCtrl: AbortController | null = null;
       const doCatalyst = async () => {
         let prompt = '';
         let phase = 'act1';
@@ -241,8 +242,8 @@ export default function RoomPage() {
         if (story) {
           // 故事模式：调用 story catalyst API
           try {
-            const ctrl = new AbortController();
-            const r = await fetch(`/api/stories/${story.id}/catalyst?roomId=${roomId}`, { signal: ctrl.signal });
+            abortCtrl = new AbortController();
+            const r = await fetch(`/api/stories/${story.id}/catalyst?roomId=${roomId}`, { signal: abortCtrl.signal });
             const data = await r.json();
             if (data.success && data.data?.prompt) {
               prompt = data.data.prompt;
@@ -286,6 +287,10 @@ export default function RoomPage() {
       };
 
       doCatalyst();
+      return () => {
+        abortCtrl?.abort();
+        if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);
+      };
     }
     return () => {
       if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);
@@ -374,6 +379,8 @@ export default function RoomPage() {
       });
       const result = await res.json();
       await new Promise((r) => setTimeout(r, 800));
+      // v8.0-fix: 组件卸载后不再执行 setState
+      if (!isMountedRef.current) { isProcessingAI.current = false; return; }
       const aiMsg: Message = {
         id: `ai-${Date.now()}`,
         userId: story ? `agent_${story.id}` : 'agent_liukanshan',
@@ -389,17 +396,19 @@ export default function RoomPage() {
         body: JSON.stringify({ content: aiMsg.content, identity: aiMsg.identity }),
       });
       // v8.0-ai-evolution: 记录学习日志（通过API）
-      fetch('/api/ai-training/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'learning',
-          sceneType: story ? 'story' : 'brainhole',
-          referenceId: story?.id || roomId,
-          aiContent: aiMsg.content,
-          messageIndex: msgCount,
-        }),
-      }).catch(() => {});
+      if (isMountedRef.current) {
+        fetch('/api/ai-training/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'learning',
+            sceneType: story ? 'story' : 'brainhole',
+            referenceId: story?.id || roomId,
+            aiContent: aiMsg.content,
+            messageIndex: msgCount,
+          }),
+        }).catch(() => {});
+      }
     } catch (e) { console.error('AI回复失败:', e); }
     finally { isProcessingAI.current = false; }
   }, [story, roomId, aiRoleName, myOpeningInfo, messages.length, brainholeTitle, brainholeScenario]);

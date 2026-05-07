@@ -42,22 +42,11 @@ export async function POST(
       return NextResponse.json(apiError("FORBIDDEN", "观众不能结束对白"), { status: 403 });
     }
 
-    // 已关闭的房间直接返回（幂等）
-    if (room.status === 'closed' || room.status === 'finished') {
-      const existingAsset = await db.asset.findFirst({ where: { roomId } });
-      return NextResponse.json(apiResponse({
-        roomId,
-        assetId: existingAsset?.id || null,
-        status: room.status,
-        truth: room.story?.act4Truth || null,
-      }));
-    }
-
-    // 关闭房间 + 创建资产（原子事务）
+    // v8.0-fix: 幂等检查移入 transaction，避免并发竞态
     const content = room.messages.map((m) => `${m.identity}: ${m.content}`).join("\n");
     const [updatedRoom, asset] = await db.$transaction([
       db.room.update({
-        where: { id: roomId },
+        where: { id: roomId, status: { not: "closed" } },
         data: { status: "closed", closedAt: new Date() },
       }),
       db.asset.create({
@@ -73,7 +62,25 @@ export async function POST(
           isPublic: true,
         },
       }),
-    ]);
+    ]).catch(async (err: any) => {
+      // 如果 transaction 失败（可能是 room 已关闭或 asset 已存在），查询已有结果
+      if (err.code === 'P2025') {
+        const existingAsset = await db.asset.findFirst({ where: { roomId } });
+        return [{ status: 'closed' }, existingAsset];
+      }
+      throw err;
+    }) as any;
+
+    // 已关闭的幂等返回
+    if (!asset) {
+      const existingAsset = await db.asset.findFirst({ where: { roomId } });
+      return NextResponse.json(apiResponse({
+        roomId,
+        assetId: existingAsset?.id || null,
+        status: 'closed',
+        truth: room.story?.act4Truth || null,
+      }));
+    }
 
     return NextResponse.json(apiResponse({
       roomId,

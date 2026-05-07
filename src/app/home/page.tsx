@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -33,24 +33,33 @@ export default function HomePage() {
 
   useEffect(() => { setMounted(true); }, []);
 
+  // v8.0-fix: 添加 AbortController + isMountedRef 防止卸载后 setState
+  const isMountedRef = useRef(true);
   useEffect(() => {
+    isMountedRef.current = true;
+    const ctrl = new AbortController();
     async function init() {
       try {
         setLoadError(false);
-        const res = await fetch('/api/sparks/top?limit=3');
+        const res = await fetch('/api/sparks/top?limit=3', { signal: ctrl.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (data.data?.list) {
+        if (isMountedRef.current && data.data?.list) {
           setTop3(data.data.list);
         }
-      } catch (e) {
+      } catch (e: any) {
+        if (e.name === 'AbortError') return;
         console.error('首页加载失败:', e);
-        setLoadError(true);
+        if (isMountedRef.current) setLoadError(true);
       } finally {
-        setLoading(false);
+        if (isMountedRef.current) setLoading(false);
       }
     }
     init();
+    return () => {
+      isMountedRef.current = false;
+      ctrl.abort();
+    };
   }, []);
 
   const modes = [

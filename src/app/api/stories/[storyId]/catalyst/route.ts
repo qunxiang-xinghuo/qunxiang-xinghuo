@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 
@@ -12,6 +13,11 @@ export async function GET(
   { params }: { params: Promise<{ storyId: string }> }
 ) {
   try {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    if (!token) {
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
+    }
+
     const { storyId } = await params;
     const { searchParams } = new URL(request.url);
     const roomId = searchParams.get("roomId");

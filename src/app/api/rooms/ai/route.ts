@@ -86,6 +86,8 @@ export async function POST(request: NextRequest) {
         console.log("[AI Room API] AI Agent用户记录已确认:", agentUserId);
       } catch (aiUserErr: any) {
         console.error("[AI Room API] AI Agent用户记录创建失败:", aiUserErr.message);
+        // v8.0-fix: 不再静默吞掉，抛出错误避免后续外键约束崩溃
+        throw aiUserErr;
       }
     }
 
@@ -136,62 +138,60 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 创建AI房间
+    // v8.0-fix: 使用 $transaction 原子创建房间+参与者+消息，防止孤儿数据
     console.log("[AI Room API] 创建房间...");
-    const room = await db.room.create({
-      data: {
-        brainholeId: finalBrainholeId || null,
-        type: "ai_duet",
-        status: "active",
-        maxRound: 10,
-        currentRound: 0,
-        scene: brainholeScenario,
-        isAiRoom: true,
-      },
-    });
-    console.log("[AI Room API] 房间创建成功, roomId:", room.id);
-
-    // 添加用户参与者
-    console.log("[AI Room API] 添加用户参与者...");
-    await db.roomParticipant.create({
-      data: {
-        roomId: room.id,
-        userId,
-        identity: identity || "我",
-        role: "actor",
-        isOnline: true,
-      },
-    });
-    console.log("[AI Room API] 用户参与者添加成功");
-
-    // v6.1: 添加AI Agent参与者
-    console.log("[AI Room API] 添加AI Agent参与者...");
-    for (const agent of agents) {
-      await db.roomParticipant.create({
+    const room = await db.$transaction(async (tx) => {
+      const newRoom = await tx.room.create({
         data: {
-          roomId: room.id,
-          userId: `agent_${agent.persona}`,
-          identity: agent.name,
-          role: "ai_agent",
+          brainholeId: finalBrainholeId || null,
+          type: "ai_duet",
+          status: "active",
+          maxRound: 10,
+          currentRound: 0,
+          scene: brainholeScenario,
+          isAiRoom: true,
+        },
+      });
+
+      // 添加用户参与者
+      await tx.roomParticipant.create({
+        data: {
+          roomId: newRoom.id,
+          userId,
+          identity: identity || "我",
+          role: "actor",
           isOnline: true,
         },
       });
-      console.log("[AI Room API] AI Agent添加成功:", agent.name, `agent_${agent.persona}`);
-    }
 
-    // v6.1: 第一个Agent的欢迎消息
-    console.log("[AI Room API] 添加欢迎消息...");
-    const welcomeAgent = agents[0];
-    await db.roomMessage.create({
-      data: {
-        roomId: room.id,
-        senderId: `agent_${welcomeAgent.persona}`,
-        content: `"${brainholeTitle}"...这个话题我正好有点想法。你先说，我听着。`,
-        identity: welcomeAgent.name,
-        isAiPrompt: false,
-      },
+      // 添加AI Agent参与者
+      for (const agent of agents) {
+        await tx.roomParticipant.create({
+          data: {
+            roomId: newRoom.id,
+            userId: `agent_${agent.persona}`,
+            identity: agent.name,
+            role: "ai_agent",
+            isOnline: true,
+          },
+        });
+      }
+
+      // 第一个Agent的欢迎消息
+      const welcomeAgent = agents[0];
+      await tx.roomMessage.create({
+        data: {
+          roomId: newRoom.id,
+          senderId: `agent_${welcomeAgent.persona}`,
+          content: `"${brainholeTitle}"...这个话题我正好有点想法。你先说，我听着。`,
+          identity: welcomeAgent.name,
+          isAiPrompt: false,
+        },
+      });
+
+      return newRoom;
     });
-    console.log("[AI Room API] 欢迎消息添加成功");
+    console.log("[AI Room API] 房间创建成功, roomId:", room.id);
 
     console.log("[AI Room API] ========== AI房间创建完成 ==========");
 

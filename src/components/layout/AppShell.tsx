@@ -57,12 +57,8 @@ export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { status: sessionStatus } = useSession();
-  const [mounted, setMounted] = useState(false);
 
-  // 客户端挂载后检查登录状态
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // v8.0-fix: 移除未使用的 mounted state
 
   // v8.0-login-fix: 严格认证守卫
   useEffect(() => {

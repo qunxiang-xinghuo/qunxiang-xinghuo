@@ -82,6 +82,11 @@ export function useSocket() {
     socketRef.current?.off(event, handler as (data: unknown) => void)
   }, [])
 
+  /**
+   * @deprecated 请使用 off(event, handler) 定向移除监听器。
+   * removeAllListeners 会移除该事件的所有监听器，可能导致其他组件的监听器被意外断开。
+   * 详见 ProblemLog.md 问题7。
+   */
   const removeAllListeners = useCallback((event: string) => {
     socketRef.current?.removeAllListeners(event)
   }, [])

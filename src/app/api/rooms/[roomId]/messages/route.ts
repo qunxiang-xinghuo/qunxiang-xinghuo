@@ -26,7 +26,12 @@ export async function POST(
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录或提供guest-id"), { status: 401 });
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
+    }
     const validation = sendMessageSchema.safeParse(body);
     
     if (!validation.success) {

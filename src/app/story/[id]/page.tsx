@@ -49,14 +49,22 @@ export default function StoryDetailPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollInProgress = useRef(false);
 
+  // v8.0-fix: 添加 AbortController + isMountedRef 防止卸载后 setState
+  const isMountedRef = useRef(true);
   useEffect(() => {
-    fetch(`/api/stories/${storyId}`)
+    isMountedRef.current = true;
+    const ctrl = new AbortController();
+    fetch(`/api/stories/${storyId}`, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((data) => {
-        if (data.success) setStory(data.data);
+        if (isMountedRef.current && data.success) setStory(data.data);
       })
-      .catch((e) => console.error('[StoryDetail] 加载失败:', e))
-      .finally(() => setLoading(false));
+      .catch((e) => { if (e.name !== 'AbortError') console.error('[StoryDetail] 加载失败:', e); })
+      .finally(() => { if (isMountedRef.current) setLoading(false); });
+    return () => {
+      isMountedRef.current = false;
+      ctrl.abort();
+    };
   }, [storyId]);
 
   // 倒计时逻辑 + 轮询检查匹配状态
@@ -111,6 +119,7 @@ export default function StoryDetailPage() {
         body: JSON.stringify({ roleId }),
       });
       const data = await res.json();
+      if (!isMountedRef.current) return;
       if (data.success) {
         if (data.data?.status === 'matched') {
           setMatchedRoomId(data.data.roomId);
@@ -125,7 +134,7 @@ export default function StoryDetailPage() {
     } catch (e) {
       console.error('[StoryDetail] 加入失败:', e);
     } finally {
-      setJoinLoading(false);
+      if (isMountedRef.current) setJoinLoading(false);
     }
   };
 
@@ -139,13 +148,14 @@ export default function StoryDetailPage() {
         body: JSON.stringify({ roleId: selectedRoleId }),
       });
       const data = await res.json();
+      if (!isMountedRef.current) return;
       if (data.success && data.data?.roomId) {
         router.push(`/room/${data.data.roomId}`);
       }
     } catch (e) {
       console.error('[StoryDetail] AI加入失败:', e);
     } finally {
-      setJoinLoading(false);
+      if (isMountedRef.current) setJoinLoading(false);
     }
   };
 
