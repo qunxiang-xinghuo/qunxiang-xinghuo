@@ -16,8 +16,10 @@ export default function TopBar({ title, showBack = false, onBack }: TopBarProps)
   const handleBack = () => {
     if (onBack) {
       onBack();
-    } else {
+    } else if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
+    } else {
+      router.push('/home');
     }
   };
 

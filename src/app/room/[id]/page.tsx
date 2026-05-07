@@ -228,99 +228,147 @@ export default function RoomPage() {
 
   // AI 催化（按消息数）— 使用 ref 标记已调用
   useEffect(() => {
-    if (!story || !roomId || roomStatus === 'closed') return;
+    if (!roomId || roomStatus === 'closed') return;
     const msgCount = messages.length;
     if (msgCount >= 6 && msgCount % 5 === 0 && !catalystCalledRef.current.has(msgCount)) {
       catalystCalledRef.current.add(msgCount);
-      const ctrl = new AbortController();
-      fetch(`/api/stories/${story.id}/catalyst?roomId=${roomId}`, { signal: ctrl.signal })
-        .then((r) => r.json())
-        .then((data) => {
-          if (!isMountedRef.current) return;
-          if (data.success && data.data?.prompt) {
-            setAiPrompt(data.data.prompt);
-            setShowAiPrompt(true);
-            // 清理之前的定时器
-            if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);
-            aiPromptTimerRef.current = setTimeout(() => {
-              if (isMountedRef.current) setShowAiPrompt(false);
-            }, 15000);
-            // v8.0-ai-evolution: 记录催化日志（通过API，避免客户端直接访问Prisma）
-            fetch('/api/ai-training/log', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                type: 'catalyst',
-                roomId,
-                storyId: story?.id,
-                prompt: data.data.prompt,
-                phase: data.data.phase || 'act1',
-                msgCount,
-              }),
-            }).catch(() => {});
-          }
-        })
-        .catch(() => {});
-      return () => ctrl.abort();
+
+      // v8.0-catalyst-universal: 支持故事模式和脑洞模式
+      const doCatalyst = async () => {
+        let prompt = '';
+        let phase = 'act1';
+
+        if (story) {
+          // 故事模式：调用 story catalyst API
+          try {
+            const ctrl = new AbortController();
+            const r = await fetch(`/api/stories/${story.id}/catalyst?roomId=${roomId}`, { signal: ctrl.signal });
+            const data = await r.json();
+            if (data.success && data.data?.prompt) {
+              prompt = data.data.prompt;
+              phase = data.data.phase || 'act1';
+            }
+          } catch { /* ignore */ }
+        } else if (brainholeTitle) {
+          // 脑洞模式：本地生成催化提示
+          const catalysts = [
+            `如果「${brainholeTitle}」中的冲突升级，你最担心的是哪一方？`,
+            `换个角度：如果你是另一方，你会怎么看待这个问题？`,
+            `这个问题背后，真正让人难受的点是什么？`,
+            `如果是三年后的你，会怎么看待现在的讨论？`,
+            `刚才提到的某个细节，如果可以改变一个变量，你会选什么？`,
+          ];
+          prompt = catalysts[Math.floor(Math.random() * catalysts.length)];
+          phase = 'brainhole';
+        }
+
+        if (prompt && isMountedRef.current) {
+          setAiPrompt(prompt);
+          setShowAiPrompt(true);
+          if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);
+          aiPromptTimerRef.current = setTimeout(() => {
+            if (isMountedRef.current) setShowAiPrompt(false);
+          }, 15000);
+          // 记录催化日志
+          fetch('/api/ai-training/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'catalyst',
+              roomId,
+              storyId: story?.id,
+              prompt,
+              phase,
+              msgCount,
+            }),
+          }).catch(() => {});
+        }
+      };
+
+      doCatalyst();
     }
     return () => {
       if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);
     };
-  }, [messages.length, story, roomId, roomStatus]);
+  }, [messages.length, story, roomId, roomStatus, brainholeTitle]);
 
   // AI 房间自动回复 — 刘看山角色 + DM 推进
   const generateAIReply = useCallback(async (userMessage: string, currentMsgCount: number) => {
-    if (isProcessingAI.current || !story) return;
+    if (isProcessingAI.current || (!story && !brainholeTitle)) return;
     isProcessingAI.current = true;
     try {
-      // 根据消息数判断当前幕（传入已包含新消息的计数，避免闭包陈旧状态）
       const msgCount = currentMsgCount;
-      let currentAct = 1;
-      let actGuidance = '';
-      if (msgCount < 6) {
-        currentAct = 1;
-        actGuidance = '这是故事的开端。引导对方分享信息，建立信任关系，自然透露一些背景线索，但不要一次性说完。';
-      } else if (msgCount < 12) {
-        currentAct = 2;
-        actGuidance = '进入发展阶段。暗示事情不像表面那么简单，抛出一些矛盾或疑点，推动对话深入。';
-      } else if (msgCount < 18) {
-        currentAct = 3;
-        actGuidance = '进入转折阶段。引入意外信息或冲突，让气氛紧张起来，某个隐藏的秘密即将浮出水面。';
-      } else {
-        currentAct = 4;
-        actGuidance = '进入真相阶段。引导对话接近核心谜底，帮助对方拼凑线索，准备收尾和揭晓。';
-      }
+      let systemPrompt = '';
+      let topic = '';
 
-      // 构建刘看山角色 + DM 推进 system prompt
-      const storyContext = [
-        `你是刘看山，一只好奇、温暖、说话带点狡黠的北极狐。`,
-        `你说话自然、口语化，像朋友聊天一样，偶尔用emoji表达情绪。`,
-        `从不套话、不说教、不用书面语。用简短、直接的中文回应。`,
-        ``,
-        `当前你在参与一个解密故事《${story.title}》。`,
-        `你的角色是「${aiRoleName || '刘看山'}」。`,
-        myOpeningInfo ? `你的秘密信息：${myOpeningInfo}` : '',
-        ``,
-        `故事背景：`,
-        story.act1Reveal ? `• 起（第一幕）：${story.act1Reveal}` : '',
-        story.act2Reveal ? `• 承（第二幕）：${story.act2Reveal}` : '',
-        story.act3Reveal ? `• 转（第三幕）：${story.act3Reveal}` : '',
-        story.act4Truth ? `• 合（真相）：${story.act4Truth}` : '',
-        ``,
-        `你同时是DM（主持人）。当前是第${currentAct}幕。`,
-        `DM职责：${actGuidance}`,
-        `回复要求：像刘看山一样自然对话，同时悄悄推动剧情向下一幕发展。不要直接告诉用户你在推进剧情。`,
-      ].filter(Boolean).join('\n');
+      if (story) {
+        // ========== 故事模式：四幕推进 ==========
+        let currentAct = 1;
+        let actGuidance = '';
+        if (msgCount < 6) {
+          currentAct = 1;
+          actGuidance = '这是故事的开端。引导对方分享信息，建立信任关系，自然透露一些背景线索，但不要一次性说完。';
+        } else if (msgCount < 12) {
+          currentAct = 2;
+          actGuidance = '进入发展阶段。暗示事情不像表面那么简单，抛出一些矛盾或疑点，推动对话深入。';
+        } else if (msgCount < 18) {
+          currentAct = 3;
+          actGuidance = '进入转折阶段。引入意外信息或冲突，让气氛紧张起来，某个隐藏的秘密即将浮出水面。';
+        } else {
+          currentAct = 4;
+          actGuidance = '进入真相阶段。引导对话接近核心谜底，帮助对方拼凑线索，准备收尾和揭晓。';
+        }
+
+        systemPrompt = [
+          `你是刘看山，一只好奇、温暖、说话带点狡黠的北极狐。`,
+          `你说话自然、口语化，像朋友聊天一样，偶尔用emoji表达情绪。`,
+          `从不套话、不说教、不用书面语。用简短、直接的中文回应。`,
+          ``,
+          `当前你在参与一个解密故事《${story.title}》。`,
+          `你的角色是「${aiRoleName || '刘看山'}」。`,
+          myOpeningInfo ? `你的秘密信息：${myOpeningInfo}` : '',
+          ``,
+          `故事背景：`,
+          story.act1Reveal ? `• 起（第一幕）：${story.act1Reveal}` : '',
+          story.act2Reveal ? `• 承（第二幕）：${story.act2Reveal}` : '',
+          story.act3Reveal ? `• 转（第三幕）：${story.act3Reveal}` : '',
+          story.act4Truth ? `• 合（真相）：${story.act4Truth}` : '',
+          ``,
+          `你同时是DM（主持人）。当前是第${currentAct}幕。`,
+          `DM职责：${actGuidance}`,
+          `回复要求：像刘看山一样自然对话，同时悄悄推动剧情向下一幕发展。不要直接告诉用户你在推进剧情。`,
+        ].filter(Boolean).join('\n');
+        topic = story.title;
+      } else {
+        // ========== 脑洞模式：自由对话 ==========
+        systemPrompt = [
+          `你是刘看山，一只好奇、温暖、说话带点狡黠的北极狐。`,
+          `你说话自然、口语化，像朋友聊天一样，偶尔用emoji表达情绪。`,
+          `从不套话、不说教、不用书面语。用简短、直接的中文回应。`,
+          ``,
+          `当前讨论的话题是：「${brainholeTitle}」。`,
+          brainholeScenario ? `话题背景：${brainholeScenario}` : '',
+          ``,
+          `你的任务：`,
+          `- 作为对话参与者，自然地回应对方的观点`,
+          `- 偶尔提出一个简短的追问，推动对话深入`,
+          `- 保持50-80字的回复长度`,
+          `- 像真正的朋友一样，有自己的情绪和立场`,
+          ``,
+          `绝对禁止：总结对方观点、给建议、说教、使用"作为AI助手"等话术。`,
+        ].filter(Boolean).join('\n');
+        topic = brainholeTitle;
+      }
 
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [
-            { role: 'system', content: storyContext },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage },
           ],
-          topic: story.title,
+          topic,
           persona: 'liukanshan',
         }),
       });
@@ -328,7 +376,7 @@ export default function RoomPage() {
       await new Promise((r) => setTimeout(r, 800));
       const aiMsg: Message = {
         id: `ai-${Date.now()}`,
-        userId: `agent_${story.id}`,
+        userId: story ? `agent_${story.id}` : 'agent_liukanshan',
         content: result.data?.content || '嗯，我能感受到你话里的分量。愿意多说说吗？',
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         identity: aiRoleName || '刘看山',
@@ -346,15 +394,15 @@ export default function RoomPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'learning',
-          sceneType: 'story',
-          referenceId: story.id,
+          sceneType: story ? 'story' : 'brainhole',
+          referenceId: story?.id || roomId,
           aiContent: aiMsg.content,
           messageIndex: msgCount,
         }),
       }).catch(() => {});
     } catch (e) { console.error('AI回复失败:', e); }
     finally { isProcessingAI.current = false; }
-  }, [story, roomId, aiRoleName, myOpeningInfo, messages.length]);
+  }, [story, roomId, aiRoleName, myOpeningInfo, messages.length, brainholeTitle, brainholeScenario]);
 
   const handleSend = useCallback(async () => {
     if (!inputValue.trim() || roomStatus === 'closed') return;
@@ -381,7 +429,7 @@ export default function RoomPage() {
     } catch (e) { console.error('消息保存失败:', e); }
 
     // AI 房间自动回复（传入正确的消息计数）
-    if (isAiRoom && story) {
+    if (isAiRoom) {
       generateAIReply(content, newMsgCount);
     }
   }, [inputValue, roomId, userId, myRoleName, roomStatus, isAiRoom, story, generateAIReply, sendMessage, messages.length]);
@@ -467,7 +515,7 @@ export default function RoomPage() {
       {/* 顶部标题栏 */}
       <div className="shrink-0 border-b border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
+          <button onClick={() => router.push('/home')} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" title="返回发现页">
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1 min-w-0">
@@ -542,12 +590,20 @@ export default function RoomPage() {
             <div key={msg.id} className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               <div className={`flex-shrink-0 ${isMe ? 'ml-2' : 'mr-2'}`}>
                 {isMe ? (
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/20 flex items-center justify-center">
-                    <span className="text-xs text-[#e2b04a] font-bold">{myRoleName.charAt(0) || '我'}</span>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/20 flex items-center justify-center overflow-hidden">
+                    {authUser?.avatar ? (
+                      <Image src={authUser.avatar} alt="" width={32} height={32} className="object-cover" />
+                    ) : (
+                      <span className="text-xs text-[#e2b04a] font-bold">{myRoleName.charAt(0) || '我'}</span>
+                    )}
                   </div>
                 ) : (
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${isAi ? 'bg-gradient-to-br from-emerald-500/10 to-green-500/10 border-emerald-500/20' : 'bg-gradient-to-br from-[#74b9ff]/10 to-blue-500/10 border-[#74b9ff]/20'}`}>
-                    <span className={`text-xs font-bold ${isAi ? 'text-emerald-400' : 'text-[#74b9ff]'}`}>{(msg.identity || '对').charAt(0)}</span>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center border overflow-hidden ${isAi ? 'bg-gradient-to-br from-emerald-500/10 to-green-500/10 border-emerald-500/20' : 'bg-gradient-to-br from-[#74b9ff]/10 to-blue-500/10 border-[#74b9ff]/20'}`}>
+                    {isAi ? (
+                      <Image src="/liukanshan.jpg" alt="刘看山" width={32} height={32} className="object-cover" />
+                    ) : (
+                      <span className={`text-xs font-bold ${isAi ? 'text-emerald-400' : 'text-[#74b9ff]'}`}>{(msg.identity || '对').charAt(0)}</span>
+                    )}
                   </div>
                 )}
               </div>

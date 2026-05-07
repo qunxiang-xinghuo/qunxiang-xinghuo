@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
         maxRound: 10,
         currentRound: 0,
         scene: brainholeScenario,
+        isAiRoom: true,
       },
     });
     console.log("[AI Room API] 房间创建成功, roomId:", room.id);

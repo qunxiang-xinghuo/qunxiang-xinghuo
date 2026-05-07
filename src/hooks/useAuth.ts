@@ -39,7 +39,7 @@ export function useAuth() {
       return;
     }
 
-    // 1. 优先从 NextAuth session 读取（最可信）
+    // 1. 优先从 NextAuth session 读取（最可信），始终覆盖本地缓存
     if (sessionStatus === 'authenticated' && session?.user) {
       const authUser: User = {
         id: session.user.id || 'user-' + Date.now(),
@@ -52,7 +52,13 @@ export function useAuth() {
         level: session.user.level || 1,
         sparkCount: session.user.sparkCount || 0,
       };
-      if (isMounted) { setUser(authUser); localStorage.setItem('xh_user', JSON.stringify(authUser)); setLoading(false); }
+      if (isMounted) {
+        setUser(authUser);
+        // v8.0-auth-fix: 始终用 session 最新数据覆盖本地缓存，避免名字不一致
+        localStorage.setItem('xh_user', JSON.stringify(authUser));
+        if (authUser.id) localStorage.setItem('xh_user_id', authUser.id);
+        setLoading(false);
+      }
       return;
     }
 
@@ -107,6 +113,18 @@ export function useAuth() {
   };
 
   const login = async (email: string, _password: string) => {
+    // v8.0-auth-fix: login 仅做本地状态过渡，真实用户数据由 NextAuth session 提供
+    // 避免本地缓存的名字与 session 不一致
+    const saved = localStorage.getItem('xh_user');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.id) {
+          setUser(parsed);
+          return;
+        }
+      } catch { /* ignore */ }
+    }
     const identity = user?.identity || { type: 'real' as const, label: email.split('@')[0] };
     const newUser: User = {
       id: user?.id || 'user-' + Date.now(),
