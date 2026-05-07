@@ -1526,3 +1526,102 @@ grep NEXTAUTH_SECRET .env || echo 'NEXTAUTH_SECRET=...' >> .env
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
 > 最后更新：2026-04-29 v8.0 路演前全局规划完成 ✅
+
+---
+
+## §30 AI 自我修炼系统（星火进化链）
+
+> 新增：2026-04-29
+
+### 30.1 系统架构
+
+```
+基础能力投喂（冷启动） → 实时学习记录（每次交互） → 定期总结优化（每日） → 反哺进化（下次交互）
+```
+
+### 30.2 数据模型
+
+| 模型 | 用途 | 关键字段 |
+|------|------|----------|
+| `AITrainingData` | 基础能力池 | domain, content, source |
+| `AILearningLog` | 实时交互记录 | sceneType, aiContent, messageIndex, userResponded, sparked |
+| `AIOptimizationSummary` | 定期总结 | bestPrompt, bestTiming, hitRate, summaryDate |
+| `CatalystLog` | 催化效果 | roomId, prompt, phase, msgCount, responded, sparked |
+| `BrainholeSummary` | 脑洞效果汇总 | bestCatalyst, hitRate, avgResponseLength |
+
+### 30.3 模块一：基础能力投喂
+
+**触发时机**：服务启动后 60 秒首次执行
+
+**领域覆盖**：
+- `psychology` — CBT认知行为疗法、共情技巧、倾听技术
+- `storytelling` — 三幕剧结构、悬念设计、即兴戏剧引导
+- `brainhole` — 开放式提问、视角转换、矛盾激化
+- `taicang` — 郑和下西洋、江南丝竹、太仓港口历史
+
+**数据来源**：DeepSeek API（主）→ 知乎直答（辅）→ 手动补充
+
+### 30.4 模块二：实时学习记录
+
+**记录场景**：
+- AI 催化提示显示 → 记录 `CatalystLog`
+- AI 回复消息 → 记录 `AILearningLog`
+- 用户发送消息 → 更新对应 `CatalystLog` 的 responded 状态
+
+**客户端实现**：通过 `fetch('/api/ai-training/log')` 异步记录，不影响主流程
+
+### 30.5 模块三：定期总结优化
+
+**执行时机**：每天凌晨 3 点
+
+**总结维度**：
+- 按 `phase`（act1/act2/act3/act4）统计催化有效率
+- 按 `referenceId` 统计脑洞最佳/最差催化
+- 按 `sceneType` 统计最佳时机（消息数）
+
+### 30.6 模块四：反哺进化
+
+**当前实现**：记录数据已就绪，反哺读取逻辑待后续接入 AI 生成 prompt
+
+**设计接口**：
+```ts
+getBestStrategy(sceneType, referenceId) → { bestPrompt, bestTiming, hitRate }
+getTrainingKnowledge(domain, limit) → string[]
+```
+
+### 30.7 模块五：个人疗愈 AI 特殊进化
+
+**隐私保护**：
+- 疗愈对话原始内容不存入学习日志
+- 只记录统计数据（回应率、对话时长、情绪标签）
+- 用户可随时删除自己的疗愈记录
+
+### 30.8 API 接口
+
+```bash
+# 手动触发基础投喂
+curl -X POST http://localhost:3000/api/ai-training \
+  -H "x-admin-key: dev-crawler-key" \
+  -d '{"action":"feed"}'
+
+# 手动触发总结优化
+curl -X POST http://localhost:3000/api/ai-training \
+  -H "x-admin-key: dev-crawler-key" \
+  -d '{"action":"summary"}'
+
+# 查看统计
+curl http://localhost:3000/api/ai-training \
+  -H "x-admin-key: dev-crawler-key"
+```
+
+### 30.9 环境变量
+
+```env
+DEEPSEEK_API_KEY=sk-...  # 基础能力投喂必需
+CRAWLER_ADMIN_KEY=...     # 手动触发API认证
+```
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.0 AI自我修炼系统完成 ✅

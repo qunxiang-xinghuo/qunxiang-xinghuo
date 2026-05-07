@@ -733,3 +733,47 @@ curl -X POST http://localhost:3000/api/crawler \
 - 无需额外配置 cron
 
 ---
+
+---
+
+## v8.0 AI 自我修炼系统 — 部署说明
+
+> 更新：2026-04-29
+
+### 数据库 Schema 变更
+
+新增5个表，部署前必须执行：
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export DATABASE_URL="file:./dev.db"
+npx prisma db push --accept-data-loss
+npx prisma generate
+```
+
+### 新增表清单
+
+| 表名 | 用途 |
+|------|------|
+| `AITrainingData` | AI 基础能力池 |
+| `AILearningLog` | 实时交互学习日志 |
+| `AIOptimizationSummary` | 定期总结优化结果 |
+| `CatalystLog` | 催化效果详细日志 |
+| `BrainholeSummary` | 脑洞催化效果汇总 |
+
+### 手动触发基础能力投喂
+
+```bash
+curl -X POST http://localhost:3000/api/ai-training \
+  -H "x-admin-key: dev-crawler-key" \
+  -d '{"action":"feed"}'
+```
+
+### 查看系统统计
+
+```bash
+curl http://localhost:3000/api/ai-training \
+  -H "x-admin-key: dev-crawler-key"
+```
+
+---

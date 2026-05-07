@@ -1223,3 +1223,45 @@ pm2 restart all
 - 生产环境 `.env` 变更应纳入部署检查清单
 
 ---
+
+---
+
+## v8.0 AI 自我修炼系统（星火进化链）— 开发记录
+
+> 时间：2026-04-29
+
+### 实现模块
+
+| 模块 | 文件 | 说明 |
+|------|------|------|
+| 基础能力投喂 | `src/lib/ai-training/feed-base-knowledge.ts` | DeepSeek API 获取4领域知识 |
+| 实时学习记录 | `src/lib/ai-training/learning-log.ts` | AILearningLog / CatalystLog 记录 |
+| 定期总结优化 | `src/lib/ai-training/optimization-summary.ts` | 每日凌晨3点自动总结 |
+| 反哺进化 | `src/lib/ai-training/index.ts` | getBestStrategy / getTrainingKnowledge 接口 |
+| 手动触发 API | `src/app/api/ai-training/route.ts` | POST 投喂/总结，GET 统计 |
+| 客户端日志 API | `src/app/api/ai-training/log/route.ts` | 接收 room 页面发送的学习日志 |
+| 定时调度 | `server.ts` | 启动时投喂，每日凌晨3点总结 |
+
+### 构建问题记录
+
+**问题1：客户端动态导入 Prisma 导致 Turbopack 报错**
+- 现象：`Parsing ecmascript source code failed`
+- 根因：room 页面 `await import('@/lib/ai-training')` 触发了客户端 bundling Prisma
+- 解决：改为 `fetch('/api/ai-training/log')` 通过 API 记录日志
+
+**问题2：Prisma Client 类型未更新**
+- 现象：`Property 'aITrainingData' does not exist on type 'PrismaClient'`
+- 根因：schema 更新后未执行 `prisma generate`
+- 解决：`npx prisma generate`
+
+**问题3：SQLite createMany skipDuplicates 不支持**
+- 现象：`Type 'true' is not assignable to type 'never'`
+- 根因：SQLite 驱动不支持 `skipDuplicates`
+- 解决：移除该选项
+
+**问题4：async 函数返回类型错误**
+- 现象：`The return type of an async function must be the global Promise<T> type`
+- 根因：`Promise<T>[]` 写成了 `Promise<T[]>` 的括号位置错误
+- 解决：`Promise<{domain: string; count: number}[]>`
+
+---
