@@ -11,7 +11,8 @@ interface StoryRole {
   name: string;
   openingInfo: string;
   description: string;
-  claimed: boolean;
+  claimedBy: string | null;
+  claimStatus: string;
 }
 
 interface StoryDetail {
@@ -130,9 +131,17 @@ export default function StoryDetailPage() {
           setWaitingSeconds(10);
           setShowWaiting(true);
         }
+      } else {
+        // v8.0-fix: 处理 API 错误（如角色已被选 409）
+        const msg = data.error?.message || '加入失败';
+        console.error('[StoryDetail] 加入失败:', msg);
+        alert(msg);
+        setSelectedRoleId(null);
       }
     } catch (e) {
       console.error('[StoryDetail] 加入失败:', e);
+      alert('网络异常，请重试');
+      setSelectedRoleId(null);
     } finally {
       if (isMountedRef.current) setJoinLoading(false);
     }
@@ -151,9 +160,14 @@ export default function StoryDetailPage() {
       if (!isMountedRef.current) return;
       if (data.success && data.data?.roomId) {
         router.push(`/room/${data.data.roomId}`);
+      } else {
+        const msg = data.error?.message || '创建AI房间失败';
+        console.error('[StoryDetail] AI加入失败:', msg);
+        alert(msg);
       }
     } catch (e) {
       console.error('[StoryDetail] AI加入失败:', e);
+      alert('网络异常，请重试');
     } finally {
       if (isMountedRef.current) setJoinLoading(false);
     }
@@ -166,7 +180,7 @@ export default function StoryDetailPage() {
 
   const handleRandomRole = () => {
     if (!story || joinLoading) return;
-    const availableRoles = story.roles.filter((r) => !r.claimed);
+    const availableRoles = story.roles.filter((r) => !r.claimedBy);
     if (availableRoles.length === 0) return;
     const randomRole = availableRoles[Math.floor(Math.random() * availableRoles.length)];
     handleSelectRole(randomRole.id);
@@ -251,7 +265,7 @@ export default function StoryDetailPage() {
             </div>
             <button
               onClick={handleRandomRole}
-              disabled={joinLoading || story.roles.every((r) => r.claimed)}
+              disabled={joinLoading || story.roles.every((r) => !!r.claimedBy)}
               className="flex items-center gap-1 text-[11px] text-[#e2b04a]/50 hover:text-[#e2b04a]/70 transition-colors disabled:opacity-20"
             >
               <Dices className="w-3.5 h-3.5" />
@@ -265,7 +279,7 @@ export default function StoryDetailPage() {
                 <div
                   key={role.id}
                   className={`w-full text-left rounded-xl border transition-all ${
-                    role.claimed
+                    !!role.claimedBy
                       ? 'bg-white/[0.02] border-white/5 opacity-40'
                       : selectedRoleId === role.id
                         ? 'bg-[#e2b04a]/10 border-[#e2b04a]/30'
@@ -273,14 +287,14 @@ export default function StoryDetailPage() {
                   }`}
                 >
                   <button
-                    onClick={() => !role.claimed && handleSelectRole(role.id)}
-                    disabled={role.claimed || joinLoading}
+                    onClick={() => !role.claimedBy && handleSelectRole(role.id)}
+                    disabled={!!role.claimedBy || joinLoading}
                     className="w-full text-left p-3"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium text-white/80">{role.name}</span>
                       <div className="flex items-center gap-2">
-                        {role.claimed && (
+                        {role.claimedBy && (
                           <span className="text-[10px] text-white/20 bg-white/[0.05] px-1.5 py-0.5 rounded-full">已被选</span>
                         )}
                         {role.description && (

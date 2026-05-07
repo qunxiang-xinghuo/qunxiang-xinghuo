@@ -63,8 +63,8 @@ export async function POST(
         },
       }),
     ]).catch(async (err: any) => {
-      // 如果 transaction 失败（可能是 room 已关闭或 asset 已存在），查询已有结果
-      if (err.code === 'P2025') {
+      // v8.0-fix: 捕获 P2025（记录未找到）和 P2002（唯一约束冲突）
+      if (err.code === 'P2025' || err.code === 'P2002') {
         const existingAsset = await db.asset.findFirst({ where: { roomId } });
         return [{ status: 'closed' }, existingAsset];
       }

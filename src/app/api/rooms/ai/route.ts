@@ -113,11 +113,19 @@ export async function POST(request: NextRequest) {
     if (!finalBrainholeId) {
       console.log("[AI Room API] 未指定脑洞，热度加权随机抽取...");
       // v5.0-fix: 避免总是返回最热脑洞，改为热度加权随机
-      const pool = await db.brainhole.findMany({
+      let pool = await db.brainhole.findMany({
         where: { status: "approved" },
         orderBy: { hotScore: "desc" },
         take: 50,
       });
+      // v8.0-fix: 如果没有 approved 脑洞，从所有脑洞中抽取
+      if (pool.length === 0) {
+        console.warn("[AI Room API] 无approved脑洞，尝试从所有脑洞抽取...");
+        pool = await db.brainhole.findMany({
+          orderBy: { hotScore: "desc" },
+          take: 50,
+        });
+      }
       if (pool.length > 0) {
         const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
         let randomPoint = Math.random() * totalScore;
@@ -134,7 +142,7 @@ export async function POST(request: NextRequest) {
         brainholeScenario = selected.scenario || "";
         console.log("[AI Room API] 热度加权随机抽取脑洞:", brainholeTitle, "(从", pool.length, "个脑洞中)");
       } else {
-        console.warn("[AI Room API] 数据库中无approved脑洞，使用默认");
+        console.warn("[AI Room API] 数据库中无脑洞，使用默认");
       }
     }
 

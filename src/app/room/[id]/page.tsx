@@ -299,7 +299,8 @@ export default function RoomPage() {
 
   // AI 房间自动回复 — 刘看山角色 + DM 推进
   const generateAIReply = useCallback(async (userMessage: string, currentMsgCount: number) => {
-    if (isProcessingAI.current || (!story && !brainholeTitle)) return;
+    // v8.0-fix: 允许无 story 无 brainholeTitle 时使用 brainholeScenario/room.scene 作为话题
+    if (isProcessingAI.current || (!story && !brainholeTitle && !brainholeScenario)) return;
     isProcessingAI.current = true;
     try {
       const msgCount = currentMsgCount;
@@ -346,12 +347,14 @@ export default function RoomPage() {
         topic = story.title;
       } else {
         // ========== 脑洞模式：自由对话 ==========
+        // v8.0-fix: 使用 brainholeScenario 或默认话题作为回退
+        const actualTopic = brainholeTitle || brainholeScenario || '一个有趣的话题';
         systemPrompt = [
           `你是刘看山，一只好奇、温暖、说话带点狡黠的北极狐。`,
           `你说话自然、口语化，像朋友聊天一样，偶尔用emoji表达情绪。`,
           `从不套话、不说教、不用书面语。用简短、直接的中文回应。`,
           ``,
-          `当前讨论的话题是：「${brainholeTitle}」。`,
+          `当前讨论的话题是：「${actualTopic}」。`,
           brainholeScenario ? `话题背景：${brainholeScenario}` : '',
           ``,
           `你的任务：`,
@@ -362,7 +365,7 @@ export default function RoomPage() {
           ``,
           `绝对禁止：总结对方观点、给建议、说教、使用"作为AI助手"等话术。`,
         ].filter(Boolean).join('\n');
-        topic = brainholeTitle;
+        topic = actualTopic;
       }
 
       const res = await fetch('/api/ai/chat', {
@@ -482,16 +485,22 @@ export default function RoomPage() {
         setFinished(true);
         setRoomStatus('closed');
         if (data.data?.truth) setShowTruth(true);
+      } else {
+        // v8.0-fix: API 返回错误时给用户反馈
+        console.error('结束对白失败:', data.error);
+        alert(data.error?.message || '结束对白失败，请重试');
       }
     } catch (e) {
       console.error('结束失败:', e);
+      alert('网络异常，结束对白失败');
     } finally {
       setFinishing(false);
     }
   };
 
   const isReadonly = roomStatus === 'closed' || finished;
-  const displayTitle = story?.title || brainholeTitle || '对白室';
+  // v8.0-fix: 增强标题回退链，使用 room.scene 作为最终回退
+  const displayTitle = story?.title || brainholeTitle || (brainholeScenario ? '自由对话' : '对白室');
   const displaySubtitle = story?.eraBackground || brainholeScenario || '';
 
   if (roomError) {
