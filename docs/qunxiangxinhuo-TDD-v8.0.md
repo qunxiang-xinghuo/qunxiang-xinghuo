@@ -1693,3 +1693,71 @@ CRAWLER_ADMIN_KEY=...     # 手动触发API认证
   - 认证相关测试：mock JWT 与实际认证逻辑不匹配
   - Hooks 测试：mock 数据与实现不同步
   - Socket.IO 测试：测试环境服务器未启动导致超时
+
+
+---
+
+## §31 回归bug批量排查与修复记录（2026-04-29）
+
+### 31.1 排查背景
+
+用户反馈5个核心功能出现回归：
+1. 双人匹配不可用
+2. 登录页不稳定
+3. 双人脑洞丢失
+4. 火花墙为空
+5. 故事页面消失
+
+### 31.2 排查方法
+
+遵循西西的纪律要求：
+1. 完整阅读 ProblemLog.md（1345行，23个问题记录）
+2. 检查5个历史修复方案是否仍然完整
+3. 检查数据库状态（Asset/Story/Brainhole/Room 表记录数）
+4. 构建验证（74/74页面通过）
+5. 构建产物HTML检查（opacity:0 / animate-spin）
+
+### 31.3 修复问题
+
+| # | 问题 | 根因 | 修复文件 | 修复内容 |
+|---|------|------|----------|----------|
+| 1 | 火花墙/TOP3为空 | Asset创建时isPublic:false | `finish/route.ts` | `isPublic: true` |
+| 2 | register页SSR风险 | motion组件无条件渲染无mounted | `register/page.tsx` | `initial={mounted ? ... : false}` |
+
+### 31.4 排查结论：其他功能代码完好
+
+| 功能 | 代码状态 | 数据库状态 | 结论 |
+|------|----------|-----------|------|
+| 双人匹配 | ✅ 事务化改造完整 | — | 无需修复 |
+| 登录页 | ✅ LoginForm完好 | — | register小遗漏已修 |
+| 对白室脑洞 | ✅ 回退链正确 | — | 无需修复 |
+| 故事系统 | ✅ isPublic判断正确 | 5个故事 | 无需修复 |
+| 火花墙 | ✅ API查询正确 | **0条公开Asset** | 修复isPublic |
+
+### 31.5 数据库状态快照
+
+| 表 | 记录数 | 说明 |
+|----|--------|------|
+| Asset (isPublic=1) | **0** | 修复前无数据 |
+| Story | 5 | 种子数据正常 |
+| Brainhole (approved) | 31 | 脑洞数据充足 |
+| Room | 0 | 无活跃/历史房间 |
+
+### 31.6 构建验证
+
+```
+▲ Next.js 16.2.4 (Turbopack)
+✓ Compiled successfully
+✓ Generating static pages (74/74)
+```
+
+### 31.7 防止再次回归的措施
+
+1. **Asset isPublic 默认公开**：产品核心理念是"让真实发光"，结束对白生成的火花应默认公开
+2. **mounted 守卫代码审查清单**：每次修改涉及 framer-motion 的文件，必须检查是否有遗漏的无条件渲染 motion 组件
+3. **数据库数据监控**：部署后检查 Asset/Brainhole/Story 表数据量是否符合预期
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.0 回归bug批量排查完成 ✅

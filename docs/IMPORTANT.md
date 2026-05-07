@@ -822,3 +822,67 @@ pm2 restart all
 2. **人机模式脑洞**：登录后进入人机模式，确认对白室顶部显示脑洞标题和场景描述。
 3. **故事详情**：进入故事大厅，点击任意故事卡片，确认正常显示故事详情而非「故事不存在」。
 
+
+
+---
+
+## v8.0 回归bug批量排查 — 部署记录
+
+> 更新：2026-04-29
+> 状态：✅ 已修复，构建通过 74/74 页面
+
+### 排查方法
+
+1. 完整阅读 ProblemLog.md（1345行，23个问题记录）
+2. 检查5个历史修复方案是否完整存在
+3. 数据库状态检查（Asset/Story/Brainhole/Room 表记录数）
+4. 构建验证 + 构建产物HTML检查（opacity:0 / animate-spin）
+
+### 修复文件清单
+
+| 修复项 | 文件 | 说明 |
+|--------|------|------|
+| 火花墙为空 | `src/app/api/rooms/[roomId]/finish/route.ts` | Asset创建时 `isPublic: false` → `true` |
+| register页mounted | `src/app/register/page.tsx` | 标题/副标题 motion 添加 mounted 守卫 |
+
+### 根因说明
+
+**火花墙为空**：结束对白时创建的 Asset 默认 `isPublic: false`，而火花墙 API 查询 `isPublic: true`，导致所有火花不可见。产品核心理念是"让真实发光"，应默认公开。
+
+**register页**：标题和副标题的 motion 组件无条件渲染，缺少 mounted 守卫，与历史 "SSR opacity:0" 问题同类。
+
+### 数据库状态（修复前）
+
+| 表 | 记录数 |
+|----|--------|
+| Asset (isPublic=1) | **0** |
+| Story | 5 |
+| Brainhole (approved) | 31 |
+| Room | 0 |
+
+### 构建结果
+
+```
+▲ Next.js 16.2.4 (Turbopack)
+✓ Compiled successfully
+✓ Generating static pages (74/74)
+```
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 部署后验证
+
+1. **火花墙**：结束一场对白后，访问 `/library`，确认火花出现
+2. **发现页TOP3**：结束对白后，访问 `/home`，确认TOP3显示新火花
+3. **register页**：无痕模式访问 `/register`，确认标题立即可见
+
+---

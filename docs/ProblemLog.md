@@ -1343,3 +1343,64 @@ const isPublic = ['published', 'open', 'recruiting', 'approved'].includes(story.
 
 **文件**：`src/app/api/stories/[storyId]/route.ts`
 
+
+
+---
+
+## v8.0 回归bug批量排查 — 问题记录
+
+> 日期：2026-04-29
+> 排查维度：登录页、双人匹配、对白室脑洞、火花墙、故事系统
+
+---
+
+### 问题1：register页面SSR opacity:0回归
+
+**现象**：注册页面标题和副标题在SSR时可能不可见。
+
+**根因**：`src/app/register/page.tsx` 的 `<motion.h2>` 和 `<motion.p>` 使用 `initial={{ y: -10, opacity: 0 }}`，无条件渲染，缺少 mounted 守卫。
+
+**修复**：
+```tsx
+initial={mounted ? { y: -10, opacity: 0 } : false}
+initial={mounted ? { y: 10, opacity: 0 } : false}
+```
+
+**文件**：`src/app/register/page.tsx`
+
+**关联历史**：ProblemLog 中 "SSR opacity:0 导致登录页消失" 的修复未覆盖 register 页面。
+
+---
+
+### 问题2：火花墙/发现页TOP3为空 — Asset默认私密
+
+**现象**：
+- `/library` 火花墙显示空白（空状态）
+- `/home` 发现页"今日最热TOP3"无数据
+
+**根因分析**：
+1. 数据库 `Asset` 表 `isPublic=1` 的记录数为 **0**
+2. 结束对白时 `/api/rooms/[roomId]/finish` 创建 Asset 时 `isPublic: false`
+3. 火花墙 API (`/api/sparks/public`) 和 TOP3 API (`/api/sparks/top`) 均查询 `where: { isPublic: true }`
+4. 导致所有结束对白生成的火花均不可见
+
+**修复方案**：将 finish API 中 Asset 创建时的 `isPublic: false` 改为 `isPublic: true`。
+
+**文件**：`src/app/api/rooms/[roomId]/finish/route.ts`
+
+**教训**：产品核心理念是"让真实发光，让思想变现"，结束对白生成的火花默认应为公开。
+
+---
+
+### 排查结论：其他功能代码完好
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| 双人匹配 | ✅ 代码完好 | match-engine.ts 事务化改造完整，4阶段匹配逻辑正确 |
+| 对白室脑洞 | ✅ 代码完好 | room page 回退链 `story?.title \|\| brainholeTitle` 正确，API 包含 brainhole |
+| 故事系统 | ✅ 代码完好 | 详情 API 的 isPublic 判断包含全部公开状态 |
+| 登录页 | ✅ 基本完好 | LoginForm.tsx mounted 守卫完整，仅 register 遗漏 |
+
+**未发现新问题。**
+
+---
