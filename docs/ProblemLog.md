@@ -930,3 +930,67 @@ sqlite3 dev.db ".tables"  # 验证正常
 **解决**：在 room 页面 state 中添加 brainhole 信息，顶部标题栏回退显示。
 
 ---
+
+## v8.0 资深技术+测试员自测修复 — 问题记录
+
+### 自测1：room 页面 generateAIReply messages.length 陈旧状态
+
+**严重程度**：🔴 高
+
+**现象**：`handleSend` 中先 `setMessages` 再调用 `generateAIReply`，但 `generateAIReply` 闭包中的 `messages.length` 不包含刚发送的消息，导致幕次判断始终延迟一条消息。
+
+**修复**：将 `currentMsgCount` 作为参数传入 `generateAIReply`，`handleSend` 中计算 `newMsgCount = messages.length + 1` 后传入。
+
+**文件**：`src/app/room/[id]/page.tsx`
+
+### 自测2：create 页面卸载后 setState 内存泄漏
+
+**严重程度**：🔴 高
+
+**现象**：`handleSubmit` 异步请求期间用户可能返回上一页，组件卸载后 `setSubmitting(false)` / `setSubmitted(true)` 仍会调用。
+
+**修复**：添加 `isMounted` ref，异步操作后检查 `isMounted.current` 再调用 setState。
+
+**文件**：`src/app/story/create/page.tsx`
+
+### 自测3：catalyst API 定时器泄漏
+
+**严重程度**：🟡 中
+
+**现象**：`setTimeout` 的清理未放在 `finally` 中，fetch 抛异常时 `clearTimeout` 不会执行。
+
+**修复**：将 `clearTimeout` 移到 `finally` 块中。
+
+**文件**：`src/app/api/stories/[storyId]/catalyst/route.ts`
+
+### 自测4：catalyst API DeepSeek 错误静默
+
+**严重程度**：🟡 中
+
+**现象**：DeepSeek 返回非 2xx 响应时，没有记录错误日志，生产环境 API 问题无法发现。
+
+**修复**：在 `else` 分支中记录 `res.status` 和响应体概要。
+
+**文件**：`src/app/api/stories/[storyId]/catalyst/route.ts`
+
+### 自测5：create 页面角色 key 使用数组索引
+
+**严重程度**：🟡 中
+
+**现象**：角色卡片使用 `key={idx}`，删除中间角色时后续元素索引前移，React 复用旧组件实例导致输入框 focus 错位。
+
+**修复**：为每个角色分配唯一 ID（`crypto.randomUUID()` 或自增计数器）作为 key。
+
+**文件**：`src/app/story/create/page.tsx`
+
+### 自测6：create 页面 updateRole 直接修改状态对象
+
+**严重程度**：🟡 中
+
+**现象**：`updateRole` 直接修改数组内对象属性 `next[idx][field] = value`，违反不可变性原则。
+
+**修复**：使用 `setRoles(prev => prev.map(...))` 创建新对象。
+
+**文件**：`src/app/story/create/page.tsx`
+
+---

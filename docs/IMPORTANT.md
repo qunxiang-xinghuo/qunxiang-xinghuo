@@ -577,6 +577,20 @@ sqlite3 dev.db ".tables"
 3. 催化 API 调用 DeepSeek/知乎直答生成沉浸式环境事件
 4. 四幕推进：act1 建立信任 → act2 抛出疑点 → act3 引入转折 → act4 引导真相
 
+### 部署注意事项
+
+**SSH 密钥环境变量**（手动部署时必须设置）：
+```bash
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+```
+
+**PM2 重启命令**：
+```bash
+pm2 restart all   # ✅ 正确
+pm2 restart al    # ❌ 错误（al 不是有效的进程名）
+```
+
 ### 后续迭代需求（已在 TDD 中标注）
 
 | 需求 | 状态 | 说明 |

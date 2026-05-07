@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,6 +10,7 @@ import {
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface RoleInput {
+  id: string;
   name: string;
   description: string;
   openingInfo: string;
@@ -30,15 +31,16 @@ export default function CreateStoryPage() {
   const [storySummary, setStorySummary] = useState('');
   const [category, setCategory] = useState('现代');
   const [roles, setRoles] = useState<RoleInput[]>([
-    { name: '', description: '', openingInfo: '' },
-    { name: '', description: '', openingInfo: '' },
+    { id: 'r1', name: '', description: '', openingInfo: '' },
+    { id: 'r2', name: '', description: '', openingInfo: '' },
   ]);
+  const roleIdCounter = useRef(3);
 
   if (!isAuthenticated) return <div className="h-screen bg-xh-primary" />;
 
   const addRole = () => {
     if (roles.length >= 6) return;
-    setRoles([...roles, { name: '', description: '', openingInfo: '' }]);
+    setRoles([...roles, { id: `r${roleIdCounter.current++}`, name: '', description: '', openingInfo: '' }]);
   };
 
   const removeRole = (idx: number) => {
@@ -47,9 +49,9 @@ export default function CreateStoryPage() {
   };
 
   const updateRole = (idx: number, field: keyof RoleInput, value: string) => {
-    const next = [...roles];
-    next[idx][field] = value;
-    setRoles(next);
+    setRoles((prev) =>
+      prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r))
+    );
   };
 
   const validateStep = (s: number): boolean => {
@@ -65,6 +67,9 @@ export default function CreateStoryPage() {
     return true;
   };
 
+  const isMounted = useRef(true);
+  useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
   const handleSubmit = async () => {
     if (!validateStep(1) || !validateStep(2)) return;
     setSubmitting(true);
@@ -78,19 +83,21 @@ export default function CreateStoryPage() {
           storySummary: storySummary.trim(),
           category,
           maxCharacters: roles.length,
-          roles: roles.map((r, i) => ({ ...r, sortOrder: i })),
+          roles: roles.map((r, i) => ({ name: r.name, description: r.description, openingInfo: r.openingInfo, sortOrder: i })),
         }),
       });
       const data = await res.json();
+      if (!isMounted.current) return;
       if (data.success) {
         setSubmitted(true);
       } else {
         alert(data.message || '提交失败');
       }
     } catch (e) {
+      if (!isMounted.current) return;
       alert('网络错误，请稍后重试');
     } finally {
-      setSubmitting(false);
+      if (isMounted.current) setSubmitting(false);
     }
   };
 
@@ -261,7 +268,7 @@ export default function CreateStoryPage() {
 
               {roles.map((role, idx) => (
                 <motion.div
-                  key={idx}
+                  key={role.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}

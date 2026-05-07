@@ -210,12 +210,12 @@ export default function RoomPage() {
   }, [messages.length, story, roomId, roomStatus]);
 
   // AI 房间自动回复 — 刘看山角色 + DM 推进
-  const generateAIReply = useCallback(async (userMessage: string) => {
+  const generateAIReply = useCallback(async (userMessage: string, currentMsgCount: number) => {
     if (isProcessingAI.current || !story) return;
     isProcessingAI.current = true;
     try {
-      // 根据消息数判断当前幕
-      const msgCount = messages.length;
+      // 根据消息数判断当前幕（传入已包含新消息的计数，避免闭包陈旧状态）
+      const msgCount = currentMsgCount;
       let currentAct = 1;
       let actGuidance = '';
       if (msgCount < 6) {
@@ -295,6 +295,8 @@ export default function RoomPage() {
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
       identity: myRoleName || '我',
     };
+    // 计算包含新消息的总数，避免闭包陈旧状态
+    const newMsgCount = messages.length + 1;
     setMessages((prev) => [...prev, msg]);
     sendMessage(roomId, { id: msgId, senderId: userId || 'me', content, createdAt: new Date().toISOString() });
 
@@ -307,11 +309,11 @@ export default function RoomPage() {
       });
     } catch (e) { console.error('消息保存失败:', e); }
 
-    // AI 房间自动回复
+    // AI 房间自动回复（传入正确的消息计数）
     if (isAiRoom && story) {
-      generateAIReply(content);
+      generateAIReply(content, newMsgCount);
     }
-  }, [inputValue, roomId, userId, myRoleName, roomStatus, isAiRoom, story, generateAIReply, sendMessage]);
+  }, [inputValue, roomId, userId, myRoleName, roomStatus, isAiRoom, story, generateAIReply, sendMessage, messages.length]);
 
   // 评论
   const submitComment = async () => {

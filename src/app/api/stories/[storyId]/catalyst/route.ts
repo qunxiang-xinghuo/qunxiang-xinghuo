@@ -54,9 +54,10 @@ export async function GET(
 
     const apiKey = process.env.DEEPSEEK_API_KEY;
     if (apiKey) {
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        timeoutId = setTimeout(() => controller.abort(), 8000);
         const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -74,32 +75,40 @@ export async function GET(
           }),
           signal: controller.signal,
         });
-        clearTimeout(timeoutId);
 
         if (res.ok) {
           const result = await res.json();
           prompt = result.choices?.[0]?.message?.content || "";
           source = "deepseek";
+        } else {
+          const errText = await res.text().catch(() => "");
+          console.error("[Catalyst] DeepSeek API 错误:", res.status, errText.slice(0, 200));
         }
-      } catch (e: any) {
-        console.error("[Catalyst] DeepSeek 失败:", e.message);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[Catalyst] DeepSeek 失败:", msg);
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
     }
 
     // DeepSeek 失败，尝试知乎直答
     if (!prompt) {
+      let t: ReturnType<typeof setTimeout> | null = null;
       try {
         const { zhidaChat } = await import("@/lib/zhihu-dev-api");
         const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 8000);
+        t = setTimeout(() => ctrl.abort(), 8000);
         const result = await zhidaChat([
           { role: "user", content: `[系统设定] ${dmPrompt.system}\n\n${dmPrompt.user}` },
         ], "zhida-fast-1p5", ctrl.signal);
-        clearTimeout(t);
         prompt = result.choices?.[0]?.message?.content || "";
         source = "zhida";
-      } catch (e: any) {
-        console.error("[Catalyst] 知乎直答 失败:", e.message);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[Catalyst] 知乎直答 失败:", msg);
+      } finally {
+        if (t) clearTimeout(t);
       }
     }
 
