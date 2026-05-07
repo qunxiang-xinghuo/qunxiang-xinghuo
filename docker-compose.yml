@@ -5,7 +5,13 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runner
-    container_name: xinghuo-app
+      args:
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your-nextauth-secret-key-here-change-in-production}
+        NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:${PORT:-3000}}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:${PORT:-3000}}
+        NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:${PORT:-3000}}
+        DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+    container_name: ${CONTAINER_NAME:-xinghuo-app}
     init: true
     ports:
       - "${PORT:-3000}:3000"
@@ -21,7 +27,6 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
     volumes:
       - app_data:/app/data
-      - ./logs:/app/logs
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.xinghuo.rule=Host(`${DOMAIN}`)"

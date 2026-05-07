@@ -59,43 +59,8 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// v6.3-auth-fix3: 使用更可靠的 matcher，匹配所有页面路径
-// 排除 API 路由、静态资源、图片等
 export const config = {
-  matcher: [
-    '/',
-    '/login',
-    '/register',
-    '/home',
-    '/library/:path*',
-    '/story-hall/:path*',
-    '/profile',
-    '/profile/sparks',
-    '/settings',
-    '/settings/:path*',
-    '/solo-match',
-    '/duo-match',
-    '/duo-waiting',
-    '/duo-timeout',
-    '/multi-match',
-    '/multi-waiting',
-    '/room/:path*',
-    '/healing/:path*',
-    '/identity',
-    '/earnings',
-    '/match',
-    '/messages',
-    '/multiplayer',
-    '/roadshow',
-    '/story',
-    '/feedback',
-    '/zhihu-search',
-    '/zhihu-zhida',
-    '/zhihu-ring',
-    '/brainhole/:path*',
-    '/spectate',
-    '/spectate/:path*',
-    '/spark-detail',
-    '/spark-detail/:path*',
-  ],
+  // 覆盖所有页面路由，排除 API、Next 静态资源和带扩展名的文件。
+  // 这样新增页面时不会因为忘记更新 matcher 而出现认证绕过或行为不一致。
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };
