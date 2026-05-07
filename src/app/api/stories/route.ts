@@ -65,21 +65,31 @@ export async function POST(request: NextRequest) {
     const { title, eraBackground, storySummary, category, maxCharacters, roles } = body;
 
     // 校验
-    if (!title?.trim() || title.length < 2) {
-      return NextResponse.json(apiError("BAD_REQUEST", "标题不能为空"), { status: 400 });
+    if (!title?.trim() || title.trim().length < 2 || title.length > 100) {
+      return NextResponse.json(apiError("BAD_REQUEST", "标题需 2-100 字"), { status: 400 });
     }
-    if (!eraBackground?.trim()) {
-      return NextResponse.json(apiError("BAD_REQUEST", "时代背景不能为空"), { status: 400 });
+    if (!eraBackground?.trim() || eraBackground.length > 100) {
+      return NextResponse.json(apiError("BAD_REQUEST", "时代背景不能为空且不超过100字"), { status: 400 });
     }
-    if (!storySummary?.trim() || storySummary.length < 20) {
-      return NextResponse.json(apiError("BAD_REQUEST", "故事简介至少20字"), { status: 400 });
+    if (!storySummary?.trim() || storySummary.trim().length < 20 || storySummary.length > 2000) {
+      return NextResponse.json(apiError("BAD_REQUEST", "故事简介需 20-2000 字"), { status: 400 });
     }
     if (!Array.isArray(roles) || roles.length < 2 || roles.length > 6) {
       return NextResponse.json(apiError("BAD_REQUEST", "角色数需 2-6 个"), { status: 400 });
     }
+    const validCategories = ['古风', '民国', '现代', '悬疑', '科幻', '职场', 'general'];
+    if (category && !validCategories.includes(category)) {
+      return NextResponse.json(apiError("BAD_REQUEST", "无效的分类"), { status: 400 });
+    }
     for (const r of roles) {
-      if (!r.name?.trim() || !r.description?.trim() || !r.openingInfo?.trim()) {
-        return NextResponse.json(apiError("BAD_REQUEST", "角色信息不完整"), { status: 400 });
+      if (!r.name?.trim() || r.name.length > 50) {
+        return NextResponse.json(apiError("BAD_REQUEST", "角色名称需 1-50 字"), { status: 400 });
+      }
+      if (!r.description?.trim() || r.description.length > 500) {
+        return NextResponse.json(apiError("BAD_REQUEST", "角色设定需 1-500 字"), { status: 400 });
+      }
+      if (!r.openingInfo?.trim() || r.openingInfo.length > 500) {
+        return NextResponse.json(apiError("BAD_REQUEST", "开场信息需 1-500 字"), { status: 400 });
       }
     }
 
@@ -113,6 +123,7 @@ export async function POST(request: NextRequest) {
     }));
   } catch (error: any) {
     console.error("[Stories Create] Error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", error.message || "创建失败"), { status: 500 });
+    console.error("[Stories Create] Error:", error);
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建失败，请稍后重试"), { status: 500 });
   }
 }

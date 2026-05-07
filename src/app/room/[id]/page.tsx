@@ -74,6 +74,8 @@ export default function RoomPage() {
   const catalystCalledRef = useRef<Set<number>>(new Set());
   const aiPromptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasJoinedRef = useRef(false);
+  const isMountedRef = useRef(true);
+  useEffect(() => { isMountedRef.current = true; return () => { isMountedRef.current = false; }; }, []);
 
   // 当前用户ID
   const userId = authUser?.id || (typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null);
@@ -95,6 +97,7 @@ export default function RoomPage() {
     fetch(`/api/rooms/${roomId}`, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((res) => {
+        if (!isMountedRef.current) return;
         if (res.success && res.data) {
           const room = res.data;
           setRoomStatus(room.status);
@@ -140,18 +143,20 @@ export default function RoomPage() {
       .catch((err) => {
         if (err.name !== 'AbortError') console.error('[Room] Fetch error:', err);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => { if (isMountedRef.current) setIsLoading(false); });
     return () => ctrl.abort();
   }, [roomId, userId]);
 
   // 加载评论
   useEffect(() => {
     if (!roomId) return;
-    fetch(`/api/room-comments?roomId=${roomId}`)
+    const ctrl = new AbortController();
+    fetch(`/api/room-comments?roomId=${roomId}`, { signal: ctrl.signal })
       .then((r) => r.json())
-      .then((data) => setComments(data.data?.list || []))
-      .catch((err) => console.error('[Comments] Load error:', err))
-      .finally(() => setCommentsLoading(false));
+      .then((data) => { if (isMountedRef.current) setComments(data.data?.list || []); })
+      .catch((err) => { if (err.name !== 'AbortError') console.error('[Comments] Load error:', err); })
+      .finally(() => { if (isMountedRef.current) setCommentsLoading(false); });
+    return () => ctrl.abort();
   }, [roomId]);
 
   // WebSocket
@@ -191,18 +196,23 @@ export default function RoomPage() {
     const msgCount = messages.length;
     if (msgCount >= 6 && msgCount % 5 === 0 && !catalystCalledRef.current.has(msgCount)) {
       catalystCalledRef.current.add(msgCount);
-      fetch(`/api/stories/${story.id}/catalyst?roomId=${roomId}`)
+      const ctrl = new AbortController();
+      fetch(`/api/stories/${story.id}/catalyst?roomId=${roomId}`, { signal: ctrl.signal })
         .then((r) => r.json())
         .then((data) => {
+          if (!isMountedRef.current) return;
           if (data.success && data.data?.prompt) {
             setAiPrompt(data.data.prompt);
             setShowAiPrompt(true);
             // 清理之前的定时器
             if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);
-            aiPromptTimerRef.current = setTimeout(() => setShowAiPrompt(false), 15000);
+            aiPromptTimerRef.current = setTimeout(() => {
+              if (isMountedRef.current) setShowAiPrompt(false);
+            }, 15000);
           }
         })
         .catch(() => {});
+      return () => ctrl.abort();
     }
     return () => {
       if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);

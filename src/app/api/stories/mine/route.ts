@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       const stories = await db.story.findMany({
         where: { creatorId: userId },
         orderBy: { createdAt: "desc" as const },
+        take: 50,
         include: {
           roles: { select: { name: true, claimedBy: true } },
         },
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
       // participated: 通过 StoryRole.claimedBy 查找
       const roles = await db.storyRole.findMany({
         where: { claimedBy: userId },
+        take: 50,
         include: {
           story: {
             include: {
@@ -66,6 +68,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(apiResponse({ list }));
   } catch (error: any) {
     console.error("[Stories Mine] Error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", error.message || "获取失败"), { status: 500 });
+    console.error("[Stories Mine] Error:", error);
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取失败，请稍后重试"), { status: 500 });
   }
 }
