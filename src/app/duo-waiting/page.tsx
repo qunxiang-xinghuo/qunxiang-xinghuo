@@ -23,6 +23,9 @@ type MatchStatus = 'matching' | 'matched' | 'timeout';
 
 function DuoWaitingContent() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const searchParams = useSearchParams();
   const urlBrainholeId = searchParams.get('brainholeId');
 
@@ -234,7 +237,7 @@ function DuoWaitingContent() {
 
         {/* 刘看山 */}
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={mounted ? { scale: 0.8, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 200 }}
           className="relative z-10 mb-6"
@@ -247,12 +250,12 @@ function DuoWaitingContent() {
           {status === 'matching' && (
             <motion.div
               key="matching"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              initial={mounted ? { opacity: 0 } : false} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="text-center w-full relative z-10"
             >
               {brainholeInfo && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                  initial={mounted ? { opacity: 0, y: -10 } : false} animate={{ opacity: 1, y: 0 }}
                   className="mb-4 mx-auto max-w-xs card-elevated p-3"
                 >
                   <div className="flex items-center gap-1.5 mb-1">
@@ -303,7 +306,7 @@ function DuoWaitingContent() {
               {/* 邀请码展示 */}
               {showInvite && inviteCode && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={mounted ? { opacity: 0, y: 10 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20"
                 >
@@ -326,11 +329,11 @@ function DuoWaitingContent() {
           {status === 'matched' && (
             <motion.div
               key="matched"
-              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              initial={mounted ? { opacity: 0, scale: 0.9 } : false} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
               className="text-center relative z-10"
             >
               <motion.div
-                initial={{ scale: 0 }} animate={{ scale: 1 }}
+                initial={mounted ? { scale: 0 } : false} animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 300, delay: 0.2 }}
                 className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4"
               >
@@ -345,12 +348,12 @@ function DuoWaitingContent() {
           {status === 'timeout' && (
             <motion.div
               key="timeout"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              initial={mounted ? { opacity: 0, y: 20 } : false} animate={{ opacity: 1, y: 0 }}
               className="text-center w-full relative z-10"
             >
               {brainholeInfo && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                  initial={mounted ? { opacity: 0, y: -10 } : false} animate={{ opacity: 1, y: 0 }}
                   className="mb-4 mx-auto max-w-xs card-elevated p-3"
                 >
                   <div className="flex items-center gap-1.5 mb-1">

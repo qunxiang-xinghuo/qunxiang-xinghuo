@@ -134,7 +134,7 @@ curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" --cookie "" http://l
 
 **方法2：用浏览器测试**
 1. 打开浏览器的无痕/隐私模式
-2. 访问 `http://81.70.59.228/home`
+2. 访问 `http://<服务器IP已脱敏>/home`
 3. 必须自动跳转到登录页，且**看不到任何页面内容**（空白后直接跳转）
 4. 登录页上**绝对不能有底部导航栏**
 
@@ -477,7 +477,7 @@ modified:   src/app/api/auth/register/route.ts  # 错误处理增强
 ### 验证步骤
 
 ```
-□ 1. 访问 http://81.70.59.228/ → 登录页正常显示
+□ 1. 访问 http://<服务器IP已脱敏>/ → 登录页正常显示
 □ 2. 点击「去注册」→ 注册页正常
 □ 3. 输入用户名/密码 → 点击注册 → 注册成功
 □ 4. 返回登录 → 输入用户名/密码 → 登录成功 → 跳转 /home
@@ -601,11 +601,11 @@ pm2 restart al    # ❌ 错误（al 不是有效的进程名）
 | 用户激励（徽章/积分） | ⏳ 待迭代 | 需 Badge/PointLog 模型 |
 | 运营后台 | ⏳ 待迭代 | 需 admin 路由 + 权限 |
 
-重要信息：宝塔私钥路径为 `C:\Users\Dell\qunxiang-xinghuo\qunxiang.pem`
-服务器	81.70.59.228	暴露真实IP，易受攻击
-SSH	id_ed25519_fqunxiang、端口 2222暴露私钥路径和端口路径	/www/wwwroot/qunxiang-xinghuo暴露服务器目录结构	替换为域名	fqunxiang.x404.online	暴露Git服务器	
-私钥	qunxiang.pem 及路径	最高风险，绝对不能泄露	
-Webhook	http://81.70.59.228/webhook	暴露内网服务	
+重要信息：宝塔私钥路径为 `<本地私钥路径已脱敏>`
+服务器	<服务器IP已脱敏>	暴露真实IP，易受攻击
+SSH	<SSH私钥文件名已脱敏>、端口 <SSH端口已脱敏>暴露私钥路径和端口路径	<服务器项目路径已脱敏>暴露服务器目录结构	替换为域名	<Git服务器域名已脱敏>	暴露Git服务器	
+私钥	<私钥文件名已脱敏> 及路径	最高风险，绝对不能泄露	
+Webhook	http://<服务器IP已脱敏>/webhook	暴露内网服务	
 数据库	SQLite文件路径	暴露数据位置	替换为通用描述
 
 ---
@@ -777,3 +777,48 @@ curl http://localhost:3000/api/ai-training \
 ```
 
 ---
+
+
+---
+
+## v8.0 路演前关键修复 — 部署记录
+
+> 更新：2026-04-29
+> 状态：✅ 已修复，构建通过 74/74 页面
+
+### 修复文件清单
+
+| 修复项 | 文件 | 说明 |
+|--------|------|------|
+| 匹配引擎事务化 | `src/server/match-engine.ts` | 整个 `findMatch` 流程包裹在 `$transaction` 中 |
+| 人机模式脑洞显示 | `src/app/room/[id]/page.tsx` | 增加 `room.scene` 回退显示 |
+| 故事详情页403 | `src/app/api/stories/[storyId]/route.ts` | 公开状态判断扩展为包含 `open/recruiting/approved` |
+| Suspense 包裹 | `src/app/my-stories/page.tsx` | `useSearchParams` 添加 Suspense 边界 |
+| 文档脱敏 | `docs/IMPORTANT.md` | 替换真实IP、端口、密钥路径为占位符 |
+
+### 构建结果
+
+```
+▲ Next.js 16.2.4 (Turbopack)
+✓ Compiled successfully in 9.0s
+✓ Finished TypeScript in 12.9s
+✓ Generating static pages (74/74) in 470ms
+```
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 验证方法
+
+1. **双人匹配竞态**：用两个无痕浏览器窗口登录不同账号，同时进入双人对白并确认身份，确认匹配成功进入同一房间。
+2. **人机模式脑洞**：登录后进入人机模式，确认对白室顶部显示脑洞标题和场景描述。
+3. **故事详情**：进入故事大厅，点击任意故事卡片，确认正常显示故事详情而非「故事不存在」。
+

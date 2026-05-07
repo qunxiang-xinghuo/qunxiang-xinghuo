@@ -71,6 +71,9 @@ const DEMO_STORIES: Record<string, StoryDetail> = {
 
 export default function StoryDetailPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const params = useParams();
   const storyId = params.storyId as string;
 
@@ -176,7 +179,7 @@ export default function StoryDetailPage() {
       <div className="flex-1 overflow-y-auto no-scrollbar">
         {/* 剧目海报头部 */}
         <div className="px-5 pt-5 pb-3">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="card-elevated p-0 relative overflow-hidden">
+          <motion.div initial={mounted ? { opacity: 0, y: 12 } : false} animate={{ opacity: 1, y: 0 }} className="card-elevated p-0 relative overflow-hidden">
             <div className={`absolute inset-0 bg-gradient-to-br ${sc.gradient} opacity-40 pointer-events-none`} />
             <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-xh-gold/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
@@ -227,7 +230,7 @@ export default function StoryDetailPage() {
                   <span className="text-[10px] text-slate-400 font-medium">{progress}%</span>
                 </div>
                 <div className="h-2 bg-slate-700/20 rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.8 }}
+                  <motion.div initial={mounted ? { width: 0 } : false} animate={{ width: `${progress}%` }} transition={{ duration: 0.8 }}
                     className={`h-full rounded-full ${progress >= 100 ? 'bg-gradient-to-r from-emerald-400 to-teal-400' : 'bg-gradient-to-r from-xh-gold to-orange-400'}`} />
                 </div>
               </div>
@@ -280,7 +283,7 @@ export default function StoryDetailPage() {
               const canClaim = !role.claimedBy && story.status === 'recruiting' && role.claimStatus === 'unclaimed';
 
               return (
-                <motion.div key={role.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.04 }}
+                <motion.div key={role.id} initial={mounted ? { opacity: 0, x: -8 } : false} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.04 }}
                   className={`card-elevated p-3.5 relative overflow-hidden ${
                     role.claimStatus === 'approved' ? 'border-l-2 border-l-emerald-500' :
                     role.claimStatus === 'pending' ? 'border-l-2 border-l-amber-400' : ''
@@ -304,7 +307,7 @@ export default function StoryDetailPage() {
                       {/* 秘密和动机 */}
                       <AnimatePresence>
                         {showSecrets && role.secret && (
-                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                          <motion.div initial={mounted ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                             <div className="p-2 rounded-lg bg-red-500/8 border border-red-500/15 mb-1.5">
                               <div className="flex items-center gap-1 mb-0.5">
                                 <KeyRound className="w-3 h-3 text-red-400/70" />
@@ -369,7 +372,7 @@ export default function StoryDetailPage() {
 
         {/* 导演待审核 */}
         {isDirector && pendingRoles.length > 0 && story.status === 'recruiting' && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-3">
+          <motion.div initial={mounted ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} className="px-4 pb-3">
             <div className="bg-amber-500/[0.04] rounded-xl p-3.5 border border-amber-500/15">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="w-4 h-4 text-amber-400" />
@@ -382,7 +385,7 @@ export default function StoryDetailPage() {
 
         {/* 启动故事 */}
         {isDirector && allApproved && story.status === 'recruiting' && !isDemo && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-4">
+          <motion.div initial={mounted ? { opacity: 0, y: 16 } : false} animate={{ opacity: 1, y: 0 }} className="px-4 pb-4">
             <motion.button whileTap={{ scale: 0.97 }} onClick={handleStartStory} disabled={starting}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
               {starting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -395,7 +398,7 @@ export default function StoryDetailPage() {
 
         {/* 范例提示 */}
         {isDemo && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-4">
+          <motion.div initial={mounted ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} className="px-4 pb-4">
             <div className="p-4 rounded-2xl bg-blue-500/[0.04] border border-blue-500/15">
               <div className="flex items-center gap-2 mb-2">
                 <Star className="w-4 h-4 text-blue-400" />
@@ -421,7 +424,7 @@ export default function StoryDetailPage() {
 
         {/* 进入对白室 */}
         {story.status === 'ongoing' && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-6">
+          <motion.div initial={mounted ? { opacity: 0, y: 16 } : false} animate={{ opacity: 1, y: 0 }} className="px-4 pb-6">
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => router.push(`/story-hall/${storyId}/room`)}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-bold shadow-lg shadow-xh-gold/20 hover:shadow-xl hover:shadow-xh-gold/30 transition-all flex items-center justify-center gap-2">
               <Sparkles className="w-5 h-5" />进入对白实验室<ArrowRight className="w-4 h-4" />

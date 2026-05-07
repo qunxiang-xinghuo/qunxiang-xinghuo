@@ -34,7 +34,8 @@ export async function GET(
     }
 
     // v8.0-sec-fix: 非公开状态的故事需要鉴权
-    const isPublic = story.status === 'published';
+    // v8.0-fix: open/recruiting/approved 状态的故事也应公开可见
+    const isPublic = ['published', 'open', 'recruiting', 'approved'].includes(story.status);
     if (!isPublic) {
       return NextResponse.json(apiError("FORBIDDEN", "该故事尚未发布"), { status: 403 });
     }

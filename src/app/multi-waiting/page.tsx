@@ -15,6 +15,9 @@ type Phase = 'multi' | 'duo' | 'ai' | 'matched' | 'timeout';
 
 function MultiWaitingContent() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const searchParams = useSearchParams();
   const initialMatchId = searchParams.get('matchId');
 
@@ -216,7 +219,7 @@ function MultiWaitingContent() {
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           >
             <AnimatePresence mode="wait">
-              <motion.div key={phase} initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }}>
+              <motion.div key={phase} initial={mounted ? { scale: 0.5, opacity: 0 } : false} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }}>
                 <PhaseIcon className="w-9 h-9" style={{ color: current.iconColor }} />
               </motion.div>
             </AnimatePresence>
@@ -242,7 +245,7 @@ function MultiWaitingContent() {
         </div>
 
         {/* 状态文案 */}
-        <motion.div key={phase} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+        <motion.div key={phase} initial={mounted ? { opacity: 0, y: 8 } : false} animate={{ opacity: 1, y: 0 }} className="text-center">
           <p className="text-base font-semibold text-slate-100 mb-1.5">{current.title}</p>
           <p className="text-xs text-slate-500 mb-1">{current.subtitle}</p>
           {current.detail && <p className="text-[10px] text-slate-600 mb-5">{current.detail}</p>}

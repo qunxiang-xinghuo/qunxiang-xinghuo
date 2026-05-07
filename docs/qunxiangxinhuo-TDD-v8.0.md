@@ -1625,3 +1625,71 @@ CRAWLER_ADMIN_KEY=...     # 手动触发API认证
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
 > 最后更新：2026-04-29 v8.0 AI自我修炼系统完成 ✅
+
+
+---
+
+## 路演前关键修复记录（v8.0-fix-pre-roadshow）
+
+> 日期：2026-04-29
+> 状态：已修复并构建通过 ✅
+
+### 修复1：双人匹配引擎事务化改造，根治并发竞态
+
+**问题**：两个已登录账号同时选择双人对白模式，几乎同时点击匹配后，双双停留在等待页面，10秒后各自超时。
+
+**根因**：`findMatch` 流程缺少数据库事务保护。A和B几乎同时发起匹配，阶段1/2查找时双方都未找到对方的 waiting 请求，各自创建 waiting 后，二次匹配虽然能找到对方，但双方都成功完成了乐观锁认领，随后各自调用 `createDuetMatch` 创建了两个独立的房间。
+
+**方案**：
+- 将整个匹配流程包裹在 Prisma `$transaction` 交互式事务中
+- 查找 → 认领 → 创建房间 全部在事务内原子执行
+- 二次匹配也在事务内完成，消除竞态窗口
+- 设置事务超时10秒、最大等待5秒
+
+**文件**：`src/server/match-engine.ts`（v6.2-transaction）
+
+### 修复2：人机模式对白室脑洞显示
+
+**问题**：人机模式进入对白室后，顶部缺少脑洞标题和场景描述。
+
+**方案**：在 `room/[id]/page.tsx` 中，当 `room.brainhole` 为 null 时，回退到 `room.scene` 字段显示场景描述。
+
+**文件**：`src/app/room/[id]/page.tsx`
+
+### 修复3：故事详情页「故事不存在」
+
+**问题**：点击故事大厅中的故事卡片，进入详情页后提示「故事不存在」。
+
+**根因**：数据库中 Story 状态为 `open`，但 `/api/stories/[storyId]` 详情 API 中 `isPublic = story.status === 'published'`，导致 `open` 状态的故事返回 403，前端因 `data.success === false` 而显示「故事不存在」。
+
+**方案**：将公开状态判断扩展为 `['published', 'open', 'recruiting', 'approved'].includes(story.status)`。
+
+**文件**：`src/app/api/stories/[storyId]/route.ts`
+
+### 修复4：my-stories 页面 Suspense 包裹
+
+**问题**：`my-stories/page.tsx` 直接使用 `useSearchParams` 而没有 Suspense 边界。
+
+**方案**：将页面逻辑拆分为 `MyStoriesContent` 内部组件，默认导出用 Suspense 包裹。
+
+**文件**：`src/app/my-stories/page.tsx`
+
+### 构建验证
+
+```
+▲ Next.js 16.2.4 (Turbopack)
+✓ Compiled successfully in 9.0s
+✓ Finished TypeScript in 12.9s
+✓ Generating static pages using 15 workers (74/74) in 470ms
+```
+
+74/74 页面全部通过，TypeScript 编译无错误。
+
+### 测试结果
+
+- 测试文件：26 个
+- 通过：7 个文件 / 140 个用例
+- 失败：19 个文件 / 100 个用例（均为历史遗留问题，与本次修复无关）
+  - 认证相关测试：mock JWT 与实际认证逻辑不匹配
+  - Hooks 测试：mock 数据与实现不同步
+  - Socket.IO 测试：测试环境服务器未启动导致超时

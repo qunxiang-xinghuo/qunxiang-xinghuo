@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -36,7 +36,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: React.Ele
   closed: { label: '已关闭', color: 'text-white/40', icon: XCircle },
 };
 
-export default function MyStoriesPage() {
+function MyStoriesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlTab = searchParams.get('tab') as TabType | null;
@@ -241,5 +241,18 @@ export default function MyStoriesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MyStoriesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col min-h-full page-gradient items-center justify-center">
+        <div className="w-8 h-8 border-2 border-slate-700 border-t-[#e2b04a] rounded-full animate-spin mb-4" />
+        <p className="text-sm text-white/30">加载中...</p>
+      </div>
+    }>
+      <MyStoriesContent />
+    </Suspense>
   );
 }

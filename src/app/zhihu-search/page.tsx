@@ -9,6 +9,9 @@ type Tab = 'site' | 'global' | 'hot';
 
 export default function ZhihuSearchPage() {
   const [activeTab, setActiveTab] = useState<Tab>('site');
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -138,7 +141,7 @@ export default function ZhihuSearchPage() {
               {results.map((item, i) => (
                 <motion.div
                   key={item.ContentID || i}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={mounted ? { opacity: 0, y: 10 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                   className="bg-white/5 rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors"

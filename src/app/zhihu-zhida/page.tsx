@@ -13,6 +13,9 @@ interface Message {
 
 export default function ZhihuZhidaPage() {
   const [selectedModel, setSelectedModel] = useState<'zhida-fast-1p5' | 'zhida-thinking-1p5' | 'zhida-agent'>('zhida-thinking-1p5');
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -110,7 +113,7 @@ export default function ZhihuZhidaPage() {
           {messages.map((msg, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 10 }}
+              initial={mounted ? { opacity: 0, y: 10 } : false}
               animate={{ opacity: 1, y: 0 }}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
@@ -129,7 +132,7 @@ export default function ZhihuZhidaPage() {
         </AnimatePresence>
         {loading && (
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={mounted ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
             className="flex justify-start"
           >

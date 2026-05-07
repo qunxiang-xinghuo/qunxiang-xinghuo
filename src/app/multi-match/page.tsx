@@ -51,6 +51,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function MultiMatchContent() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const searchParams = useSearchParams();
   const preselectedBrainholeId = searchParams.get('brainholeId');
 
@@ -182,7 +185,7 @@ function MultiMatchContent() {
             return (
               <motion.div
                 key={bh.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={mounted ? { opacity: 0, y: 10 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.04 }}
                 onClick={() => handleSelectBrainhole(bh)}
@@ -227,7 +230,7 @@ function MultiMatchContent() {
       {showIdentity && selectedBrainhole && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center">
           <motion.div
-            initial={{ y: '100%' }}
+            initial={mounted ? { y: '100%' } : false}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             className="w-full max-w-md bg-[#0f1525] rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto border border-slate-700/20"
@@ -273,7 +276,7 @@ function MultiMatchContent() {
                   </div>
 
                   {selectedType === option.type && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mt-2.5 pt-2.5 border-t border-slate-700/15">
+                    <motion.div initial={mounted ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} className="mt-2.5 pt-2.5 border-t border-slate-700/15">
                       {option.type === 'zhihu' && (
                         <div className="space-y-1.5">
                           {zhihuIdentities.length === 0 ? (

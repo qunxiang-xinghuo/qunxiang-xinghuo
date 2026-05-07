@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Coins, TrendingUp, Clock, Wallet, Gift } from 'lucide-react';
@@ -25,6 +25,9 @@ const mockEarnings: EarningItem[] = [
 
 export default function EarningsPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'settled'>('all');
 
   const filtered = mockEarnings.filter((e) => activeTab === 'all' || e.status === activeTab);
@@ -44,7 +47,7 @@ export default function EarningsPage() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
         {/* 总收益卡片 */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={mounted ? { opacity: 0, y: 10 } : false}
           animate={{ opacity: 1, y: 0 }}
           className="p-5 rounded-2xl bg-gradient-to-br from-[#e2b04a]/10 to-orange-500/5 border border-[#e2b04a]/15 mb-5"
         >
@@ -104,7 +107,7 @@ export default function EarningsPage() {
             return (
               <motion.div
                 key={item.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={mounted ? { opacity: 0, y: 10 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5"

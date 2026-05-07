@@ -26,6 +26,9 @@ interface StoryDetail {
 
 export default function StoryDetailPage() {
   const params = useParams();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const router = useRouter();
   const storyId = params.id as string;
   const { user: authUser } = useAuth();
@@ -284,7 +287,7 @@ export default function StoryDetailPage() {
                   </button>
                   {isExpanded && role.description && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
+                      initial={mounted ? { height: 0, opacity: 0 } : false}
                       animate={{ height: 'auto', opacity: 1 }}
                       className="px-3 pb-3"
                     >
@@ -314,14 +317,14 @@ export default function StoryDetailPage() {
       <AnimatePresence>
         {showWaiting && (
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={mounted ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={() => {}}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={mounted ? { scale: 0.9, opacity: 0 } : false}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-white/10 max-w-[320px] w-full text-center"

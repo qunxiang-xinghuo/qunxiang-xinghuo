@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
@@ -10,6 +10,9 @@ type Choice = 'ai' | 'wait' | 'exit';
 
 function DuoTimeoutContent() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const searchParams = useSearchParams();
   const matchId = searchParams.get('matchId');
   const round = parseInt(searchParams.get('round') || '1', 10);
@@ -106,7 +109,7 @@ function DuoTimeoutContent() {
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         {/* 刘看山形象 */}
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={mounted ? { scale: 0.8, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 200 }}
         >
@@ -115,7 +118,7 @@ function DuoTimeoutContent() {
 
         {/* 文案 */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={mounted ? { y: 20, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
           className="text-center mb-8"
@@ -137,7 +140,7 @@ function DuoTimeoutContent() {
         {/* 按钮组 */}
         {error && (
           <motion.p
-            initial={{ opacity: 0 }}
+            initial={mounted ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
             className="text-xs text-red-400 text-center bg-red-500/10 rounded-lg py-2 px-4 mb-4"
           >
@@ -146,7 +149,7 @@ function DuoTimeoutContent() {
         )}
 
         <motion.div
-          initial={{ y: 30, opacity: 0 }}
+          initial={mounted ? { y: 30, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
           className="w-full max-w-xs space-y-3"

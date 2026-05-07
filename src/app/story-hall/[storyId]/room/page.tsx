@@ -36,6 +36,9 @@ interface StoryDetail {
 
 export default function StoryRoomPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const params = useParams();
   const storyId = params.storyId as string;
 
@@ -301,7 +304,7 @@ export default function StoryRoomPage() {
       {/* 分支侧边栏 */}
       <AnimatePresence>
         {showBranches && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+          <motion.div initial={mounted ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             className="shrink-0 overflow-hidden border-b border-slate-700/20 bg-slate-800/20">
             <div className="p-3 max-h-48 overflow-y-auto no-scrollbar">
               <div className="flex items-center justify-between mb-2">
@@ -353,7 +356,7 @@ export default function StoryRoomPage() {
       {/* 灵感侧边栏 */}
       <AnimatePresence>
         {showInspirations && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+          <motion.div initial={mounted ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             className="shrink-0 overflow-hidden border-b border-slate-700/20 bg-slate-800/20">
             <div className="p-3 max-h-40 overflow-y-auto no-scrollbar">
               <span className="text-xs font-medium text-slate-300 block mb-2 flex items-center gap-1.5">
@@ -390,7 +393,7 @@ export default function StoryRoomPage() {
             const isMe = msg.senderId === currentUserId;
             const isDirectorMsg = msg.isDirectorNote;
             return (
-              <motion.div key={msg.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+              <motion.div key={msg.id} initial={mounted ? { opacity: 0, y: 6 } : false} animate={{ opacity: 1, y: 0 }} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[82%] ${isMe ? 'items-end' : 'items-start'}`}>
                   {/* 身份标签 */}
                   <div className="flex items-center gap-1.5 mb-1 px-1">

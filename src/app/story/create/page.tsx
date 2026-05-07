@@ -20,6 +20,9 @@ const CATEGORIES = ['古风', '民国', '现代', '悬疑', '科幻', '职场'];
 
 export default function CreateStoryPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const { isAuthenticated } = useRequireAuth();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -106,7 +109,7 @@ export default function CreateStoryPage() {
     return (
       <div className="flex flex-col min-h-full page-gradient items-center justify-center px-6">
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={mounted ? { scale: 0.8, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
           className="text-center"
         >
@@ -154,7 +157,7 @@ export default function CreateStoryPage() {
           <div key={s} className="flex-1 h-1 rounded-full bg-white/[0.05]">
             <motion.div
               className="h-full rounded-full bg-[#e2b04a]"
-              initial={{ width: '0%' }}
+              initial={mounted ? { width: '0%' } : false}
               animate={{ width: s <= step ? '100%' : '0%' }}
               transition={{ duration: 0.3 }}
             />
@@ -167,7 +170,7 @@ export default function CreateStoryPage() {
           {step === 1 && (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, x: 20 }}
+              initial={mounted ? { opacity: 0, x: 20 } : false}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
@@ -255,7 +258,7 @@ export default function CreateStoryPage() {
           {step === 2 && (
             <motion.div
               key="step2"
-              initial={{ opacity: 0, x: 20 }}
+              initial={mounted ? { opacity: 0, x: 20 } : false}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
@@ -269,7 +272,7 @@ export default function CreateStoryPage() {
               {roles.map((role, idx) => (
                 <motion.div
                   key={role.id}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={mounted ? { opacity: 0, y: 8 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-2.5"

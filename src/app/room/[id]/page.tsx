@@ -151,6 +151,9 @@ export default function RoomPage() {
           if (room.brainhole) {
             setBrainholeTitle(room.brainhole.title || '');
             setBrainholeScenario(room.brainhole.scenario || '');
+          } else if (room.scene) {
+            // v8.0-fix: AI房间可能通过scene字段存储场景描述
+            setBrainholeScenario(room.scene);
           }
 
           // 找到自己的角色

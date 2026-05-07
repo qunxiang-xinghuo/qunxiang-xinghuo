@@ -1265,3 +1265,81 @@ pm2 restart all
 - 解决：`Promise<{domain: string; count: number}[]>`
 
 ---
+
+
+---
+
+## 路演前关键问题修复记录
+
+> 日期：2026-04-29
+
+### 问题：双人匹配引擎并发竞态条件
+
+**现象**：两个已登录账号同时选择双人对白模式，几乎同时点击匹配后，双双停留在等待页面，10秒后各自超时。
+
+**根因分析**：
+1. A和B几乎同时发起匹配请求
+2. 阶段1/2查找时，双方都未找到对方的 waiting 请求（对方还未创建）
+3. 双方各自创建 waiting 请求
+4. 二次匹配虽然能找到对方，但双方都成功完成了乐观锁认领（因为此时对方的 status 都还是 waiting）
+5. 随后 A 和 B 各自调用 `createDuetMatch`，分别创建了两个独立的房间
+6. 整个过程缺少数据库事务保护，多个读写操作各自独立执行，无法保证原子性
+
+**修复方案**：
+- 将整个 `findMatch` 流程包裹在 Prisma `$transaction` 交互式事务中
+- 查找 → 认领 → 创建房间 全部在事务内原子执行
+- 二次匹配也在事务内完成，消除竞态窗口
+- 设置事务参数：`maxWait: 5000`, `timeout: 10000`
+
+**验证方法**：
+- 用两个无痕浏览器窗口分别登录两个不同账号
+- 两个账号尽可能同时进入双人对白模式并确认身份
+- 确认匹配成功，双方进入同一个对白室
+- 重复至少5次，确保竞态条件已彻底消除
+
+**文件**：`src/server/match-engine.ts`（v6.2-transaction）
+
+---
+
+### 问题：人机模式对白室顶部缺少脑洞显示
+
+**现象**：人机模式进入对白室后，顶部缺少脑洞标题和场景描述。双人对白室已有此功能。
+
+**根因分析**：
+- AI 房间创建 API 正确返回了 `brainholeTitle` 和 `brainholeScenario`
+- 但 `room.brainhole` 关联对象在某些情况下可能为 null
+- 前端仅回退到 `room.brainhole.title`，没有处理 `room.scene` 字段
+
+**修复方案**：在 `room/[id]/page.tsx` 中，当 `room.brainhole` 为 null 时，回退到 `room.scene` 字段显示场景描述。
+
+```tsx
+if (room.brainhole) {
+  setBrainholeTitle(room.brainhole.title || '');
+  setBrainholeScenario(room.brainhole.scenario || '');
+} else if (room.scene) {
+  setBrainholeScenario(room.scene);
+}
+```
+
+**文件**：`src/app/room/[id]/page.tsx`
+
+---
+
+### 问题：故事详情页显示「故事不存在」
+
+**现象**：点击故事大厅中的某个故事卡片，进入详情页后提示「故事不存在」。其他故事正常。
+
+**根因分析**：
+1. 数据库 `Story` 表中记录的状态为 `open`
+2. 故事列表 API (`/api/stories`) 查询条件包含 `status: { in: ["open", "recruiting", "approved"] }`，所以列表能正常显示
+3. 但故事详情 API (`/api/stories/[storyId]`) 中 `isPublic = story.status === 'published'`，`open` 状态被判定为非公开
+4. 返回 403「该故事尚未发布」
+5. 前端检查 `data.success === false`，未设置 story 状态，loading 结束后显示「故事不存在」
+
+**修复方案**：将详情 API 的公开状态判断扩展为：
+```ts
+const isPublic = ['published', 'open', 'recruiting', 'approved'].includes(story.status);
+```
+
+**文件**：`src/app/api/stories/[storyId]/route.ts`
+

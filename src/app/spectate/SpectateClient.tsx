@@ -31,6 +31,9 @@ interface PublicRoom {
 
 export default function SpectatePage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const { isAuthenticated } = useRequireAuth();
   const { status: sessionStatus } = useSession();
   const [rooms, setRooms] = useState<PublicRoom[]>([]);
@@ -106,7 +109,7 @@ export default function SpectatePage() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
         {/* 头部说明 */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={mounted ? { opacity: 0, y: 10 } : false}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 p-4 rounded-xl bg-[#ff6b6b]/5 border border-[#ff6b6b]/10 mb-6"
         >
@@ -131,7 +134,7 @@ export default function SpectatePage() {
           </div>
         ) : rooms.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={mounted ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center py-16"
           >
@@ -144,7 +147,7 @@ export default function SpectatePage() {
             {rooms.map((room, idx) => (
               <motion.button
                 key={room.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={mounted ? { opacity: 0, y: 10 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.06 }}
                 onClick={() => handleEnterRoom(room.id)}

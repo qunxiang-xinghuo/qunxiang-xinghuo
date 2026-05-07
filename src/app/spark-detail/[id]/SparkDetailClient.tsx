@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Flame, Clock, Sparkles, MessageCircle } from 'lucide-react';
@@ -35,6 +36,9 @@ interface SparkDetailData {
 
 export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
@@ -69,7 +73,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
           {data.messages.map((msg, idx) => (
             <motion.div
               key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
+              initial={mounted ? { opacity: 0, y: 10 } : false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
               className={`flex ${idx % 2 === 0 ? 'justify-start' : 'justify-end'}`}

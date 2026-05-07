@@ -33,6 +33,9 @@ interface Pin {
 
 export default function ZhihuRingPage() {
   const [ringInfo, setRingInfo] = useState<RingInfo | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -208,7 +211,7 @@ export default function ZhihuRingPage() {
             {pins.map((pin) => (
               <motion.div
                 key={pin.pin_id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={mounted ? { opacity: 0, y: 20 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors"
               >
@@ -262,7 +265,7 @@ export default function ZhihuRingPage() {
                 <AnimatePresence>
                   {activePinId === pin.pin_id && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
+                      initial={mounted ? { height: 0, opacity: 0 } : false}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
@@ -298,7 +301,7 @@ export default function ZhihuRingPage() {
                 <AnimatePresence>
                   {commentingPinId === pin.pin_id && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
+                      initial={mounted ? { height: 0, opacity: 0 } : false}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
@@ -332,14 +335,14 @@ export default function ZhihuRingPage() {
       <AnimatePresence>
         {publishModalOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={mounted ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
             onClick={() => setPublishModalOpen(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={mounted ? { scale: 0.9, opacity: 0 } : false}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg"
