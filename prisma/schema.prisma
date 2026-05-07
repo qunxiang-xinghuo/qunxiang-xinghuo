@@ -564,3 +564,83 @@ model StoryBranch {
 
   @@index([storyId])
 }
+
+// ==================== AI 自我修炼系统（星火进化链）====================
+
+// AI 基础能力投喂数据
+model AITrainingData {
+  id        String   @id @default(cuid())
+  domain    String   // 领域：psychology / storytelling / brainhole / taicang / general
+  content   String   // 知识内容
+  source    String   @default("deepseek") // deepseek / zhihu / manual
+  createdAt DateTime @default(now())
+
+  @@index([domain])
+  @@index([source])
+}
+
+// AI 实时学习日志
+model AILearningLog {
+  id             String   @id @default(cuid())
+  sceneType      String   // healing / brainhole / story / catalyst
+  referenceId    String?  // 关联的脑洞ID/故事ID/房间ID
+  aiContent      String   // AI发出的内容
+  messageIndex   Int      // 第几条消息后发出
+  userResponded  Boolean  @default(false) // 用户是否在5条消息内回应
+  userReplyLength Int     @default(0)     // 用户回复字数
+  sparked        Boolean  @default(false) // 是否产生火花
+  createdAt      DateTime @default(now())
+
+  @@index([sceneType, referenceId])
+  @@index([createdAt])
+  @@index([sceneType, sparked])
+}
+
+// AI 定期总结优化
+model AIOptimizationSummary {
+  id          String   @id @default(cuid())
+  sceneType   String   // healing / brainhole / story
+  referenceId String?  // 关联ID（可为空，表示全局总结）
+  bestPrompt  String?  // 最有效的问题模板
+  bestTiming  Int?     // 最佳催化时机（消息数）
+  worstPrompt String?  // 最无效的问题模板
+  hitRate     Float    @default(0) // 有效率（回应比例 0-1）
+  summaryDate DateTime @default(now())
+
+  @@index([sceneType, referenceId])
+  @@index([summaryDate])
+}
+
+// 催化效果详细日志
+model CatalystLog {
+  id          String   @id @default(cuid())
+  roomId      String
+  storyId     String?
+  prompt      String   // 催化的内容
+  phase       String   // act1 / act2 / act3 / act4
+  msgCount    Int      // 触发时的消息数
+  responded   Boolean  @default(false) // 用户是否回应
+  sparked     Boolean  @default(false) // 是否产生火花
+  createdAt   DateTime @default(now())
+
+  @@index([roomId])
+  @@index([storyId])
+  @@index([phase, createdAt])
+}
+
+// 脑洞催化效果汇总
+model BrainholeSummary {
+  id                String   @id @default(cuid())
+  brainholeId       String?
+  category          String?  // 脑洞分类（同类脑洞汇总）
+  bestCatalyst      String?  // 最佳催化内容
+  bestTiming        Int?     // 最佳时机
+  worstCatalyst     String?  // 最差催化内容
+  hitRate           Float    @default(0)
+  avgResponseLength Float    @default(0)
+  summaryDate       DateTime @default(now())
+
+  @@index([brainholeId])
+  @@index([category])
+  @@index([summaryDate])
+}

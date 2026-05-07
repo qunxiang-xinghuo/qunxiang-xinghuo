@@ -7,6 +7,7 @@ import path from 'path'
 import { setIO } from './src/server/io'
 import { registerSocketHandlers } from './src/server/socket-handler'
 import { startCrawlerSchedule } from './src/lib/crawler'
+import { startAIEvolutionSchedule } from './src/lib/ai-training'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOSTNAME || '0.0.0.0'
@@ -87,5 +88,8 @@ app.prepare().then(() => {
 
     // v8.0-crawler: 启动知乎热榜脑洞定时抓取
     startCrawlerSchedule()
+
+    // v8.0-ai-evolution: 启动 AI 自我修炼系统（星火进化链）
+    startAIEvolutionSchedule()
   })
 })

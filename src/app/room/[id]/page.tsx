@@ -242,6 +242,19 @@ export default function RoomPage() {
             aiPromptTimerRef.current = setTimeout(() => {
               if (isMountedRef.current) setShowAiPrompt(false);
             }, 15000);
+            // v8.0-ai-evolution: 记录催化日志（通过API，避免客户端直接访问Prisma）
+            fetch('/api/ai-training/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'catalyst',
+                roomId,
+                storyId: story?.id,
+                prompt: data.data.prompt,
+                phase: data.data.phase || 'act1',
+                msgCount,
+              }),
+            }).catch(() => {});
           }
         })
         .catch(() => {});
@@ -324,6 +337,18 @@ export default function RoomPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: aiMsg.content, identity: aiMsg.identity }),
       });
+      // v8.0-ai-evolution: 记录学习日志（通过API）
+      fetch('/api/ai-training/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'learning',
+          sceneType: 'story',
+          referenceId: story.id,
+          aiContent: aiMsg.content,
+          messageIndex: msgCount,
+        }),
+      }).catch(() => {});
     } catch (e) { console.error('AI回复失败:', e); }
     finally { isProcessingAI.current = false; }
   }, [story, roomId, aiRoleName, myOpeningInfo, messages.length]);
