@@ -611,3 +611,106 @@ Webhook	http://81.70.59.228/webhook	暴露内网服务
 ---
 
 ---
+
+---
+
+## v8.0 路演前 — 自动化部署系统
+
+> 更新：2026-04-29
+
+### 一键部署脚本
+
+```bash
+# 赋予执行权限（首次使用）
+chmod +x /www/wwwroot/qunxiang-xinghuo/scripts/deploy-auto.sh
+
+# 执行一键部署
+/www/wwwroot/qunxiang-xinghuo/scripts/deploy-auto.sh
+```
+
+脚本自动执行以下流程：
+1. 数据库备份（带时间戳）
+2. 从 `fqunxiang dev` 拉取最新代码
+3. 安装依赖
+4. 数据库 Schema 同步（`prisma db push`）
+5. 项目构建（失败自动重试，最多3次）
+6. 重启 PM2 + Nginx
+7. 部署后验证（登录页状态码、守卫拦截、PM2状态、HTML内容）
+
+### 部署后登录页验证
+
+```bash
+# 执行登录页专项检查
+chmod +x /www/wwwroot/qunxiang-xinghuo/scripts/verify-login-page.sh
+/www/wwwroot/qunxiang-xinghuo/scripts/verify-login-page.sh http://localhost:3000
+```
+
+验证项：
+- HTML 包含 `<form>` 和 `<input>` 标签
+- 无 `opacity:0` 隐藏属性
+- 页面返回 200
+- 未登录访问 `/home` 被重定向到 `/login`
+
+### 部署失败排查指南
+
+| 阶段 | 可能失败原因 | 排查方法 |
+|------|-------------|----------|
+| 代码拉取 | SSH 密钥权限 | `ls -la /root/.ssh/id_ed25519_fqunxiang` |
+| 依赖安装 | npm registry 超时 | `npm config set registry https://registry.npmmirror.com` |
+| 数据库同步 | DATABASE_URL 未设置 | `export DATABASE_URL="file:./dev.db"` |
+| 构建 | TypeScript 错误 | 查看日志中 `Failed to type check` 后的文件名和行号 |
+| PM2 重启 | 端口占用 | `lsof -i :3000` 或 `pm2 delete all` 后重新启动 |
+| Nginx | 配置文件错误 | `nginx -t` 测试配置 |
+
+---
+
+## v8.0 路演前 — 登录页消失预防规范
+
+### 代码规范（已落实）
+
+1. **动画组件初始状态**：所有 `motion.*` 组件使用 `initial={mounted ? ... : false}`，服务端渲染期间不执行动画
+2. **可见状态标记**：`const [mounted, setMounted] = useState(false)` + `useEffect(() => setMounted(true), [])`
+3. **登录页结构**：服务端 `page.tsx` 为纯 Suspense 包装，`LoginForm` 为客户端组件
+4. **浏览器 API 调用**：`window.innerHeight`、`localStorage` 等均在 `useEffect` 中执行
+
+### 每次部署后必做检查
+
+```bash
+# 检查1：HTML源码
+curl -s http://localhost/login | grep -E "form|input"
+
+# 检查2：状态码
+curl -I -s -o /dev/null -w "%{http_code}" http://localhost/login
+# 预期：200
+
+# 检查3：守卫拦截
+curl -I -s -o /dev/null -w "%{http_code}" --cookie "" http://localhost/home
+# 预期：307
+```
+
+---
+
+## v8.0 知乎热榜脑洞抓取 — 部署说明
+
+### 环境变量
+
+```bash
+# .env 中需要配置
+DEEPSEEK_API_KEY=your_key_here
+CRAWLER_ADMIN_KEY=your_admin_key_here  # 可选，默认 dev-crawler-key
+```
+
+### 手动触发抓取
+
+```bash
+curl -X POST http://localhost:3000/api/crawler \
+  -H "x-admin-key: dev-crawler-key"
+```
+
+### 定时策略
+
+- 服务启动后 30 秒首次执行
+- 之后每 6 小时执行一次
+- 无需额外配置 cron
+
+---

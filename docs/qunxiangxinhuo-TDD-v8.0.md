@@ -1313,3 +1313,208 @@ modified:   src/app/my-stories/page.tsx             # 编辑按钮
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
 > 最后更新：2026-05-06 v8.0 对白室 brainhole + AI DM 催化 + 刘看山真实对话完成 ✅
+
+---
+
+## §26 知乎热榜脑洞自动抓取系统
+
+> 新增：2026-04-29
+
+### 26.1 需求背景
+
+双人匹配时脑洞话题依赖种子数据和用户 UGC 供给，数量有限。需要自动化流程每日从知乎热榜抓取新鲜话题，经 AI 转化后存入数据库。
+
+### 26.2 数据流
+
+```
+知乎热榜 API → 过滤敏感话题 → AI 转化（DeepSeek/知乎直答）→ 存入 Brainhole 表 → 匹配引擎随机选取
+```
+
+### 26.3 模块设计
+
+| 模块 | 文件 | 职责 |
+|------|------|------|
+| 热榜抓取 | `src/lib/crawler/zhihu-hot.ts` | 调用知乎公开 API，过滤新闻/政策/敏感内容 |
+| AI 转化 | `src/lib/crawler/ai-transform.ts` | 将话题转为第二人称冲突场景，80字以内 |
+| 核心流程 | `src/lib/crawler/index.ts` | 去重检查、标签创建、入库、定时调度 |
+| 手动触发 | `src/app/api/crawler/route.ts` | POST 执行 / GET 统计（需 admin key） |
+
+### 26.4 AI 转化 Prompt 规范
+
+- 用第二人称「你」开头
+- 设置具体冲突场景
+- 控制在80字以内
+- 给出2-3个身份标签
+- 难度评估：easy/medium/hard
+- 禁止涉及真实人名、血腥暴力政治
+
+### 26.5 定时策略
+
+- 服务启动后 30 秒首次执行
+- 之后每 6 小时执行一次（`setInterval`）
+- 单次最多处理 10 条话题
+- 串行执行避免 API 限流
+
+### 26.6 匹配引擎集成
+
+```ts
+// match-engine.ts pickRandomBrainhole()
+// 70% 概率优先从最近7天的 zhihu_hot 脑洞中选取
+const useRecentHot = Math.random() < 0.7;
+```
+
+### 26.7 环境变量
+
+```env
+DEEPSEEK_API_KEY=sk-...
+CRAWLER_ADMIN_KEY=dev-crawler-key  # 手动触发 API 的认证密钥
+```
+
+---
+
+## §27 20次全项目自测执行记录
+
+> 新增：2026-04-29
+
+### 27.1 自测方法论
+
+每轮自测由「资深测试工程师视角」+「资深技术员视角」双轨执行：
+- 测试工程师：关注用户体验路径、边界条件、异常场景
+- 技术员：关注代码质量、安全漏洞、性能隐患
+
+### 27.2 执行记录
+
+**第1-5轮（代码审查驱动）**
+
+| 轮次 | 维度 | 发现问题 | 修复 |
+|------|------|----------|------|
+| 1 | stale closure | `messages.length` 闭包延迟 | 传参 `currentMsgCount` |
+| 1 | 内存泄漏 | 组件卸载后 setState | `mounted` ref |
+| 1 | timer 泄漏 | `setTimeout` 未清理 | `finally { clearTimeout }` |
+| 1 | key index | 角色卡片用数组索引 | `crypto.randomUUID()` |
+| 1 | immutability | 直接修改状态对象 | `setRoles(prev => ...)` |
+| 2 | AbortController | 评论加载无取消 | 添加 signal + mounted 检查 |
+| 2 | mounted guard | finally 中 setState | `if (mounted.current)` |
+| 2 | 错误泄露 | `error.message` 返客户端 | 通用错误信息 |
+| 2 | 分页限制 | `findMany` 无上限 | `take: 100/50` |
+| 2 | 字段上限 | 创建故事无长度限制 | Zod `max()` |
+| 3 | 竞态条件 | tab 切换请求覆盖 | AbortController 取消旧请求 |
+| 3 | 空状态逻辑 | `stories.length` 判断错误 | `filteredStories.length` |
+| 3 | XSS | `img src` 未验证 | 协议白名单 + `onError` fallback |
+| 3 | fetch 校验 | 4个文件无 `res.ok` | 统一添加 |
+| 4 | JWT 密钥 | 硬编码 fallback | 强制要求 `NEXTAUTH_SECRET` |
+| 4 | 敏感日志 | auth 流程打印 username | 移除所有认证日志 |
+| 4 | 未鉴权 API | 故事详情无权限 | 非公开状态返回 403 |
+| 4 | Socket 权限 | join-room 无身份校验 | UUID 格式校验 + 导演 DB 校验 |
+| 5 | 构建验证 | `useRef` 未导入 | 补充 import |
+
+**第6轮（用户路径审查）**
+
+| 维度 | 发现问题 | 修复 |
+|------|----------|------|
+| 登录系统 | ✅ 无问题 | — |
+| 故事大厅 | 网络错误无提示 | `loadError` 状态 + 刷新按钮 |
+| 故事详情 | API 错误无反馈、进度条异常 | 部分修复 |
+| 对白室 | 房间切换状态残留、无错误页 | 重置 effect + `roomError` |
+| 火花墙 | 空状态缺失、网络错误无提示 | `loadError` + 空状态文案 |
+| 我的页面 | API 失败误导登录、头像无 fallback | `loadError` + `imgError` state |
+| 登录守卫 | ✅ 无问题 | — |
+| 底部导航 | ✅ 无问题 | — |
+| 前端异常 | 3个页面网络错误无提示 | 全部修复 |
+| SSR渲染 | ✅ 无问题 | `mounted` 模式全部合规 |
+| 移动端适配 | ✅ 无问题 | — |
+
+### 27.3 累计修复统计
+
+- **高优先级**：17 个
+- **中优先级**：8 个
+- **低优先级**：5 个（记录待后续）
+- **构建通过率**：100%（72/72 页面）
+
+---
+
+## §28 登录页消失专项预防机制
+
+> 新增：2026-04-29
+
+### 28.1 历史根因与预防
+
+| 根因 | 预防措施 | 状态 |
+|------|----------|------|
+| 动画初始透明度写入服务端HTML | `initial={mounted ? ... : false}` | ✅ 已落实 |
+| 容器组件带动画初始状态 | 所有 motion 组件使用 mounted 守卫 | ✅ 已落实 |
+| 表单组件多处设置初始透明度 | 登录页无 opacity:0 | ✅ 已落实 |
+| useSearchParams 未包裹 Suspense | LoginForm 被 page.tsx Suspense 包裹 | ✅ 已落实 |
+| 外部字体服务被屏蔽 | 使用系统字体栈 | ✅ 已落实 |
+| cookie secure 与 HTTP 不兼容 | `secure: false`（已知妥协） | ✅ 已记录 |
+
+### 28.2 代码规范（强制）
+
+```tsx
+// ✅ 正确：动画仅在客户端挂载后执行
+const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
+
+<motion.div
+  initial={mounted ? { opacity: 0 } : false}
+  animate={{ opacity: 1 }}
+/>
+
+// ❌ 错误：服务端渲染时 opacity 为 0
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+/>
+```
+
+### 28.3 部署后验证脚本
+
+```bash
+scripts/verify-login-page.sh http://localhost:3000
+```
+
+验证项：
+1. HTML 包含 `<form>` + `<input>`
+2. 无 `opacity:0`
+3. 状态码 200
+4. 未登录访问 `/home` → 307
+
+---
+
+## §29 自动化部署系统配置
+
+> 新增：2026-04-29
+
+### 29.1 脚本位置
+
+| 脚本 | 路径 | 说明 |
+|------|------|------|
+| 自动部署 | `scripts/deploy-auto.sh` | 一键完整部署 |
+| 登录页验证 | `scripts/verify-login-page.sh` | 部署后检查 |
+
+### 29.2 部署流程
+
+```
+数据库备份 → 拉代码 → 装依赖 → DB同步 → 构建（3次重试）→ 重启服务 → 验证
+```
+
+### 29.3 重试机制
+
+- 构建步骤失败自动重试
+- 每次重试前清除 `.next` 缓存
+- 最多 3 次，全部失败输出告警并终止
+- 不自动恢复数据库（需手动确认）
+
+### 29.4 验证清单
+
+| 验证项 | 方法 | 预期 |
+|--------|------|------|
+| 登录页状态码 | `curl /login` | 200 |
+| 守卫拦截 | `curl --cookie "" /home` | 307→/login |
+| PM2 进程 | `pm2 status` | online |
+| 登录页HTML | `grep form\|input` | 包含 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.0 路演前全局规划完成 ✅
