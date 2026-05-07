@@ -1505,7 +1505,15 @@ scripts/verify-login-page.sh http://localhost:3000
 - 最多 3 次，全部失败输出告警并终止
 - 不自动恢复数据库（需手动确认）
 
-### 29.4 验证清单
+### 29.4 部署前环境变量检查（强制）
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+# NEXTAUTH_SECRET 必须 >= 32 字符，无 fallback
+grep NEXTAUTH_SECRET .env || echo 'NEXTAUTH_SECRET=...' >> .env
+```
+
+### 29.5 验证清单
 
 | 验证项 | 方法 | 预期 |
 |--------|------|------|

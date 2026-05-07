@@ -637,6 +637,25 @@ chmod +x /www/wwwroot/qunxiang-xinghuo/scripts/deploy-auto.sh
 6. 重启 PM2 + Nginx
 7. 部署后验证（登录页状态码、守卫拦截、PM2状态、HTML内容）
 
+### ⚠️ 部署前环境变量检查
+
+**必须确认 `.env` 中以下变量已设置：**
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+
+# 检查 NEXTAUTH_SECRET（必须 >= 32 字符）
+grep NEXTAUTH_SECRET .env || echo 'NEXTAUTH_SECRET=qunxiang-xinghuo-production-secret-key-2026' >> .env
+
+# 检查 DATABASE_URL
+grep DATABASE_URL .env || echo 'DATABASE_URL=file:./dev.db' >> .env
+
+# 检查 DEEPSEEK_API_KEY（如使用 AI 抓取）
+grep DEEPSEEK_API_KEY .env || echo 'DEEPSEEK_API_KEY=your_key_here' >> .env
+```
+
+**v8.0-sec-fix 注意**：`NEXTAUTH_SECRET` 已无 fallback，未设置将导致构建失败！
+
 ### 部署后登录页验证
 
 ```bash

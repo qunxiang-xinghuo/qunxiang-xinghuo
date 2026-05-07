@@ -1188,3 +1188,38 @@ curl http://localhost:3000/api/crawler \
 ```
 
 ---
+
+---
+
+## v8.0 路演前部署 — 构建失败记录
+
+> 时间：2026-04-29
+> 问题：部署后构建失败
+
+### 问题：NEXTAUTH_SECRET 未设置导致构建失败
+
+**现象**：
+```
+Error: [Auth] NEXTAUTH_SECRET 未设置或长度不足32字符，应用无法启动。
+    at module evaluation (.next/server/chunks/...)
+```
+
+**根因**：
+- 第4轮自测修复了硬编码 fallback JWT 密钥（安全漏洞）
+- `src/lib/auth.ts` 改为强制要求 `NEXTAUTH_SECRET` 环境变量
+- 服务器 `.env` 文件中未设置该变量
+
+**解决**：
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+echo 'NEXTAUTH_SECRET=qunxiang-xinghuo-production-secret-key-2026' >> .env
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+**教训**：
+- 任何移除 fallback 的修复，必须在部署前确认环境变量已配置
+- 生产环境 `.env` 变更应纳入部署检查清单
+
+---
