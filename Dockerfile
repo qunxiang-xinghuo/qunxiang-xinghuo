@@ -73,4 +73,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-CMD ["npm", "run", "start"]
+CMD ["sh", "-c", "echo '[Entry] Running prisma db push...' && npx prisma db push --accept-data-loss && echo '[Entry] Seeding...' && npx tsx prisma/seed.ts || true && echo '[Entry] Starting...' && npm run start"]
