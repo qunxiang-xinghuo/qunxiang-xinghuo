@@ -24,6 +24,7 @@ export default function StoryHallPage() {
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [filteredStories, setFilteredStories] = useState<StoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('全部');
 
@@ -40,6 +41,7 @@ export default function StoryHallPage() {
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
+    setLoadError(false);
     fetch('/api/stories')
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -50,7 +52,10 @@ export default function StoryHallPage() {
         setStories(list);
         setFilteredStories(list);
       })
-      .catch((e) => console.error('[StoryHall] 加载失败:', e))
+      .catch((e) => {
+        console.error('[StoryHall] 加载失败:', e);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -114,6 +119,18 @@ export default function StoryHallPage() {
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-32 rounded-xl bg-white/5 animate-pulse" />
             ))}
+          </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Sparkles className="w-10 h-10 text-white/10 mb-3" />
+            <p className="text-sm text-white/30 mb-1">加载失败</p>
+            <p className="text-xs text-white/20 mb-4">网络异常，请稍后重试</p>
+            <button
+              onClick={() => { setLoading(true); setLoadError(false); window.location.reload(); }}
+              className="text-xs text-[#e2b04a]/50 hover:text-[#e2b04a]/70 transition-colors"
+            >
+              点击刷新
+            </button>
           </div>
         ) : filteredStories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">

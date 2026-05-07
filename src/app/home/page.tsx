@@ -22,6 +22,7 @@ export default function HomePage() {
   const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
   const [top3, setTop3] = useState<Top3Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -35,6 +36,7 @@ export default function HomePage() {
   useEffect(() => {
     async function init() {
       try {
+        setLoadError(false);
         const res = await fetch('/api/sparks/top?limit=3');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
@@ -43,6 +45,7 @@ export default function HomePage() {
         }
       } catch (e) {
         console.error('首页加载失败:', e);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -110,6 +113,21 @@ export default function HomePage() {
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-14 rounded-xl bg-white/5 animate-pulse" />
               ))}
+            </div>
+          ) : loadError ? (
+            <div className="text-center py-6">
+              <p className="text-sm text-white/30 mb-2">加载失败</p>
+              <button
+                onClick={() => { setLoading(true); setLoadError(false); window.location.reload(); }}
+                className="text-xs text-[#e2b04a]/50 hover:text-[#e2b04a]/70 transition-colors"
+              >
+                点击刷新
+              </button>
+            </div>
+          ) : top3.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-sm text-white/30">暂无火花数据</p>
+              <p className="text-xs text-white/20 mt-1">去发起一段对白，创造第一个火花</p>
             </div>
           ) : (
             <div className="space-y-1">

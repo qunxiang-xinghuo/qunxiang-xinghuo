@@ -42,20 +42,24 @@ function isSafeImageUrl(url: string): boolean {
   }
 }
 
-// 用户头像组件
+// 用户头像组件（带加载失败回退）
 function UserAvatar({ user, size = 64 }: { user: UserData | null; size?: number }) {
+  const [imgError, setImgError] = useState(false);
+
   if (!user) return <DefaultAvatar name="?" size={size} />;
-  if (user.image && isSafeImageUrl(user.image)) {
+
+  if (user.image && isSafeImageUrl(user.image) && !imgError) {
     return (
       <img
         src={user.image}
         alt={user.name || '头像'}
         className="rounded-full object-cover flex-shrink-0 border border-white/10"
         style={{ width: size, height: size }}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        onError={() => setImgError(true)}
       />
     );
   }
+
   return <DefaultAvatar name={user.name || user.username || '?'} size={size} />;
 }
 
@@ -64,6 +68,7 @@ export default function ProfilePage() {
   const { isAuthenticated } = useRequireAuth();
   const [user, setUser] = useState<UserData | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
@@ -76,6 +81,7 @@ export default function ProfilePage() {
   // 从 API 加载最新用户信息
   async function loadUserFromApi() {
     try {
+      setLoadError(false);
       const guestId = localStorage.getItem('xh_user_id');
       const res = await fetch('/api/users/me', {
         headers: guestId ? { 'x-guest-id': guestId } : {},
@@ -85,9 +91,12 @@ export default function ProfilePage() {
       if (data.success && data.data) {
         setUser(data.data);
         localStorage.setItem('xh_user', JSON.stringify(data.data));
+      } else {
+        throw new Error(data.message || '加载失败');
       }
     } catch (e) {
       console.error('加载用户信息失败:', e);
+      setLoadError(true);
     }
   }
 
@@ -123,13 +132,17 @@ export default function ProfilePage() {
         <div className="w-16 h-16 rounded-2xl bg-[#e2b04a]/10 flex items-center justify-center mb-4">
           <Sparkles className="w-8 h-8 text-[#e2b04a]" />
         </div>
-        <h2 className="text-lg font-bold text-white/90 mb-2">请先登录</h2>
-        <p className="text-sm text-white/40 mb-6 text-center">登录后即可查看个人信息和使用全部功能</p>
+        <h2 className="text-lg font-bold text-white/90 mb-2">
+          {loadError ? '加载失败' : '请先登录'}
+        </h2>
+        <p className="text-sm text-white/40 mb-6 text-center">
+          {loadError ? '网络异常，请检查连接后重试' : '登录后即可查看个人信息和使用全部功能'}
+        </p>
         <button
-          onClick={() => router.push('/login')}
+          onClick={() => loadError ? loadUserFromApi() : router.push('/login')}
           className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#e2b04a] to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          去登录
+          {loadError ? '重试' : '去登录'}
         </button>
       </div>
     );

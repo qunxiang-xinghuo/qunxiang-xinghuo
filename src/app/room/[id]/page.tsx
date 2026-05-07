@@ -36,6 +36,7 @@ export default function RoomPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [roomError, setRoomError] = useState(false);
   const [roomStatus, setRoomStatus] = useState<'created' | 'active' | 'closed'>('created');
   const [roomType, setRoomType] = useState('');
   const [isAiRoom, setIsAiRoom] = useState(false);
@@ -77,6 +78,31 @@ export default function RoomPage() {
   const isMountedRef = useRef(true);
   useEffect(() => { isMountedRef.current = true; return () => { isMountedRef.current = false; }; }, []);
 
+  // v8.0-selftest: roomId 变化时重置所有房间状态，防止旧数据残留
+  useEffect(() => {
+    setMessages([]);
+    setRoomStatus('created');
+    setRoomType('');
+    setIsAiRoom(false);
+    setStory(null);
+    setMyRoleName('');
+    setMyOpeningInfo('');
+    setAiRoleName('');
+    setBrainholeTitle('');
+    setBrainholeScenario('');
+    setComments([]);
+    setCommentsLoading(true);
+    setFinished(false);
+    setShowTruth(false);
+    setShowEndConfirm(false);
+    setShowAiPrompt(false);
+    setAiPrompt('');
+    if (aiPromptTimerRef.current) clearTimeout(aiPromptTimerRef.current);
+    catalystCalledRef.current.clear();
+    hasJoinedRef.current = false;
+    isProcessingAI.current = false;
+  }, [roomId]);
+
   // 当前用户ID
   const userId = authUser?.id || (typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null);
 
@@ -93,9 +119,13 @@ export default function RoomPage() {
   // 加载房间信息
   useEffect(() => {
     if (!roomId) return;
+    setRoomError(false);
     const ctrl = new AbortController();
     fetch(`/api/rooms/${roomId}`, { signal: ctrl.signal })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((res) => {
         if (!isMountedRef.current) return;
         if (res.success && res.data) {
@@ -141,7 +171,10 @@ export default function RoomPage() {
         }
       })
       .catch((err) => {
-        if (err.name !== 'AbortError') console.error('[Room] Fetch error:', err);
+        if (err.name !== 'AbortError') {
+          console.error('[Room] Fetch error:', err);
+          if (isMountedRef.current) setRoomError(true);
+        }
       })
       .finally(() => { if (isMountedRef.current) setIsLoading(false); });
     return () => ctrl.abort();
@@ -375,6 +408,22 @@ export default function RoomPage() {
   const isReadonly = roomStatus === 'closed' || finished;
   const displayTitle = story?.title || brainholeTitle || '对白室';
   const displaySubtitle = story?.eraBackground || brainholeScenario || '';
+
+  if (roomError) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center page-gradient px-6">
+        <Sparkles className="w-10 h-10 text-white/10 mb-3" />
+        <p className="text-sm text-white/30 mb-1">房间加载失败</p>
+        <p className="text-xs text-white/20 mb-4">房间不存在或网络异常</p>
+        <button
+          onClick={() => router.push('/home')}
+          className="px-6 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-sm text-white/50 hover:bg-white/[0.08] transition-colors"
+        >
+          返回发现页
+        </button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

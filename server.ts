@@ -6,6 +6,7 @@ import fs from 'fs'
 import path from 'path'
 import { setIO } from './src/server/io'
 import { registerSocketHandlers } from './src/server/socket-handler'
+import { startCrawlerSchedule } from './src/lib/crawler'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOSTNAME || '0.0.0.0'
@@ -83,5 +84,8 @@ app.prepare().then(() => {
 
   server.listen(port, hostname, () => {
     console.log(`🚀 Server ready on http://${hostname}:${port}`)
+
+    // v8.0-crawler: 启动知乎热榜脑洞定时抓取
+    startCrawlerSchedule()
   })
 })
