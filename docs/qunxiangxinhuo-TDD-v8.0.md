@@ -1232,5 +1232,84 @@ new file:   src/app/story/create/page.tsx          # 发起故事表单（两步
 
 ---
 
+---
+
+## 二十五、v8.0 对白室 brainhole 恢复 + AI DM 催化 + 刘看山真实对话（2026-05-06 追加）
+
+### 25.1 双人对白室 brainhole（脑洞）显示恢复
+
+**问题**：room 页面顶部只显示 story 信息，没有显示 brainhole（脑洞）标题和场景描述。
+
+**修复**：
+- 从 `/api/rooms/${roomId}` 返回的 `room.brainhole` 中提取标题和场景
+- 当没有 story 时，顶部显示 brainhole 信息
+- **文件**：`src/app/room/[id]/page.tsx`
+
+### 25.2 刘看山 AI 对话去套话化
+
+**问题**：AI 回复像客服套话，缺乏角色感和真实感。
+
+**修复**：
+1. **新增 `liukanshan` persona**（`src/lib/ai/personas.ts`）
+   - 强调"有情绪、有立场、像真实的人"
+   - 禁止总结、建议、分析、AI助手话术
+   - 字数 30-60 字，像真实聊天
+
+2. **改进 room 页面的 AI system prompt**（`src/app/room/[id]/page.tsx`）
+   - 结合刘看山角色设定 + 故事上下文（角色、开场信息、当前幕）
+   - 根据 messages.length 判断当前幕，注入 DM 推进目标
+   - 调用 `/api/ai/chat` 时使用 `persona: 'liukanshan'`
+
+3. **已有 DeepSeek + 知乎直答接入**（`/api/ai/chat`）
+   - 优先 DeepSeek，失败回退知乎直答
+   - 两个都失败才用 fallback
+
+### 25.3 AI 作为 DM 驱动四幕催化
+
+**问题**：原催化提示是固定文本，缺乏变化和新意。
+
+**修复**（`src/app/api/stories/[storyId]/catalyst/route.ts`）：
+1. 构建 DM 催化 prompt，调用 DeepSeek/知乎直答生成沉浸式环境事件
+2. 根据消息数判断当前幕：
+   - act1 (<6条)：建立信任，铺垫背景
+   - act2 (6-10条)：抛出疑点，信息不对等
+   - act3 (11-15条)：引入转折，打破平衡
+   - act4 (16+条)：引导真相，关键选择
+3. DeepSeek/知乎直答失败时使用本地兜底提示库
+
+### 25.4 删除泡泡脑洞到对白室线路
+
+**确认**：room 页面中不存在从 brainhole 跳转到此页面的逻辑。brainhole 到 room 的关联是通过数据库 `room.brainholeId` 外键实现的，前端没有单独的跳转线。
+
+### 25.5 发起故事后编辑审核
+
+**流程**：
+1. 作者创建故事后 status = `pending_review`
+2. 在「我发起的故事」列表中显示「继续编辑」按钮（草稿/审核中状态）
+3. 点击后跳转到 `/story/create?edit=${storyId}`（编辑模式待实现）
+4. 审核通过后 status = `recruiting`，出现在故事大厅
+
+**审核方式**（设计决策）：
+- **短期**：人工审核（管理员在数据库直接修改 status）
+- **中期**：AI 自动审核（调用 DeepSeek 评估故事质量、角色设定完整性）
+- **长期**：社区投票审核（达到一定点赞数后自动上线）
+
+### 25.6 文件变更清单
+
+```
+modified:   src/app/room/[id]/page.tsx              # brainhole显示 + AI prompt改进 + DM催化
+modified:   src/lib/ai/personas.ts                  # 新增 liukanshan persona
+modified:   src/app/api/stories/[storyId]/catalyst/route.ts  # AI驱动四幕催化
+modified:   src/app/my-stories/page.tsx             # 编辑按钮
+```
+
+### 25.7 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-ai-dm | 2026-05-06 | ✅ 通过 | 72/72 |
+
+---
+
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
-> 最后更新：2026-05-06 v8.0 多人模式 + 故事拆分 + 发起审核流程完成 ✅
+> 最后更新：2026-05-06 v8.0 对白室 brainhole + AI DM 催化 + 刘看山真实对话完成 ✅

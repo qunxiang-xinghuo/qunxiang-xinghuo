@@ -46,6 +46,10 @@ export default function RoomPage() {
   const [myOpeningInfo, setMyOpeningInfo] = useState('');
   const [aiRoleName, setAiRoleName] = useState('');
 
+  // Brainhole 信息
+  const [brainholeTitle, setBrainholeTitle] = useState('');
+  const [brainholeScenario, setBrainholeScenario] = useState('');
+
   // 评论区
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentInput, setCommentInput] = useState('');
@@ -108,6 +112,12 @@ export default function RoomPage() {
           // 故事信息
           if (room.story) {
             setStory(room.story);
+          }
+
+          // Brainhole 信息
+          if (room.brainhole) {
+            setBrainholeTitle(room.brainhole.title || '');
+            setBrainholeScenario(room.brainhole.scenario || '');
           }
 
           // 找到自己的角色
@@ -199,20 +209,48 @@ export default function RoomPage() {
     };
   }, [messages.length, story, roomId, roomStatus]);
 
-  // AI 房间自动回复 — 使用故事上下文作为 system prompt
+  // AI 房间自动回复 — 刘看山角色 + DM 推进
   const generateAIReply = useCallback(async (userMessage: string) => {
     if (isProcessingAI.current || !story) return;
     isProcessingAI.current = true;
     try {
-      // 构建故事上下文提示
+      // 根据消息数判断当前幕
+      const msgCount = messages.length;
+      let currentAct = 1;
+      let actGuidance = '';
+      if (msgCount < 6) {
+        currentAct = 1;
+        actGuidance = '这是故事的开端。引导对方分享信息，建立信任关系，自然透露一些背景线索，但不要一次性说完。';
+      } else if (msgCount < 12) {
+        currentAct = 2;
+        actGuidance = '进入发展阶段。暗示事情不像表面那么简单，抛出一些矛盾或疑点，推动对话深入。';
+      } else if (msgCount < 18) {
+        currentAct = 3;
+        actGuidance = '进入转折阶段。引入意外信息或冲突，让气氛紧张起来，某个隐藏的秘密即将浮出水面。';
+      } else {
+        currentAct = 4;
+        actGuidance = '进入真相阶段。引导对话接近核心谜底，帮助对方拼凑线索，准备收尾和揭晓。';
+      }
+
+      // 构建刘看山角色 + DM 推进 system prompt
       const storyContext = [
-        `你正在参与一个解密故事《${story.title}》。`,
+        `你是刘看山，一只好奇、温暖、说话带点狡黠的北极狐。`,
+        `你说话自然、口语化，像朋友聊天一样，偶尔用emoji表达情绪。`,
+        `从不套话、不说教、不用书面语。用简短、直接的中文回应。`,
+        ``,
+        `当前你在参与一个解密故事《${story.title}》。`,
         `你的角色是「${aiRoleName || '刘看山'}」。`,
-        myOpeningInfo ? `你的开场信息：${myOpeningInfo}` : '',
-        story.act1Reveal ? `故事背景（起）：${story.act1Reveal}` : '',
-        story.act2Reveal ? `发展线索（承）：${story.act2Reveal}` : '',
-        story.act3Reveal ? `转折信息（转）：${story.act3Reveal}` : '',
-        '请基于以上信息回应对方，保持角色一致性，不要直接透露你是AI。',
+        myOpeningInfo ? `你的秘密信息：${myOpeningInfo}` : '',
+        ``,
+        `故事背景：`,
+        story.act1Reveal ? `• 起（第一幕）：${story.act1Reveal}` : '',
+        story.act2Reveal ? `• 承（第二幕）：${story.act2Reveal}` : '',
+        story.act3Reveal ? `• 转（第三幕）：${story.act3Reveal}` : '',
+        story.act4Truth ? `• 合（真相）：${story.act4Truth}` : '',
+        ``,
+        `你同时是DM（主持人）。当前是第${currentAct}幕。`,
+        `DM职责：${actGuidance}`,
+        `回复要求：像刘看山一样自然对话，同时悄悄推动剧情向下一幕发展。不要直接告诉用户你在推进剧情。`,
       ].filter(Boolean).join('\n');
 
       const res = await fetch('/api/ai/chat', {
@@ -224,7 +262,7 @@ export default function RoomPage() {
             { role: 'user', content: userMessage },
           ],
           topic: story.title,
-          persona: 'catalyst',
+          persona: 'liukanshan',
         }),
       });
       const result = await res.json();
@@ -245,7 +283,7 @@ export default function RoomPage() {
       });
     } catch (e) { console.error('AI回复失败:', e); }
     finally { isProcessingAI.current = false; }
-  }, [story, roomId, aiRoleName, myOpeningInfo]);
+  }, [story, roomId, aiRoleName, myOpeningInfo, messages.length]);
 
   const handleSend = useCallback(async () => {
     if (!inputValue.trim() || roomStatus === 'closed') return;
@@ -323,8 +361,8 @@ export default function RoomPage() {
   };
 
   const isReadonly = roomStatus === 'closed' || finished;
-  const displayTitle = story?.title || '对白室';
-  const displaySubtitle = story?.eraBackground || '';
+  const displayTitle = story?.title || brainholeTitle || '对白室';
+  const displaySubtitle = story?.eraBackground || brainholeScenario || '';
 
   if (isLoading) {
     return (

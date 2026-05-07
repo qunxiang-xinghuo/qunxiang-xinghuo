@@ -564,6 +564,19 @@ sqlite3 dev.db ".tables"
 
 **审核状态**：draft → pending_review → approved → recruiting → ongoing → completed
 
+### 改动5：对白室 brainhole 显示恢复 + AI 去套话 + DM 催化
+
+**文件**：
+- `src/app/room/[id]/page.tsx` — brainhole 显示 + AI prompt 改进
+- `src/lib/ai/personas.ts` — 新增 `liukanshan` persona
+- `src/app/api/stories/[storyId]/catalyst/route.ts` — AI 驱动四幕催化
+
+**AI 改进要点**：
+1. 新增 `liukanshan` persona：有情绪、有立场、像真实的人，禁止套话
+2. room 页面 AI system prompt 结合刘看山角色 + 故事上下文 + DM 推进目标
+3. 催化 API 调用 DeepSeek/知乎直答生成沉浸式环境事件
+4. 四幕推进：act1 建立信任 → act2 抛出疑点 → act3 引入转折 → act4 引导真相
+
 ### 后续迭代需求（已在 TDD 中标注）
 
 | 需求 | 状态 | 说明 |

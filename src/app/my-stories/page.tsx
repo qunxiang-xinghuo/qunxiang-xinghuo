@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Clock, ChevronRight, BookOpen, Users, PlusCircle, ScrollText, UserCircle,
-  Eye, MessageCircle, AlertCircle, CheckCircle2, Clock4, XCircle,
+  Eye, MessageCircle, AlertCircle, CheckCircle2, Clock4, XCircle, Pencil,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
@@ -214,6 +214,16 @@ export default function MyStoriesPage() {
                           </span>
                         )}
                       </div>
+                      {/* 草稿/审核中状态显示编辑按钮 */}
+                      {(story.status === 'draft' || story.status === 'pending_review') && tab === 'created' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); router.push(`/story/create?edit=${story.id}`); }}
+                          className="mt-2 flex items-center gap-1 text-[10px] text-[#e2b04a]/50 hover:text-[#e2b04a] transition-colors"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          继续编辑
+                        </button>
+                      )}
                     </div>
                     <ChevronRight className="w-4 h-4 text-white/15 flex-shrink-0 mt-1" />
                   </div>
