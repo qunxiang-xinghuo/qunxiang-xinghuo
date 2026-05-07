@@ -103,14 +103,14 @@ export default function RegisterPage() {
       {/* 标题 */}
       <div className="pt-8 pb-6 px-6 text-center relative z-10">
         <motion.h2
-          initial={{ y: -10, opacity: 0 }}
+          initial={mounted ? { y: -10, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           className="text-xl font-bold text-white/90 mb-2"
         >
           创建账号
         </motion.h2>
         <motion.p
-          initial={{ y: 10, opacity: 0 }}
+          initial={mounted ? { y: 10, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
           className="text-xs text-white/50"

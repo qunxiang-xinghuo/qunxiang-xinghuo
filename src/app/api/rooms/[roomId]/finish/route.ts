@@ -70,7 +70,7 @@ export async function POST(
           identity: me.identity || "匿名",
           messageCount: room.messages.length,
           sparkCount: room.messages.filter((m) => m.isSpark).length,
-          isPublic: false,
+          isPublic: true,
         },
       }),
     ]);
