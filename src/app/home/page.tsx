@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye, Sparkles,
+  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye, Sparkles, ScrollText,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
@@ -22,6 +22,7 @@ export default function HomePage() {
   const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
   const [top3, setTop3] = useState<Top3Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -35,13 +36,16 @@ export default function HomePage() {
   useEffect(() => {
     async function init() {
       try {
+        setLoadError(false);
         const res = await fetch('/api/sparks/top?limit=3');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data.data?.list) {
           setTop3(data.data.list);
         }
       } catch (e) {
         console.error('首页加载失败:', e);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -52,7 +56,7 @@ export default function HomePage() {
   const modes = [
     {
       key: 'ai',
-      title: '人机交互模式',
+      title: '和刘看山对话',
       desc: '与刘看山一对一对话',
       icon: Bot,
       color: 'from-[#00b894]/20 to-emerald-500/20',
@@ -72,13 +76,13 @@ export default function HomePage() {
     },
     {
       key: 'multi',
-      title: '多人组队模式',
-      desc: '多人共创故事',
+      title: '多人模式',
+      desc: '多人即兴碰撞，共创群像故事',
       icon: Users,
       color: 'from-[#74b9ff]/20 to-blue-500/20',
       iconColor: 'text-[#74b9ff]',
-      path: '/story-hall',
-      comingSoon: true,
+      path: '/multiplayer',
+      comingSoon: false,
     },
     {
       key: 'spectate',
@@ -109,6 +113,21 @@ export default function HomePage() {
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-14 rounded-xl bg-white/5 animate-pulse" />
               ))}
+            </div>
+          ) : loadError ? (
+            <div className="text-center py-6">
+              <p className="text-sm text-white/30 mb-2">加载失败</p>
+              <button
+                onClick={() => { setLoading(true); setLoadError(false); window.location.reload(); }}
+                className="text-xs text-[#e2b04a]/50 hover:text-[#e2b04a]/70 transition-colors"
+              >
+                点击刷新
+              </button>
+            </div>
+          ) : top3.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-sm text-white/30">暂无火花数据</p>
+              <p className="text-xs text-white/20 mt-1">去发起一段对白，创造第一个火花</p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -152,6 +171,23 @@ export default function HomePage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* 我的故事快捷入口 */}
+        <section className="mb-4">
+          <button
+            onClick={() => router.push('/my-stories')}
+            className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.99] transition-all"
+          >
+            <div className="w-9 h-9 rounded-lg bg-[#e2b04a]/10 flex items-center justify-center">
+              <ScrollText className="w-4 h-4 text-[#e2b04a]/60" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-medium text-white/80">我的故事</p>
+              <p className="text-[11px] text-white/30">查看你参与和发起的故事</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-white/15" />
+          </button>
         </section>
 
         {/* 四大模式入口 */}

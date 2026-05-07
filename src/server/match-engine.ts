@@ -378,15 +378,39 @@ async function getEngagedBrainholes() {
 
 /**
  * 从approved池中随机选brainhole
+ * v8.0-crawler: 优先从最近7天的知乎热榜脑洞中选取（70%概率）
  */
 async function pickRandomBrainhole() {
-  const pool = await db.brainhole.findMany({
-    where: { status: "approved" },
-    orderBy: { hotScore: "desc" },
-    take: 50,
-  });
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  // 策略：70% 概率优先从最近7天的 zhihu_hot 选取
+  const useRecentHot = Math.random() < 0.7;
+
+  let pool;
+  if (useRecentHot) {
+    pool = await db.brainhole.findMany({
+      where: {
+        status: 'approved',
+        source: 'zhihu_hot',
+        createdAt: { gte: sevenDaysAgo },
+      },
+      orderBy: { hotScore: 'desc' },
+      take: 30,
+    });
+  }
+
+  // 如果近期热榜脑洞不足，回退到全量池
+  if (!pool || pool.length === 0) {
+    pool = await db.brainhole.findMany({
+      where: { status: 'approved' },
+      orderBy: { hotScore: 'desc' },
+      take: 50,
+    });
+  }
+
   if (pool.length === 0) return null;
 
+  // 热度加权随机
   const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
   let randomPoint = Math.random() * totalScore;
   for (const b of pool) {

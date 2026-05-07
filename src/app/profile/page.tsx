@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { signOut } from 'next-auth/react';
 import {
-  Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins,
+  Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins, ScrollText, UserCircle,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -32,19 +32,34 @@ function DefaultAvatar({ name, size = 64 }: { name: string; size?: number }) {
   );
 }
 
-// 用户头像组件
+// 安全的头像 URL 验证
+function isSafeImageUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return ['http:', 'https:', 'data:'].includes(u.protocol);
+  } catch {
+    return false;
+  }
+}
+
+// 用户头像组件（带加载失败回退）
 function UserAvatar({ user, size = 64 }: { user: UserData | null; size?: number }) {
+  const [imgError, setImgError] = useState(false);
+
   if (!user) return <DefaultAvatar name="?" size={size} />;
-  if (user.image) {
+
+  if (user.image && isSafeImageUrl(user.image) && !imgError) {
     return (
       <img
         src={user.image}
         alt={user.name || '头像'}
         className="rounded-full object-cover flex-shrink-0 border border-white/10"
         style={{ width: size, height: size }}
+        onError={() => setImgError(true)}
       />
     );
   }
+
   return <DefaultAvatar name={user.name || user.username || '?'} size={size} />;
 }
 
@@ -53,6 +68,7 @@ export default function ProfilePage() {
   const { isAuthenticated } = useRequireAuth();
   const [user, setUser] = useState<UserData | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
@@ -65,17 +81,22 @@ export default function ProfilePage() {
   // 从 API 加载最新用户信息
   async function loadUserFromApi() {
     try {
+      setLoadError(false);
       const guestId = localStorage.getItem('xh_user_id');
       const res = await fetch('/api/users/me', {
         headers: guestId ? { 'x-guest-id': guestId } : {},
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.success && data.data) {
         setUser(data.data);
         localStorage.setItem('xh_user', JSON.stringify(data.data));
+      } else {
+        throw new Error(data.message || '加载失败');
       }
     } catch (e) {
       console.error('加载用户信息失败:', e);
+      setLoadError(true);
     }
   }
 
@@ -111,13 +132,17 @@ export default function ProfilePage() {
         <div className="w-16 h-16 rounded-2xl bg-[#e2b04a]/10 flex items-center justify-center mb-4">
           <Sparkles className="w-8 h-8 text-[#e2b04a]" />
         </div>
-        <h2 className="text-lg font-bold text-white/90 mb-2">请先登录</h2>
-        <p className="text-sm text-white/40 mb-6 text-center">登录后即可查看个人信息和使用全部功能</p>
+        <h2 className="text-lg font-bold text-white/90 mb-2">
+          {loadError ? '加载失败' : '请先登录'}
+        </h2>
+        <p className="text-sm text-white/40 mb-6 text-center">
+          {loadError ? '网络异常，请检查连接后重试' : '登录后即可查看个人信息和使用全部功能'}
+        </p>
         <button
-          onClick={() => router.push('/login')}
+          onClick={() => loadError ? loadUserFromApi() : router.push('/login')}
           className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#e2b04a] to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          去登录
+          {loadError ? '重试' : '去登录'}
         </button>
       </div>
     );
@@ -127,7 +152,8 @@ export default function ProfilePage() {
     { icon: Coins, label: '我的收益', desc: '盐粒收益明细', path: '/earnings' },
     { icon: Flame, label: '个人疗愈', desc: '私密对话空间', path: '/healing' },
     { icon: Flame, label: '我的火花', desc: '管理你的灵感片段', path: '/profile/sparks' },
-    { icon: BookOpen, label: '我的故事', desc: '参与的故事记录', path: '/story-hall' },
+    { icon: ScrollText, label: '我发起的故事', desc: '创建和管理你的故事', path: '/my-stories?tab=created' },
+    { icon: UserCircle, label: '我参与的故事', desc: '你扮演过的角色和对白', path: '/my-stories?tab=participated' },
     { icon: Settings, label: '设置', desc: '账号与偏好', path: '/settings' },
   ];
 

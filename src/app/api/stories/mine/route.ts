@@ -1,48 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { db as prisma } from "@/lib/db";
-import { apiResponse } from "@/lib/utils";
+import { db } from "@/lib/db";
+import { apiResponse, apiError } from "@/lib/utils";
 
 /**
- * GET /api/stories/mine
- * 我参与的故事
+ * GET /api/stories/mine?type=created|participated
+ * 我的故事：我创建的 / 我参与的
  */
-// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
-        const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-    const guestId = request.headers.get("x-guest-id");
-    const effectiveUserId = userId || guestId;
-
-    if (!effectiveUserId) {
-      return NextResponse.json(apiResponse({ list: [] }));
+    if (!userId) {
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
-    // 查找用户参与的故事房间
-    const rooms = await prisma.room.findMany({
-      where: {
-        participants: { some: { userId: effectiveUserId } },
-        type: 'story',
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      include: {
-        brainhole: { select: { title: true } },
-        participants: { select: { userId: true, identity: true } },
-      },
-    });
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get("type") || "participated"; // created | participated
 
-    const list = rooms.map((r) => ({
-      id: r.id,
-      title: r.brainhole?.title || "未命名故事",
-      participantCount: r.participants.length,
-      updatedAt: r.createdAt.toISOString(),
-    }));
+    let list: any[] = [];
+
+    if (type === "created") {
+      const stories = await db.story.findMany({
+        where: { creatorId: userId },
+        orderBy: { createdAt: "desc" as const },
+        take: 50,
+        include: {
+          roles: { select: { name: true, claimedBy: true } },
+        },
+      });
+      list = stories.map((s) => ({
+        id: s.id,
+        title: s.title,
+        eraBackground: s.eraBackground || "",
+        status: s.status,
+        createdAt: s.createdAt.toISOString(),
+        roleCount: s.roles.length,
+        hotScore: s.hotScore || 0,
+        isCreator: true,
+      }));
+    } else {
+      // participated: 通过 StoryRole.claimedBy 查找
+      const roles = await db.storyRole.findMany({
+        where: { claimedBy: userId },
+        take: 50,
+        include: {
+          story: {
+            include: {
+              roles: { select: { name: true, claimedBy: true } },
+            },
+          },
+        },
+      });
+      list = roles.map((r) => ({
+        id: r.story.id,
+        title: r.story.title,
+        eraBackground: r.story.eraBackground || "",
+        status: r.story.status,
+        myRole: r.name,
+        createdAt: r.story.createdAt.toISOString(),
+        roleCount: r.story.roles.length,
+        hotScore: r.story.hotScore || 0,
+        isCreator: r.story.creatorId === userId,
+      }));
+    }
 
     return NextResponse.json(apiResponse({ list }));
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Stories Mine] Error:", error);
-    return NextResponse.json(apiResponse({ list: [] }));
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取失败，请稍后重试"), { status: 500 });
   }
 }

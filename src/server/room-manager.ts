@@ -187,6 +187,14 @@ export async function getRoomWithParticipants(roomId: string) {
     where: { id: roomId },
     include: {
       brainhole: true,
+      story: {
+        include: {
+          roles: {
+            select: { id: true, name: true, openingInfo: true, claimedBy: true },
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+      },
       participants: {
         include: {
           user: {

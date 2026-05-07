@@ -76,9 +76,16 @@ export default function LoginForm() {
         password,
         redirect: false,
       });
+      console.log('[Login] signIn result:', JSON.stringify(result));
 
-      if (result?.error || !result?.ok) {
+      if (result?.error) {
+        console.log('[Login] signIn error:', result.error);
         setError('用户名或密码错误');
+        return;
+      }
+      if (!result?.ok) {
+        console.log('[Login] signIn not ok, status:', result?.status);
+        setError('登录验证失败，请稍后重试');
         return;
       }
 

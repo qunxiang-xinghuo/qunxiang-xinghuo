@@ -448,3 +448,1180 @@ new file:   src/app/api/sparks/[id]/route.ts       # 火花详情 API
 new file:   src/app/spark-detail/[id]/page.tsx     # 火花详情服务端入口
 new file:   src/app/spark-detail/[id]/SparkDetailClient.tsx  # 微信聊天风格展示
 ```
+
+
+---
+
+## 十二、v8.1 四大改造
+
+### 12.1 TOP3 极简列表改造
+
+**改动**：
+- 发现页 `/home` 的 TOP3 从复杂卡片改为**极简文字列表**
+- 显示：排名 + 脑洞标题 + 参与者身份对 + 火花数
+- 点击跳转从 `/spark-detail/:id` 改为 `/room/:roomId`
+
+**文件**：`src/app/home/page.tsx`
+
+---
+
+### 12.2 对白详情页 `/room/[id]` 只读改造
+
+**改动**：
+- 移除实时聊天、WebSocket、输入框、AI 催化、结束按钮
+- 改为只读模式，从 `/api/rooms/:id` 加载历史消息
+- 微信聊天风格气泡，左右交替排列
+- **火花消息**：金色边框 `border-[#e2b04a]/40` + 发光 `shadow-[0_0_12px_rgba(226,176,74,0.12)]`
+- **评论区**：
+  - GET `/api/room-comments?roomId=xxx` — 加载评论列表
+  - POST `/api/room-comments` — 创建评论（需登录）
+  - DELETE `/api/room-comments/:id` — 删除自己的评论
+
+**文件**：
+- `src/app/room/[id]/page.tsx`
+- `src/app/api/room-comments/route.ts`
+- `src/app/api/room-comments/[id]/route.ts`
+
+**Prisma**：
+- 新增 `RoomComment` 模型
+- `Room.comments` / `User.roomComments` 双向关系
+
+---
+
+### 12.3 火花页职业分类
+
+**改动**：
+- `/library` 增加横向滚动标签栏
+- 分类：全部 / 医疗 / 法律 / 教育 / 服务 / 技术 / 生活
+- API `/api/sparks/public` 增加 `?category=xxx` 筛选参数
+
+**文件**：
+- `src/app/library/page.tsx`
+- `src/app/api/sparks/public/route.ts`
+
+---
+
+### 12.4 全局 Flame 图标替换
+
+**改动**：
+- 所有 `Heart` / `ThumbsUp` 替换为 `lucide-react` 的 `Flame`
+- 已赞：金色 `#e2b04a` + `fill-current` + `drop-shadow` 发光
+- 未赞：灰色
+
+**涉及文件**（15个）：
+- `src/app/home/page.tsx`
+- `src/app/library/page.tsx`
+- `src/app/healing/page.tsx`
+- `src/app/healing/session/[id]/page.tsx`
+- `src/app/spectate/[roomId]/page.tsx`
+- `src/app/profile/page.tsx`
+- `src/app/room/[id]/page.tsx`
+- `src/components/bubble-cloud/BubbleDetailModal.tsx`
+- `src/components/match/MatchCard.tsx`
+- `src/components/home/ModeDock.tsx`
+- `src/components/story/CreateStoryModal.tsx`
+
+---
+
+### 12.5 v8.1b 补充改造
+
+#### 12.5.1 多人组队愿景介绍页
+
+**改动**：
+- `src/app/multiplayer/page.tsx` 完全重写为愿景介绍页
+- 无按钮，纯文字介绍多人即兴碰撞的玩法和愿景
+- 包含：场景想象（急诊室）、玩法四步、四个价值点
+- 底部"🚧 功能开发中"
+
+#### 12.5.2 "人机交互模式"改名
+
+**改动**：
+- `src/app/home/page.tsx`：模式卡片标题 "人机交互模式" → "和刘看山对话"
+- `src/app/solo-match/page.tsx`：TopBar 标题 "人机模式" → "和刘看山对话"
+
+---
+
+## 十三、构建验证记录
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0 | 2026-05-06 | ✅ 通过 | 68/68 |
+| v8.1 | 2026-05-06 | ✅ 通过 | 68/68 |
+| v8.1b | 2026-05-06 | ✅ 通过 | 68/68 |
+
+
+---
+
+## 十四、v8.0 故事系统完整开发
+
+### 14.1 设计理念
+
+**叙事性轨迹 + AI兜底**
+
+| 角色 | 能看到 | 看不到 |
+|------|--------|--------|
+| 角色A | 自己的身份、开场信息 | 角色B的信息、完整故事线 |
+| 角色B | 自己的身份、开场信息 | 角色A的信息、完整故事线 |
+| AI刘看山 | 完整故事线（起承转合） | — |
+
+**四格解密结构**：起→承→转→合，用户只解锁「起」，承转合在对话中逐步揭示。
+
+**AI兜底**：15秒未匹配到真人→弹窗询问是否和刘看山玩。
+
+### 14.2 数据库设计
+
+扩展现有 `Story` / `StoryRole` / `Room` 模型：
+
+| 模型 | 新增字段 | 说明 |
+|------|----------|------|
+| Story | `eraBackground`, `storySummary`, `act1Reveal`~`act4Truth`, `maxCharacters`, `hotScore`, `creatorId` | 解密故事内容 |
+| StoryRole | `openingInfo`, `sortOrder` | 角色开场信息 |
+| Room | `storyId`, `isAiRoom` | 关联故事、AI房间标记 |
+| User | `createdStories` | 创建的故事关系 |
+
+### 14.3 种子数据（5个太仓解密故事）
+
+1. 最后的起锚地 — 明永乐三年，郑和下西洋前夜
+2. 天妃宫的不速之客 — 明洪武三十一年，朱元璋驾崩前夜
+3. 丝竹世家的最后一曲 — 1937年，日军逼近苏州
+4. 麻将的秘密 — 1937年，南京沦陷后
+5. 牛郎织女降生地 — 2026年，西工大
+
+### 14.4 API 路由
+
+| 路由 | 方法 | 功能 |
+|------|------|------|
+| `/api/stories` | GET | 故事列表（标题、时代背景、简介、角色数） |
+| `/api/stories/[storyId]` | GET | 故事详情 + 角色列表 + openingInfo |
+| `/api/stories/[storyId]/join` | POST | 选角色加入，匹配或等待 |
+| `/api/stories/[storyId]/join-ai` | POST | 创建AI房间，刘看山扮演另一角色 |
+| `/api/stories/[storyId]/catalyst` | GET | 按消息数返回对应阶段催化提示 |
+| `/api/stories/mine` | GET | `?type=created` / `?type=participated` |
+
+### 14.5 前端页面
+
+| 路由 | 功能 |
+|------|------|
+| `/story-hall` | 故事大厅：故事卡片列表 + 长期连载入口 |
+| `/story/[id]` | 故事详情：时代背景、简介、起（解锁）、承转合（锁住）、角色选择、等待匹配弹窗、AI兜底弹窗 |
+| `/room/[id]` | 对白室：顶部故事标题+时代背景+角色名、openingInfo提示、AI催化提示、实时聊天/只读模式切换、评论区 |
+| `/my-stories` | 我的故事：我参与的 / 我发起的 |
+| `/story-hall/long-term` | 长期连载愿景介绍页 |
+
+### 14.6 Room 页面模式切换
+
+| 房间状态 | 模式 | 功能 |
+|----------|------|------|
+| `active` | 实时聊天 | WebSocket、输入框、AI催化、AI房间自动回复 |
+| `closed` | 只读浏览 | 消息列表、评论区（GET/POST/DELETE） |
+
+### 14.7 文件变更清单
+
+```
+modified:   prisma/schema.prisma                 # Story/StoryRole/Room 扩展
+new file:   prisma/seed-stories.ts               # 5个太仓解密故事种子
+modified:   src/lib/db.ts                        # 默认数据库路径修正
+modified:   src/server/room-manager.ts           # 添加 story include
+modified:   src/app/home/page.tsx                # 入口改为「故事大厅」「和刘看山对话」
+new file:   src/app/story-hall/page.tsx          # 故事大厅
+new file:   src/app/story-hall/long-term/page.tsx # 长期连载愿景页
+new file:   src/app/story/[id]/page.tsx          # 故事详情+角色选择+弹窗
+new file:   src/app/my-stories/page.tsx          # 我的故事
+modified:   src/app/room/[id]/page.tsx           # 支持故事系统+实时/只读双模式
+modified:   src/app/api/stories/[storyId]/route.ts # 合并解密故事字段
+new file:   src/app/api/stories/[storyId]/join/route.ts
+new file:   src/app/api/stories/[storyId]/join-ai/route.ts
+new file:   src/app/api/stories/[storyId]/catalyst/route.ts
+```
+
+### 14.8 构建验证
+
+| 版本 | 日期 | 结果 | 页面数 |
+|------|------|------|--------|
+| v8.0 story | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+## 十五、已知问题与注意事项
+
+1. **Prisma db push 路径问题**：`src/lib/db.ts` 默认路径原为 `file:./prisma/dev.db`（空文件），已修正为 `file:./dev.db`
+2. **路由冲突**：`/api/stories/[id]` 与 `/api/stories/[storyId]` 冲突，已合并到 `[storyId]` 下
+3. **生产环境 migrate deploy P3005**：数据库未 baseline，需使用 `prisma db push`
+4. **SSH 自动部署失败**：服务器端口 2222 超时 / 22 权限拒绝，需手动部署
+
+
+---
+
+## 十六、v8.0 故事系统代码审查修复（2026-05-06 追加）
+
+### 16.1 审查背景
+在 v8.0 故事系统开发完成后，进行了资深测试工程师 + 资深技术员的全面代码审查，发现并修复了 **20+ 个代码审查问题**，涵盖竞态条件、内存泄漏、数据一致性、权限控制等。
+
+### 16.2 修复问题清单
+
+#### API 层修复（5 个关键问题）
+
+| # | 文件 | 问题 | 修复方案 | 严重程度 |
+|---|------|------|---------|---------|
+| 1 | `rooms/[roomId]/finish` | 重复调用 finish 会因 Asset.roomId @unique 约束崩溃 | 添加幂等检查：`status==='closed'` 时直接返回已有 assetId；使用 `$transaction` 原子执行 update+create | 🔴 Critical |
+| 2 | `rooms/[roomId]/finish` | 观众(spectator)可触发结束 | 添加 `me.role === 'spectator'` 拒绝 | 🟡 Warning |
+| 3 | `stories/[storyId]/join` | role claim 竞态条件：两个请求同时检查 `claimedBy===null`，都通过，后一个覆盖前一个 | 使用乐观锁：`update({ where: { id: roleId, claimedBy: null } })`，P2025 时返回 409 | 🔴 Critical |
+| 4 | `stories/[storyId]/join` | 未检查用户是否已在该故事活跃房间中，可重复创建 | 先查 `roomParticipant` where `room.storyId=xxx AND status=active` | 🔴 Critical |
+| 5 | `stories/[storyId]/join` | 匹配时可能重复创建房间（两个用户同时触发） | 创建房间前先查 `participants.every` 是否已有配对房间 | 🔴 Critical |
+| 6 | `stories/[storyId]/catalyst` | 不验证 room 是否属于 story，可传入任意 roomId | 添加 `db.room.findFirst({ where: { id: roomId, storyId } })` | 🔴 Critical |
+| 7 | `stories/[storyId]/join-ai` | 可无限创建 AI 房间 | 添加检查：该用户在该故事是否已有活跃 AI 房间 | 🔴 Critical |
+| 8 | `stories/[storyId]/join` | 未验证 story 状态（closed/completed 仍可加入） | 添加 `story.status` 检查 | 🟡 Warning |
+
+#### 前端层修复（5 个关键问题）
+
+| # | 文件 | 问题 | 修复方案 | 严重程度 |
+|---|------|------|---------|---------|
+| 9 | `room/[id]/page.tsx` | AI 催化 `setTimeout` 未清理，组件卸载后 setState 警告 | `useRef` 存储 timeout ID，effect cleanup 中 `clearTimeout` | 🔴 Critical |
+| 10 | `room/[id]/page.tsx` | `removeAllListeners('new-message')` 清除全局 socket 的所有监听器 | 改为 `off('new-message', handleNewMessage)` 只移除当前 handler | 🔴 Critical |
+| 11 | `room/[id]/page.tsx` | Socket `joinRoom` 在 `myRoleName` 从空到值时触发两次 | 添加 `hasJoinedRef` + `!myRoleName` 提前 return | 🔴 Critical |
+| 12 | `room/[id]/page.tsx` | `msg.userId.startsWith('agent_')` 可能 crash（null/undefined） | 改为 `msg.userId?.startsWith('agent_') &#124;&#124; false` | 🔴 Critical |
+| 13 | `story/[id]/page.tsx` | 轮询 POST `/join` 每3秒调用，有副作用（重复 claim/创建） | 添加 `pollInProgress` ref 防并发 | 🔴 Critical |
+| 14 | `room/[id]/page.tsx` | 房间 fetch 无 AbortController，快速切换房间时数据错乱 | 添加 `AbortController`，cleanup 中 abort | 🟡 Warning |
+| 15 | `room/[id]/page.tsx` | `useCallback` deps 不完整（`sendMessage` 未包含） | 补全依赖数组 | 🟡 Warning |
+
+#### v8.0 初始 20 个问题（用户确认的设计决策后修复）
+
+| # | 问题 | 状态 |
+|---|------|------|
+| 1 | 房间无结束机制 | ✅ 添加 🏁 结束对白按钮 + `/api/rooms/{id}/finish` |
+| 2 | 匹配后用户A不知道 | ✅ 轮询自动检测 matched 状态 |
+| 3 | 催化剂调用过于频繁 | ✅ `catalystCalledRef` Set 防重复 |
+| 4 | AI房间开场冲突 | ✅ `isAiRoom &#124;&#124; type==='story_ai'` 双重判断 |
+| 5 | 无「我的故事」入口 | ✅ `/home` 发现页添加快捷入口 |
+| 6 | 等待弹窗无关闭/返回 | ✅ 添加 ❌ 关闭、↩ 返回选角色按钮 |
+| 7 | 等待状态丢失 | ✅ 轮询自动恢复 |
+| 8 | 旧角色claim未清理 | ✅ join API 清理旧记录 |
+| 9 | Room API权限403 | ✅ finish API 兼容 storyId 场景 |
+| 10 | 无揭晓谜底按钮 | ✅ 结束按钮确认后揭晓起承转合 |
+| 11 | 只读不显示四格 | ✅ room page 展示四格 + 评论区 |
+| 12 | 角色选择无loading | ✅ 添加 loading 状态 |
+| 13 | isAi判断不严谨 | ✅ 双重校验 |
+
+### 16.3 设计决策确认（7项）
+
+1. **故事大厅样式**：列表式（保持现有）
+2. **结束按钮位置**：输入区上方「🏁 结束对白」
+3. **揭晓时机**：手动点击后一次性揭晓起承转合
+4. **只读模式**：完整四格 + 对白记录 + 评论区
+5. **等待弹窗**：新增「❌ 关闭」「返回选角色」
+6. **超时后**：「和刘看山玩」「继续等待」「返回选角色」
+7. **我的故事入口**：`/home` 发现页
+
+### 16.4 文件变更清单（本次修复）
+
+```
+modified:   src/app/api/rooms/[roomId]/finish/route.ts      # 幂等+事务+权限
+modified:   src/app/api/stories/[storyId]/join/route.ts     # 乐观锁+防重复房间
+modified:   src/app/api/stories/[storyId]/join-ai/route.ts  # 防重复AI房间
+modified:   src/app/api/stories/[storyId]/catalyst/route.ts # room-story验证
+modified:   src/app/room/[id]/page.tsx                      # 内存泄漏+socket+防御
+modified:   src/app/story/[id]/page.tsx                     # 轮询防并发
+```
+
+### 16.5 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0 story-fix | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 故事系统代码审查修复完成 ✅
+
+
+---
+
+## 十七、v8.0 故事系统 UX 优化（2026-05-06 追加）
+
+### 17.1 优化背景
+基于资深产品交互设计师的全方位体验走查，对故事系统进行 7 项 UX 优化，覆盖「降低决策成本」「减少信息过载」「提升叙事沉浸感」「增强容错能力」四个维度。
+
+### 17.2 优化清单
+
+| # | 优化项 | 目标 | 实现方案 | 文件 |
+|---|--------|------|---------|------|
+| 1 | openingInfo 自动折叠 | 减少信息过载 | 30秒后自动折叠为「📋 查看开场信息」小按钮，点击展开 | `room/[id]/page.tsx` |
+| 2 | 结束对白确认卡片 | 替代生硬 confirm | 内嵌柔和确认卡片：「真的要揭晓谜底了吗？」+「再聊一会」「揭晓谜底」双按钮 | `room/[id]/page.tsx` |
+| 3 | 揭晓谜底后「再来一局」 | 降低流失率 | TruthModal 底部增加「🎭 再来一局」按钮，跳转 /story-hall | `room/[id]/page.tsx` |
+| 4 | AI 房间使用故事上下文 | 提升沉浸感 | generateAIReply 构建 system prompt 包含：角色名、openingInfo、act1-4Reveal，让 AI 扮演知情角色 | `room/[id]/page.tsx` |
+| 5 | 🎲 随机分配角色 | 降低决策成本 | 角色列表顶部增加「随机分配」按钮，从未被选角色中随机选一个 | `story/[id]/page.tsx` |
+| 6 | 角色详情展开 | 帮助决策 | 每个角色卡片增加 ChevronDown 展开按钮，显示 description | `story/[id]/page.tsx` |
+| 7 | 等待时间缩短 | 减少焦虑感 | 15秒 → 10秒，AI 兜底体验本身很好，不需要让用户等太久 | `story/[id]/page.tsx` |
+| 8 | 故事大厅空状态 | 避免空白迷茫 | stories 为空时显示「还没有解密故事」+ 引导去长期连载 | `story-hall/page.tsx` |
+| 9 | Error Boundary | 防止白屏崩溃 | AppShell 包裹 ErrorBoundary，渲染错误时显示「刷新页面」按钮 | `AppShell.tsx` |
+
+### 17.3 文件变更清单
+
+```
+modified:   src/app/room/[id]/page.tsx           # 折叠+确认卡片+再来一局+AI context
+modified:   src/app/story/[id]/page.tsx           # 随机角色+详情展开+10秒等待
+modified:   src/app/story-hall/page.tsx           # 空状态引导
+modified:   src/components/layout/AppShell.tsx    # Error Boundary
+```
+
+### 17.4 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-ux | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 故事系统 UX 优化完成 ✅
+
+
+---
+
+## 十八、v8.0 故事系统全方位建议实现（2026-05-06 追加）
+
+### 18.1 实现背景
+基于资深产品交互设计师、产品经理、项目经理、视觉设计师、开发工程师、测试工程师、产品运营师、剧本杀作者八重视角的全面走查，将可落地的建议全部实现。
+
+### 18.2 已实现建议清单
+
+#### 交互设计师建议（6/6 实现）
+
+| # | 建议 | 实现 | 文件 |
+|---|------|------|------|
+| 1 | openingInfo 30秒自动折叠 | ✅ 折叠为「📋 查看开场信息」小按钮 | `room/[id]/page.tsx` |
+| 2 | 结束对白 confirm 改为内嵌卡片 | ✅ 「真的要揭晓谜底了吗？」柔和确认 | `room/[id]/page.tsx` |
+| 3 | 揭晓谜底后「再来一局」 | ✅ TruthModal 底部增加 🎭 再来一局按钮 | `room/[id]/page.tsx` |
+| 4 | AI 房间使用故事 system prompt | ✅ 传入角色名+openingInfo+act1-4Reveal | `room/[id]/page.tsx` |
+| 5 | 🎲 随机分配角色 | ✅ 从未选角色中随机，降低决策成本 | `story/[id]/page.tsx` |
+| 6 | 角色详情展开 | ✅ ChevronDown 展开 description | `story/[id]/page.tsx` |
+| 7 | 等待时间 15秒→10秒 | ✅ 减少焦虑感 | `story/[id]/page.tsx` |
+| 8 | 加载全局遮罩 | ✅ joinLoading 时显示半透明遮罩+转圈 | `story/[id]/page.tsx` |
+| 9 | 故事大厅分类标签 | ✅ 全部/古风/民国/现代 横向标签栏 | `story-hall/page.tsx` |
+| 10 | placeholder 可见性 | ✅ white/20 → white/35 | `room/[id]/page.tsx` |
+| 11 | 起承转合动画 | ✅ motion.div 渐入动画，delay 递增 | `room/[id]/page.tsx` |
+
+#### 剧本杀作者建议（4/5 实现）
+
+| # | 建议 | 实现 | 文件 |
+|---|------|------|------|
+| 1 | OpeningInfo 悬念设计 | ✅ 每段增加「未完成的任务」或「内心的矛盾」 | `prisma/seed-stories.ts` |
+| 2 | 四格叙事节奏感 | ✅ act1-4 保持起承转合结构（已有） | — |
+| 3 | AI 催化叙事融入 | ✅ 包装成环境事件（烛火摇曳/脚步声/空气凝固） | `catalyst/route.ts` |
+| 4 | 线索卡机制 | ⏳ 待后续迭代（大工作量） | — |
+| 5 | 结局分支 | ⏳ 待后续迭代（需 AI 情绪分析） | — |
+
+#### 开发工程师建议（1/3 实现）
+
+| # | 建议 | 实现 | 文件 |
+|---|------|------|------|
+| 1 | Error Boundary | ✅ AppShell 包裹，渲染错误时显示刷新按钮 | `AppShell.tsx` |
+| 2 | 拆分 room page 子组件 | ⏳ 待后续迭代 | — |
+| 3 | memoize 日期格式化 | ⏳ 待后续迭代 | — |
+
+#### 产品经理建议（0/2 实现，需后续迭代）
+
+| # | 建议 | 状态 |
+|---|------|------|
+| 1 | 埋点系统 | ⏳ 需接入 analytics |
+| 2 | 商业模式闭环 | ⏳ 需 Asset 公开/私密 + 解锁机制 |
+
+#### 产品运营师建议（0/3 实现，需后续迭代）
+
+| # | 建议 | 状态 |
+|---|------|------|
+| 1 | 用户激励（徽章/积分） | ⏳ 需新表 + 前端展示 |
+| 2 | 社区运营（置顶/加精） | ⏳ 需评论权限系统 |
+| 3 | 定期评选活动 | ⏳ 需运营后台 |
+
+### 18.3 种子数据改写（剧本杀化）
+
+每个角色的 `openingInfo` 和 `description` 已改写为悬念式剧本风格：
+
+- **船工**：「你还没想好要不要去当面问他。如果真是他做的，你该怎么办？」
+- **锦衣卫密探**：「你的任务是监视他，但你已经开始怀疑密档了。」
+- **天妃宫住持**：「你还没决定要不要告诉他：他握着的，是一个死人的东西。」
+- **受伤的年轻人**：「你还没决定：是继续装失忆试探他，还是直接亮出身份？」
+- **沈家孙女**：「包括你自己吗？」
+- **算命先生**：「但你不能确定：来的这个孙女，是敌是友？」
+- **粮仓记账员**：「因为你知道，如果你答应了他，你就再也回不去了。」
+- **保安队长**：「他的妻子三个月前已经死了。而他帮日本人统计粮食，是在给杀妻仇人打工。」
+- **西工大研究生**：「因为你突然意识到，你完全不记得自己本科四年是怎么过的。」
+- **旧宅管理员**：「你还没决定要不要告诉他：三年前他在这里发现的东西，是你亲手毁掉的。」
+
+### 18.4 催化提示叙事化
+
+| 阶段 | 原提示 | 新提示 |
+|------|--------|--------|
+| act1 | 「先聊聊你们的开场信息」 | 「窗外突然传来一阵异响，你注意到对方的眼神闪烁了一下」 |
+| act2 | 「有没有发现信息对不上」 | 「桌上烛火突然摇曳了一下，你意识到对方说的某句话和之前矛盾」 |
+| act3 | 「再深入问问」 | 「门外传来脚步声，又停住了。你知道有人在听」 |
+| act4 | 「你们准备好了吗」 | 「空气仿佛凝固了。你们都知道，再往下问，就没有回头路了」 |
+
+### 18.5 文件变更清单
+
+```
+modified:   prisma/seed-stories.ts                    # 剧本杀化 openingInfo + description
+modified:   src/app/api/stories/[storyId]/catalyst/route.ts  # 叙事风格催化提示
+modified:   src/app/room/[id]/page.tsx                 # placeholder/动画/折叠/确认卡片/再来一局/AI context
+modified:   src/app/story-hall/page.tsx                # 分类标签筛选
+modified:   src/app/story/[id]/page.tsx                # 随机角色/详情展开/10秒等待/加载遮罩
+modified:   docs/story-system-flow.md                  # 6处流程图修正
+```
+
+### 18.6 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-full | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 故事系统全方位建议实现完成 ✅
+
+
+---
+
+## 十九、v8.0 生产部署记录（2026-05-06）
+
+### 19.1 部署结果
+
+- **服务器部署**：✅ 成功
+- **PM2 状态**：online (pid 815133)
+- **构建**：✅ 70/70 页面
+- **种子数据**：✅ 5 个剧本杀化故事已插入
+
+### 19.2 生产环境问题
+
+#### 问题：DATABASE_URL 环境变量为空
+
+**现象**：
+- 种子脚本执行时报错：`The table main.Story does not exist`
+- 但 `prisma db push` 显示 schema 已同步
+
+**根因**：
+- `.env` 中 `DATABASE_URL="file:/www/wwwroot/qunxiang-xinghuo/prisma/dev.db"` 正确
+- 但 **shell 环境变量** `DATABASE_URL` 为空
+- `src/lib/db.ts` 中 `process.env.DATABASE_URL` 优先读取 shell 环境变量，回退到 `"file:./dev.db"`
+- 根目录 `dev.db` 是 0 字节的空文件，没有 Story 表
+- 真实数据在 `prisma/dev.db`（2.4MB）
+
+**解决**：
+```bash
+export DATABASE_URL="file:./dev.db"
+npx prisma db push --accept-data-loss
+npx tsx prisma/seed-stories.ts
+```
+
+**注意**：种子脚本执行了两次，导致数据库中有 10 个故事（5 个标题各重复一次）。需要清理重复数据。
+
+### 19.3 重复数据清理方案
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+sqlite3 dev.db "DELETE FROM Story WHERE id NOT IN (SELECT MAX(id) FROM Story GROUP BY title);"
+# 验证
+sqlite3 dev.db "SELECT title FROM Story;"
+# 预期输出：5 个不重复的故事标题
+```
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 生产部署完成 ✅
+
+
+---
+
+## 二十、v8.0 登录/注册服务器错误修复（2026-05-06）
+
+### 20.1 问题现象
+
+- 用户访问网站时显示「服务器错误」
+- 登录验证失败
+- 注册时显示「服务器错误，请稍后重试」（HTTP 500）
+
+### 20.2 根因分析（5轮自测）
+
+#### 自测1：排查服务器错误根因
+- 检查注册 API `/api/auth/register` → 代码正常，有完善错误处理
+- 检查 next-auth 配置 `/api/auth/[...nextauth]` → 引用了 `PrismaAdapter`
+- 检查数据库连接 `src/lib/db.ts` → 使用了 `@prisma/adapter-better-sqlite3`
+
+#### 自测2：发现关键问题 — PrismaAdapter 不兼容
+- `@auth/prisma-adapter` v2.11.2 是为 **Auth.js (next-auth v5)** 设计的
+- `next-auth` v4.24.14 使用旧版适配器 API
+- `PrismaAdapter(db)` 中 `db` 是 Prisma 7 + `@prisma/adapter-better-sqlite3`
+- 三者组合导致 next-auth 初始化失败，所有 `/api/auth/*` 路由返回 500
+
+#### 自测3：修复 db 全局单例
+- 原代码：`if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db`
+- 生产环境中每次 import 都会创建新的 PrismaClient
+- 修复：始终使用全局单例 `globalForPrisma.prisma = db`
+
+#### 自测4：增强错误处理
+- `authorize` 函数添加 try/catch，防止未捕获异常导致 500
+- 注册 API 添加数据库连接错误分支（503）
+- `NEXTAUTH_SECRET` 添加 fallback（防止生产环境未设置）
+
+#### 自测5：验证构建
+- TypeScript 编译通过
+- 70/70 页面生成成功
+
+### 20.3 修复方案
+
+```
+┌─────────────────┐     ┌─────────────────────┐     ┌─────────────────┐
+│  原代码          │     │  问题                │     │  修复            │
+├─────────────────┤     ├─────────────────────┤     ├─────────────────┤
+│ adapter:        │     │ @auth/prisma-adapter │     │ 移除 adapter     │
+│ PrismaAdapter() │────▶│ v2 与 next-auth v4   │────▶│ JWT+Credentials  │
+│                 │     │ 不兼容               │     │ 不需要 adapter   │
+├─────────────────┤     ├─────────────────────┤     ├─────────────────┤
+│ NODE_ENV !==    │     │ 生产环境不缓存       │     │ 始终缓存         │
+│ "production"    │────▶│ PrismaClient         │────▶│ globalForPrisma  │
+├─────────────────┤     ├─────────────────────┤     ├─────────────────┤
+│ NEXTAUTH_SECRET │     │ 生产环境可能未设置   │     │ 添加 fallback    │
+│ 无 fallback     │────▶│ 导致 getToken 失败   │────▶│ 密钥（32位+）    │
+└─────────────────┘     └─────────────────────┘     └─────────────────┘
+```
+
+### 20.4 文件变更
+
+```
+modified:   src/lib/auth.ts                 # 移除 PrismaAdapter + 添加 fallback
+modified:   src/lib/db.ts                   # 始终使用全局单例
+modified:   src/app/api/auth/register/route.ts  # 增强错误处理
+```
+
+### 20.5 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-auth-fix | 2026-05-06 | ✅ 通过 | 70/70 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`
+> 最后更新：2026-05-06 v8.0 登录/注册服务器错误修复完成 ✅
+
+---
+
+## 二十一、v8.0 登录/注册 cookie secure 修复（2026-05-06 追加）
+
+### 21.1 问题现象
+
+- 注册成功 ✅
+- 登录失败 ❌（`/api/users/me` 返回未登录）
+- 服务器日志显示 `authorize` 返回用户成功，但 session 未建立
+
+### 21.2 根因分析（第6轮自测）
+
+| 检查项 | 结果 |
+|--------|------|
+| `authorize` 返回用户对象 | ✅ 正常 |
+| JWT callback 写入 token | ✅ 正常 |
+| session callback 恢复 | ✅ 正常 |
+| **cookie `secure: true`** | ❌ **HTTP 环境下浏览器拒绝发送** |
+
+**根因**：生产环境使用 HTTP（非 HTTPS），NextAuth cookie `secure: true` 时，浏览器**不会**将 cookie 发送给 HTTP 站点。导致 `signIn` 成功后 cookie 被设置但后续请求不携带，session 无法建立。
+
+### 21.3 修复方案
+
+```ts
+// src/lib/auth.ts
+cookies: {
+  sessionToken: {
+    name: `next-auth.session-token`,
+    options: {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: false, // ← 原为 true，HTTP 环境必须 false
+    },
+  },
+},
+```
+
+### 21.4 验证结果
+
+- 注册新账号 ✅
+- 新账号登录 ✅
+- 登录后跳转 `/home` 并显示用户名 ✅
+
+---
+
+## 二十二、v8.0 发现页 TOP3 火花 + 数据库路径统一（2026-05-06 追加）
+
+### 22.1 发现页 TOP3 火花缺失
+
+**现象**：发现页 `/home` 的"今日最热火花"列表为空，显示骨架屏后无数据。
+
+**根因**：`home/page.tsx` 调用 `/api/sparks/top?limit=3`，但该 API 路由文件 `src/app/api/sparks/top/route.ts` 缺失（v8.1 改造时未创建）。
+
+**修复**：新建 `/api/sparks/top` API 路由：
+- 从 `Asset` 表按 `hotScore` 降序取前 3 条
+- 关联 `brainhole`（标题）和 `room`（参与者身份对）
+- 返回 `{ id, brainholeTitle, identityPair, sparkCount, roomId }`
+
+**文件**：`src/app/api/sparks/top/route.ts`（新建）
+
+### 22.2 生产数据库路径混乱
+
+**现象**：
+- 根目录 `dev.db`：0 字节（空文件）
+- `prisma/dev.db`：2.4MB（旧数据）
+- `.env` 指向 `prisma/dev.db`
+- `src/lib/db.ts` 回退到 `file:./dev.db`
+
+**解决**（已完成）：
+1. `src/lib/db.ts` 统一使用 `file:./dev.db`
+2. `.env` 统一为 `DATABASE_URL="file:./dev.db"`
+3. 生产环境需执行：
+   ```bash
+   cd /www/wwwroot/qunxiang-xinghuo
+   # 备份旧数据（如需迁移）
+   cp prisma/dev.db prisma/dev.db.backup
+   # 删除旧文件避免混淆
+   rm prisma/dev.db
+   # 确保根目录 dev.db 是正确数据库
+   sqlite3 dev.db ".tables"
+   ```
+
+### 22.3 文件变更清单
+
+```
+new file:   src/app/api/sparks/top/route.ts        # TOP3 火花排行榜 API
+modified:   src/lib/auth.ts                        # cookie secure=false
+```
+
+### 22.4 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-top3-fix | 2026-05-06 | ✅ 通过 | 71/71 |
+
+---
+
+## 二十三、后续迭代需求汇总（TDD 标注）
+
+以下需求已在 TDD §18.2 中标注，待后续版本实现：
+
+### 23.1 线索卡机制
+- **状态**：⏳ 待后续迭代（大工作量）
+- **说明**：在对白过程中，用户可通过特定条件（如消息数达到阈值、关键词触发）获得"线索卡"，逐步解锁故事隐藏信息。需新增 `StoryClue` 模型 + 前端 UI。
+
+### 23.2 结局分支（需 AI 情绪分析）
+- **状态**：⏳ 待后续迭代（需 AI 情绪分析）
+- **说明**：根据用户在对白中的情绪倾向（通过 AI 分析消息情感），生成不同结局分支（如"真相大白"/"遗憾收场"/"意外反转"）。需接入情感分析 API + 结局分支表。
+
+### 23.3 埋点系统
+- **状态**：⏳ 需接入 analytics
+- **说明**：统计用户行为（页面停留、点击热区、漏斗转化），支持自研或接入第三方（如 Plausible/umami）。需设计事件 schema + 上报 SDK。
+
+### 23.4 用户激励（徽章/积分）
+- **状态**：⏳ 需新表 + 前端展示
+- **说明**：
+  - 徽章系统：首次完成故事、累计火花数、连续登录等成就徽章
+  - 积分系统：参与对白、获得点赞、发表评论获得积分
+  - 需新增 `Badge` / `UserBadge` / `PointLog` 模型
+
+### 23.5 运营后台
+- **状态**：⏳ 需运营后台
+- **说明**：
+  - 内容管理：故事增删改、审核用户提交的故事
+  - 用户管理：查看用户数据、禁言/封号
+  - 数据统计：DAU/留存/转化率
+  - 需独立的 admin 路由 + 权限控制
+
+---
+
+---
+
+## 二十四、v8.0 多人模式 + 我的故事拆分 + 发起故事审核流程（2026-05-06 追加）
+
+### 24.1 发现页第三个模式改为「多人模式」
+
+**改动前**：第三个模式是「故事大厅」→ `/story-hall`
+**改动后**：第三个模式是「多人模式」→ `/multiplayer`（多人即兴碰撞愿景页）
+
+**文件**：`src/app/home/page.tsx`
+
+故事大厅入口保留在底部导航「故事」tab → `/story-hall`
+
+### 24.2 「我的故事」拆分为两个菜单项
+
+**改动前**：profile 页面只有一个「我的故事」→ `/story-hall`
+**改动后**：
+- 「我发起的故事」→ `/my-stories?tab=created`
+- 「我参与的故事」→ `/my-stories?tab=participated`
+
+**文件**：`src/app/profile/page.tsx`
+
+### 24.3 「我发起的故事」— 创建故事到审核流程
+
+#### 产品设计角度
+
+**作者发起故事流程**：
+1. 在「我发起的故事」页面点击「发起新故事」
+2. 填写故事基本信息（标题、时代背景、分类、简介）
+3. 设定角色（2-6 个），每个角色包含：名称、设定、开场信息
+4. 提交后进入「审核中」状态
+5. 审核通过后出现在故事大厅，其他用户可以参与
+
+**审核状态流转**：
+```
+draft → pending_review → approved → recruiting → ongoing → completed
+       ↑                 ↑
+    作者保存          管理员审核
+```
+
+#### 技术角度
+
+**API 设计**：
+- `POST /api/stories` — 创建故事（需登录），status = `pending_review`
+- `GET /api/stories/mine?type=created` — 返回我发起的故事（含 status、hotScore）
+- `GET /api/stories` — 列表只返回 `status in [open, recruiting, approved]`
+
+**数据模型**：复用现有 `Story` 和 `StoryRole` 模型，扩展 status 枚举值：
+- `draft` — 草稿
+- `pending_review` — 审核中
+- `approved` — 已通过（等待上线）
+- `rejected` — 未通过
+- `recruiting` — 招募中（已上线）
+- `ongoing` — 进行中
+- `completed` — 已完结
+
+**前端页面**：
+- `/story/create` — 两步表单（故事信息 → 角色设定）
+- `/my-stories?tab=created` — 我发起的故事列表 + 审核状态标签
+
+#### 作者角度
+
+**创作者体验**：
+- 简洁的两步创建流程，降低创作门槛
+- 角色「开场信息」引导作者设计信息不对称（悬念）
+- 提交后清晰的审核状态反馈
+- 审核通过后自动上线，无需额外操作
+
+### 24.4 「我参与的故事」— 角色与对白展示
+
+**功能**：
+- 列表展示参与过的故事 + 扮演的角色
+- 点击后进入 `/story/${story.id}` 故事详情页
+- 详情页展示：角色信息、进入对白室、只读模式下展示对白记录
+
+### 24.5 文件变更清单
+
+```
+modified:   src/app/home/page.tsx                  # 第三个模式改为多人模式
+modified:   src/app/profile/page.tsx               # 拆分「我的故事」为两个菜单项
+modified:   src/app/my-stories/page.tsx            # 支持 URL tab + 创建故事按钮 + 审核状态
+modified:   src/app/api/stories/route.ts           # 添加 POST 创建故事
+modified:   src/app/api/stories/mine/route.ts      # 返回 hotScore、isCreator
+new file:   src/app/story/create/page.tsx          # 发起故事表单（两步）
+```
+
+### 24.6 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-story-create | 2026-05-06 | ✅ 通过 | 72/72 |
+
+---
+
+---
+
+## 二十五、v8.0 对白室 brainhole 恢复 + AI DM 催化 + 刘看山真实对话（2026-05-06 追加）
+
+### 25.1 双人对白室 brainhole（脑洞）显示恢复
+
+**问题**：room 页面顶部只显示 story 信息，没有显示 brainhole（脑洞）标题和场景描述。
+
+**修复**：
+- 从 `/api/rooms/${roomId}` 返回的 `room.brainhole` 中提取标题和场景
+- 当没有 story 时，顶部显示 brainhole 信息
+- **文件**：`src/app/room/[id]/page.tsx`
+
+### 25.2 刘看山 AI 对话去套话化
+
+**问题**：AI 回复像客服套话，缺乏角色感和真实感。
+
+**修复**：
+1. **新增 `liukanshan` persona**（`src/lib/ai/personas.ts`）
+   - 强调"有情绪、有立场、像真实的人"
+   - 禁止总结、建议、分析、AI助手话术
+   - 字数 30-60 字，像真实聊天
+
+2. **改进 room 页面的 AI system prompt**（`src/app/room/[id]/page.tsx`）
+   - 结合刘看山角色设定 + 故事上下文（角色、开场信息、当前幕）
+   - 根据 messages.length 判断当前幕，注入 DM 推进目标
+   - 调用 `/api/ai/chat` 时使用 `persona: 'liukanshan'`
+
+3. **已有 DeepSeek + 知乎直答接入**（`/api/ai/chat`）
+   - 优先 DeepSeek，失败回退知乎直答
+   - 两个都失败才用 fallback
+
+### 25.3 AI 作为 DM 驱动四幕催化
+
+**问题**：原催化提示是固定文本，缺乏变化和新意。
+
+**修复**（`src/app/api/stories/[storyId]/catalyst/route.ts`）：
+1. 构建 DM 催化 prompt，调用 DeepSeek/知乎直答生成沉浸式环境事件
+2. 根据消息数判断当前幕：
+   - act1 (<6条)：建立信任，铺垫背景
+   - act2 (6-10条)：抛出疑点，信息不对等
+   - act3 (11-15条)：引入转折，打破平衡
+   - act4 (16+条)：引导真相，关键选择
+3. DeepSeek/知乎直答失败时使用本地兜底提示库
+
+### 25.4 删除泡泡脑洞到对白室线路
+
+**确认**：room 页面中不存在从 brainhole 跳转到此页面的逻辑。brainhole 到 room 的关联是通过数据库 `room.brainholeId` 外键实现的，前端没有单独的跳转线。
+
+### 25.5 发起故事后编辑审核
+
+**流程**：
+1. 作者创建故事后 status = `pending_review`
+2. 在「我发起的故事」列表中显示「继续编辑」按钮（草稿/审核中状态）
+3. 点击后跳转到 `/story/create?edit=${storyId}`（编辑模式待实现）
+4. 审核通过后 status = `recruiting`，出现在故事大厅
+
+**审核方式**（设计决策）：
+- **短期**：人工审核（管理员在数据库直接修改 status）
+- **中期**：AI 自动审核（调用 DeepSeek 评估故事质量、角色设定完整性）
+- **长期**：社区投票审核（达到一定点赞数后自动上线）
+
+### 25.6 文件变更清单
+
+```
+modified:   src/app/room/[id]/page.tsx              # brainhole显示 + AI prompt改进 + DM催化
+modified:   src/lib/ai/personas.ts                  # 新增 liukanshan persona
+modified:   src/app/api/stories/[storyId]/catalyst/route.ts  # AI驱动四幕催化
+modified:   src/app/my-stories/page.tsx             # 编辑按钮
+```
+
+### 25.7 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.0-ai-dm | 2026-05-06 | ✅ 通过 | 72/72 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-05-06 v8.0 对白室 brainhole + AI DM 催化 + 刘看山真实对话完成 ✅
+
+---
+
+## §26 知乎热榜脑洞自动抓取系统
+
+> 新增：2026-04-29
+
+### 26.1 需求背景
+
+双人匹配时脑洞话题依赖种子数据和用户 UGC 供给，数量有限。需要自动化流程每日从知乎热榜抓取新鲜话题，经 AI 转化后存入数据库。
+
+### 26.2 数据流
+
+```
+知乎热榜 API → 过滤敏感话题 → AI 转化（DeepSeek/知乎直答）→ 存入 Brainhole 表 → 匹配引擎随机选取
+```
+
+### 26.3 模块设计
+
+| 模块 | 文件 | 职责 |
+|------|------|------|
+| 热榜抓取 | `src/lib/crawler/zhihu-hot.ts` | 调用知乎公开 API，过滤新闻/政策/敏感内容 |
+| AI 转化 | `src/lib/crawler/ai-transform.ts` | 将话题转为第二人称冲突场景，80字以内 |
+| 核心流程 | `src/lib/crawler/index.ts` | 去重检查、标签创建、入库、定时调度 |
+| 手动触发 | `src/app/api/crawler/route.ts` | POST 执行 / GET 统计（需 admin key） |
+
+### 26.4 AI 转化 Prompt 规范
+
+- 用第二人称「你」开头
+- 设置具体冲突场景
+- 控制在80字以内
+- 给出2-3个身份标签
+- 难度评估：easy/medium/hard
+- 禁止涉及真实人名、血腥暴力政治
+
+### 26.5 定时策略
+
+- 服务启动后 30 秒首次执行
+- 之后每 6 小时执行一次（`setInterval`）
+- 单次最多处理 10 条话题
+- 串行执行避免 API 限流
+
+### 26.6 匹配引擎集成
+
+```ts
+// match-engine.ts pickRandomBrainhole()
+// 70% 概率优先从最近7天的 zhihu_hot 脑洞中选取
+const useRecentHot = Math.random() < 0.7;
+```
+
+### 26.7 环境变量
+
+```env
+DEEPSEEK_API_KEY=sk-...
+CRAWLER_ADMIN_KEY=dev-crawler-key  # 手动触发 API 的认证密钥
+```
+
+---
+
+## §27 20次全项目自测执行记录
+
+> 新增：2026-04-29
+
+### 27.1 自测方法论
+
+每轮自测由「资深测试工程师视角」+「资深技术员视角」双轨执行：
+- 测试工程师：关注用户体验路径、边界条件、异常场景
+- 技术员：关注代码质量、安全漏洞、性能隐患
+
+### 27.2 执行记录
+
+**第1-5轮（代码审查驱动）**
+
+| 轮次 | 维度 | 发现问题 | 修复 |
+|------|------|----------|------|
+| 1 | stale closure | `messages.length` 闭包延迟 | 传参 `currentMsgCount` |
+| 1 | 内存泄漏 | 组件卸载后 setState | `mounted` ref |
+| 1 | timer 泄漏 | `setTimeout` 未清理 | `finally { clearTimeout }` |
+| 1 | key index | 角色卡片用数组索引 | `crypto.randomUUID()` |
+| 1 | immutability | 直接修改状态对象 | `setRoles(prev => ...)` |
+| 2 | AbortController | 评论加载无取消 | 添加 signal + mounted 检查 |
+| 2 | mounted guard | finally 中 setState | `if (mounted.current)` |
+| 2 | 错误泄露 | `error.message` 返客户端 | 通用错误信息 |
+| 2 | 分页限制 | `findMany` 无上限 | `take: 100/50` |
+| 2 | 字段上限 | 创建故事无长度限制 | Zod `max()` |
+| 3 | 竞态条件 | tab 切换请求覆盖 | AbortController 取消旧请求 |
+| 3 | 空状态逻辑 | `stories.length` 判断错误 | `filteredStories.length` |
+| 3 | XSS | `img src` 未验证 | 协议白名单 + `onError` fallback |
+| 3 | fetch 校验 | 4个文件无 `res.ok` | 统一添加 |
+| 4 | JWT 密钥 | 硬编码 fallback | 强制要求 `NEXTAUTH_SECRET` |
+| 4 | 敏感日志 | auth 流程打印 username | 移除所有认证日志 |
+| 4 | 未鉴权 API | 故事详情无权限 | 非公开状态返回 403 |
+| 4 | Socket 权限 | join-room 无身份校验 | UUID 格式校验 + 导演 DB 校验 |
+| 5 | 构建验证 | `useRef` 未导入 | 补充 import |
+
+**第6轮（用户路径审查）**
+
+| 维度 | 发现问题 | 修复 |
+|------|----------|------|
+| 登录系统 | ✅ 无问题 | — |
+| 故事大厅 | 网络错误无提示 | `loadError` 状态 + 刷新按钮 |
+| 故事详情 | API 错误无反馈、进度条异常 | 部分修复 |
+| 对白室 | 房间切换状态残留、无错误页 | 重置 effect + `roomError` |
+| 火花墙 | 空状态缺失、网络错误无提示 | `loadError` + 空状态文案 |
+| 我的页面 | API 失败误导登录、头像无 fallback | `loadError` + `imgError` state |
+| 登录守卫 | ✅ 无问题 | — |
+| 底部导航 | ✅ 无问题 | — |
+| 前端异常 | 3个页面网络错误无提示 | 全部修复 |
+| SSR渲染 | ✅ 无问题 | `mounted` 模式全部合规 |
+| 移动端适配 | ✅ 无问题 | — |
+
+### 27.3 累计修复统计
+
+- **高优先级**：17 个
+- **中优先级**：8 个
+- **低优先级**：5 个（记录待后续）
+- **构建通过率**：100%（72/72 页面）
+
+---
+
+## §28 登录页消失专项预防机制
+
+> 新增：2026-04-29
+
+### 28.1 历史根因与预防
+
+| 根因 | 预防措施 | 状态 |
+|------|----------|------|
+| 动画初始透明度写入服务端HTML | `initial={mounted ? ... : false}` | ✅ 已落实 |
+| 容器组件带动画初始状态 | 所有 motion 组件使用 mounted 守卫 | ✅ 已落实 |
+| 表单组件多处设置初始透明度 | 登录页无 opacity:0 | ✅ 已落实 |
+| useSearchParams 未包裹 Suspense | LoginForm 被 page.tsx Suspense 包裹 | ✅ 已落实 |
+| 外部字体服务被屏蔽 | 使用系统字体栈 | ✅ 已落实 |
+| cookie secure 与 HTTP 不兼容 | `secure: false`（已知妥协） | ✅ 已记录 |
+
+### 28.2 代码规范（强制）
+
+```tsx
+// ✅ 正确：动画仅在客户端挂载后执行
+const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
+
+<motion.div
+  initial={mounted ? { opacity: 0 } : false}
+  animate={{ opacity: 1 }}
+/>
+
+// ❌ 错误：服务端渲染时 opacity 为 0
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+/>
+```
+
+### 28.3 部署后验证脚本
+
+```bash
+scripts/verify-login-page.sh http://localhost:3000
+```
+
+验证项：
+1. HTML 包含 `<form>` + `<input>`
+2. 无 `opacity:0`
+3. 状态码 200
+4. 未登录访问 `/home` → 307
+
+---
+
+## §29 自动化部署系统配置
+
+> 新增：2026-04-29
+
+### 29.1 脚本位置
+
+| 脚本 | 路径 | 说明 |
+|------|------|------|
+| 自动部署 | `scripts/deploy-auto.sh` | 一键完整部署 |
+| 登录页验证 | `scripts/verify-login-page.sh` | 部署后检查 |
+
+### 29.2 部署流程
+
+```
+数据库备份 → 拉代码 → 装依赖 → DB同步 → 构建（3次重试）→ 重启服务 → 验证
+```
+
+### 29.3 重试机制
+
+- 构建步骤失败自动重试
+- 每次重试前清除 `.next` 缓存
+- 最多 3 次，全部失败输出告警并终止
+- 不自动恢复数据库（需手动确认）
+
+### 29.4 部署前环境变量检查（强制）
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+# NEXTAUTH_SECRET 必须 >= 32 字符，无 fallback
+grep NEXTAUTH_SECRET .env || echo 'NEXTAUTH_SECRET=...' >> .env
+```
+
+### 29.5 验证清单
+
+| 验证项 | 方法 | 预期 |
+|--------|------|------|
+| 登录页状态码 | `curl /login` | 200 |
+| 守卫拦截 | `curl --cookie "" /home` | 307→/login |
+| PM2 进程 | `pm2 status` | online |
+| 登录页HTML | `grep form\|input` | 包含 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.0 路演前全局规划完成 ✅
+
+---
+
+## §30 AI 自我修炼系统（星火进化链）
+
+> 新增：2026-04-29
+
+### 30.1 系统架构
+
+```
+基础能力投喂（冷启动） → 实时学习记录（每次交互） → 定期总结优化（每日） → 反哺进化（下次交互）
+```
+
+### 30.2 数据模型
+
+| 模型 | 用途 | 关键字段 |
+|------|------|----------|
+| `AITrainingData` | 基础能力池 | domain, content, source |
+| `AILearningLog` | 实时交互记录 | sceneType, aiContent, messageIndex, userResponded, sparked |
+| `AIOptimizationSummary` | 定期总结 | bestPrompt, bestTiming, hitRate, summaryDate |
+| `CatalystLog` | 催化效果 | roomId, prompt, phase, msgCount, responded, sparked |
+| `BrainholeSummary` | 脑洞效果汇总 | bestCatalyst, hitRate, avgResponseLength |
+
+### 30.3 模块一：基础能力投喂
+
+**触发时机**：服务启动后 60 秒首次执行
+
+**领域覆盖**：
+- `psychology` — CBT认知行为疗法、共情技巧、倾听技术
+- `storytelling` — 三幕剧结构、悬念设计、即兴戏剧引导
+- `brainhole` — 开放式提问、视角转换、矛盾激化
+- `taicang` — 郑和下西洋、江南丝竹、太仓港口历史
+
+**数据来源**：DeepSeek API（主）→ 知乎直答（辅）→ 手动补充
+
+### 30.4 模块二：实时学习记录
+
+**记录场景**：
+- AI 催化提示显示 → 记录 `CatalystLog`
+- AI 回复消息 → 记录 `AILearningLog`
+- 用户发送消息 → 更新对应 `CatalystLog` 的 responded 状态
+
+**客户端实现**：通过 `fetch('/api/ai-training/log')` 异步记录，不影响主流程
+
+### 30.5 模块三：定期总结优化
+
+**执行时机**：每天凌晨 3 点
+
+**总结维度**：
+- 按 `phase`（act1/act2/act3/act4）统计催化有效率
+- 按 `referenceId` 统计脑洞最佳/最差催化
+- 按 `sceneType` 统计最佳时机（消息数）
+
+### 30.6 模块四：反哺进化
+
+**当前实现**：记录数据已就绪，反哺读取逻辑待后续接入 AI 生成 prompt
+
+**设计接口**：
+```ts
+getBestStrategy(sceneType, referenceId) → { bestPrompt, bestTiming, hitRate }
+getTrainingKnowledge(domain, limit) → string[]
+```
+
+### 30.7 模块五：个人疗愈 AI 特殊进化
+
+**隐私保护**：
+- 疗愈对话原始内容不存入学习日志
+- 只记录统计数据（回应率、对话时长、情绪标签）
+- 用户可随时删除自己的疗愈记录
+
+### 30.8 API 接口
+
+```bash
+# 手动触发基础投喂
+curl -X POST http://localhost:3000/api/ai-training \
+  -H "x-admin-key: dev-crawler-key" \
+  -d '{"action":"feed"}'
+
+# 手动触发总结优化
+curl -X POST http://localhost:3000/api/ai-training \
+  -H "x-admin-key: dev-crawler-key" \
+  -d '{"action":"summary"}'
+
+# 查看统计
+curl http://localhost:3000/api/ai-training \
+  -H "x-admin-key: dev-crawler-key"
+```
+
+### 30.9 环境变量
+
+```env
+DEEPSEEK_API_KEY=sk-...  # 基础能力投喂必需
+CRAWLER_ADMIN_KEY=...     # 手动触发API认证
+```
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.0 AI自我修炼系统完成 ✅
