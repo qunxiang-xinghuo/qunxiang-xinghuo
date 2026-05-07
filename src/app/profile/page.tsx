@@ -32,16 +32,27 @@ function DefaultAvatar({ name, size = 64 }: { name: string; size?: number }) {
   );
 }
 
+// 安全的头像 URL 验证
+function isSafeImageUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return ['http:', 'https:', 'data:'].includes(u.protocol);
+  } catch {
+    return false;
+  }
+}
+
 // 用户头像组件
 function UserAvatar({ user, size = 64 }: { user: UserData | null; size?: number }) {
   if (!user) return <DefaultAvatar name="?" size={size} />;
-  if (user.image) {
+  if (user.image && isSafeImageUrl(user.image)) {
     return (
       <img
         src={user.image}
         alt={user.name || '头像'}
         className="rounded-full object-cover flex-shrink-0 border border-white/10"
         style={{ width: size, height: size }}
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
     );
   }
@@ -69,6 +80,7 @@ export default function ProfilePage() {
       const res = await fetch('/api/users/me', {
         headers: guestId ? { 'x-guest-id': guestId } : {},
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.success && data.data) {
         setUser(data.data);

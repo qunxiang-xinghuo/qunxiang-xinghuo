@@ -36,6 +36,7 @@ export default function HomePage() {
     async function init() {
       try {
         const res = await fetch('/api/sparks/top?limit=3');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data.data?.list) {
           setTop3(data.data.list);

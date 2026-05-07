@@ -41,7 +41,10 @@ export default function StoryHallPage() {
 
   useEffect(() => {
     fetch('/api/stories')
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
         const list = data.data?.list || [];
         setStories(list);
@@ -112,7 +115,7 @@ export default function StoryHallPage() {
               <div key={i} className="h-32 rounded-xl bg-white/5 animate-pulse" />
             ))}
           </div>
-        ) : stories.length === 0 ? (
+        ) : filteredStories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Sparkles className="w-10 h-10 text-white/10 mb-3" />
             <p className="text-sm text-white/30 mb-1">还没有解密故事</p>

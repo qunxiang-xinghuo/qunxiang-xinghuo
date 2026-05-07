@@ -601,6 +601,13 @@ pm2 restart al    # ❌ 错误（al 不是有效的进程名）
 | 用户激励（徽章/积分） | ⏳ 待迭代 | 需 Badge/PointLog 模型 |
 | 运营后台 | ⏳ 待迭代 | 需 admin 路由 + 权限 |
 
+重要信息：宝塔私钥路径为 `C:\Users\Dell\qunxiang-xinghuo\qunxiang.pem`
+服务器	81.70.59.228	暴露真实IP，易受攻击
+SSH	id_ed25519_fqunxiang、端口 2222暴露私钥路径和端口路径	/www/wwwroot/qunxiang-xinghuo暴露服务器目录结构	替换为域名	fqunxiang.x404.online	暴露Git服务器	
+私钥	qunxiang.pem 及路径	最高风险，绝对不能泄露	
+Webhook	http://81.70.59.228/webhook	暴露内网服务	
+数据库	SQLite文件路径	暴露数据位置	替换为通用描述
+
 ---
 
 ---

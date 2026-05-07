@@ -7,6 +7,24 @@
 import { Server as SocketIOServer, Socket } from 'socket.io'
 import { db } from '@/lib/db'
 
+// v8.0-sec-fix: 简单的 UUID 格式校验
+function isValidId(id: string): boolean {
+  return /^[0-9a-fA-F-]{8,}$/.test(id)
+}
+
+// v8.0-sec-fix: 验证导演权限
+async function verifyDirector(storyId: string, userId: string): Promise<boolean> {
+  try {
+    const story = await db.story.findUnique({
+      where: { id: storyId },
+      select: { directorId: true },
+    })
+    return story?.directorId === userId
+  } catch {
+    return false
+  }
+}
+
 interface JoinRoomData {
   roomId: string
   userId: string
@@ -94,6 +112,11 @@ export function registerSocketHandlers(io: SocketIOServer): void {
 
     // 加入房间 —— v6.2-fix6: 不再广播 user-joined 文字消息，改为静默更新 viewer count
     socket.on('join-room', async ({ roomId, userId, identity }: JoinRoomData) => {
+      // v8.0-sec-fix: 校验 ID 格式
+      if (!isValidId(roomId) || !isValidId(userId)) {
+        console.warn('[Socket] join-room rejected: invalid id format')
+        return
+      }
       socket.join(roomId)
       joinedRooms.set(roomId, userId)
       console.log(`[Socket] User ${userId} (${identity}) joined room ${roomId}`)
@@ -213,7 +236,14 @@ export function registerSocketHandlers(io: SocketIOServer): void {
     })
 
     // 导演暂停
-    socket.on('director-pause', ({ storyId, directorId }: DirectorControlData) => {
+    socket.on('director-pause', async ({ storyId, directorId }: DirectorControlData) => {
+      // v8.0-sec-fix: 验证导演身份
+      if (!isValidId(storyId) || !isValidId(directorId)) return
+      const ok = await verifyDirector(storyId, directorId)
+      if (!ok) {
+        console.warn(`[Socket] director-pause rejected: ${directorId} is not director of ${storyId}`)
+        return
+      }
       const roomKey = `story-${storyId}`
       io.to(roomKey).emit('director-pause', {
         storyId,
@@ -224,7 +254,14 @@ export function registerSocketHandlers(io: SocketIOServer): void {
     })
 
     // 导演继续
-    socket.on('director-resume', ({ storyId, directorId }: DirectorControlData) => {
+    socket.on('director-resume', async ({ storyId, directorId }: DirectorControlData) => {
+      // v8.0-sec-fix: 验证导演身份
+      if (!isValidId(storyId) || !isValidId(directorId)) return
+      const ok = await verifyDirector(storyId, directorId)
+      if (!ok) {
+        console.warn(`[Socket] director-resume rejected: ${directorId} is not director of ${storyId}`)
+        return
+      }
       const roomKey = `story-${storyId}`
       io.to(roomKey).emit('director-resume', {
         storyId,

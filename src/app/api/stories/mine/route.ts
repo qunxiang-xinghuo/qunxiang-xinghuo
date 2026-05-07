@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(apiResponse({ list }));
   } catch (error: any) {
     console.error("[Stories Mine] Error:", error);
-    console.error("[Stories Mine] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取失败，请稍后重试"), { status: 500 });
   }
 }

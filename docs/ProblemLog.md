@@ -994,3 +994,73 @@ sqlite3 dev.db ".tables"  # 验证正常
 **文件**：`src/app/story/create/page.tsx`
 
 ---
+
+## v8.0 资深技术+测试员自测 第2轮 — 问题记录
+
+### 自测7：room 页面评论区加载无 AbortController
+
+**严重程度**：🔴 高
+
+**现象**：评论 fetch 无 AbortController，组件卸载或切换房间时 pending 请求无法取消，旧数据可能覆盖新数据。
+
+**修复**：添加 AbortController，`.then`/`.finally` 中检查 `isMountedRef.current`。
+
+**文件**：`src/app/room/[id]/page.tsx`
+
+### 自测8：room 页面房间信息 finally 回调未保护
+
+**严重程度**：🔴 高
+
+**现象**：`fetch(...).finally(() => setIsLoading(false))` 在 abort 后仍会执行，组件卸载后调用 setState。
+
+**修复**：`finally(() => { if (isMountedRef.current) setIsLoading(false); })`。
+
+**文件**：`src/app/room/[id]/page.tsx`
+
+### 自测9：room 页面 AI 催化 timer 泄漏
+
+**严重程度**：🔴 高
+
+**现象**：AI 催化 fetch 无 AbortController，`.then` 内部注册的 `setTimeout` 不受 cleanup 保护，组件卸载后 15 秒仍会尝试 setState。
+
+**修复**：添加 AbortController，`setTimeout` 回调中检查 `isMountedRef.current`。
+
+**文件**：`src/app/room/[id]/page.tsx`
+
+### 自测10：API 错误信息泄露
+
+**严重程度**：🔴 高
+
+**现象**：`stories/route.ts` 和 `stories/mine/route.ts` 中 `error.message` 直接返回给客户端，可能暴露数据库结构、Prisma 内部错误。
+
+**修复**：统一返回 `"创建失败，请稍后重试"` / `"获取失败，请稍后重试"`，错误详情记录到服务器日志。
+
+**文件**：`src/app/api/stories/route.ts`、`src/app/api/stories/mine/route.ts`
+
+### 自测11：API 缺少字段长度上限
+
+**严重程度**：🟡 中
+
+**现象**：创建故事时 title、storySummary、角色字段仅有下限校验，无上限限制。
+
+**修复**：
+- title: 2-100 字
+- eraBackground: 1-100 字
+- storySummary: 20-2000 字
+- 角色 name: 1-50 字
+- 角色 description/openingInfo: 1-500 字
+- category 白名单校验
+
+**文件**：`src/app/api/stories/route.ts`
+
+### 自测12：API 缺少分页限制
+
+**严重程度**：🟡 中
+
+**现象**：`stories` 列表和 `stories/mine` 的 `findMany` 无 `take` 上限，数据量大时可能一次性返回巨量数据。
+
+**修复**：`stories` 列表 `take: 100`，`stories/mine` `take: 50`。
+
+**文件**：`src/app/api/stories/route.ts`、`src/app/api/stories/mine/route.ts`
+
+---

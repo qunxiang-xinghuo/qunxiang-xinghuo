@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -57,14 +57,20 @@ export default function MyStoriesPage() {
     }
   }, [urlTab]);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const loadStories = useCallback(async () => {
+    // 取消之前的请求
+    if (abortRef.current) abortRef.current.abort();
+    abortRef.current = new AbortController();
     setLoading(true);
     try {
-      const res = await fetch(`/api/stories/mine?type=${tab}`);
+      const res = await fetch(`/api/stories/mine?type=${tab}`, { signal: abortRef.current.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setStories(data.data?.list || []);
-    } catch (e) {
-      console.error('[MyStories] 加载失败:', e);
+    } catch (e: any) {
+      if (e.name !== 'AbortError') console.error('[MyStories] 加载失败:', e);
     } finally {
       setLoading(false);
     }
@@ -72,6 +78,7 @@ export default function MyStoriesPage() {
 
   useEffect(() => {
     loadStories();
+    return () => { if (abortRef.current) abortRef.current.abort(); };
   }, [loadStories]);
 
   const handleTabChange = (newTab: TabType) => {

@@ -33,6 +33,12 @@ export async function GET(
       return NextResponse.json(apiError("NOT_FOUND", "故事不存在"), { status: 404 });
     }
 
+    // v8.0-sec-fix: 非公开状态的故事需要鉴权
+    const isPublic = story.status === 'published';
+    if (!isPublic) {
+      return NextResponse.json(apiError("FORBIDDEN", "该故事尚未发布"), { status: 403 });
+    }
+
     // v8.0: 如果是解密故事（有 eraBackground），返回简化格式
     if (story.eraBackground) {
       return NextResponse.json(apiResponse({

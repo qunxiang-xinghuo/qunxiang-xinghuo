@@ -34,14 +34,15 @@ declare module "next-auth/jwt" {
 }
 
 // v8.0-fix: 确保 NEXTAUTH_SECRET 在生产环境中已设置
-if (!process.env.NEXTAUTH_SECRET) {
-  console.warn('[Auth] NEXTAUTH_SECRET 未设置，使用 fallback 密钥（不推荐用于生产环境）');
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
+if (!NEXTAUTH_SECRET || NEXTAUTH_SECRET.length < 32) {
+  throw new Error('[Auth] NEXTAUTH_SECRET 未设置或长度不足32字符，应用无法启动。请在 .env 中设置强密钥。');
 }
 
 export const authOptions: NextAuthOptions = {
   // v8.0-fix: 移除 PrismaAdapter。我们使用 JWT + CredentialsProvider，
   // 不需要数据库存储 session/account。PrismaAdapter v2 与 next-auth v4 不兼容。
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key-min-32-chars-long!!',
+  secret: NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
     // v6.3-auth-fix3: JWT 有效期 24 小时，避免长期会话残留
@@ -97,9 +98,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          console.log('[Auth] authorize called, username:', credentials?.username);
           if (!credentials?.username || !credentials?.password) {
-            console.log('[Auth] missing credentials');
             return null;
           }
 
@@ -114,26 +113,20 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!user) {
-            console.log('[Auth] user not found:', credentials.username);
             return null;
           }
-          console.log('[Auth] user found:', user.id, 'hasPassword:', !!user.password);
 
           // 验证密码
           if (user.password) {
-            console.log('[Auth] comparing password...');
             const valid = await bcrypt.compare(credentials.password, user.password);
-            console.log('[Auth] password valid:', valid);
             if (!valid) {
               return null;
             }
           } else {
             // 兼容旧用户：没有密码的不能通过 credentials 登录
-            console.log('[Auth] user has no password');
             return null;
           }
 
-          console.log('[Auth] authorize success, userId:', user.id);
           return {
             id: user.id,
             name: user.name || user.username || user.email?.split("@")[0],
@@ -143,7 +136,7 @@ export const authOptions: NextAuthOptions = {
             sparkCount: user.sparkCount,
           };
         } catch (error) {
-          console.error('[Auth] authorize error:', error);
+          console.error('[Auth] authorize 异常');
           return null;
         }
       },
