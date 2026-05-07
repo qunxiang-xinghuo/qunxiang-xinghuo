@@ -886,3 +886,61 @@ pm2 restart all
 3. **register页**：无痕模式访问 `/register`，确认标题立即可见
 
 ---
+
+
+---
+
+## v8.0 20次流程走查 — 部署记录
+
+> 更新：2026-04-29
+> 状态：✅ 已完成，构建通过 74/74 页面
+
+### 排查方法
+
+按照 `story-system-flow.md` 流程图，20个检查点逐条代码审查：
+- 核心用户旅程 8个
+- 状态机 4个
+- 关键交互流程 4个
+- 异常处理 4个
+
+### 修复文件清单
+
+| 修复项 | 文件 | 说明 | 提交 |
+|--------|------|------|------|
+| 火花墙为空 | `finish/route.ts` | Asset `isPublic: false→true` | `6393045` |
+| register页mounted | `register/page.tsx` | motion组件添加mounted守卫 | `6393045` |
+| 等待时间回归 | `story/[id]/page.tsx` | 15秒→10秒 | `b564f4a` |
+
+### 审计结论
+
+| 维度 | 通过 | 失败 | 风险 |
+|------|------|------|------|
+| 核心用户旅程 | 7 | 1 | 0 |
+| 状态机 | 4 | 0 | 0 |
+| 关键交互流程 | 4 | 0 | 0 |
+| 异常处理 | 3 | 0 | 1 |
+| **合计** | **18** | **1** | **1** |
+
+**唯一失败项**：`story/[id]/page.tsx` 等待时间回归（15秒→10秒，已修复）
+
+**风险项**：`middleware.ts` 调试日志过多（非阻塞，建议后续优化）
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 部署后验证
+
+1. 注册页 `/register` → 标题立即可见，无opacity:0
+2. 故事大厅 `/story-hall` → 5个故事卡片正常显示
+3. 选择角色 → 等待弹窗显示**10秒**倒计时
+4. 结束对白 → 火花出现在 `/library`
+
+---
