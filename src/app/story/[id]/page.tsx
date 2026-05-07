@@ -39,7 +39,7 @@ export default function StoryDetailPage() {
 
   // 等待匹配弹窗状态
   const [showWaiting, setShowWaiting] = useState(false);
-  const [waitingSeconds, setWaitingSeconds] = useState(15);
+  const [waitingSeconds, setWaitingSeconds] = useState(10);
   const [matchResult, setMatchResult] = useState<'waiting' | 'matched' | 'timeout'>('waiting');
   const [matchedRoomId, setMatchedRoomId] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
@@ -118,7 +118,7 @@ export default function StoryDetailPage() {
           setShowWaiting(true);
         } else {
           setMatchResult('waiting');
-          setWaitingSeconds(15);
+          setWaitingSeconds(10);
           setShowWaiting(true);
         }
       }
@@ -337,7 +337,7 @@ export default function StoryDetailPage() {
                   <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden mb-4">
                     <div
                       className="h-full bg-[#e2b04a]/50 rounded-full transition-all duration-1000"
-                      style={{ width: `${(waitingSeconds / 15) * 100}%` }}
+                      style={{ width: `${(waitingSeconds / 10) * 100}%` }}
                     />
                   </div>
                   <button
