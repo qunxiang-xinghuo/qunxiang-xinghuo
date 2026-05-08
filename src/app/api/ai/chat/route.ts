@@ -88,8 +88,9 @@ export async function POST(request: NextRequest) {
     let systemPrompt = persona.systemPrompt;
 
     // 为 liukanshan 角色注入话题和上下文
+    // v8.1-fix: 加入硬性约束，确保回复融入脑洞场景
     if (personaKey === 'liukanshan' && context) {
-      systemPrompt += `\n\n当前话题：「${topic || '一个有趣的话题'}」\n${context}`;
+      systemPrompt += `\n\n当前话题：「${topic || '一个有趣的话题'}」\n${context}\n\n硬性约束：你的每一次回复必须和当前话题直接相关。如果用户偏离话题，用一个简短的提问把话题拉回来。禁止聊与当前话题无关的内容。`;
     } else {
       systemPrompt = systemPrompt.replace("{topic}", topic || "一个有趣的话题");
     }

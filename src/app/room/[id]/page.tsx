@@ -471,11 +471,8 @@ export default function RoomPage() {
         setFinished(true);
         setRoomStatus('closed');
         if (data.data?.truth) setShowTruth(true);
-        // v8.1: 根据审核结果给用户反馈
-        const review = data.data?.review;
-        if (review && !review.approved) {
-          alert(`你的火花已保存，但需要经过审核才能公开。原因：${review.reason || '内容违规'}`);
-        }
+        // v8.1-fix: 审核静默完成，不弹窗。成功后直接跳转发现页
+        router.push('/home');
       } else {
         // v8.0-fix: API 返回错误时给用户反馈
         console.error('结束对白失败:', data.error);
@@ -560,7 +557,8 @@ export default function RoomPage() {
             {displaySubtitle && (
               <p className="text-[11px] text-[#e2b04a]/50 break-words mt-0.5 leading-relaxed">{displaySubtitle}</p>
             )}
-            {myRoleName && (
+            {/* v8.1-fix: 人机模式不显示重复的身份提示，故事模式才显示 */}
+            {myRoleName && story && (
               <p className="text-[11px] text-white/30 mt-0.5">你扮演：{myRoleName}</p>
             )}
           </div>
@@ -681,25 +679,52 @@ export default function RoomPage() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-2 p-3 rounded-xl bg-white/[0.03] border border-white/10"
             >
-              <p className="text-xs text-white/60 mb-2 leading-relaxed">
-                真的要揭晓谜底了吗？<br />
-                <span className="text-white/40">一旦结束，这段对白就将成为你的故事资产。</span>
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowEndConfirm(false)}
-                  className="flex-1 py-1.5 rounded-lg text-xs text-white/40 bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
-                >
-                  再聊一会
-                </button>
-                <button
-                  onClick={() => { setShowEndConfirm(false); handleFinish(); }}
-                  disabled={finishing}
-                  className="flex-1 py-1.5 rounded-lg text-xs text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-colors"
-                >
-                  {finishing ? '保存中...' : '揭晓谜底'}
-                </button>
-              </div>
+              {/* v8.1-fix: 人机模式和故事模式用不同的结束弹窗文案 */}
+              {isAiRoom || !story ? (
+                <>
+                  <p className="text-xs text-white/60 mb-2 leading-relaxed">
+                    是否结束对白？<br />
+                    <span className="text-white/40">结束后将保存为火花。</span>
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowEndConfirm(false)}
+                      className="flex-1 py-1.5 rounded-lg text-xs text-white/40 bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
+                    >
+                      否
+                    </button>
+                    <button
+                      onClick={() => { setShowEndConfirm(false); handleFinish(); }}
+                      disabled={finishing}
+                      className="flex-1 py-1.5 rounded-lg text-xs text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-colors"
+                    >
+                      {finishing ? '保存中...' : '是'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-white/60 mb-2 leading-relaxed">
+                    真的要揭晓谜底了吗？<br />
+                    <span className="text-white/40">一旦结束，这段对白就将成为你的故事资产。</span>
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowEndConfirm(false)}
+                      className="flex-1 py-1.5 rounded-lg text-xs text-white/40 bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
+                    >
+                      再聊一会
+                    </button>
+                    <button
+                      onClick={() => { setShowEndConfirm(false); handleFinish(); }}
+                      disabled={finishing}
+                      className="flex-1 py-1.5 rounded-lg text-xs text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-colors"
+                    >
+                      {finishing ? '保存中...' : '揭晓谜底'}
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
 

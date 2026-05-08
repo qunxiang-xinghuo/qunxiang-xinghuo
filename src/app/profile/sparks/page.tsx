@@ -196,16 +196,16 @@ export default function MySparksPage() {
                         {spark.hotScore || 0}
                       </span>
 
-                      {/* v8.1: 审核状态标签 */}
+                      {/* v8.1: 公开状态标签（审核瞬时完成，无中间状态） */}
                       {spark.isPublic ? (
                         <span className="flex items-center gap-1 text-[10px] text-emerald-400/60 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
                           <ShieldCheck className="w-3 h-3" />
                           已公开
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] text-amber-400/60 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                        <span className="flex items-center gap-1 text-[10px] text-white/25 bg-white/[0.03] border border-white/5 px-2 py-0.5 rounded-full">
                           <ShieldAlert className="w-3 h-3" />
-                          审核中
+                          私密
                         </span>
                       )}
 
