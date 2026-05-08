@@ -486,33 +486,8 @@ export default function RoomPage() {
     }
   };
 
-  // v8.1: 用户离开页面时强制触发结束流程（返回键/关闭标签/刷新）
-  useEffect(() => {
-    if (!roomId || roomStatus === 'closed' || finished) return;
-
-    const handleBeforeUnload = () => {
-      // 使用 sendBeacon 发送同步请求，确保页面关闭前完成
-      const blob = new Blob([JSON.stringify({})], { type: 'application/json' });
-      navigator.sendBeacon(`/api/rooms/${roomId}/finish`, blob);
-    };
-
-    // 监听浏览器返回键（popstate）
-    const handlePopState = () => {
-      if (!finished) {
-        // 使用 fetch with keepalive 触发结束
-        fetch(`/api/rooms/${roomId}/finish`, { method: 'POST', keepalive: true })
-          .catch(() => {});
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [roomId, roomStatus, finished]);
+  // v8.1-fix5: 页面关闭/刷新时由 socket disconnect 事件自动处理清理
+  // 不再在 beforeunload 中调用 finish，避免无认证信息导致 401 或重复创建 Asset
 
   const isReadonly = roomStatus === 'closed' || finished;
   // v8.0-fix: 增强标题回退链，使用 room.scene 作为最终回退

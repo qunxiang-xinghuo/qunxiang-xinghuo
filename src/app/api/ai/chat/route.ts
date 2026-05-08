@@ -191,13 +191,16 @@ export async function POST(request: NextRequest) {
       source = "zhida";
       console.log("[AI Chat] 使用 知乎直答 回复");
     } else {
-      // 两个 API 都失败，返回 fallback
+      // 两个 API 都失败，返回 fallback（刘看山口吻）
       const fallbackReplies = [
-        "这个观点很有意思，从我这个角色的角度来看...",
-        "确实，这种冲突在现实中很常见。如果是我，可能会...",
-        "你提到的这点让我想到一个类似的情境...",
-        "哈哈，我们角色的立场完全不同，但这就是碰撞的火花吧。",
-        "我能理解你的思路。不过考虑到我的职业背景...",
+        "说实话，我没太听懂你刚才那句，能再说一遍吗？",
+        "嗯… 让我想想。",
+        "有点意思，你继续说。",
+        "那可不。",
+        "我不知道该咋接，但我在听。",
+        "哈哈，你这话把我整不会了。",
+        "等等，那如果反过来呢？",
+        "其实吧，我也有过类似的想法。",
       ];
       finalContent = fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
       source = "fallback";

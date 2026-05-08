@@ -80,7 +80,9 @@ export async function POST(
       }),
     ]).catch(async (err: any) => {
       // v8.0-fix: 捕获 P2025（记录未找到）和 P2002（唯一约束冲突）
-      if (err.code === 'P2025' || err.code === 'P2002') {
+      // v8.1-fix5: 增加 err.code 不存在时的保护
+      const code = err?.code || err?.meta?.target || '';
+      if (code === 'P2025' || code === 'P2002' || String(err?.message || '').includes('Unique constraint')) {
         const existingAsset = await db.asset.findFirst({ where: { roomId } });
         return [{ status: 'closed' }, existingAsset];
       }

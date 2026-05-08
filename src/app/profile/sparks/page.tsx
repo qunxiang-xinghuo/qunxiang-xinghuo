@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Flame, TrendingUp, Clock, ChevronLeft, ChevronRight,
+  Flame, Clock, ChevronLeft, ChevronRight,
   ArrowLeft, Trash2, ShieldAlert, ShieldCheck,
 } from 'lucide-react';
 
@@ -23,12 +23,9 @@ interface Spark {
   reviewStatus?: string;
 }
 
-type SortType = 'latest' | 'hottest';
-
 export default function MySparksPage() {
   const router = useRouter();
   const [sparks, setSparks] = useState<Spark[]>([]);
-  const [sort, setSort] = useState<SortType>('latest');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [guestId, setGuestId] = useState<string | null>(null);
@@ -50,7 +47,7 @@ export default function MySparksPage() {
     setLoading(true);
     try {
       const gid = guestId || localStorage.getItem('xh_user_id');
-      const res = await fetch(`/api/sparks/mine?sort=${sort}`, {
+      const res = await fetch(`/api/sparks/mine`, {
         headers: gid ? { 'x-guest-id': gid } : {},
       });
       if (!res.ok) {
@@ -64,7 +61,7 @@ export default function MySparksPage() {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [sort, guestId]);
+  }, [guestId]);
 
   useEffect(() => {
     loadSparks();
@@ -117,34 +114,6 @@ export default function MySparksPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-4">
-        {/* 排序切换 */}
-        <div className="flex items-center justify-end mb-4">
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => setSort('latest')}
-              className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-colors ${
-                sort === 'latest'
-                  ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25'
-                  : 'bg-white/[0.03] text-white/30 border border-white/5 hover:text-white/50'
-              }`}
-            >
-              <Clock className="w-3 h-3" />
-              最新
-            </button>
-            <button
-              onClick={() => setSort('hottest')}
-              className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-colors ${
-                sort === 'hottest'
-                  ? 'bg-[#ff6b6b]/15 text-[#ff6b6b] border border-[#ff6b6b]/25'
-                  : 'bg-white/[0.03] text-white/30 border border-white/5 hover:text-white/50'
-              }`}
-            >
-              <TrendingUp className="w-3 h-3" />
-              最热
-            </button>
-          </div>
-        </div>
-
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
