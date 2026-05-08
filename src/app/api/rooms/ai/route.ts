@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const createAiRoomSchema = z.object({
       brainholeId: z.string().optional(),
-      identity: z.string().min(1, "身份不能为空").max(100, "身份不能超过100字"),
+      identity: z.string().min(1, "身份不能为空").max(100, "身份不能超过100字").optional(),
       agents: z.array(z.object({
         name: z.string().min(1).max(50),
         persona: z.string().min(1).max(50),
@@ -40,7 +40,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(apiError("VALIDATION_ERROR", validation.error.issues[0]?.message || "参数格式错误"), { status: 400 });
     }
 
-    const { brainholeId, identity, agents: agentConfigs } = validation.data;
+    // v8.1: identity 可选，未传时从用户记录获取
+    let { brainholeId, identity, agents: agentConfigs } = validation.data;
+    if (!identity) {
+      const userRecord = await db.user.findUnique({ where: { id: userId }, select: { name: true } });
+      identity = userRecord?.name || '我';
+    }
 
     // v6.1: 多Agent协作支持
     const agents = Array.isArray(agentConfigs) && agentConfigs.length > 0

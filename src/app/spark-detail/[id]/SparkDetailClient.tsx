@@ -38,10 +38,37 @@ interface SparkDetailData {
 export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [hotScore, setHotScore] = useState(data.hotScore);
+  const [likeLoading, setLikeLoading] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
   // v8.1-fix: 根据 senderId 判断消息归属，而不是 idx % 2
   const isMyMessage = (msg: Message) => msg.senderId === data.ownerId;
+
+  // v8.1: 点赞功能
+  const handleLike = async () => {
+    if (likeLoading) return;
+    setLikeLoading(true);
+    try {
+      const res = await fetch(`/api/sparks/${data.id}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('xh_user_id') ? { 'x-guest-id': localStorage.getItem('xh_user_id')! } : {}),
+        },
+      });
+      const result = await res.json();
+      if (result.success) {
+        setLiked(result.data?.liked);
+        setHotScore(result.data?.hotScore ?? hotScore);
+      }
+    } catch (e) {
+      console.error('点赞失败:', e);
+    } finally {
+      setLikeLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
@@ -57,10 +84,23 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
           <h1 className="text-base font-bold text-white/90 truncate">{data.brainholeTitle || data.title}</h1>
           <p className="text-[11px] text-white/30">{data.identityPair}</p>
         </div>
-        <div className="flex items-center gap-1 text-[11px] text-[#e2b04a]/60">
-          <Flame className="w-3.5 h-3.5" />
-          {data.hotScore}
-        </div>
+        {/* v8.1: 点赞按钮 */}
+        <button
+          onClick={handleLike}
+          disabled={likeLoading}
+          className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-all active:scale-95 ${
+            liked
+              ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25'
+              : 'bg-white/[0.03] text-white/30 border border-white/5 hover:bg-white/[0.06] hover:text-white/50'
+          }`}
+        >
+          {likeLoading ? (
+            <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Flame className={`w-3.5 h-3.5 ${liked ? 'fill-current drop-shadow-[0_0_4px_rgba(226,176,74,0.5)]' : ''}`} />
+          )}
+          {hotScore}
+        </button>
       </div>
 
       {/* 场景描述 */}

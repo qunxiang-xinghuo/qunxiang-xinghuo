@@ -104,6 +104,9 @@ export default function SparksPage() {
               : s
           )
         );
+      } else {
+        // v8.1: 点赞失败时给用户反馈
+        alert(result.error?.message || '点赞失败');
       }
     } catch (e) {
       console.error('点赞失败:', e);

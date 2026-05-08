@@ -25,6 +25,7 @@ export default function HomePage() {
   const [loadError, setLoadError] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [creatingAiRoom, setCreatingAiRoom] = useState(false);
 
   // v8.0-login-fix: 页面级认证门禁
   if (!isAuthenticated) {
@@ -72,6 +73,7 @@ export default function HomePage() {
       iconColor: 'text-[#00b894]',
       path: '/solo-match',
       comingSoon: false,
+      isAiDirect: true, // v8.1: 一步直达，不跳转身份选择页
     },
     {
       key: 'duo',
@@ -211,9 +213,29 @@ export default function HomePage() {
                   initial={mounted ? { opacity: 0, y: 15 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + idx * 0.08 }}
-                  onClick={() => {
+                  onClick={async () => {
                     if (mode.comingSoon) {
                       setShowComingSoon(mode.title);
+                    } else if (mode.isAiDirect) {
+                      // v8.1: 一步直达，直接创建AI房间
+                      if (creatingAiRoom) return;
+                      setCreatingAiRoom(true);
+                      try {
+                        const res = await fetch('/api/rooms/ai', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                        });
+                        const result = await res.json();
+                        if (result.success && result.data?.roomId) {
+                          router.push(`/room/${result.data.roomId}`);
+                        } else {
+                          alert('创建房间失败，请重试');
+                          setCreatingAiRoom(false);
+                        }
+                      } catch (e) {
+                        alert('网络异常，请重试');
+                        setCreatingAiRoom(false);
+                      }
                     } else {
                       router.push(mode.path);
                     }
