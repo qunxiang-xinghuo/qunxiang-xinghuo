@@ -46,6 +46,7 @@ model User {
   password      String?
   level         Int       @default(1)
   sparkCount      Int       @default(0)
+  isAdmin         Boolean   @default(false) // v8.2: 管理员标识
   tokenRevokedAt  DateTime? // v8.0: 登出时设置，用于服务器端 token 失效
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -449,6 +450,20 @@ model AssetLike {
   @@index([userId])
 }
 
+// v8.2: 故事点赞记录
+model StoryLike {
+  id        String   @id @default(cuid())
+  storyId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@index([storyId])
+  @@index([userId])
+}
+
 
 // ==================== 故事大厅 ====================
 
@@ -482,6 +497,7 @@ model Story {
   inspirations StoryInspiration[]
   branches     StoryBranch[]
   rooms        Room[]             // v8.0: 关联的对白房间
+  likes        StoryLike[]        // v8.2: 故事点赞
 
   @@index([status, hotScore])
   @@index([directorId])

@@ -746,3 +746,85 @@ GET /api/sparks/top?limit=3
 
 > 文档位置：`docs/story-system-flow.md`  
 > 最后更新：2026-04-29 v8.1-fix5 流程图更新完成 ✅
+
+
+---
+
+## I. v8.2 新增流程
+
+### I.1 管理员后台流程
+
+```
+管理员登录
+    │
+    ▼
+/profile 页面 → 显示「管理员后台」入口
+    │
+    ▼
+/admin
+    │
+    ├── 僵尸房间 Tab ──▶ GET /api/admin/rooms
+    │                      ├── AI僵尸房间（活跃>2小时）
+    │                      └── 孤儿房间（创建>24小时未活跃）
+    │                      └── 点击 🗑️ → POST /api/admin/delete {type:'room'}
+    │
+    ├── 公开火花 Tab ──▶ GET /api/admin/sparks
+    │                      └── 点击 🗑️ → POST /api/admin/delete {type:'spark'}
+    │
+    └── 公开故事 Tab ──▶ GET /api/admin/stories
+                           └── 点击 🗑️ → POST /api/admin/delete {type:'story'}
+```
+
+### I.2 火花详情评论流程
+
+```
+/spark-detail/:id
+    │
+    ▼
+加载 Asset 详情 + room.messages
+    │
+    ▼
+GET /api/room-comments?roomId=xxx
+    │
+    ▼
+显示评论列表 + 输入框
+    │
+    ├── 输入评论 → POST /api/room-comments → 实时追加到列表
+    │
+    └── 删除自己的评论 → DELETE /api/room-comments/:id
+```
+
+### I.3 故事点赞流程
+
+```
+/story/:id 或 /story-hall
+    │
+    ▼
+点击 Flame 图标
+    │
+    ▼
+POST /api/stories/:storyId/like
+    │
+    ├── 已点赞 → 取消点赞 + hotScore - 1
+    │
+    └── 未点赞 → 创建 StoryLike + hotScore + 1
+```
+
+### I.4 我的故事删除流程
+
+```
+/my-stories
+    │
+    ├── 我发起的故事 ──▶ 点击 🗑️
+    │                      └── DELETE /api/stories/mine {storyId}
+    │                          └── creator → 删除整个 Story + 关联数据
+    │
+    └── 我参与的故事 ──▶ 点击 🗑️
+                           └── DELETE /api/stories/mine {storyId}
+                               └── participant → 解除 claim + 删除关联 Asset
+```
+
+---
+
+> 文档位置：`docs/story-system-flow.md`  
+> 最后更新：2026-04-29 v8.2 流程图更新完成 ✅

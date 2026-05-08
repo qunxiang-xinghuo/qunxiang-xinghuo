@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Flame, Clock, Sparkles, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Flame, Clock, Sparkles, MessageCircle, Send, Trash2 } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -13,6 +13,13 @@ interface Message {
   roleCharacter?: string | null;
   isSpark: boolean;
   createdAt: string;
+}
+
+interface CommentItem {
+  id: string;
+  content: string;
+  createdAt: string;
+  user: { id: string; name: string; image: string | null };
 }
 
 interface SparkDetailData {
@@ -41,9 +48,39 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
   const [liked, setLiked] = useState(false);
   const [hotScore, setHotScore] = useState(data.hotScore);
   const [likeLoading, setLikeLoading] = useState(false);
+
+  // v8.2: 评论功能
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [commentInput, setCommentInput] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentDeletingId, setCommentDeletingId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
   useEffect(() => { setMounted(true); }, []);
 
-  // v8.1-fix: 根据 senderId 判断消息归属，而不是 idx % 2
+  // 加载当前用户ID
+  useEffect(() => {
+    const guestId = localStorage.getItem('xh_user_id');
+    if (guestId) setCurrentUserId(guestId);
+  }, []);
+
+  // v8.2: 加载评论
+  useEffect(() => {
+    if (!data.roomId) {
+      setCommentsLoading(false);
+      return;
+    }
+    const ctrl = new AbortController();
+    fetch(`/api/room-comments?roomId=${data.roomId}`, { signal: ctrl.signal })
+      .then((res) => res.json())
+      .then((data) => { setComments(data.data?.list || []); })
+      .catch((err) => { if (err.name !== 'AbortError') console.error('[Comments] Load error:', err); })
+      .finally(() => { setCommentsLoading(false); });
+    return () => ctrl.abort();
+  }, [data.roomId]);
+
+  // v8.1-fix: 根据 senderId 判断消息归属
   const isMyMessage = (msg: Message) => msg.senderId === data.ownerId;
 
   // v8.1: 点赞功能
@@ -67,6 +104,45 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
       console.error('点赞失败:', e);
     } finally {
       setLikeLoading(false);
+    }
+  };
+
+  // v8.2: 提交评论
+  const submitComment = async () => {
+    const content = commentInput.trim();
+    if (!content || !data.roomId) return;
+    setCommentLoading(true);
+    try {
+      const res = await fetch('/api/room-comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId: data.roomId, content }),
+      });
+      const dataRes = await res.json();
+      if (dataRes.success && dataRes.data?.comment) {
+        setComments((prev) => [dataRes.data.comment, ...prev]);
+        setCommentInput('');
+      }
+    } catch (e) {
+      console.error('[Comments] Submit error:', e);
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  // v8.2: 删除评论
+  const deleteComment = async (commentId: string) => {
+    setCommentDeletingId(commentId);
+    try {
+      const res = await fetch(`/api/room-comments/${commentId}`, { method: 'DELETE' });
+      const dataRes = await res.json();
+      if (dataRes.success) {
+        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      }
+    } catch (e) {
+      console.error('[Comments] Delete error:', e);
+    } finally {
+      setCommentDeletingId(null);
     }
   };
 
@@ -166,6 +242,82 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
             </p>
           </div>
         ) : null}
+
+        {/* v8.2: 评论区 */}
+        {data.roomId && (
+          <div className="mt-6 pt-4 border-t border-white/5">
+            <div className="flex items-center gap-2 mb-3">
+              <MessageCircle className="w-4 h-4 text-white/30" />
+              <span className="text-xs text-white/40">评论 ({comments.length})</span>
+            </div>
+
+            {/* 评论输入 */}
+            <div className="flex items-end gap-2 mb-4">
+              <textarea
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                placeholder="写下你的评论..."
+                rows={2}
+                className="flex-1 bg-white/[0.03] border border-white/5 rounded-xl px-3 py-2 text-sm text-white/70 placeholder:text-white/20 outline-none resize-none"
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
+              />
+              <button
+                onClick={submitComment}
+                disabled={!commentInput.trim() || commentLoading}
+                className="p-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 hover:bg-[#e2b04a]/25 transition-colors disabled:opacity-20"
+              >
+                {commentLoading ? (
+                  <span className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin block" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+
+            {/* 评论列表 */}
+            {commentsLoading ? (
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-14 rounded-xl bg-white/5 animate-pulse" />
+                ))}
+              </div>
+            ) : comments.length === 0 ? (
+              <p className="text-xs text-white/15 text-center py-4">还没有评论</p>
+            ) : (
+              <div className="space-y-3">
+                {comments.map((c) => (
+                  <div key={c.id} className="flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[10px] text-white/40 flex-shrink-0">
+                      {(c.user.name || '匿').charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-white/50 font-medium">{c.user.name || '匿名用户'}</span>
+                        <span className="text-[9px] text-white/15">
+                          {new Date(c.createdAt).toLocaleDateString('zh-CN')}
+                        </span>
+                        {currentUserId && c.user.id === currentUserId && (
+                          <button
+                            onClick={() => deleteComment(c.id)}
+                            disabled={commentDeletingId === c.id}
+                            className="ml-auto p-1 rounded hover:bg-white/5 text-white/15 hover:text-red-400 transition-colors"
+                          >
+                            {commentDeletingId === c.id ? (
+                              <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin block" />
+                            ) : (
+                              <Trash2 className="w-3 h-3" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[13px] text-white/70 mt-0.5 leading-relaxed">{c.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
         eraBackground: r.story.eraBackground || "",
         status: r.story.status,
         myRole: r.name,
+        roleId: r.id, // v8.2: 用于删除参与记录
         createdAt: r.story.createdAt.toISOString(),
         roleCount: r.story.roles.length,
         hotScore: r.story.hotScore || 0,
@@ -69,5 +70,93 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("[Stories Mine] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取失败，请稍后重试"), { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/stories/mine
+ * v8.2: 删除我的故事记录
+ * Body: { storyId: string }
+ * - creator: 删除整个 Story 及其关联数据
+ * - participant: 解除角色 claim，删除关联 Asset
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    if (!userId) {
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
+    }
+
+    const body = await request.json();
+    const { storyId } = body;
+    if (!storyId) {
+      return NextResponse.json(apiError("BAD_REQUEST", "参数错误"), { status: 400 });
+    }
+
+    const story = await db.story.findUnique({
+      where: { id: storyId },
+      select: { creatorId: true },
+    });
+    if (!story) {
+      return NextResponse.json(apiError("NOT_FOUND", "故事不存在"), { status: 404 });
+    }
+
+    // creator 删除整个故事
+    if (story.creatorId === userId) {
+      const rooms = await db.room.findMany({ where: { storyId }, select: { id: true } });
+      for (const room of rooms) {
+        await db.roomComment.deleteMany({ where: { roomId: room.id } });
+        await db.roomMessage.deleteMany({ where: { roomId: room.id } });
+        await db.roomParticipant.deleteMany({ where: { roomId: room.id } });
+        await db.asset.deleteMany({ where: { roomId: room.id } });
+        await db.reaction.deleteMany({ where: { roomId: room.id } });
+      }
+      await db.room.deleteMany({ where: { storyId } });
+      await db.storyRole.deleteMany({ where: { storyId } });
+      await db.storyChapter.deleteMany({ where: { storyId } });
+      await db.storyMessage.deleteMany({ where: { storyId } });
+      await db.storyInspiration.deleteMany({ where: { storyId } });
+      await db.storyBranch.deleteMany({ where: { storyId } });
+      await db.storyLike.deleteMany({ where: { storyId } });
+      await db.story.delete({ where: { id: storyId } });
+      return NextResponse.json(apiResponse({ message: "故事已删除" }));
+    }
+
+    // participant: 解除角色 claim + 删除关联 Asset
+    const myRole = await db.storyRole.findFirst({
+      where: { storyId, claimedBy: userId },
+    });
+    if (myRole) {
+      await db.storyRole.update({
+        where: { id: myRole.id },
+        data: { claimedBy: null, claimedAt: null, claimStatus: 'unclaimed' },
+      });
+    }
+
+    // 删除关联的 Asset（人机/双人模式）
+    const myRooms = await db.roomParticipant.findMany({
+      where: { userId },
+      include: { room: { select: { storyId: true } } },
+    });
+    const storyRoomIds = myRooms
+      .filter((rp) => rp.room.storyId === storyId)
+      .map((rp) => rp.roomId);
+
+    for (const roomId of storyRoomIds) {
+      const assets = await db.asset.findMany({ where: { roomId, userId } });
+      for (const asset of assets) {
+        await db.assetLike.deleteMany({ where: { assetId: asset.id } });
+        await db.asset.delete({ where: { id: asset.id } });
+      }
+    }
+
+    return NextResponse.json(apiResponse({ message: "参与记录已删除" }));
+  } catch (error: any) {
+    console.error("[Stories Mine DELETE] Error:", error);
+    if (error.code === 'P2025') {
+      return NextResponse.json(apiResponse({ message: '资源不存在或已删除' }));
+    }
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "删除失败"), { status: 500 });
   }
 }

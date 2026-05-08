@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import {
   Clock, ChevronRight, BookOpen, Users, PlusCircle, ScrollText, UserCircle,
   Eye, MessageCircle, AlertCircle, CheckCircle2, Clock4, XCircle, Pencil,
+  Trash2,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
@@ -19,6 +20,7 @@ interface MyStory {
   createdAt: string;
   roleCount: number;
   hotScore: number;
+  roleId?: string;
   isCreator?: boolean;
 }
 
@@ -45,6 +47,7 @@ function MyStoriesContent() {
   const [stories, setStories] = useState<MyStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   if (!isAuthenticated) return <div className="h-screen bg-xh-primary" />;
 
@@ -90,12 +93,28 @@ function MyStoriesContent() {
   };
 
   const handleStoryClick = (story: MyStory) => {
-    if (tab === 'created') {
-      // 我发起的故事 → 进入故事管理页（创建者可编辑、查看审核状态）
-      router.push(`/story/${story.id}`);
-    } else {
-      // 我参与的故事 → 进入故事详情页（展示角色 + 对白）
-      router.push(`/story/${story.id}`);
+    router.push(`/story/${story.id}`);
+  };
+
+  const handleDelete = async (story: MyStory) => {
+    if (!confirm(story.isCreator ? '确定删除这个故事？此操作不可恢复。' : '确定删除这条参与记录？')) return;
+    setDeletingId(story.id);
+    try {
+      const res = await fetch('/api/stories/mine', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storyId: story.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStories((prev) => prev.filter((s) => s.id !== story.id));
+      } else {
+        alert(data.error?.message || '删除失败');
+      }
+    } catch (e) {
+      alert('删除失败');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -232,7 +251,21 @@ function MyStoriesContent() {
                         </button>
                       )}
                     </div>
-                    <ChevronRight className="w-4 h-4 text-white/15 flex-shrink-0 mt-1" />
+                    <div className="flex flex-col items-end gap-2">
+                      <ChevronRight className="w-4 h-4 text-white/15 flex-shrink-0" />
+                      {/* v8.2: 删除按钮 */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(story); }}
+                        disabled={deletingId === story.id}
+                        className="p-1.5 rounded-lg bg-red-500/10 text-red-400/40 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-30"
+                      >
+                        {deletingId === story.id ? (
+                          <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin block" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               );

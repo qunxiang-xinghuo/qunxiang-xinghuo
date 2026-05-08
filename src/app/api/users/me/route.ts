@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
         image: true,
         level: true,
         sparkCount: true,
+        isAdmin: true,
         createdAt: true,
       },
     });

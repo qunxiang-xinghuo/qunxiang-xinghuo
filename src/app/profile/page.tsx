@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { signOut } from 'next-auth/react';
 import {
   Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins, ScrollText, UserCircle,
+  Shield,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -16,6 +17,7 @@ interface UserData {
   email: string | null;
   image: string | null;
   level: number;
+  isAdmin?: boolean;
 }
 
 // 默认头像：白底灰色首字母
@@ -155,6 +157,7 @@ export default function ProfilePage() {
     { icon: ScrollText, label: '我发起的故事', desc: '创建和管理你的故事', path: '/my-stories?tab=created' },
     { icon: UserCircle, label: '我参与的故事', desc: '你扮演过的角色和对白', path: '/my-stories?tab=participated' },
     { icon: Settings, label: '设置', desc: '账号与偏好', path: '/settings' },
+    ...(user?.isAdmin ? [{ icon: Shield, label: '管理员后台', desc: '清理僵尸房间与内容', path: '/admin' }] : []),
   ];
 
   // 显示数据库中的登录用户名（username）

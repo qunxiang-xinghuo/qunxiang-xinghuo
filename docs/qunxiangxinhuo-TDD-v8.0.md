@@ -1881,3 +1881,61 @@ CRAWLER_ADMIN_KEY=...     # 手动触发API认证
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
 > 最后更新：2026-04-29 v8.1-fix5 修复完成 ✅
+
+
+---
+
+## 二十一、v8.2 管理员后台 + 火花评论 + 故事点赞（2026-04-29）
+
+### 21.1 功能清单
+
+| 功能 | 文件 | 说明 |
+|------|------|------|
+| 管理员后台 | `src/app/admin/page.tsx` | 僵尸房间 / 公开火花 / 公开故事 管理 |
+| 管理员API | `src/app/api/admin/*` | rooms/sparks/stories/delete |
+| 火花评论 | `src/app/spark-detail/[id]/SparkDetailClient.tsx` | 评论列表 + 输入 + 删除 |
+| 故事点赞 | `src/app/api/stories/[storyId]/like/route.ts` | 点赞/取消点赞 Story |
+| 我的故事删除 | `src/app/my-stories/page.tsx` + `api/stories/mine` | creator删除故事 / participant解除claim |
+| 管理员入口 | `src/app/profile/page.tsx` | isAdmin 时显示后台入口 |
+
+### 21.2 数据库变更
+
+- `User.isAdmin Boolean @default(false)` — 管理员标识
+- `StoryLike` 模型 — 故事点赞记录
+
+### 21.3 管理员权限
+
+- 在 `/api/users/me` 返回 `isAdmin` 字段
+- 所有 admin API 使用 `checkAdmin()` 统一鉴权
+- 非 admin 用户访问 admin API → 403
+
+### 21.4 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npx prisma db push --accept-data-loss
+npx prisma generate
+npm run build
+pm2 restart all
+```
+
+### 21.5 设置管理员
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+sqlite3 dev.db "UPDATE User SET isAdmin = 1 WHERE username = '你的用户名';"
+```
+
+### 21.6 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.2 | 2026-04-29 | ✅ 通过 | 80/80 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.2 完成 ✅

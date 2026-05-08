@@ -996,3 +996,63 @@ modified:   src/server/socket-handler.ts
    - 双人模式：一方删除后从列表隐藏，另一方仍可见；双方都删后物理清除
 
 ---
+
+
+---
+
+## v8.2 管理员后台 + 火花评论 + 故事点赞 — 部署记录
+
+> 更新：2026-04-29
+> 修复内容：管理员后台、火花详情评论、故事点赞、我的故事删除
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npx prisma db push --accept-data-loss
+npx prisma generate
+npm run build
+pm2 restart all
+```
+
+### 数据库变更
+
+- `User` 表新增 `isAdmin` 字段
+- 新增 `StoryLike` 表
+
+### 设置管理员账号
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+sqlite3 dev.db "UPDATE User SET isAdmin = 1 WHERE username = '你的用户名';"
+```
+
+### 文件变更清单
+
+```
+modified:   prisma/schema.prisma
+new file:   src/lib/admin-utils.ts
+new file:   src/app/admin/page.tsx
+new file:   src/app/api/admin/rooms/route.ts
+new file:   src/app/api/admin/sparks/route.ts
+new file:   src/app/api/admin/stories/route.ts
+new file:   src/app/api/admin/delete/route.ts
+new file:   src/app/api/stories/[storyId]/like/route.ts
+modified:   src/app/api/users/me/route.ts
+modified:   src/app/api/stories/mine/route.ts
+modified:   src/app/spark-detail/[id]/SparkDetailClient.tsx
+modified:   src/app/my-stories/page.tsx
+modified:   src/app/profile/page.tsx
+```
+
+### 部署后验证
+
+1. **管理员后台**：登录管理员账号 → `/profile` 出现「管理员后台」入口 → 可删除僵尸房间/火花/故事
+2. **火花评论**：访问任意火花详情 → 底部可发表评论、删除自己的评论
+3. **故事点赞**：访问故事详情 → 可点击点赞（不能给自己的故事点赞）
+4. **我的故事删除**：`/my-stories` → 每个故事卡片有删除按钮
+
+---
