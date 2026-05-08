@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { BookOpen, Clock, Users, ChevronRight, Sparkles, Filter } from 'lucide-react';
+import { BookOpen, Clock, Users, ChevronRight, Sparkles, Filter, Flame } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -13,6 +13,7 @@ interface StoryItem {
   eraBackground: string;
   storySummary: string;
   hotScore: number;
+  liked: boolean;
   maxCharacters: number;
   roleCount: number;
   roles: { id: string; name: string; claimed: boolean }[];
@@ -27,6 +28,7 @@ export default function StoryHallPage() {
   const [loadError, setLoadError] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('全部');
+  const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
 
   const categories = ['全部', '古风', '民国', '现代'];
 
@@ -173,7 +175,53 @@ export default function StoryHallPage() {
                       </span>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/15 flex-shrink-0 mt-1" />
+                  <div className="flex flex-col items-end gap-2">
+                    <ChevronRight className="w-4 h-4 text-white/15 flex-shrink-0" />
+                    {/* v8.2: 故事点赞 */}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        setLikeLoadingId(story.id);
+                        try {
+                          const res = await fetch(`/api/stories/${story.id}/like`, { method: 'POST' });
+                          const data = await res.json();
+                          if (data.success) {
+                            setStories((prev) =>
+                              prev.map((s) =>
+                                s.id === story.id
+                                  ? { ...s, liked: data.data.liked, hotScore: data.data.hotScore }
+                                  : s
+                              )
+                            );
+                            setFilteredStories((prev) =>
+                              prev.map((s) =>
+                                s.id === story.id
+                                  ? { ...s, liked: data.data.liked, hotScore: data.data.hotScore }
+                                  : s
+                              )
+                            );
+                          }
+                        } catch (e) {
+                          console.error('点赞失败:', e);
+                        } finally {
+                          setLikeLoadingId(null);
+                        }
+                      }}
+                      disabled={likeLoadingId === story.id}
+                      className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border transition-all ${
+                        story.liked
+                          ? 'bg-[#e2b04a]/15 text-[#e2b04a] border-[#e2b04a]/25'
+                          : 'bg-white/[0.03] text-white/25 border-white/5 hover:bg-white/[0.06] hover:text-white/40'
+                      }`}
+                    >
+                      {likeLoadingId === story.id ? (
+                        <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Flame className={`w-3 h-3 ${story.liked ? 'fill-current' : ''}`} />
+                      )}
+                      {story.hotScore}
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}

@@ -10,6 +10,9 @@ import { apiResponse, apiError } from "@/lib/utils";
  */
 export async function GET(request: NextRequest) {
   try {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+
     const stories = await db.story.findMany({
       where: {
         status: { in: ["open", "recruiting", "approved"] },
@@ -25,6 +28,16 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // v8.2: 已登录时查询用户点赞状态
+    let likedStoryIds = new Set<string>();
+    if (userId) {
+      const likes = await db.storyLike.findMany({
+        where: { userId, storyId: { in: stories.map((s) => s.id) } },
+        select: { storyId: true },
+      });
+      likedStoryIds = new Set(likes.map((l) => l.storyId));
+    }
+
     const list = stories.map((s) => ({
       id: s.id,
       title: s.title,
@@ -33,6 +46,7 @@ export async function GET(request: NextRequest) {
       hotScore: s.hotScore || 0,
       maxCharacters: s.maxCharacters || 2,
       roleCount: s._count.roles,
+      liked: likedStoryIds.has(s.id),
       roles: s.roles.map((r) => ({
         id: r.id,
         name: r.name,
