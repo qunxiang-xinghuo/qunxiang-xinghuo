@@ -395,19 +395,21 @@ model StoryDraft {
 // ==================== 对白资产（素材库）====================
 
 model Asset {
-  id           String   @id @default(cuid())
-  userId       String
-  roomId       String?  @unique
-  brainholeId  String?
-  title        String
-  summary      String?
-  content      String?  // v6.0: 精彩对白片段内容
-  identity     String?  // v6.0: 作者身份标签
-  messageCount Int      @default(0)
-  sparkCount   Int      @default(0)
-  isPublic     Boolean  @default(false)
-  hotScore     Int      @default(0)  // v6.0: 热度值
-  createdAt    DateTime @default(now())
+  id              String   @id @default(cuid())
+  userId          String
+  roomId          String?  @unique
+  brainholeId     String?
+  title           String
+  summary         String?
+  content         String?  // v6.0: 精彩对白片段内容
+  identity        String?  // v6.0: 作者身份标签
+  messageCount    Int      @default(0)
+  sparkCount      Int      @default(0)
+  isPublic        Boolean  @default(false)
+  hotScore        Int      @default(0)  // v6.0: 热度值
+  deletedByUser   Boolean  @default(false)   // v8.1: 当前用户是否删除
+  deletedByPartner Boolean @default(false)   // v8.1: 对方是否删除
+  createdAt       DateTime @default(now())
 
   user      User       @relation(fields: [userId], references: [id])
   brainhole Brainhole? @relation(fields: [brainholeId], references: [id])

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const limit = Number.isNaN(rawLimit) ? 3 : Math.min(Math.max(rawLimit, 1), 10);
 
     const assets = await prisma.asset.findMany({
-      where: { isPublic: true },
+      where: { isPublic: true, deletedByUser: false },
       orderBy: [{ hotScore: "desc" as const }, { createdAt: "desc" as const }],
       take: limit,
       include: {

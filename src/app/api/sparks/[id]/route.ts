@@ -48,6 +48,11 @@ export async function GET(
       return NextResponse.json(apiError("NOT_FOUND", "火花不存在"), { status: 404 });
     }
 
+    // v8.1-fix5: 已软删除的火花对所有人不可见
+    if (asset.deletedByUser) {
+      return NextResponse.json(apiError("NOT_FOUND", "火花不存在"), { status: 404 });
+    }
+
     if (!asset.isPublic) {
       return NextResponse.json(apiError("FORBIDDEN", "该火花未公开"), { status: 403 });
     }
@@ -95,7 +100,9 @@ export async function GET(
 
 /**
  * DELETE /api/sparks/:id
- * v8.1: 删除自己的火花
+ * v8.1-fix5: 删除自己的火花
+ * - 人机模式(ai_duet)：直接物理删除
+ * - 双人/故事模式：标记 deletedByUser 软删除（从列表隐藏）
  */
 export async function DELETE(
   request: NextRequest,
@@ -115,15 +122,26 @@ export async function DELETE(
     // 验证所有权
     const asset = await db.asset.findFirst({
       where: { id, userId: effectiveUserId },
+      include: { room: { select: { type: true } } },
     });
 
     if (!asset) {
       return NextResponse.json(apiError("NOT_FOUND", "火花不存在或无权限"), { status: 404 });
     }
 
-    await db.asset.delete({ where: { id } });
+    // v8.1-fix5: 人机模式直接物理删除
+    if (asset.room?.type === 'ai_duet') {
+      await db.asset.delete({ where: { id } });
+      return NextResponse.json(apiResponse({ id, message: "火花已删除" }));
+    }
 
-    return NextResponse.json(apiResponse({ id, message: "火花已删除" }));
+    // v8.1-fix5: 双人/故事模式标记软删除
+    await db.asset.update({
+      where: { id },
+      data: { deletedByUser: true },
+    });
+
+    return NextResponse.json(apiResponse({ id, message: "已从你的列表中移除" }));
   } catch (error) {
     console.error("[Sparks Delete] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "删除失败"), { status: 500 });

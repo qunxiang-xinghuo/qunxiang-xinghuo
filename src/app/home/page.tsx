@@ -224,6 +224,7 @@ export default function HomePage() {
                         const res = await fetch('/api/rooms/ai', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({}),
                         });
                         const result = await res.json();
                         if (result.success && result.data?.roomId) {

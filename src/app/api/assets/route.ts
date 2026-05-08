@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     const assets = await db.asset.findMany({
-      where: { userId: effectiveUserId },
+      where: { userId: effectiveUserId, deletedByUser: false },
       orderBy: { createdAt: "desc" },
       include: {
         brainhole: { select: { title: true, scenario: true } },

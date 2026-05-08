@@ -17,13 +17,15 @@ export async function POST(request: NextRequest) {
     }
     console.log("[AI Room API] userId:", userId, "token存在:", !!token, "guestId:", guestId);
 
-    let body;
+    // v8.1-fix5: 兼容空 body（前端可能不传或传 {}）
+    let body: any = {};
     try {
       body = await request.json();
       console.log("[AI Room API] 请求体:", JSON.stringify(body));
     } catch (parseErr: any) {
-      console.error("[AI Room API] 请求体解析失败:", parseErr.message);
-      return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
+      // 请求体为空或解析失败时，默认使用空对象
+      console.log("[AI Room API] 请求体为空或解析失败，使用默认值");
+      body = {};
     }
 
     const createAiRoomSchema = z.object({

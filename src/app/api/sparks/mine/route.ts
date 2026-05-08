@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       : [{ createdAt: "desc" as const }];
 
     const assets = await prisma.asset.findMany({
-      where: { userId: effectiveUserId },
+      where: { userId: effectiveUserId, deletedByUser: false },
       orderBy,
       take: 100,
       include: {
