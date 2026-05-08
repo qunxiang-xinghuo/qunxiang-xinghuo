@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db as prisma } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
+import { liukanshanReview } from "@/lib/ai/review";
 
 /**
  * PUT /api/sparks/:id/visibility
  * 更新火花的公开/私密状态
+ * v8.1: 设为公开前必须经过刘看山Agent审核
  * Body: { isPublic: boolean }
  */
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
@@ -38,6 +40,21 @@ export async function PUT(
 
     if (!asset) {
       return NextResponse.json(apiError("NOT_FOUND", "火花不存在或无权限"), { status: 404 });
+    }
+
+    // v8.1: 设为公开前必须经过刘看山审核
+    if (isPublic && !asset.isPublic) {
+      const review = await liukanshanReview(asset.content || asset.summary || "");
+      if (!review.approved) {
+        return NextResponse.json(apiError("REJECTED", review.reason || "内容未通过审核，无法设为公开"), { status: 403 });
+      }
+      // 审核通过，保存推荐语到 summary
+      if (review.summary) {
+        await prisma.asset.update({
+          where: { id },
+          data: { summary: review.summary },
+        });
+      }
     }
 
     const updated = await prisma.asset.update({

@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const rooms = await db.room.findMany({
       where: {
         status: { not: "closed" },
+        isAiRoom: false, // v8.1: 观看模式不显示AI房间
       },
       include: {
         brainhole: {

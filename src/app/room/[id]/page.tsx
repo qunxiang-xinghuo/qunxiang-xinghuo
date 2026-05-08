@@ -148,13 +148,11 @@ export default function RoomPage() {
           }
 
           // Brainhole 信息
-          if (room.brainhole) {
-            setBrainholeTitle(room.brainhole.title || '');
-            setBrainholeScenario(room.brainhole.scenario || '');
-          } else if (room.scene) {
-            // v8.0-fix: AI房间可能通过scene字段存储场景描述
-            setBrainholeScenario(room.scene);
-          }
+          // v8.1-fix: 统一处理 brainhole 和 scene，避免空字符串导致的问题
+          const bhTitle = room.brainhole?.title || '';
+          const bhScenario = room.brainhole?.scenario || room.scene || '';
+          setBrainholeTitle(bhTitle);
+          setBrainholeScenario(bhScenario);
 
           // 找到自己的角色
           if (room.participants && Array.isArray(room.participants)) {
