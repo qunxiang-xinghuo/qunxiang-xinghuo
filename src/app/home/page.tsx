@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, Flame, Zap, Users, ChevronRight, Bot, BookOpen, MessageCircle, Eye, Sparkles, ScrollText,
+  TrendingUp, Flame, Users, ChevronRight, Bot, MessageCircle, Eye, ScrollText,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';

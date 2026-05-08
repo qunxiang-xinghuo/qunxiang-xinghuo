@@ -102,7 +102,7 @@ export async function GET(
  * DELETE /api/sparks/:id
  * v8.1-fix5: 删除自己的火花
  * - 人机模式(ai_duet)：直接物理删除
- * - 双人/故事模式：标记 deletedByUser 软删除（从列表隐藏）
+ * - 双人/故事模式：标记 deletedByUser，若双方均已删除则物理清除
  */
 export async function DELETE(
   request: NextRequest,
@@ -140,6 +140,19 @@ export async function DELETE(
       where: { id },
       data: { deletedByUser: true },
     });
+
+    // v8.1-fix5: 若同一房间下所有 Asset 均已被标记删除 → 物理清除
+    if (asset.roomId) {
+      const roomAssets = await db.asset.findMany({
+        where: { roomId: asset.roomId },
+        select: { id: true, deletedByUser: true },
+      });
+      const allDeleted = roomAssets.every((a) => a.deletedByUser);
+      if (allDeleted && roomAssets.length > 0) {
+        await db.asset.deleteMany({ where: { roomId: asset.roomId } });
+        return NextResponse.json(apiResponse({ id, message: "删除成功（双方均已删除）" }));
+      }
+    }
 
     return NextResponse.json(apiResponse({ id, message: "已从你的列表中移除" }));
   } catch (error) {

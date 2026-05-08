@@ -14,7 +14,11 @@ export async function GET(request: NextRequest) {
     const limit = Number.isNaN(rawLimit) ? 3 : Math.min(Math.max(rawLimit, 1), 10);
 
     const assets = await prisma.asset.findMany({
-      where: { isPublic: true, deletedByUser: false },
+      where: { 
+        isPublic: true, 
+        deletedByUser: false,
+        brainholeId: { not: null }, // v8.1-fix5: TOP3只显示有脑洞关联的火花
+      },
       orderBy: [{ hotScore: "desc" as const }, { createdAt: "desc" as const }],
       take: limit,
       include: {

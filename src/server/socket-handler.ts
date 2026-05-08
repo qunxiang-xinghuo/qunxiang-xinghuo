@@ -148,6 +148,36 @@ export function registerSocketHandlers(io: SocketIOServer): void {
       await broadcastViewerCount(io, roomId)
     })
 
+    // v8.1-fix5: AI房间用户离开后自动关闭
+    async function maybeCloseAiRoom(roomId: string) {
+      try {
+        const room = await db.room.findUnique({
+          where: { id: roomId },
+          select: { isAiRoom: true, type: true, status: true },
+        });
+        if (!room || room.status === 'closed') return;
+        if (room.isAiRoom || room.type === 'ai_duet') {
+          const onlineActors = await db.roomParticipant.count({
+            where: {
+              roomId,
+              role: 'actor',
+              isOnline: true,
+              userId: { not: { startsWith: 'agent_' } },
+            },
+          });
+          if (onlineActors === 0) {
+            await db.room.update({
+              where: { id: roomId },
+              data: { status: 'closed', closedAt: new Date() },
+            });
+            console.log(`[Socket] AI房间已自动关闭: ${roomId}`);
+          }
+        }
+      } catch (err: any) {
+        console.error('[Socket] AI房间自动关闭失败:', err.message);
+      }
+    }
+
     // 离开房间 —— v6.2-fix6: 同上，静默更新 viewer count
     // v7.0-fix7: 向对方广播 opponent-left 事件
     socket.on('leave-room', async ({ roomId, userId }: LeaveRoomData) => {
@@ -173,6 +203,9 @@ export function registerSocketHandlers(io: SocketIOServer): void {
 
       // v6.2-fix6: 静默广播房间在线人数
       await broadcastViewerCount(io, roomId)
+
+      // v8.1-fix5: AI房间用户离开后自动关闭
+      await maybeCloseAiRoom(roomId);
     })
 
     // 转发消息 —— v6.1-fix: 排除发送者避免重复
@@ -314,6 +347,9 @@ export function registerSocketHandlers(io: SocketIOServer): void {
         // v7.0-fix7: 用户意外断开（关闭浏览器/断网）时，向对方广播 opponent-left
         socket.to(roomId).emit('opponent-left', { userId, roomId, timestamp: Date.now() })
         await broadcastViewerCount(io, roomId)
+
+        // v8.1-fix5: AI房间用户断开后自动关闭
+        await maybeCloseAiRoom(roomId);
       }
       joinedRooms.clear()
     })

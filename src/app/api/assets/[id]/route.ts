@@ -64,7 +64,7 @@ export async function GET(
 }
 
 // DELETE /api/assets/[id] — 删除素材
-// v8.1-fix5: 人机模式直接删除，双人模式标记软删除
+// v8.1-fix5: 人机模式直接删除，双人模式标记删除（双方均删才物理清除）
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -99,6 +99,20 @@ export async function DELETE(
       where: { id },
       data: { deletedByUser: true },
     });
+
+    // v8.1-fix5: 若同一房间下所有 Asset 均已被标记删除 → 物理清除
+    if (asset.roomId) {
+      const roomAssets = await db.asset.findMany({
+        where: { roomId: asset.roomId },
+        select: { id: true, deletedByUser: true },
+      });
+      const allDeleted = roomAssets.every((a) => a.deletedByUser);
+      if (allDeleted && roomAssets.length > 0) {
+        await db.asset.deleteMany({ where: { roomId: asset.roomId } });
+        return NextResponse.json(apiResponse({ message: "删除成功（双方均已删除）" }));
+      }
+    }
+
     return NextResponse.json(apiResponse({ message: "已从你的列表中移除" }));
   } catch (error) {
     console.error("[Asset DELETE] Error:", error);

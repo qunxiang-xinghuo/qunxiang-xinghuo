@@ -1822,3 +1822,62 @@ CRAWLER_ADMIN_KEY=...     # 手动触发API认证
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
 > 最后更新：2026-04-29 v8.0 20次流程走查完成 ✅
+
+
+---
+
+## §33 v8.1-fix5 修复记录
+
+> 新增：2026-04-29
+> 修复内容：观看模式僵尸AI房间清理 + 发现页TOP3过滤 + AI房间空body兼容 + Asset软删除
+
+### 33.1 观看模式僵尸AI房间清理
+
+**问题**：`/spectate` 堆积大量未关闭的AI房间，用户断开连接后房间仍为 `active`。
+
+**修复**：
+1. `src/server/socket-handler.ts`：
+   - `leave-room` / `disconnect` 事件中，AI房间用户离开后自动检查真人在线数
+   - 无真人在线 → 自动关闭房间（`status: 'closed'`）
+2. `scripts/cleanup-ai-rooms.ts`：定期清理超过1小时的活跃AI房间
+3. `src/app/api/rooms/public/route.ts`：已有 `isAiRoom: false` 过滤
+
+### 33.2 发现页TOP3过滤
+
+**问题**：TOP3区域显示无brainhole关联的故事对白，点击后缺少场景描述。
+
+**修复**：`src/app/api/sparks/top/route.ts` 增加 `brainholeId: { not: null }` 过滤。
+
+### 33.3 AI房间空body兼容
+
+**问题**：`POST /api/rooms/ai` 无body时 `request.json()` 抛异常。
+
+**修复**：`src/app/api/rooms/ai/route.ts` 解析失败时默认 `body = {}`。
+
+### 33.4 Asset软删除
+
+**设计**：
+- 人机模式（ai_duet）：用户直接物理删除
+- 双人/故事模式：
+  - 用户A删除 → 标记 `deletedByUser: true`
+  - 用户B仍可见（B有自己的Asset记录）
+  - 用户B也删除 → 检查同一room下所有Asset是否均标记删除 → 是则物理清除全部
+
+**数据库变更**：Asset 表新增 `deletedByUser` / `deletedByPartner` 字段。
+
+**涉及文件**：
+- `prisma/schema.prisma`
+- `src/app/api/assets/[id]/route.ts`
+- `src/app/api/sparks/[id]/route.ts`
+- 所有Asset查询API增加 `deletedByUser: false` 过滤
+
+### 33.5 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.1-fix5 | 2026-04-29 | ✅ 通过 | 75/75 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.1-fix5 修复完成 ✅

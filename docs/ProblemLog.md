@@ -1516,3 +1516,103 @@ initial={mounted ? { y: 10, opacity: 0 } : false}
 3. **端到端测试**：故事系统核心流程需要至少1个端到端测试覆盖
 
 ---
+
+
+---
+
+## v8.1-fix5 问题记录
+
+> 日期：2026-04-29
+> 修复者：AI助手
+
+### 问题1：观看模式堆积僵尸AI房间
+
+**现象**：
+- `/spectate` 观看模式列表中堆积了大量未关闭的AI房间
+- 用户关闭页面或网络断开时，AI房间状态仍为 `active`
+
+**根因**：
+- socket handler 中 `leave-room` / `disconnect` 事件仅标记 participant 离线，不关闭AI房间
+- 观看模式API虽已有 `isAiRoom: false` 过滤，但历史僵尸房间仍存在
+
+**修复方案**：
+1. `src/server/socket-handler.ts`：
+   - 新增 `maybeCloseAiRoom()` 辅助函数
+   - `leave-room` 和 `disconnect` 事件中，AI房间用户离开后检查是否还有真人在线，无则关闭房间
+2. `scripts/cleanup-ai-rooms.ts`：定期清理超过1小时的活跃AI房间（已存在）
+
+**文件变更**：
+- `src/server/socket-handler.ts`
+
+---
+
+### 问题2：发现页TOP3显示故事数据
+
+**现象**：
+- `/home` 页"今日最热火花"TOP3区域显示的是故事对白标题（无brainhole关联）
+- 点击后进入房间，缺少脑洞场景描述，显示"没内容"
+
+**根因**：
+- `/api/sparks/top` 查询所有公开 Asset，包含无 brainhole 关联的故事对白 Asset
+- 故事对白的 title 取自 `story.title`，而非 `brainhole.title`
+
+**修复方案**：
+- `src/app/api/sparks/top/route.ts`：增加 `brainholeId: { not: null }` 过滤，TOP3只显示有脑洞关联的火花
+
+**文件变更**：
+- `src/app/api/sparks/top/route.ts`
+
+---
+
+### 问题3：首页创建AI房间空body 400错误
+
+**现象**：
+- 发现页点击"和刘看山对话"直接 `POST /api/rooms/ai`（无body）
+- `request.json()` 抛 `SyntaxError` 导致 400
+
+**修复方案**：
+- `src/app/api/rooms/ai/route.ts`：try-catch 中解析失败时默认 `body = {}`
+
+**文件变更**：
+- `src/app/api/rooms/ai/route.ts`
+
+---
+
+### 问题4：Asset删除逻辑缺失
+
+**现象**：
+- 用户无法删除自己的火花/对白记录
+- 双人模式下，一方删除不应影响另一方记录
+
+**修复方案**：
+1. `prisma/schema.prisma`：Asset 模型新增 `deletedByUser` / `deletedByPartner` 字段
+2. 删除API逻辑：
+   - 人机模式（ai_duet）：直接物理删除
+   - 双人/故事模式：标记 `deletedByUser = true`，检查同一 room 下是否所有 Asset 均已标记，是则物理清除全部
+3. 所有查询API增加 `deletedByUser: false` 过滤：
+   - `api/assets` GET
+   - `api/assets/public` GET
+   - `api/sparks/mine` GET
+   - `api/sparks/public` GET
+   - `api/sparks/top` GET
+4. 详情API增加已删除检查（返回404）
+
+**文件变更**：
+- `prisma/schema.prisma`
+- `src/app/api/assets/[id]/route.ts`
+- `src/app/api/assets/route.ts`
+- `src/app/api/assets/public/route.ts`
+- `src/app/api/sparks/[id]/route.ts`
+- `src/app/api/sparks/mine/route.ts`
+- `src/app/api/sparks/public/route.ts`
+- `src/app/api/sparks/top/route.ts`
+
+---
+
+### 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.1-fix5 | 2026-04-29 | ✅ 通过 | 75/75 |
+
+---

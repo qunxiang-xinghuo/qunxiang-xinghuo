@@ -680,3 +680,69 @@ room/[id] → fetch /api/ai-training/log → AILearningLog / CatalystLog
 
 > 文档位置：`docs/story-system-flow.md`
 > 最后更新：2026-04-29 v8.0 路演前全局规划全部完成 ✅
+
+
+---
+
+## H. v8.1-fix5 新增流程
+
+### H.1 AI房间断开自动关闭
+
+```
+用户离开AI房间
+    │
+    ├──┬── 正常点击返回/结束对白
+    │  │     → 前端发送 leave-room 事件
+    │  │     → socket-handler 标记 participant 离线
+    │  │     → maybeCloseAiRoom() 检查真人在线数 = 0
+    │  │     → 自动关闭房间 (status → closed)
+    │  │
+    └──┴── 意外断开（关闭浏览器/断网）
+          → socket disconnect 事件触发
+          → 同上逻辑自动关闭房间
+```
+
+**关键代码**：`src/server/socket-handler.ts`
+
+### H.2 Asset删除流程
+
+```
+用户点击删除按钮
+    │
+    ├──┬── 人机模式 (ai_duet)
+    │  │     → 直接物理删除 db.asset.delete()
+    │  │     → 返回"删除成功"
+    │  │
+    └──┴── 双人/故事模式
+              → 标记 deletedByUser = true
+              → 查询同一 room 下所有 Asset
+              → 检查是否全部 deletedByUser = true
+              ├── 是 → 物理删除该 room 下全部 Asset
+              │         → 返回"删除成功（双方均已删除）"
+              │
+              └── 否 → 仅标记
+                        → 返回"已从你的列表中移除"
+```
+
+**关键代码**：`src/app/api/sparks/[id]/route.ts` / `src/app/api/assets/[id]/route.ts`
+
+### H.3 TOP3火花过滤流程
+
+```
+GET /api/sparks/top?limit=3
+    │
+    → Asset.findMany({
+        isPublic: true,
+        deletedByUser: false,
+        brainholeId: { not: null }  ← 只显示有脑洞关联的火花
+      })
+    → 按 hotScore 降序取前3
+    → 返回 { id, brainholeTitle, identityPair, sparkCount, roomId }
+```
+
+**关键代码**：`src/app/api/sparks/top/route.ts`
+
+---
+
+> 文档位置：`docs/story-system-flow.md`  
+> 最后更新：2026-04-29 v8.1-fix5 流程图更新完成 ✅

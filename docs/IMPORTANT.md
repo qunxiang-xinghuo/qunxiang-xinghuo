@@ -944,3 +944,55 @@ pm2 restart all
 4. 结束对白 → 火花出现在 `/library`
 
 ---
+
+
+---
+
+## v8.1-fix5 部署记录
+
+> 更新：2026-04-29
+> 修复内容：观看模式僵尸AI房间 + TOP3故事数据过滤 + AI房间空body兼容 + Asset软删除
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang main
+rm -rf .next
+npx prisma db push --accept-data-loss
+npx prisma generate
+npm run build
+pm2 restart all
+```
+
+### 数据库变更
+
+- Asset 表新增字段：`deletedByUser Boolean @default(false)`、`deletedByPartner Boolean @default(false)`
+
+### 文件变更清单
+
+```
+modified:   prisma/schema.prisma
+modified:   src/app/api/assets/[id]/route.ts
+modified:   src/app/api/assets/public/route.ts
+modified:   src/app/api/assets/route.ts
+modified:   src/app/api/rooms/ai/route.ts
+modified:   src/app/api/rooms/public/route.ts
+modified:   src/app/api/sparks/[id]/route.ts
+modified:   src/app/api/sparks/mine/route.ts
+modified:   src/app/api/sparks/public/route.ts
+modified:   src/app/api/sparks/top/route.ts
+modified:   src/server/socket-handler.ts
+```
+
+### 部署后验证
+
+1. **观看模式**：访问 `/spectate`，确认不显示AI房间，只显示真人实时房间
+2. **TOP3**：访问 `/home`，确认"今日最热火花"显示脑洞标题，不是故事标题
+3. **AI房间创建**：点击"和刘看山对话"，确认正常创建房间并跳转
+4. **Asset删除**：
+   - 人机模式：删除后物理消失
+   - 双人模式：一方删除后从列表隐藏，另一方仍可见；双方都删后物理清除
+
+---
