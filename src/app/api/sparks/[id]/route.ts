@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 
@@ -73,6 +74,7 @@ export async function GET(
       closedAt: asset.room?.closedAt?.toISOString() || null,
       messageCount: asset.messageCount || 0,
       sparkCount: asset.sparkCount || 0,
+      ownerId: asset.userId, // v8.1-fix: 返回所有者ID，前端用于判断消息归属
       messages: (asset.room?.messages || []).map((m) => ({
         id: m.id,
         content: m.content,
@@ -88,5 +90,42 @@ export async function GET(
   } catch (error) {
     console.error("[Spark Detail] Error:", error);
     return NextResponse.json(apiError("SERVER_ERROR", "获取火花详情失败"), { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/sparks/:id
+ * v8.1: 删除自己的火花
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    const guestId = request.headers.get("x-guest-id");
+    const effectiveUserId = userId || guestId;
+
+    if (!effectiveUserId) {
+      return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
+    }
+
+    // 验证所有权
+    const asset = await db.asset.findFirst({
+      where: { id, userId: effectiveUserId },
+    });
+
+    if (!asset) {
+      return NextResponse.json(apiError("NOT_FOUND", "火花不存在或无权限"), { status: 404 });
+    }
+
+    await db.asset.delete({ where: { id } });
+
+    return NextResponse.json(apiResponse({ id, message: "火花已删除" }));
+  } catch (error) {
+    console.error("[Sparks Delete] Error:", error);
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "删除失败"), { status: 500 });
   }
 }

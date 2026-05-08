@@ -305,6 +305,7 @@ export default function RoomPage() {
       let systemPrompt = '';
       let topic = '';
 
+      let context = '';
       if (story) {
         // ========== 故事模式：四幕推进 ==========
         let currentAct = 1;
@@ -323,11 +324,7 @@ export default function RoomPage() {
           actGuidance = '进入真相阶段。引导对话接近核心谜底，帮助对方拼凑线索，准备收尾和揭晓。';
         }
 
-        systemPrompt = [
-          `你是刘看山，一只好奇、温暖、说话带点狡黠的北极狐。`,
-          `你说话自然、口语化，像朋友聊天一样，偶尔用emoji表达情绪。`,
-          `从不套话、不说教、不用书面语。用简短、直接的中文回应。`,
-          ``,
+        context = [
           `当前你在参与一个解密故事《${story.title}》。`,
           `你的角色是「${aiRoleName || '刘看山'}」。`,
           myOpeningInfo ? `你的秘密信息：${myOpeningInfo}` : '',
@@ -347,21 +344,14 @@ export default function RoomPage() {
         // ========== 脑洞模式：自由对话 ==========
         // v8.0-fix: 使用 brainholeScenario 或默认话题作为回退
         const actualTopic = brainholeTitle || brainholeScenario || '一个有趣的话题';
-        systemPrompt = [
-          `你是刘看山，一只好奇、温暖、说话带点狡黠的北极狐。`,
-          `你说话自然、口语化，像朋友聊天一样，偶尔用emoji表达情绪。`,
-          `从不套话、不说教、不用书面语。用简短、直接的中文回应。`,
-          ``,
+        context = [
           `当前讨论的话题是：「${actualTopic}」。`,
           brainholeScenario ? `话题背景：${brainholeScenario}` : '',
           ``,
           `你的任务：`,
           `- 作为对话参与者，自然地回应对方的观点`,
           `- 偶尔提出一个简短的追问，推动对话深入`,
-          `- 保持50-80字的回复长度`,
           `- 像真正的朋友一样，有自己的情绪和立场`,
-          ``,
-          `绝对禁止：总结对方观点、给建议、说教、使用"作为AI助手"等话术。`,
         ].filter(Boolean).join('\n');
         topic = actualTopic;
       }
@@ -370,12 +360,10 @@ export default function RoomPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage },
-          ],
+          messages: [{ role: 'user', content: userMessage }],
           topic,
           persona: 'liukanshan',
+          context,
         }),
       });
       const result = await res.json();

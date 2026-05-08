@@ -42,19 +42,12 @@ export async function PUT(
       return NextResponse.json(apiError("NOT_FOUND", "火花不存在或无权限"), { status: 404 });
     }
 
-    // v8.1: 设为公开前必须经过刘看山审核
+    // v8.1: 用户没有手动公开权，公开只能由 finish API 的自动审核触发
     if (isPublic && !asset.isPublic) {
-      const review = await liukanshanReview(asset.content || asset.summary || "");
-      if (!review.approved) {
-        return NextResponse.json(apiError("REJECTED", review.reason || "内容未通过审核，无法设为公开"), { status: 403 });
-      }
-      // 审核通过，保存推荐语到 summary
-      if (review.summary) {
-        await prisma.asset.update({
-          where: { id },
-          data: { summary: review.summary },
-        });
-      }
+      return NextResponse.json(
+        apiError("FORBIDDEN", "火花公开需通过系统审核，无法手动设为公开"),
+        { status: 403 }
+      );
     }
 
     const updated = await prisma.asset.update({

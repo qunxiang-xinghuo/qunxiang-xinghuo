@@ -31,6 +31,7 @@ interface SparkDetailData {
   closedAt: string | null;
   messageCount: number;
   sparkCount: number;
+  ownerId: string;
   messages: Message[];
 }
 
@@ -39,6 +40,8 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
+  // v8.1-fix: 根据 senderId 判断消息归属，而不是 idx % 2
+  const isMyMessage = (msg: Message) => msg.senderId === data.ownerId;
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
@@ -76,9 +79,9 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
               initial={mounted ? { opacity: 0, y: 10 } : false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className={`flex ${idx % 2 === 0 ? 'justify-start' : 'justify-end'}`}
+              className={`flex ${isMyMessage(msg) ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[80%] ${idx % 2 === 0 ? 'items-start' : 'items-end'} flex flex-col`}>
+              <div className={`max-w-[80%] ${isMyMessage(msg) ? 'items-end' : 'items-start'} flex flex-col`}>
                 {/* 身份标签 */}
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-[10px] text-white/40">{msg.identity}</span>
@@ -92,9 +95,9 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
                 {/* 消息气泡 */}
                 <div
                   className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                    idx % 2 === 0
-                      ? 'bg-white/[0.06] text-white/85 rounded-tl-sm border border-white/5'
-                      : 'bg-[#e2b04a]/15 text-white/85 rounded-tr-sm border border-[#e2b04a]/20'
+                    isMyMessage(msg)
+                      ? 'bg-[#e2b04a]/15 text-white/85 rounded-tr-sm border border-[#e2b04a]/20'
+                      : 'bg-white/[0.06] text-white/85 rounded-tl-sm border border-white/5'
                   }`}
                 >
                   {msg.content}

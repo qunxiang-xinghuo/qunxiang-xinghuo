@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Flame, TrendingUp, Clock, ChevronLeft, ChevronRight,
-  Eye, EyeOff, ArrowLeft,
+  ArrowLeft, Trash2, ShieldAlert, ShieldCheck,
 } from 'lucide-react';
 
 interface Spark {
@@ -20,6 +20,7 @@ interface Spark {
   messageCount: number;
   roomId: string | null;
   isPublic: boolean;
+  reviewStatus?: string;
 }
 
 type SortType = 'latest' | 'hottest';
@@ -69,27 +70,27 @@ export default function MySparksPage() {
     loadSparks();
   }, [loadSparks]);
 
-  // 切换公开/私密状态
-  const toggleVisibility = async (spark: Spark) => {
+  // v8.1: 删除火花
+  const handleDelete = async (spark: Spark) => {
     if (updatingId === spark.id) return;
+    if (!confirm('确定要删除这个火花吗？')) return;
     setUpdatingId(spark.id);
     try {
-      const res = await fetch(`/api/sparks/${spark.id}/visibility`, {
-        method: 'PUT',
+      const res = await fetch(`/api/sparks/${spark.id}`, {
+        method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           ...(localStorage.getItem('xh_user_id') ? { 'x-guest-id': localStorage.getItem('xh_user_id')! } : {}),
         },
-        body: JSON.stringify({ isPublic: !spark.isPublic }),
       });
       const result = await res.json();
       if (result.success) {
-        setSparks((prev) =>
-          prev.map((s) => (s.id === spark.id ? { ...s, isPublic: !spark.isPublic } : s))
-        );
+        setSparks((prev) => prev.filter((s) => s.id !== spark.id));
+      } else {
+        alert(result.error?.message || '删除失败');
       }
     } catch (e) {
-      console.error('切换可见性失败:', e);
+      console.error('删除火花失败:', e);
+      alert('网络异常，删除失败');
     } finally {
       setUpdatingId(null);
     }
@@ -195,29 +196,31 @@ export default function MySparksPage() {
                         {spark.hotScore || 0}
                       </span>
 
-                      {/* 公开/私密切换开关 */}
+                      {/* v8.1: 审核状态标签 */}
+                      {spark.isPublic ? (
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-400/60 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                          <ShieldCheck className="w-3 h-3" />
+                          已公开
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[10px] text-amber-400/60 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                          <ShieldAlert className="w-3 h-3" />
+                          审核中
+                        </span>
+                      )}
+
+                      {/* v8.1: 删除按钮 */}
                       <button
-                        onClick={() => toggleVisibility(spark)}
+                        onClick={() => handleDelete(spark)}
                         disabled={updatingId === spark.id}
-                        className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full transition-colors ${
-                          spark.isPublic
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-white/[0.05] text-white/30 border border-white/5'
-                        }`}
+                        className="flex items-center gap-1 text-[10px] text-red-400/60 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full hover:bg-red-500/15 transition-colors"
                       >
                         {updatingId === spark.id ? (
                           <span className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin" />
-                        ) : spark.isPublic ? (
-                          <>
-                            <Eye className="w-3 h-3" />
-                            公开
-                          </>
                         ) : (
-                          <>
-                            <EyeOff className="w-3 h-3" />
-                            私密
-                          </>
+                          <Trash2 className="w-3 h-3" />
                         )}
+                        删除
                       </button>
 
                       {/* 详情箭头 */}

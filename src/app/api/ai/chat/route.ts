@@ -73,7 +73,7 @@ const LIUKANSHAN_SYSTEM_PROMPT = `你是刘看山，一只生活在北极的北�
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, topic, persona: personaKey } = body;
+    const { messages, topic, persona: personaKey, context } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -83,8 +83,17 @@ export async function POST(request: NextRequest) {
     }
 
     // v6.1: 支持多角色切换
+    // v8.1-fix: liukanshan 角色使用 personas.ts 中的完整 systemPrompt，注入话题/上下文
     const persona = getPersona(personaKey);
-    const systemPrompt = persona.systemPrompt.replace("{topic}", topic || "一个有趣的话题");
+    let systemPrompt = persona.systemPrompt;
+
+    // 为 liukanshan 角色注入话题和上下文
+    if (personaKey === 'liukanshan' && context) {
+      systemPrompt += `\n\n当前话题：「${topic || '一个有趣的话题'}」\n${context}`;
+    } else {
+      systemPrompt = systemPrompt.replace("{topic}", topic || "一个有趣的话题");
+    }
+
     console.log("[AI Chat] 使用角色:", persona.name, "key:", personaKey || "catalyst");
     console.log("[AI Chat] 收到请求, topic:", topic, "history长度:", messages.length);
 
@@ -95,9 +104,11 @@ export async function POST(request: NextRequest) {
 
     if (apiKey) {
       try {
+        // v8.1-fix: 过滤掉前端传来的 system message，避免重复
+        const userMessages = messages.filter((m: ChatMessage) => m.role !== 'system');
         const deepseekMessages = [
           { role: "system", content: systemPrompt },
-          ...messages,
+          ...userMessages,
         ];
         console.log("[AI Chat] 调用 DeepSeek API...");
 
@@ -141,11 +152,13 @@ export async function POST(request: NextRequest) {
 
     try {
       // 知乎直答不支持 system role，把 system prompt 作为第一条 user 消息
+      // v8.1-fix: 过滤掉前端传来的 system message，避免重复
+      const userMessages = messages.filter((m: ChatMessage) => m.role !== 'system');
       const zhidaMessages = [
         { role: "user" as const, content: `[系统设定] ${systemPrompt}` },
-        ...messages.map((m: ChatMessage) => ({
-          role: m.role === "system" ? "user" as const : m.role as "user" | "assistant",
-          content: m.role === "system" ? `[系统设定] ${m.content}` : m.content,
+        ...userMessages.map((m: ChatMessage) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
         })),
       ];
       console.log("[AI Chat] 调用 知乎直答 API...");
