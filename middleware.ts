@@ -26,15 +26,17 @@ export async function middleware(request: NextRequest) {
 
   const isLoggedIn = !!token;
 
-  // v8.0-login-fix: spectate 路由调试
-  if (pathname === '/spectate' || pathname.startsWith('/spectate/')) {
-    console.log('[Middleware-Spectate]', pathname, 'isLoggedIn=', isLoggedIn);
+  // v8.0-login-fix: spectate 路由调试（仅开发环境）
+  if (process.env.NODE_ENV === 'development') {
+    if (pathname === '/spectate' || pathname.startsWith('/spectate/')) {
+      console.log('[Middleware-Spectate]', pathname, 'isLoggedIn=', isLoggedIn);
+    }
+    console.log('[Middleware]', pathname, 'isLoggedIn=', isLoggedIn, 'token=', token ? 'yes' : 'no');
   }
-  console.log('[Middleware]', pathname, 'isLoggedIn=', isLoggedIn, 'token=', token ? 'yes' : 'no');
 
   // 已登录用户访问登录页/注册页 → 重定向到首页
   if (isLoggedIn && PUBLIC_PATHS.includes(pathname)) {
-    console.log('[Middleware] 已登录用户访问', pathname, '→ 重定向到 /home');
+    // console.log('[Middleware] 已登录用户访问', pathname, '→ 重定向到 /home');
     const response = NextResponse.redirect(new URL('/home', request.url));
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
