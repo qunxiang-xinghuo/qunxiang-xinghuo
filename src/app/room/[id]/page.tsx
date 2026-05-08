@@ -485,6 +485,11 @@ export default function RoomPage() {
         setFinished(true);
         setRoomStatus('closed');
         if (data.data?.truth) setShowTruth(true);
+        // v8.1: 根据审核结果给用户反馈
+        const review = data.data?.review;
+        if (review && !review.approved) {
+          alert(`你的火花已保存，但需要经过审核才能公开。原因：${review.reason || '内容违规'}`);
+        }
       } else {
         // v8.0-fix: API 返回错误时给用户反馈
         console.error('结束对白失败:', data.error);
@@ -497,6 +502,34 @@ export default function RoomPage() {
       setFinishing(false);
     }
   };
+
+  // v8.1: 用户离开页面时强制触发结束流程（返回键/关闭标签/刷新）
+  useEffect(() => {
+    if (!roomId || roomStatus === 'closed' || finished) return;
+
+    const handleBeforeUnload = () => {
+      // 使用 sendBeacon 发送同步请求，确保页面关闭前完成
+      const blob = new Blob([JSON.stringify({})], { type: 'application/json' });
+      navigator.sendBeacon(`/api/rooms/${roomId}/finish`, blob);
+    };
+
+    // 监听浏览器返回键（popstate）
+    const handlePopState = () => {
+      if (!finished) {
+        // 使用 fetch with keepalive 触发结束
+        fetch(`/api/rooms/${roomId}/finish`, { method: 'POST', keepalive: true })
+          .catch(() => {});
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [roomId, roomStatus, finished]);
 
   const isReadonly = roomStatus === 'closed' || finished;
   // v8.0-fix: 增强标题回退链，使用 room.scene 作为最终回退
@@ -686,10 +719,10 @@ export default function RoomPage() {
 
           <div className="flex items-center justify-between mb-2 px-1">
             <button
-              onClick={() => { if (messages.length >= 3) setShowEndConfirm(true); }}
-              disabled={finishing || messages.length < 3}
+              onClick={() => setShowEndConfirm(true)}
+              disabled={finishing}
               className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full transition-colors ${
-                messages.length < 3
+                finishing
                   ? 'bg-white/[0.02] text-white/15 border border-white/5 cursor-not-allowed'
                   : 'bg-red-500/10 text-red-400/60 border border-red-500/20 hover:bg-red-500/15'
               }`}
