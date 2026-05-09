@@ -373,6 +373,7 @@ async function createDuetMatchTx(
     tx.matchRequest.update({
       where: { id: matchedRequest.id },
       data: {
+        status: "matched",
         matchedUserId: userId,
         roomId: room.id,
         resolvedAt: new Date(),
@@ -385,6 +386,7 @@ async function createDuetMatchTx(
       tx.matchRequest.update({
         where: { id: matchRequestId },
         data: {
+          status: "matched",
           matchedUserId: matchedRequest.userId,
           roomId: room.id,
           resolvedAt: new Date(),
