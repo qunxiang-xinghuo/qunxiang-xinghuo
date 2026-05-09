@@ -378,10 +378,14 @@ export default function RoomPage() {
         identity: aiRoleName || '刘看山',
       };
       setMessages((prev) => [...prev, aiMsg]);
-      // 保存到数据库
+      // v8.3-fix: 保存AI消息时必须传递AI的userId，否则cookie会让人类userId覆盖senderId
+      const aiUserId = story ? `agent_${story.id}` : 'agent_catalyst';
       await fetch(`/api/rooms/${roomId}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-guest-id': aiUserId,
+        },
         body: JSON.stringify({ content: aiMsg.content, identity: aiMsg.identity }),
       });
       // v8.0-ai-evolution: 记录学习日志（通过API）

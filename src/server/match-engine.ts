@@ -109,19 +109,26 @@ async function _findMatch(
         userId: { not: excludeUserId || userId },
       };
 
-      if (preferDifferentIdentity) {
-        baseWhere.OR = [{ identity: { not: identity || "default" } }];
-      }
+      // v8.3-fix: preferDifferentIdentity 从硬性过滤改为优先排序
+      // 先查全部 waiting 用户，再在内存中优先选不同身份的
 
       // ========== 阶段1: 同 brainhole 精确匹配 ==========
       if (brainholeId) {
         const stage1Matches = await tx.matchRequest.findMany({
           where: { ...baseWhere, brainholeId },
           orderBy: { createdAt: "asc" },
-          take: 3,
+          take: 5,
         });
 
-        for (const candidate of stage1Matches) {
+        // 优先不同身份，但相同身份也能匹配
+        const orderedMatches = preferDifferentIdentity
+          ? [
+              ...stage1Matches.filter((c: any) => c.identity !== (identity || "default")),
+              ...stage1Matches.filter((c: any) => c.identity === (identity || "default")),
+            ]
+          : stage1Matches;
+
+        for (const candidate of orderedMatches) {
           const claimed = await claimMatchRequestTx(tx, candidate.id);
           if (claimed) {
             console.log(
@@ -159,10 +166,18 @@ async function _findMatch(
       const stage2Matches = await tx.matchRequest.findMany({
         where: baseWhere,
         orderBy: { createdAt: "asc" },
-        take: 3,
+        take: 5,
       });
 
-      for (const candidate of stage2Matches) {
+      // 优先不同身份，但相同身份也能匹配
+      const orderedStage2 = preferDifferentIdentity
+        ? [
+            ...stage2Matches.filter((c: any) => c.identity !== (identity || "default")),
+            ...stage2Matches.filter((c: any) => c.identity === (identity || "default")),
+          ]
+        : stage2Matches;
+
+      for (const candidate of orderedStage2) {
         const claimed = await claimMatchRequestTx(tx, candidate.id);
         if (claimed) {
           let finalBrainholeId = brainholeId || candidate.brainholeId || "";

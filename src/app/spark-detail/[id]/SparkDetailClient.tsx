@@ -80,8 +80,10 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
     return () => ctrl.abort();
   }, [data.roomId]);
 
-  // v8.1-fix: 根据 senderId 判断消息归属
-  const isMyMessage = (msg: Message) => msg.senderId === data.ownerId;
+  // v8.3-fix: 根据 senderId 判断消息归属
+  // AI 消息（senderId 以 agent_ 开头）始终显示在左边
+  const isAiMessage = (msg: Message) => msg.senderId?.startsWith('agent_') || false;
+  const isMyMessage = (msg: Message) => msg.senderId === data.ownerId && !isAiMessage(msg);
 
   // v8.1: 点赞功能
   const handleLike = async () => {
@@ -205,7 +207,9 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
               <div className={`max-w-[80%] ${isMyMessage(msg) ? 'items-end' : 'items-start'} flex flex-col`}>
                 {/* 身份标签 */}
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[10px] text-white/40">{msg.identity}</span>
+                  <span className={`text-[10px] ${isAiMessage(msg) ? 'text-emerald-400/60' : 'text-white/40'}`}>
+                    {msg.identity}
+                  </span>
                   {msg.isSpark && (
                     <span className="flex items-center gap-0.5 text-[10px] text-[#e2b04a]">
                       <Sparkles className="w-3 h-3" />
@@ -218,7 +222,9 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
                   className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
                     isMyMessage(msg)
                       ? 'bg-[#e2b04a]/15 text-white/85 rounded-tr-sm border border-[#e2b04a]/20'
-                      : 'bg-white/[0.06] text-white/85 rounded-tl-sm border border-white/5'
+                      : isAiMessage(msg)
+                        ? 'bg-emerald-500/10 text-white/85 rounded-tl-sm border border-emerald-500/20'
+                        : 'bg-white/[0.06] text-white/85 rounded-tl-sm border border-white/5'
                   }`}
                 >
                   {msg.content}
