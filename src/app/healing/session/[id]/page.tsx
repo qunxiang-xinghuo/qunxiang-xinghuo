@@ -27,6 +27,7 @@ export default function HealingSessionPage() {
   const [sending, setSending] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<'active' | 'closed'>('active');
   const [publishing, setPublishing] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -38,20 +39,28 @@ export default function HealingSessionPage() {
     if (saved) setStableUserId(saved);
   }, []);
 
-  // 加载消息
+  // 加载会话状态 + 消息
   useEffect(() => {
     if (!sessionId) return;
     const guestId = localStorage.getItem('xh_user_id');
-    fetch(`/api/healing/${sessionId}/messages`, {
-      headers: guestId ? { 'x-guest-id': guestId } : {},
-    })
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.success && res.data) {
-          setMessages(res.data);
+
+    Promise.all([
+      fetch(`/api/healing/${sessionId}`, {
+        headers: guestId ? { 'x-guest-id': guestId } : {},
+      }).then((r) => r.json()),
+      fetch(`/api/healing/${sessionId}/messages`, {
+        headers: guestId ? { 'x-guest-id': guestId } : {},
+      }).then((r) => r.json()),
+    ])
+      .then(([sessionRes, messagesRes]) => {
+        if (sessionRes.success && sessionRes.data) {
+          setSessionStatus(sessionRes.data.status);
+        }
+        if (messagesRes.success && messagesRes.data) {
+          setMessages(messagesRes.data);
         }
       })
-      .catch((err) => console.error('[Healing] 加载消息失败:', err))
+      .catch((err) => console.error('[Healing] 加载失败:', err))
       .finally(() => setIsLoading(false));
   }, [sessionId]);
 
@@ -103,8 +112,33 @@ export default function HealingSessionPage() {
     }
   }, [inputValue, sending, sessionId, sessionStatus, stableUserId]);
 
+  // 结束疗愈会话
+  const handleClose = useCallback(async () => {
+    if (!confirm('确定结束这次疗愈对话吗？')) return;
+    setClosing(true);
+    const guestId = localStorage.getItem('xh_user_id');
+    try {
+      const res = await fetch(`/api/healing/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
+      });
+      const result = await res.json();
+      if (result.success) {
+        setSessionStatus('closed');
+        setToast({ type: 'success', message: '疗愈对话已结束' });
+      } else {
+        setToast({ type: 'error', message: result.error?.message || '结束失败' });
+      }
+    } catch (err) {
+      console.error('[Healing] 结束失败:', err);
+      setToast({ type: 'error', message: '结束失败，请重试' });
+    } finally {
+      setClosing(false);
+      setTimeout(() => setToast(null), 3000);
+    }
+  }, [sessionId]);
+
   const handlePublish = async () => {
-    // v7.0-test13: 先检查内容再设置publishing，避免死锁
     const content = messages.filter((m) => !m.isAi).map((m) => m.content).join('\n\n');
     if (!content) {
       setToast({ type: 'error', message: '没有可公开的内容' });
@@ -113,7 +147,6 @@ export default function HealingSessionPage() {
     }
     setPublishing(true);
     try {
-
       const guestId = localStorage.getItem('xh_user_id');
       await fetch('/api/assets', {
         method: 'POST',
@@ -125,15 +158,13 @@ export default function HealingSessionPage() {
           isPublic: true,
         }),
       });
-
       setToast({ type: 'success', message: '已公开至火花墙' });
-      setTimeout(() => setToast(null), 3000);
     } catch (err) {
       console.error('公开失败:', err);
       setToast({ type: 'error', message: '公开失败，请重试' });
-      setTimeout(() => setToast(null), 3000);
     } finally {
       setPublishing(false);
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -219,59 +250,56 @@ export default function HealingSessionPage() {
       {/* 底部操作区 */}
       <div className="shrink-0 px-4 py-3 border-t border-white/5">
         {sessionStatus === 'active' ? (
-          <div className="flex gap-2">
-            <textarea
-              ref={inputRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder="想聊点什么..."
-              className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-rose-500/30 resize-none max-h-24"
-              rows={1}
-              disabled={sending}
-            />
-            <button
-              onClick={handleSend}
-              disabled={!inputValue.trim() || sending}
-              className="shrink-0 w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 hover:bg-rose-500/30 disabled:opacity-30 transition-all"
-            >
-              {sending ? (
-                <div className="w-4 h-4 border-2 border-rose-400/30 border-t-rose-400 rounded-full animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-        ) : (
-          <div className="text-center py-2">
-            <p className="text-xs text-slate-600">会话已结束</p>
-          </div>
-        )}
-
-        {/* 结束会话 + 公开按钮 */}
-        {sessionStatus === 'active' && messages.length > 2 && (
-          <div className="flex items-center justify-between mt-2">
-            <button
-              onClick={() => setSessionStatus('closed')}
-              className="text-[10px] text-slate-600 hover:text-slate-500"
-            >
-              结束对话
-            </button>
-            <div className="flex items-center gap-2">
-              <Lock className="w-3 h-3 text-slate-700" />
-              <span className="text-[10px] text-slate-700">加密保护中</span>
+          <>
+            <div className="flex gap-2">
+              <textarea
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder="想聊点什么..."
+                className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-rose-500/30 resize-none max-h-24"
+                rows={1}
+                disabled={sending}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!inputValue.trim() || sending}
+                className="shrink-0 w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 hover:bg-rose-500/30 disabled:opacity-30 transition-all"
+              >
+                {sending ? (
+                  <div className="w-4 h-4 border-2 border-rose-400/30 border-t-rose-400 rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </button>
             </div>
-          </div>
-        )}
 
-        {sessionStatus === 'closed' && (
-          <div className="mt-2 space-y-2">
-            <p className="text-[10px] text-slate-600 text-center">对话已结束，你可以选择：</p>
+            {/* 结束会话按钮 */}
+            <div className="flex items-center justify-between mt-2">
+              <button
+                onClick={handleClose}
+                disabled={closing}
+                className="text-[10px] text-slate-600 hover:text-slate-500 disabled:opacity-30"
+              >
+                {closing ? '结束中...' : '结束疗愈'}
+              </button>
+              <div className="flex items-center gap-2">
+                <Lock className="w-3 h-3 text-slate-700" />
+                <span className="text-[10px] text-slate-700">加密保护中</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="space-y-2">
+            <div className="text-center py-2">
+              <p className="text-xs text-slate-600">会话已结束</p>
+            </div>
             <button
               onClick={handlePublish}
               disabled={publishing}

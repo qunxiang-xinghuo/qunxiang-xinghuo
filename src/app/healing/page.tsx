@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Flame, Plus, MessageCircle, Lock, Clock, ArrowRight } from 'lucide-react';
+import { Flame, Plus, MessageCircle, Lock, Clock, ArrowRight, Trash2 } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 
 interface HealingSessionItem {
@@ -24,6 +24,7 @@ export default function HealingPage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -81,6 +82,29 @@ export default function HealingPage() {
       setError('网络错误，请重试');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleDelete = async (sessionId: string) => {
+    if (!confirm('确定删除这条疗愈记录吗？此操作不可恢复。')) return;
+    setDeletingId(sessionId);
+    try {
+      const guestId = localStorage.getItem('xh_user_id');
+      const res = await fetch(`/api/healing/${sessionId}`, {
+        method: 'DELETE',
+        headers: guestId ? { 'x-guest-id': guestId } : {},
+      });
+      const result = await res.json();
+      if (result.success) {
+        setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      } else {
+        alert(result.error?.message || '删除失败');
+      }
+    } catch (e) {
+      console.error('删除疗愈会话失败:', e);
+      alert('删除失败');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -155,11 +179,13 @@ export default function HealingPage() {
                 initial={mounted ? { opacity: 0, y: 10 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                onClick={() => router.push(`/healing/session/${session.id}`)}
-                className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 active:scale-[0.98] transition-all cursor-pointer"
+                className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 active:scale-[0.98] transition-all"
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
+                  <div
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => router.push(`/healing/session/${session.id}`)}
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-medium text-slate-200 truncate">
                         {session.title}
@@ -167,6 +193,11 @@ export default function HealingPage() {
                       {session.status === 'active' && (
                         <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                           进行中
+                        </span>
+                      )}
+                      {session.status === 'closed' && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-400 border border-slate-500/20">
+                          已结束
                         </span>
                       )}
                     </div>
@@ -181,7 +212,19 @@ export default function HealingPage() {
                       </span>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-700 mt-1" />
+                  <div className="flex items-center gap-1 ml-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(session.id);
+                      }}
+                      disabled={deletingId === session.id}
+                      className="p-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-30"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <ArrowRight className="w-4 h-4 text-slate-700 mt-1 cursor-pointer" onClick={() => router.push(`/healing/session/${session.id}`)} />
+                  </div>
                 </div>
               </motion.div>
             ))}
