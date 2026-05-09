@@ -251,9 +251,9 @@ export default function HealingSessionPage() {
       <div className="shrink-0 px-4 py-3 border-t border-white/5">
         {sessionStatus === 'active' ? (
           <>
-            <div className="flex gap-2">
-              <textarea
-                ref={inputRef}
+            <div className="flex gap-2 items-end">
+              <input
+                ref={inputRef as any}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -263,8 +263,7 @@ export default function HealingSessionPage() {
                   }
                 }}
                 placeholder="想聊点什么..."
-                className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-rose-500/30 resize-none max-h-24"
-                rows={1}
+                className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-rose-500/30 h-10"
                 disabled={sending}
               />
               <button

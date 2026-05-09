@@ -1939,3 +1939,118 @@ sqlite3 dev.db "UPDATE User SET isAdmin = 1 WHERE username = '你的用户名';"
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
 > 最后更新：2026-04-29 v8.2 完成 ✅
+
+
+---
+
+### 21.7 v8.3 紧急修复（2026-04-29）
+
+#### 21.7.1 修复清单
+
+| 问题 | 根因 | 修复文件 |
+|------|------|----------|
+| 火花墙看不到别人的火花 | 跳转 `/room` 导致非参与者 403；`isAiRoom` null 误判；缺少 `deletedByPartner` 过滤 | `library/page.tsx`, `finish/route.ts`, `public/route.ts` |
+| 火花详情无法评论 | `SparkDetailClient` 未发送 `x-guest-id` | `SparkDetailClient.tsx` |
+| 双人匹配不上 | `brainholeId` CUID 验证过严；倒计时不重启；invite/join API 不支持 guest | `match.ts`, `duo-waiting/page.tsx`, `invite/route.ts`, `join/route.ts` |
+| 分享按钮点不动 | `navigator.clipboard` 在 HTTP 下失败无 fallback | `room/[id]/page.tsx` |
+| 疗愈输入框点不动 | `textarea` 无最小高度，点击区域过小 | `healing/session/[id]/page.tsx` |
+
+#### 21.7.2 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.3 | 2026-04-29 | ✅ 通过 | 80/80 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.3 紧急修复完成 ✅
+
+
+---
+
+### 21.8 v8.4 种子数据管理员自动创建（2026-04-29）
+
+#### 21.8.1 修复清单
+
+| 问题 | 根因 | 修复文件 |
+|------|------|----------|
+| 种子数据无管理员 | `seed.ts` 未包含管理员创建逻辑 | `prisma/seed.ts` |
+| 环境变量缺失示例 | `.env.example` 未标注管理员配置 | `.env.example` |
+
+#### 21.8.2 种子脚本管理员创建逻辑
+
+```ts
+// prisma/seed.ts
+import "dotenv/config";
+import bcrypt from "bcryptjs";
+
+const adminUsername = process.env.BACKEND_ADMIN;
+const adminPassword = process.env.BACKEND_ADMIN_PAASSWORD;
+if (adminUsername && adminPassword) {
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
+  await prisma.user.upsert({
+    where: { email: `${adminUsername}@admin.local` },
+    update: { name: adminUsername, username: adminUsername, password: hashedPassword, isAdmin: true },
+    create: { email: `${adminUsername}@admin.local`, name: adminUsername, username: adminUsername, password: hashedPassword, isAdmin: true, level: 1, sparkCount: 0 },
+  });
+}
+```
+
+#### 21.8.3 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.4 | 2026-04-29 | ✅ 通过 | 80/80 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.4 完成 ✅
+
+
+---
+
+### 21.9 v8.3b 回归修复（2026-04-29）
+
+#### 21.9.1 修复清单
+
+| 问题 | 根因 | 修复文件 |
+|------|------|----------|
+| 火花详情加载失败 | 服务端组件硬编码 `localhost:3000`，生产环境不可访问 | `spark-detail/[id]/page.tsx` |
+| 双人匹配失败 | SQLite 交互式事务的 `maxWait`/`timeout` 选项导致不稳定 | `match-engine.ts` |
+| 疗愈输入框不可点击 | `textarea rows={1}` 在移动端高度渲染异常 | `healing/session/[id]/page.tsx` |
+| 管理员无法登录 | 服务器 `.env` 未同步管理员环境变量 | 手动追加 `.env` |
+
+#### 21.9.2 关键代码变更
+
+**火花详情页（服务端组件直接查库）**
+```ts
+const asset = await db.asset.findUnique({
+  where: { id, isPublic: true, deletedByUser: false },
+  include: { brainhole: {...}, room: { include: { participants, messages } } },
+});
+```
+
+**匹配引擎（移除事务超时选项）**
+```ts
+// 移除:
+// { maxWait: 5000, timeout: 10000 }
+return await db.$transaction(async (tx) => { ... });
+```
+
+**疗愈输入框（textarea → input）**
+```tsx
+<input className="... h-10" />
+```
+
+#### 21.9.3 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.3b | 2026-04-29 | ✅ 通过 | 80/80 |
+
+---
+
+> 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
+> 最后更新：2026-04-29 v8.3b 完成 ✅

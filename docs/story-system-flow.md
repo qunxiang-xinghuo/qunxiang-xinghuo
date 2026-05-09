@@ -828,3 +828,118 @@ POST /api/stories/:storyId/like
 
 > 文档位置：`docs/story-system-flow.md`  
 > 最后更新：2026-04-29 v8.2 流程图更新完成 ✅
+
+
+### I.5 v8.3 紧急修复流程补充
+
+#### 火花墙可见性修复
+
+```
+/library
+    │
+    ├── 点击火花卡片
+    │       └── 跳转 /spark-detail/:assetId（公开只读，无 403）
+    │
+    └── /api/sparks/public
+            └── where: { isPublic: true, deletedByUser: false, deletedByPartner: false }
+```
+
+#### 双人匹配修复
+
+```
+/duo-waiting
+    │
+    ├── 初始化匹配 POST /api/match
+    │       └── brainholeId 验证放宽（z.string().optional()）
+    │
+    ├── 15秒超时 → 点击"再次尝试匹配"
+    │       └── 倒计时重启（effect 依赖 [status]）
+    │
+    └── 邀请好友 POST /api/rooms/invite
+            └── 支持 guest（effectiveUserId = userId || guestId）
+```
+
+#### 房间分享修复
+
+```
+/room/:id
+    │
+    └── 点击 Share2 图标
+            ├── 优先 navigator.clipboard.writeText
+            └── fallback document.execCommand('copy')
+```
+
+---
+
+> 文档位置：`docs/story-system-flow.md`  
+> 最后更新：2026-04-29 v8.3 流程图补充完成 ✅
+
+
+### I.6 v8.4 管理员初始化流程补充
+
+#### 数据库种子管理员创建流程
+
+```
+prisma/seed.ts
+    │
+    ├── 读取环境变量
+    │       ├── BACKEND_ADMIN（用户名）
+    │       └── BACKEND_ADMIN_PAASSWORD（密码）
+    │
+    ├── 条件判断
+    │       └── 两个变量均存在？
+    │               ├── 是 → bcrypt.hash(password, 10)
+    │               │           └── prisma.user.upsert
+    │               │                   ├── where: { email: `${admin}@admin.local` }
+    │               │                   ├── update: { isAdmin: true, password: hash }
+    │               │                   └── create: { ...isAdmin: true }
+    │               └── 否 → 跳过并打印提示
+    │
+    └── 控制台输出
+            └── 管理员用户已创建/更新: xxx (isAdmin=true)
+```
+
+---
+
+> 文档位置：`docs/story-system-flow.md`  
+> 最后更新：2026-04-29 v8.4 流程图补充完成 ✅
+
+
+### I.7 v8.3b 回归修复流程补充
+
+#### 火花详情页加载流程（修复后）
+
+```
+/spark-detail/:assetId
+    │
+    └── 服务端组件 (page.tsx)
+            └── Prisma db.asset.findUnique({ where: { id, isPublic: true } })
+                    └── 直接查询数据库（不再走 HTTP localhost:3000）
+                            └── 返回数据给 SparkDetailClient
+```
+
+#### 双人匹配流程（修复后）
+
+```
+/duo-waiting
+    │
+    └── POST /api/match
+            └── findMatch()
+                    └── db.$transaction(async (tx) => { ... })
+                            └── 移除 maxWait/timeout 选项（SQLite 兼容）
+```
+
+#### 疗愈输入框流程（修复后）
+
+```
+/healing/session/:id
+    │
+    └── 底部操作区
+            └── sessionStatus === 'active'
+                    └── input[type="text"] h-10（固定高度，确保可点击）
+```
+
+---
+
+> 文档位置：`docs/story-system-flow.md`  
+> 最后更新：2026-04-29 v8.3b 流程图补充完成 ✅

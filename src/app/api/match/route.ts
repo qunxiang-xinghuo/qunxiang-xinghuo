@@ -12,9 +12,8 @@ export async function POST(request: NextRequest) {
     console.log("[MatchAPI] 请求URL:", request.url);
 
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-    // v6.1-fix: 支持guest用户，但不再自动生成guest ID（必须由客户端提供）
     const guestId = request.headers.get("x-guest-id");
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
     if (!userId) {
       console.error("[MatchAPI] 缺少用户身份：未登录且无 x-guest-id header");
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录或提供用户ID"), { status: 401 });

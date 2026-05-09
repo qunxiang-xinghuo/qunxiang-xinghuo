@@ -49,14 +49,14 @@ export async function POST(
     const content = room.messages.map((m) => `${m.identity}: ${m.content}`).join("\n");
 
     // v8.1: 刘看山编辑审核（在关闭房间后、保存资产前）
-    // v8.1-fix: 审核超时默认通过，不因技术故障卡住用户
+    // v8.3-fix: AI房间跳过审核，强制公开
     let reviewResult: { approved: boolean; summary?: string; reason?: string } | null = null;
-    if (room.messages.length > 0) {
+    let isPublic = true;
+    if (!room.isAiRoom && room.messages.length > 0) {
       reviewResult = await liukanshanReview(content);
+      isPublic = reviewResult ? reviewResult.approved : true;
     }
 
-    // 审核未返回结果（如超时）→ 默认通过；审核返回结果 → 按其判断
-    const isPublic = reviewResult ? reviewResult.approved : true;
     const summary = reviewResult?.summary || reviewResult?.reason || room.story?.storySummary || "";
 
     const [updatedRoom, asset] = await db.$transaction([

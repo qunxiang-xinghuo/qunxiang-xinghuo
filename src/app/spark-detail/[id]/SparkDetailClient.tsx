@@ -113,9 +113,10 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
     if (!content || !data.roomId) return;
     setCommentLoading(true);
     try {
+      const guestId = localStorage.getItem('xh_user_id');
       const res = await fetch('/api/room-comments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
         body: JSON.stringify({ roomId: data.roomId, content }),
       });
       const dataRes = await res.json();
@@ -134,7 +135,11 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
   const deleteComment = async (commentId: string) => {
     setCommentDeletingId(commentId);
     try {
-      const res = await fetch(`/api/room-comments/${commentId}`, { method: 'DELETE' });
+      const guestId = localStorage.getItem('xh_user_id');
+      const res = await fetch(`/api/room-comments/${commentId}`, {
+        method: 'DELETE',
+        headers: guestId ? { 'x-guest-id': guestId } : {},
+      });
       const dataRes = await res.json();
       if (dataRes.success) {
         setComments((prev) => prev.filter((c) => c.id !== commentId));

@@ -28,7 +28,7 @@ export default function BottomNav() {
   if (hideNavPaths.includes(pathname)) return null;
 
   // 房间、匹配等页面也隐藏
-  if (pathname.startsWith('/room/') || pathname.startsWith('/duo') || pathname.startsWith('/story/room/')) return null;
+  if (pathname.startsWith('/room/') || pathname.startsWith('/duo') || pathname.startsWith('/story/room/') || pathname.startsWith('/healing/session/')) return null;
   // v8.0-fix: 故事大厅的对白室入口也隐藏底部导航
   if (pathname.startsWith('/story-hall/') && pathname.includes('/room/')) return null;
 

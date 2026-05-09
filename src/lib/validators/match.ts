@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const matchRequestSchema = z.object({
-  brainholeId: z.string().cuid().optional(),
+  brainholeId: z.string().optional(),
   identity: z.string().min(1, '身份标签不能为空').max(100, '身份标签不能超过100字'),
   preferDifferent: z.boolean().default(true),
   timeoutMinutes: z.coerce.number().int().min(1).max(60).default(10),
@@ -17,7 +17,7 @@ export const matchStatusSchema = z.object({
 });
 
 export const matchCriteriaSchema = z.object({
-  brainholeId: z.string().cuid().optional(),
+  brainholeId: z.string().optional(),
   identity: z.string().min(1, '身份标签不能为空').max(100, '身份标签不能超过100字'),
   excludeUserId: z.string().cuid().optional(),
   minLevel: z.number().int().min(1).default(1),

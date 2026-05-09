@@ -1,7 +1,9 @@
 // v8.0: 火花详情页 — 展示已完结对白的完整消息记录
+// v8.3-fix: 改用 Prisma 直接查询，避免生产环境 localhost:3000 不可访问
 export const dynamic = 'force-dynamic';
 
 import { notFound } from 'next/navigation';
+import { db } from '@/lib/db';
 import SparkDetailClient from './SparkDetailClient';
 
 interface SparkDetailPageProps {
@@ -12,21 +14,64 @@ export default async function SparkDetailPage({ params }: SparkDetailPageProps) 
   const { id } = await params;
 
   try {
-    const res = await fetch(`http://localhost:3000/api/sparks/${id}`, {
-      cache: 'no-store',
+    const asset = await db.asset.findFirst({
+      where: { id, isPublic: true, deletedByUser: false, deletedByPartner: false },
+      include: {
+        brainhole: { select: { title: true, category: true, scenario: true } },
+        room: {
+          include: {
+            participants: { select: { identity: true, userId: true, role: true } },
+            messages: {
+              orderBy: { createdAt: 'asc' },
+              select: {
+                id: true, content: true, identity: true, senderId: true,
+                roleCharacter: true, isSpark: true, createdAt: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    if (!res.ok) {
-      if (res.status === 404) return notFound();
-      return <div className="h-screen bg-xh-primary flex items-center justify-center text-white/50">加载失败</div>;
-    }
-
-    const json = await res.json();
-    if (!json.success || !json.data) {
+    if (!asset) {
       return notFound();
     }
 
-    return <SparkDetailClient data={json.data} />;
+    const participants = asset.room?.participants || [];
+    const identities = participants.map((p) => p.identity).filter(Boolean);
+    const identityPair = identities.length >= 2
+      ? `${identities[0]} × ${identities[1]}`
+      : identities[0] || asset.identity || '匿名';
+
+    const data = {
+      id: asset.id,
+      title: asset.title,
+      content: asset.content || asset.summary || '',
+      hotScore: asset.hotScore || 0,
+      createdAt: asset.createdAt.toISOString(),
+      identity: asset.identity || '匿名',
+      identityPair,
+      brainholeTitle: asset.brainhole?.title || '',
+      brainholeCategory: asset.brainhole?.category || '',
+      brainholeScenario: asset.brainhole?.scenario || '',
+      roomId: asset.roomId,
+      roomStatus: asset.room?.status || null,
+      closedAt: asset.room?.closedAt?.toISOString() || null,
+      messageCount: asset.messageCount || 0,
+      sparkCount: asset.sparkCount || 0,
+      ownerId: asset.userId,
+      messages: (asset.room?.messages || []).map((m) => ({
+        id: m.id,
+        content: m.content,
+        identity: m.identity,
+        senderId: m.senderId,
+        roleCharacter: m.roleCharacter,
+        isSpark: m.isSpark,
+        createdAt: m.createdAt.toISOString(),
+      })),
+    };
+
+    return <SparkDetailClient data={data} />;
   } catch {
     return <div className="h-screen bg-xh-primary flex items-center justify-center text-white/50">加载失败</div>;
   }

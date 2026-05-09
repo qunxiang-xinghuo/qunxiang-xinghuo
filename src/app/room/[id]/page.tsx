@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Eye, Lock, X,
+  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Eye, Lock, X, Share2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
@@ -538,6 +538,32 @@ export default function RoomPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                const url = window.location.href;
+                const doCopy = (text: string) => {
+                  if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => alert('房间链接已复制')).catch(() => fallbackCopy());
+                  } else {
+                    fallbackCopy();
+                  }
+                };
+                const fallbackCopy = () => {
+                  const ta = document.createElement('textarea');
+                  ta.value = url;
+                  document.body.appendChild(ta);
+                  ta.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(ta);
+                  alert('房间链接已复制');
+                };
+                doCopy(url);
+              }}
+              className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              title="分享房间"
+            >
+              <Share2 className="w-4 h-4 text-white/40" />
+            </button>
             <div className="flex items-center gap-1.5 text-[11px] text-white/30">
               <MessageCircle className="w-3.5 h-3.5" />
               <span>{messages.length}</span>

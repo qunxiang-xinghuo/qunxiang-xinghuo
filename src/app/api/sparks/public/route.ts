@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
     const effectiveUserId = userId || guestId;
 
     // v8.1: 构建 where 条件，支持职业分类筛选
-    const where: any = { isPublic: true, deletedByUser: false };
+    // v8.3-fix: 补充 deletedByPartner: false，防止对方已删除的火花仍出现在公开墙
+    const where: any = { isPublic: true, deletedByUser: false, deletedByPartner: false };
     if (category && category !== "all") {
       where.brainhole = {
         category: {

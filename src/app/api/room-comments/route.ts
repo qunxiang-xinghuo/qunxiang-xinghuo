@@ -50,7 +50,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    const guestId = request.headers.get("x-guest-id");
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
     if (!userId) {
       return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });
     }

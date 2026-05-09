@@ -72,6 +72,7 @@ function DuoWaitingContent() {
   // 创建邀请房间
   const createInviteRoom = useCallback(async () => {
     setCreatingInvite(true);
+    setMatchError('');
     try {
       const guestId = localStorage.getItem('xh_user_id');
       const identity = identityRef.current;
@@ -87,9 +88,12 @@ function DuoWaitingContent() {
       if (result.success && result.data?.inviteCode) {
         setInviteCode(result.data.inviteCode);
         setShowInvite(true);
+      } else {
+        setMatchError(result.error?.message || '创建邀请房间失败');
       }
     } catch (err) {
       console.error('创建邀请房间失败:', err);
+      setMatchError('网络异常，创建邀请房间失败');
     } finally {
       setCreatingInvite(false);
     }
@@ -194,6 +198,7 @@ function DuoWaitingContent() {
 
   // 倒计时
   useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setElapsedTime((prev) => {
         const next = prev + 1;
@@ -205,7 +210,7 @@ function DuoWaitingContent() {
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
+  }, [status]);
 
   // 轮询匹配状态
   useEffect(() => {

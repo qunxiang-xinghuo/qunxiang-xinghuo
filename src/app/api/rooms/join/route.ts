@@ -9,7 +9,8 @@ export async function POST(request: NextRequest) {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
-    if (!userId) {
+    const effectiveUserId = userId || guestId;
+    if (!effectiveUserId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
@@ -33,19 +34,19 @@ export async function POST(request: NextRequest) {
       const actorCount = room.participants.filter((p) => p.role === "actor").length;
       if (actorCount >= 2) return { error: "FULL" as const };
 
-      const alreadyIn = room.participants.some((p) => p.userId === userId);
+      const alreadyIn = room.participants.some((p) => p.userId === effectiveUserId);
       if (alreadyIn) return { roomId: room.id, alreadyJoined: true };
 
       await tx.user.upsert({
-        where: { id: userId },
+        where: { id: effectiveUserId },
         update: { name: identity },
-        create: { id: userId, name: identity, email: `${userId}@guest.local` },
+        create: { id: effectiveUserId, name: identity, email: `${effectiveUserId}@guest.local` },
       });
 
       await tx.roomParticipant.create({
         data: {
           roomId: room.id,
-          userId,
+          userId: effectiveUserId,
           identity,
           role: "actor",
           isOnline: true,

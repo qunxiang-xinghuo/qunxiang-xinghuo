@@ -1056,3 +1056,167 @@ modified:   src/app/profile/page.tsx
 4. **我的故事删除**：`/my-stories` → 每个故事卡片有删除按钮
 
 ---
+
+
+---
+
+## v8.3 紧急修复 — 部署记录
+
+> 更新：2026-04-29
+> 修复内容：火花可见性 + 双人匹配/分享 + 疗愈输入框
+
+### 修复文件清单
+
+| 修复项 | 文件 | 说明 |
+|--------|------|------|
+| 火花跳转 | `src/app/library/page.tsx` | 点击火花跳转 `/spark-detail/${id}`，避免非参与者 403 |
+| AI房间审核 | `src/app/api/rooms/[roomId]/finish/route.ts` | `!room.isAiRoom` → `room.isAiRoom !== true` |
+| 火花墙过滤 | `src/app/api/sparks/public/route.ts` | 补充 `deletedByPartner: false` |
+| 评论认证 | `src/app/spark-detail/[id]/SparkDetailClient.tsx` | 评论 API 发送 `x-guest-id` header |
+| 匹配验证 | `src/lib/validators/match.ts` | `brainholeId` 放宽为 `z.string().optional()` |
+| 倒计时 | `src/app/duo-waiting/page.tsx` | effect 依赖 `[status]`，支持再次匹配倒计时 |
+| 邀请API | `src/app/api/rooms/invite/route.ts` | 支持 `effectiveUserId = userId \|\| guestId` |
+| 加入API | `src/app/api/rooms/join/route.ts` | 支持 `effectiveUserId = userId \|\| guestId` |
+| 分享按钮 | `src/app/room/[id]/page.tsx` | 添加 fallback `execCommand('copy')` |
+| 疗愈输入框 | `src/app/healing/session/[id]/page.tsx` | `textarea` 添加 `min-h-[40px]` |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 部署后验证
+
+1. **火花墙**：用户A结束人机对话，用户B访问 `/library`，应能看到A的火花
+2. **火花评论**：点击火花进入详情，底部评论输入框可正常发送评论
+3. **双人匹配**：两个无痕窗口同时进入双人对白，10秒内应匹配成功
+4. **分享按钮**：房间内点击分享图标，应弹出"房间链接已复制"
+5. **疗愈输入框**：进入个人疗愈新建会话，底部输入框可正常点击输入
+
+### 构建验证
+
+| 版本 | 日期 | 构建 | 页面数 |
+|------|------|------|--------|
+| v8.3 | 2026-04-29 | ✅ | 80/80 |
+
+---
+
+
+---
+
+## v8.4 种子数据管理员配置 — 部署记录
+
+> 更新：2026-04-29
+> 修复内容：数据库种子自动创建管理员 + `.env.example` 更新
+
+### 修改文件清单
+
+| 修复项 | 文件 | 说明 |
+|--------|------|------|
+| 管理员种子 | `prisma/seed.ts` | 导入 `dotenv/config` + `bcryptjs`，根据环境变量自动创建管理员 |
+| 环境变量示例 | `.env.example` | 新增 `BACKEND_ADMIN` / `BACKEND_ADMIN_PAASSWORD` |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+
+# 同步数据库 schema（若 User 表无 isAdmin 列）
+npx prisma db push --accept-data-loss
+
+# 重新执行种子（自动创建管理员）
+npx tsx prisma/seed.ts
+
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 环境变量配置
+
+确保 `.env` 中已设置：
+
+```bash
+BACKEND_ADMIN="xingxing"
+BACKEND_ADMIN_PAASSWORD="xingxing123"
+```
+
+### 关于 `.bundle` 文件
+
+项目根目录下有两个 git bundle 文件：
+- `dev.bundle`（161MB）
+- `qunxiang-fix7.bundle`（201MB）
+
+**用途**：git bundle 是 Git 的打包格式，用于在无网络环境下传输仓库历史。这两个文件是旧的代码备份/传输包。
+
+**建议**：项目已有正常的 `fqunxiang` 远程仓库，这两个 bundle 文件不再需要，可删除以释放空间：
+
+```bash
+rm dev.bundle qunxiang-fix7.bundle
+```
+
+### 构建验证
+
+| 版本 | 日期 | 构建 | 页面数 |
+|------|------|------|--------|
+| v8.4 | 2026-04-29 | ✅ | 80/80 |
+
+---
+
+
+---
+
+## v8.3b 回归修复 — 部署记录
+
+> 更新：2026-04-29
+> 修复内容：火花详情/双人匹配/疗愈输入框 + 管理员登录
+
+### 修复文件清单
+
+| 修复项 | 文件 | 说明 |
+|--------|------|------|
+| 火花详情 | `src/app/spark-detail/[id]/page.tsx` | 改用 Prisma 直接查询数据库，避免 `localhost:3000` 不可访问 |
+| 双人匹配 | `src/server/match-engine.ts` | 移除 `$transaction` 的 `maxWait`/`timeout` 选项 |
+| 疗愈输入框 | `src/app/healing/session/[id]/page.tsx` | `textarea` → `input`，固定高度 `h-10` |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+
+# 确保 .env 中有管理员配置（如缺失需手动添加）
+grep BACKEND_ADMIN .env || echo 'BACKEND_ADMIN="xingxing"' >> .env
+grep BACKEND_ADMIN_PAASSWORD .env || echo 'BACKEND_ADMIN_PAASSWORD="xingxing123"' >> .env
+
+# 重新执行种子（确保管理员存在）
+npx tsx prisma/seed.ts
+
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 部署后验证
+
+1. **火花详情**：访问 `/library` → 点击火花 → 应正常加载消息记录和评论区
+2. **双人匹配**：两个无痕窗口同时匹配 → 10秒内应匹配成功进入同一房间
+3. **疗愈输入框**：新建疗愈会话 → 底部输入框可正常点击输入
+4. **管理员登录**：用 `xingxing` / `xingxing123` 登录 → `/profile` 应出现「管理员后台」
+
+### 构建验证
+
+| 版本 | 日期 | 构建 | 页面数 |
+|------|------|------|--------|
+| v8.3b | 2026-04-29 | ✅ | 80/80 |
+
+---

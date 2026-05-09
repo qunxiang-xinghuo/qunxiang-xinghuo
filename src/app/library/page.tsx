@@ -116,9 +116,8 @@ export default function SparksPage() {
   };
 
   const handleSparkClick = (spark: Spark) => {
-    if (spark.roomId) {
-      router.push(`/room/${spark.roomId}`);
-    }
+    // v8.3-fix: 跳转到 spark-detail（公开只读），避免非参与者访问 /room 被 403 拒绝
+    router.push(`/spark-detail/${spark.id}`);
   };
 
   return (

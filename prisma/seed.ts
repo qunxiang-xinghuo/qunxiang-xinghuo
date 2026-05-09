@@ -1,5 +1,7 @@
+import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import bcrypt from "bcryptjs";
 
 const adapter = new PrismaBetterSqlite3({
   url: process.env.DATABASE_URL || "file:./dev.db",
@@ -75,6 +77,36 @@ async function main() {
     createdUsers.push(user);
   }
   console.log(`创建了 ${createdUsers.length} 个测试用户`);
+
+  // 2.5 创建后台管理员用户（从环境变量读取）
+  const adminUsername = process.env.BACKEND_ADMIN;
+  const adminPassword = process.env.BACKEND_ADMIN_PAASSWORD;
+  if (adminUsername && adminPassword) {
+    console.log("创建后台管理员用户...");
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    const adminEmail = `${adminUsername}@admin.local`;
+    const adminUser = await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: {
+        name: adminUsername,
+        username: adminUsername,
+        password: hashedPassword,
+        isAdmin: true,
+      },
+      create: {
+        email: adminEmail,
+        name: adminUsername,
+        username: adminUsername,
+        password: hashedPassword,
+        isAdmin: true,
+        level: 1,
+        sparkCount: 0,
+      },
+    });
+    console.log(`管理员用户已创建/更新: ${adminUser.username} (isAdmin=${adminUser.isAdmin})`);
+  } else {
+    console.log("未设置 BACKEND_ADMIN / BACKEND_ADMIN_PAASSWORD 环境变量，跳过管理员创建");
+  }
 
   // 3. 创建用户身份
   console.log("创建用户身份...");

@@ -16,6 +16,32 @@ export interface MatchResult {
 }
 
 /**
+ * v8.3-fix: 进程级队列序列化匹配请求
+ * SQLite 是单写者，交互式事务的读快照在 BEGIN 时固定。
+ * 两个同时到达的请求会互相看不到对方的 waiting 记录，导致双双进入等待死锁。
+ * 用 Promise 链将 findMatch 串行化，从根本上消除并发竞态窗口。
+ */
+let matchQueue = Promise.resolve();
+
+export async function findMatch(
+  userId: string,
+  criteria: MatchCriteriaInput
+): Promise<MatchResult> {
+  return new Promise((resolve, reject) => {
+    matchQueue = matchQueue
+      .then(async () => {
+        try {
+          const result = await _findMatch(userId, criteria);
+          resolve(result);
+        } catch (e) {
+          reject(e);
+        }
+      })
+      .catch(() => {}); // 防止队列中某个失败阻塞后续请求
+  });
+}
+
+/**
  * v6.2-transaction: 匹配引擎 — 交互式事务化改造，根治并发竞态
  *
  * 核心修复：
@@ -24,7 +50,7 @@ export interface MatchResult {
  * 3. 创建 waiting 后立即在同一事务中二次查找，捕获并发请求
  * 4. 事务隔离确保并发请求串行化，不会出现双方同时创建独立房间
  */
-export async function findMatch(
+async function _findMatch(
   userId: string,
   criteria: MatchCriteriaInput
 ): Promise<MatchResult> {
@@ -38,7 +64,7 @@ export async function findMatch(
   } = criteria;
 
   console.log(
-    "[MatchEngine v6.2-transaction] findMatch start - userId:",
+    "[MatchEngine v8.3-queue] findMatch start - userId:",
     userId,
     "brainholeId:",
     brainholeId,
@@ -47,6 +73,7 @@ export async function findMatch(
   );
 
   // === 整个匹配流程包裹在交互式事务中 ===
+  // v8.3-fix: 移除 maxWait/timeout 选项，SQLite 交互式事务对这些选项支持不稳定
   return await db.$transaction(
     async (tx) => {
       // === 0. 检查用户是否已有活跃匹配 ===
@@ -283,10 +310,6 @@ export async function findMatch(
         brainholeId: waitingBrainholeId,
         brainholeTitle: waitingBrainholeTitle,
       };
-    },
-    {
-      maxWait: 5000, // 最多等待5秒获取事务锁
-      timeout: 10000, // 事务最多执行10秒
     }
   );
 }
@@ -469,7 +492,7 @@ export async function cancelMatch(
 }
 
 export async function checkMatchStatus(matchId: string, userId: string) {
-  const match = await db.matchRequest.findFirst({
+  let match = await db.matchRequest.findFirst({
     where: { id: matchId, userId },
     include: {
       brainhole: true,
@@ -489,6 +512,86 @@ export async function checkMatchStatus(matchId: string, userId: string) {
       },
     });
     match.status = "timeout";
+    return match;
+  }
+
+  // v8.3-fix: 轮询时尝试主动配对 — 处理两个已 waiting 用户互相发现的情况
+  if (match.status === "waiting") {
+    const paired = await new Promise<any | null>((resolve, reject) => {
+      matchQueue = matchQueue
+        .then(async () => {
+          try {
+            const result = await db.$transaction(async (tx) => {
+              // 重新确认自己仍是 waiting
+              const self = await tx.matchRequest.findFirst({
+                where: { id: matchId, userId, status: "waiting" },
+              });
+              if (!self) return null;
+
+              const candidates = await tx.matchRequest.findMany({
+                where: {
+                  status: "waiting",
+                  expiresAt: { gt: new Date() },
+                  userId: { not: userId },
+                  id: { not: matchId },
+                },
+                orderBy: { createdAt: "asc" },
+                take: 3,
+              });
+
+              for (const candidate of candidates) {
+                const claimed = await claimMatchRequestTx(tx, candidate.id);
+                if (claimed) {
+                  await claimMatchRequestTx(tx, matchId);
+
+                  let finalBrainholeId = self.brainholeId || candidate.brainholeId || "";
+                  let finalBrainholeTitle = "";
+
+                  if (!finalBrainholeId) {
+                    const randomBh = await pickRandomBrainholeTx(tx);
+                    if (randomBh) {
+                      finalBrainholeId = randomBh.id;
+                      finalBrainholeTitle = randomBh.title;
+                    }
+                  } else {
+                    const bh = await tx.brainhole.findUnique({
+                      where: { id: finalBrainholeId },
+                      select: { title: true },
+                    });
+                    finalBrainholeTitle = bh?.title || "";
+                  }
+
+                  await createDuetMatchTx(
+                    tx,
+                    userId,
+                    matchId,
+                    candidate,
+                    finalBrainholeId,
+                    finalBrainholeTitle,
+                    "poll_pairing",
+                    self.identity || "default"
+                  );
+
+                  return tx.matchRequest.findFirst({
+                    where: { id: matchId },
+                    include: { brainhole: true },
+                  });
+                }
+              }
+
+              return null;
+            });
+            resolve(result);
+          } catch (e) {
+            reject(e);
+          }
+        })
+        .catch(() => {});
+    });
+
+    if (paired) {
+      return paired;
+    }
   }
 
   return match;

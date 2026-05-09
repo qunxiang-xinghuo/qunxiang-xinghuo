@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
-    if (!userId) {
+    const effectiveUserId = userId || guestId;
+    if (!effectiveUserId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
 
@@ -26,9 +27,9 @@ export async function POST(request: NextRequest) {
 
     // 确保用户存在
     await db.user.upsert({
-      where: { id: userId },
+      where: { id: effectiveUserId },
       update: { name: identity },
-      create: { id: userId, name: identity, email: `${userId}@guest.local` },
+      create: { id: effectiveUserId, name: identity, email: `${effectiveUserId}@guest.local` },
     });
 
     // v7.0-test15: 使用try/catch捕获P2002唯一约束冲突，结合重试生成邀请码
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
         await db.roomParticipant.create({
           data: {
             roomId: room.id,
-            userId,
+            userId: effectiveUserId,
             identity: identity || "我",
             role: "actor",
             isOnline: true,

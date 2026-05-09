@@ -1673,3 +1673,200 @@ initial={mounted ? { y: 10, opacity: 0 } : false}
 | v8.2 | 2026-04-29 | ✅ 通过 | 80/80 |
 
 ---
+
+
+---
+
+## v8.3 紧急修复 — 火花可见性 + 双人匹配/分享 + 疗愈输入框
+
+> 修复日期：2026-04-29
+
+### 问题1：火花无法被其他人看到
+
+**现象**：
+- 自己结束人机对话后，"我的火花"能看到，但别人在火花墙（`/library`）看不到
+
+**根因**：
+- `library/page.tsx` 点击火花后跳转到 `/room/${roomId}`，但 `/api/rooms/${roomId}` 对非参与者返回 403
+- `finish/route.ts` 中 `!room.isAiRoom` 在 `isAiRoom` 为 `null/undefined` 时误判为 true，导致 AI 房间也进入审核逻辑
+- `public/route.ts` 缺少 `deletedByPartner: false` 过滤
+
+**解决**：
+- `library/page.tsx`：`handleSparkClick` 跳转到 `/spark-detail/${spark.id}`（公开只读页）
+- `finish/route.ts`：`!room.isAiRoom` → `room.isAiRoom !== true`
+- `public/route.ts`：where 条件补充 `deletedByPartner: false`
+
+### 问题2：火花详情无法评论
+
+**现象**：
+- 点击火花卡片进详情后，底部评论区无法使用
+
+**根因**：
+- `SparkDetailClient.tsx` 的 `submitComment` / `deleteComment` 未发送 `x-guest-id` header
+- 未登录/访客用户调用评论 API 时，后端取不到 userId，返回 401
+
+**解决**：
+- `SparkDetailClient.tsx`：评论相关 fetch 补充 `x-guest-id` header
+
+### 问题3：双人对白匹配不上
+
+**现象**：
+- 之前能正常匹配，现在无法匹配成功
+
+**根因**：
+- `matchRequestSchema` 中 `brainholeId` 使用 `z.string().cuid()` 严格验证，若 localStorage 中存有旧格式 brainholeId，Zod 验证失败导致匹配请求 400
+- `duo-waiting/page.tsx` 倒计时不随"再次尝试匹配"重启
+- `api/rooms/invite/route.ts` / `api/rooms/join/route.ts` 未支持 guest 用户（只认 token userId，不认 x-guest-id）
+
+**解决**：
+- `matchRequestSchema` / `matchCriteriaSchema`：`brainholeId` 验证放宽为 `z.string().optional()`
+- `duo-waiting/page.tsx`：倒计时 effect 依赖 `[status]`，确保再次匹配后倒计时正常重启
+- `api/rooms/invite/route.ts` / `api/rooms/join/route.ts`：支持 `effectiveUserId = userId || guestId`
+
+### 问题4：分享按钮点不动
+
+**现象**：
+- 房间页面的分享（邀请）按钮点击无反应
+
+**根因**：
+- `navigator.clipboard.writeText` 在 HTTP 环境下可能失败（Clipboard API 需要安全上下文）
+- 无 catch 处理，Promise reject 后无用户反馈
+
+**解决**：
+- `room/[id]/page.tsx`：分享按钮添加 fallback 复制（`document.execCommand('copy')`）+ 错误处理
+
+### 问题5：疗愈输入框点不动
+
+**现象**：
+- 新建疗愈对话后，底部的输入框点击无反应
+
+**根因**：
+- `textarea` 仅设置 `rows={1}`，在某些移动浏览器/环境下高度可能异常缩小，导致点击区域难以命中
+
+**解决**：
+- `healing/session/[id]/page.tsx`：`textarea` 添加 `min-h-[40px]` 确保最小可点击高度
+
+### 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.3 | 2026-04-29 | ✅ 通过 | 80/80 |
+
+---
+
+
+---
+
+## v8.4 种子数据管理员 + bundle 清理（2026-04-29）
+
+### 问题1：数据库初始化无管理员账号
+
+**现象**：
+- 执行 `npx tsx prisma/seed.ts` 后，数据库中没有管理员用户
+- 无法登录后台管理页面 `/admin`
+
+**根因**：
+- `seed.ts` 未包含管理员账号创建逻辑
+- `.env` 中已配置 `BACKEND_ADMIN` / `BACKEND_ADMIN_PAASSWORD`，但种子脚本未读取
+
+**解决**：
+- `prisma/seed.ts`：导入 `dotenv/config` + `bcryptjs`，添加管理员 upsert 逻辑
+- `.env.example`：补充 `BACKEND_ADMIN` / `BACKEND_ADMIN_PAASSWORD` 示例
+
+**验证**：
+```bash
+npx prisma db push --accept-data-loss
+npx tsx prisma/seed.ts
+# 输出：管理员用户已创建/更新: xingxing (isAdmin=true)
+```
+
+### 问题2：`User.isAdmin` 列不存在
+
+**现象**：
+- 种子脚本报错：`The column main.User.isAdmin does not exist in the current database`
+
+**根因**：
+- `prisma/schema.prisma` 中有 `isAdmin` 字段，但本地数据库未同步
+
+**解决**：
+- 执行 `npx prisma db push --accept-data-loss` 同步 schema
+
+### 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.4 | 2026-04-29 | ✅ 通过 | 80/80 |
+
+---
+
+
+---
+
+## v8.3b 回归修复 — 火花详情/双人匹配/疗愈输入框 + 管理员登录
+
+> 修复日期：2026-04-29
+
+### 问题1：火花详情页加载失败
+
+**现象**：
+- 火花墙列表能看到火花，但点击进去后显示"加载失败"或空白
+
+**根因**：
+- `spark-detail/[id]/page.tsx` 使用 `fetch('http://localhost:3000/api/sparks/${id}')`
+- 生产服务器上 `localhost:3000` 不可访问，导致服务端组件渲染时 fetch 失败
+
+**解决**：
+- `spark-detail/[id]/page.tsx`：改用 Prisma 直接查询数据库，绕过 HTTP 请求
+
+### 问题2：双人匹配仍然无法匹配
+
+**现象**：
+- 两个用户同时进入双人对白，始终无法匹配成功
+
+**根因**：
+- `match-engine.ts` 中 `db.$transaction` 配置了 `maxWait: 5000` / `timeout: 10000`
+- Prisma + SQLite 的交互式事务对这些选项支持不稳定，可能导致事务超时或死锁
+
+**解决**：
+- `match-engine.ts`：移除 `$transaction` 的 `maxWait` 和 `timeout` 选项
+
+### 问题3：疗愈输入框仍不可点击
+
+**现象**：
+- 新建疗愈对话后，底部输入框仍无法点击输入
+
+**根因**：
+- `textarea rows={1}` 在某些移动端浏览器中高度渲染异常，点击区域难以命中
+- `min-h-[40px]` 仍不足以保证所有环境下的可点击性
+
+**解决**：
+- `healing/session/[id]/page.tsx`：将 `textarea` 改为 `input`，设置固定高度 `h-10`
+
+### 问题4：管理员账号无法登录
+
+**现象**：
+- 用 `xingxing` / `xingxing123` 无法登录
+- `/profile` 看不到「管理员后台」入口
+
+**根因**：
+- `.env` 文件在 `.gitignore` 中，服务器上的 `.env` 是旧版本
+- 服务器 `.env` 缺少 `BACKEND_ADMIN` / `BACKEND_ADMIN_PAASSWORD`
+- 种子脚本运行时读不到这两个变量，未创建管理员
+
+**解决**：
+- 在服务器上手动向 `.env` 文件追加管理员环境变量
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+echo 'BACKEND_ADMIN="xingxing"' >> .env
+echo 'BACKEND_ADMIN_PAASSWORD="xingxing123"' >> .env
+npx tsx prisma/seed.ts
+```
+
+### 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.3b | 2026-04-29 | ✅ 通过 | 80/80 |
+
+---
