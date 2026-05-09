@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Eye, Lock, X, Share2,
+  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Eye, Lock, X, Share2, Copy,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
@@ -50,6 +50,10 @@ export default function RoomPage() {
   // Brainhole 信息
   const [brainholeTitle, setBrainholeTitle] = useState('');
   const [brainholeScenario, setBrainholeScenario] = useState('');
+
+  // v8.5: 邀请房间信息
+  const [inviteCode, setInviteCode] = useState('');
+  const [participantCount, setParticipantCount] = useState(0);
 
   // 评论区
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -133,6 +137,8 @@ export default function RoomPage() {
           setRoomStatus(room.status);
           setRoomType(room.type);
           setIsAiRoom(room.isAiRoom);
+          setInviteCode(room.inviteCode || '');
+          setParticipantCount(room.participants?.filter((p: any) => p.role === 'actor').length || 0);
 
           if (room.messages && Array.isArray(room.messages)) {
             setMessages(room.messages.map((m: any) => ({
@@ -584,6 +590,42 @@ export default function RoomPage() {
           </div>
         </div>
       </div>
+
+      {/* v8.5: 邀请房间 — 显示邀请码等待朋友加入 */}
+      {roomType === 'invite_duet' && participantCount < 2 && !isReadonly && inviteCode && (
+        <div className="shrink-0 px-4 py-3 border-b border-emerald-500/10 bg-emerald-500/[0.03]">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-emerald-400/60 mb-1">等待好友加入</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold text-emerald-400 tracking-widest">{inviteCode}</span>
+                <button
+                  onClick={() => {
+                    if (navigator.clipboard?.writeText) {
+                      navigator.clipboard.writeText(inviteCode).then(() => alert('房间号已复制'));
+                    } else {
+                      const ta = document.createElement('textarea');
+                      ta.value = inviteCode;
+                      document.body.appendChild(ta);
+                      ta.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(ta);
+                      alert('房间号已复制');
+                    }
+                  }}
+                  className="p-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                >
+                  <Copy className="w-3 h-3 text-emerald-400/70" />
+                </button>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-white/30">把房间号发给好友</p>
+              <p className="text-[10px] text-white/20">好友输入后即可加入对戏</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* OpeningInfo 提示 — 30秒后自动折叠 */}
       {myOpeningInfo && !isReadonly && (

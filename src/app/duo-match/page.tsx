@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { User, Sparkles, Edit3, Check, BrainCircuit, ArrowRight, DoorOpen } from 'lucide-react';
+import { User, Sparkles, Edit3, Check, BrainCircuit, ArrowRight, DoorOpen, Share2 } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 
 interface IdentityOption {
@@ -88,16 +88,14 @@ function DuoMatchContent() {
     }
   }, [preselectedBrainholeId]);
 
-  const handleConfirm = () => {
-    let identity = '';
-    if (selectedType === 'zhihu') {
-      identity = selectedZhihuId || '匿名用户';
-    } else if (selectedType === 'ai') {
-      identity = aiGenerated;
-    } else {
-      identity = customLabel.trim() || '自定义角色';
-    }
+  const getIdentity = () => {
+    if (selectedType === 'zhihu') return selectedZhihuId || '匿名用户';
+    if (selectedType === 'ai') return aiGenerated;
+    return customLabel.trim() || '自定义角色';
+  };
 
+  const saveIdentityAndGo = (mode: 'auto' | 'invite') => {
+    const identity = getIdentity();
     const stableUserId = localStorage.getItem('xh_user_id') || `guest-${Date.now()}`;
     localStorage.setItem('xh_user_id', stableUserId);
     localStorage.setItem('xh_duo_identity', identity);
@@ -108,8 +106,12 @@ function DuoMatchContent() {
 
     const params = new URLSearchParams();
     if (preselectedBrainholeId) params.set('brainholeId', preselectedBrainholeId);
+    params.set('mode', mode);
     router.push(`/duo-waiting?${params.toString()}`);
   };
+
+  const handleConfirm = () => saveIdentityAndGo('auto');
+  const handleInvite = () => saveIdentityAndGo('invite');
 
   const handleJoinRoom = async () => {
     if (!joinCode || joinCode.length !== 6) {
@@ -326,7 +328,7 @@ function DuoMatchContent() {
       </div>
 
       {/* 底部确认按钮 */}
-      <div className="shrink-0 px-6 py-4 border-t border-slate-700/15">
+      <div className="shrink-0 px-6 py-4 border-t border-slate-700/15 space-y-3">
         <button
           onClick={handleConfirm}
           className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
@@ -343,6 +345,13 @@ function DuoMatchContent() {
               确认身份，进入匹配
             </>
           )}
+        </button>
+        <button
+          onClick={handleInvite}
+          className="w-full py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+        >
+          <Share2 className="w-4 h-4" />
+          邀请好友对戏
         </button>
       </div>
     </div>

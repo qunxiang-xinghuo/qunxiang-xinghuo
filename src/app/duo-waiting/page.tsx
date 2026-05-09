@@ -28,6 +28,8 @@ function DuoWaitingContent() {
 
   const searchParams = useSearchParams();
   const urlBrainholeId = searchParams.get('brainholeId');
+  const mode = (searchParams.get('mode') as 'auto' | 'invite') || 'auto';
+  const isInviteMode = mode === 'invite';
 
   const [elapsedTime, setElapsedTime] = useState(0);
   const [status, setStatus] = useState<MatchStatus>('matching');
@@ -99,6 +101,35 @@ function DuoWaitingContent() {
     }
   }, []);
 
+  // v8.5: 邀请模式 — 创建房间后直接进入
+  const createInviteRoomAndEnter = useCallback(async () => {
+    setCreatingInvite(true);
+    setMatchError('');
+    try {
+      const guestId = localStorage.getItem('xh_user_id');
+      const identity = identityRef.current;
+      const res = await fetch('/api/rooms/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
+        body: JSON.stringify({
+          brainholeId: brainholeIdRef.current,
+          identity: identity || '我',
+        }),
+      });
+      const result = await res.json();
+      if (result.success && result.data?.roomId) {
+        router.push(`/room/${result.data.roomId}`);
+      } else {
+        setMatchError(result.error?.message || '创建邀请房间失败');
+      }
+    } catch (err) {
+      console.error('创建邀请房间失败:', err);
+      setMatchError('网络异常，创建邀请房间失败');
+    } finally {
+      setCreatingInvite(false);
+    }
+  }, [router]);
+
   const copyInviteCode = () => {
     if (inviteCode) {
       navigator.clipboard.writeText(inviteCode).then(() => {
@@ -168,6 +199,12 @@ function DuoWaitingContent() {
           }
         })
         .catch(() => {});
+    }
+
+    // v8.5: 邀请模式直接创建房间并进入
+    if (isInviteMode) {
+      createInviteRoomAndEnter();
+      return;
     }
 
     const matchTimer = setTimeout(async () => {
@@ -258,8 +295,46 @@ function DuoWaitingContent() {
         </motion.div>
 
         <AnimatePresence mode="wait">
+          {/* 邀请模式 —— 正在创建房间 */}
+          {isInviteMode && creatingInvite && (
+            <motion.div
+              key="invite-creating"
+              initial={mounted ? { opacity: 0 } : false} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="text-center w-full relative z-10"
+            >
+              <div className="mb-4">
+                <div className="w-8 h-8 border-2 border-slate-700 border-t-[#e2b04a] rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-base font-medium text-slate-100">正在创建邀请房间...</p>
+                <p className="text-xs text-slate-500 mt-1">请稍等</p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* 邀请模式 —— 创建失败 */}
+          {isInviteMode && !creatingInvite && matchError && (
+            <motion.div
+              key="invite-error"
+              initial={mounted ? { opacity: 0 } : false} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="text-center w-full relative z-10"
+            >
+              <p className="text-sm text-red-400/70 mb-4">{matchError}</p>
+              <button
+                onClick={createInviteRoomAndEnter}
+                className="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all"
+              >
+                重试
+              </button>
+              <button
+                onClick={() => router.push('/duo-match')}
+                className="ml-2 px-4 py-2 rounded-xl text-white/30 text-sm hover:text-white/50 transition-colors"
+              >
+                返回
+              </button>
+            </motion.div>
+          )}
+
           {/* 匹配中 —— 简化版 */}
-          {status === 'matching' && (
+          {!isInviteMode && status === 'matching' && (
             <motion.div
               key="matching"
               initial={mounted ? { opacity: 0 } : false} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
