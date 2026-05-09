@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Eye, Lock, X, Share2, Copy,
+  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Eye, Lock, X, Share2, Copy, Bot, RefreshCw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
@@ -72,6 +72,12 @@ export default function RoomPage() {
   // 交互优化状态
   const [openingInfoCollapsed, setOpeningInfoCollapsed] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
+
+  // v8.5: 邀请房间超时弹窗
+  const [inviteCountdown, setInviteCountdown] = useState(120); // 2分钟 = 120秒
+  const [showInviteTimeoutModal, setShowInviteTimeoutModal] = useState(false);
+  const [inviteExtended, setInviteExtended] = useState(false);
+  const inviteTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -186,6 +192,40 @@ export default function RoomPage() {
       .finally(() => { if (isMountedRef.current) setIsLoading(false); });
     return () => ctrl.abort();
   }, [roomId, userId]);
+
+  // v8.5: 邀请房间 2 分钟倒计时
+  useEffect(() => {
+    if (roomType !== 'invite_duet' || participantCount >= 2 || roomStatus === 'closed') {
+      if (inviteTimerRef.current) {
+        clearInterval(inviteTimerRef.current);
+        inviteTimerRef.current = null;
+      }
+      return;
+    }
+    // 已经显示弹窗了就不再启动倒计时
+    if (showInviteTimeoutModal) return;
+
+    inviteTimerRef.current = setInterval(() => {
+      setInviteCountdown((prev) => {
+        if (prev <= 1) {
+          if (inviteTimerRef.current) {
+            clearInterval(inviteTimerRef.current);
+            inviteTimerRef.current = null;
+          }
+          setShowInviteTimeoutModal(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (inviteTimerRef.current) {
+        clearInterval(inviteTimerRef.current);
+        inviteTimerRef.current = null;
+      }
+    };
+  }, [roomType, participantCount, roomStatus, showInviteTimeoutModal]);
 
   // 加载评论
   useEffect(() => {
@@ -855,6 +895,70 @@ export default function RoomPage() {
               >
                 🎭 再来一局
               </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* v8.5: 邀请房间超时弹窗 */}
+      {showInviteTimeoutModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="p-6 rounded-2xl bg-[#1a1a2e] border border-emerald-500/20 max-w-[320px] w-full"
+          >
+            <div className="text-center mb-5">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+                <Bot className="w-6 h-6 text-emerald-400" />
+              </div>
+              <h3 className="text-base font-bold text-white/90 mb-1">
+                {inviteExtended ? '还是没人来' : '朋友还没来'}
+              </h3>
+              <p className="text-xs text-white/40">
+                {inviteExtended ? '等了很久了，换个方式吧' : '等了两分钟了，换个方式吧'}
+              </p>
+            </div>
+            <div className="space-y-2.5">
+              <button
+                onClick={() => { setShowInviteTimeoutModal(false); router.push('/solo-match'); }}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/30 text-[#e2b04a] text-sm font-medium hover:from-[#e2b04a]/30 hover:to-orange-500/30 active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+              >
+                <Bot className="w-4 h-4" />
+                与刘看山对话
+              </button>
+              <button
+                onClick={() => { setShowInviteTimeoutModal(false); router.push('/duo-waiting'); }}
+                className="w-full py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                自动匹配
+              </button>
+              {!inviteExtended ? (
+                <button
+                  onClick={() => {
+                    setShowInviteTimeoutModal(false);
+                    setInviteCountdown(60);
+                    setInviteExtended(true);
+                  }}
+                  className="w-full py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  再等 1 分钟
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setShowInviteTimeoutModal(false); router.push('/home'); }}
+                  className="w-full py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  返回发现页面
+                </button>
+              )}
             </div>
           </motion.div>
         </motion.div>
