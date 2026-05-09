@@ -1,5 +1,39 @@
 # 群像·星火 — 重要操作记录
 
+## v8.3c + v8.5 热修复 — 部署教程
+
+> 最后更新：2026-04-29
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 匹配引擎队列化 | `src/server/match-engine.ts` | Promise 队列消除 SQLite 竞态 |
+| 匹配状态修复 | `src/server/match-engine.ts` | `createDuetMatchTx` 补充 `status: "matched"` |
+| 无效 brainholeId 防御 | `match-engine.ts` + `invite/route.ts` | 查询不存在时清空，避免外键约束 500 |
+| localStorage JSON 防御 | `duo-waiting/page.tsx` + `duo-timeout/page.tsx` | JSON 字符串提取 `id` |
+| Admin Dashboard | `admin/page.tsx` + `api/admin/users` | 房间监控 + 用户 CRUD |
+| 观看返回死循环 | `spectate/[roomId]/page.tsx` | `router.push` → `router.back` |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 部署验证记录
+
+| 时间 | 版本 | 构建 | 页面数 | PM2 |
+|------|------|------|--------|-----|
+| 2026-04-29 | v8.3c+v8.5 | ✅ | 81/81 | ✅ online |
+
+---
+
 ## v8.1 + v8.1b 改造 — 部署教程
 
 > 最后更新：2026-05-06

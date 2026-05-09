@@ -859,6 +859,58 @@ POST /api/stories/:storyId/like
             └── 支持 guest（effectiveUserId = userId || guestId）
 ```
 
+#### 邀请房间流程（v8.5 改进方案）
+
+```
+/duo-match
+    │
+    ├── 选择身份 → 点击"开始"
+    │       └── 进入 /duo-waiting
+    │
+    └── 选择身份 → 点击"邀请好友"（新增按钮）
+            └── 进入 /duo-waiting?mode=invite
+
+/duo-waiting?mode=auto（默认）
+    │
+    ├── 15秒自动匹配
+    │       ├── 匹配成功 → /room/:roomId
+    │       └── 15秒超时
+    │               ├── 与刘看山对话 → /room/:aiRoomId
+    │               ├── 再次尝试匹配（重启15秒）
+    │               └── 邀请好友 → 切换 mode=invite
+    │
+    └── 轮询 /api/match/:matchId（每2秒）
+            └── matched → /room/:roomId
+
+/duo-waiting?mode=invite
+    │
+    ├── POST /api/rooms/invite
+    │       ├── 创建 invite_duet 房间
+    │       ├── 房主自动加入（role=actor）
+    │       └── 返回 inviteCode
+    │
+    ├── 房主直接进入 /room/:roomId
+    │       └── 房间页面显示邀请码
+    │
+    ├── 朋友通过邀请码加入
+    │       └── POST /api/rooms/join {inviteCode}
+    │               ├── 加入成功 → 朋友进入 /room/:roomId
+    │               └── 房间满员（2人）→ 开始对白
+    │
+    └── 2分钟超时（房主端倒计时）
+            ├── 与刘看山对话 → 转换房间为 ai_duet
+            ├── 自动匹配 → 释放房间，进入匹配队列
+            ├── 再等1分钟 → 延长等待
+            └── 返回发现页 → 清理房间
+
+/room/:roomId（invite_duet 模式）
+    │
+    ├── 顶部显示脑洞标题（brainhole?.title || "自由对话"）
+    ├── 显示邀请码（仅当 participantCount < 2）
+    ├── 朋友加入后邀请码消失
+    └── 满2人后开始实时对话
+```
+
 #### 房间分享修复
 
 ```
@@ -872,7 +924,7 @@ POST /api/stories/:storyId/like
 ---
 
 > 文档位置：`docs/story-system-flow.md`  
-> 最后更新：2026-04-29 v8.3 流程图补充完成 ✅
+> 最后更新：2026-04-29 v8.5 流程图补充完成 ✅
 
 
 ### I.6 v8.4 管理员初始化流程补充

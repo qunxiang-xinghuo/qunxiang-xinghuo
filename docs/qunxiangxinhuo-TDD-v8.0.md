@@ -2052,5 +2052,98 @@ return await db.$transaction(async (tx) => { ... });
 
 ---
 
+### 21.10 v8.3c 匹配引擎队列化 + 无效 brainholeId 防御（2026-04-29）
+
+#### 21.10.1 修复清单
+
+| 问题 | 根因 | 修复文件 |
+|------|------|----------|
+| 匹配引擎 SQLite 竞态 | 并发 `findMatch` 同时读写 `matchRequest` 导致 `database is locked` | `match-engine.ts` |
+| 匹配成功一方不知晓 | `createDuetMatchTx` 更新 `matchRequest` 时漏设 `status: "matched"` | `match-engine.ts` |
+| 无效 brainholeId 导致 500 | `brainholeId` 不存在于 `Brainhole` 表，`matchRequest.create` 外键约束失败 | `match-engine.ts`, `invite/route.ts` |
+| localStorage 存 JSON 字符串 | 前端 `brainholeId` 变成完整 JSON 对象字符串 | `duo-waiting/page.tsx`, `duo-timeout/page.tsx` |
+| 观看房间返回死循环 | `router.push('/spectate')` 不断添加历史记录 | `spectate/[roomId]/page.tsx` |
+
+#### 21.10.2 关键代码变更
+
+**匹配引擎队列化**
+```ts
+let matchQueue = Promise.resolve();
+export async function findMatch(userId, criteria) {
+  return new Promise((resolve, reject) => {
+    matchQueue = matchQueue.then(async () => {
+      try { resolve(await _findMatch(userId, criteria)); } catch (e) { reject(e); }
+    }).catch(() => {});
+  });
+}
+```
+
+**无效 brainholeId 防御**
+```ts
+if (brainholeId && !userBrainhole) {
+  console.log(`[MatchEngine] brainholeId ${brainholeId} 不存在，清空`);
+  brainholeId = undefined;
+}
+```
+
+**匹配状态修复**
+```ts
+// createDuetMatchTx 中两个 update 都加上 status: "matched"
+tx.matchRequest.update({
+  where: { id: matchedRequest.id },
+  data: { status: "matched", matchedUserId: userId, roomId: room.id, resolvedAt: new Date() },
+});
+```
+
+#### 21.10.3 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.3c | 2026-04-29 | ✅ 通过 | 81/81 |
+
+---
+
+### 21.11 v8.5 Admin Dashboard + 邀请房间流程问题（2026-04-29）
+
+#### 21.11.1 新增功能
+
+| 功能 | 说明 | 文件 |
+|------|------|------|
+| 异常活跃房间监控 | 房间分类：活跃AI / 未关闭AI / 真人房间 | `admin/page.tsx` |
+| 用户管理 CRUD | 列表/创建/编辑/删除/搜索用户 | `api/admin/users/route.ts` |
+| Spark Detail AI 消息 | AI 消息显示在左侧绿色气泡 | `spark-detail/[id]/SparkDetailClient.tsx` |
+| AI Sender 修复 | `x-guest-id: agent_liukanshan` 确保 senderId 正确 | `room/[id]/page.tsx` |
+
+#### 21.11.2 邀请房间流程问题记录
+
+**问题描述**：
+1. 用户在 `duo-waiting` 页面点击"邀请好友"创建邀请房间
+2. 15秒倒计时仍在继续，超时后页面进入"与刘看山对话 / 再次匹配"状态
+3. 朋友通过邀请码加入时，房间显示"空白脑洞"
+4. 房主自己也进不去房间，再次匹配时房间号跟第一次一样
+
+**根因分析**：
+| 问题 | 根因 |
+|------|------|
+| 邀请和自动匹配混在一起 | `duo-waiting` 同时处理自动匹配和邀请，15秒倒计时不区分 |
+| 房主未进入邀请房间 | `createInviteRoom` 只显示邀请码，没有 `router.push` 进房间 |
+| 空白脑洞 | `brainholeId` 无效时 `room.brainhole` 为 null，room 页面无回退显示 |
+| 房间号重复 | localStorage `xh_duo_match_id` 未清理，再次匹配用旧 matchId |
+| spectate 400 | 发现页面调用 `POST /spectate` 时 `room.status === "closed"` 或已是 actor |
+
+**改进方案（待实现）**：
+- **分离自动匹配和邀请**：自动匹配 15 秒，邀请好友可等 2 分钟
+- **邀请房间创建后房主直接进入**：`createInviteRoom` 成功后 `router.push(/room/${roomId})`
+- **2分钟超时处理**：提示"与刘看山对话 / 自动匹配 / 再等1分钟"
+- **1分钟后再问**：提示"与刘看山对话 / 自动匹配 / 返回发现页"
+
+#### 21.11.3 构建验证
+
+| 版本 | 日期 | 构建结果 | 页面数 |
+|------|------|----------|--------|
+| v8.5 | 2026-04-29 | ✅ 通过 | 81/81 |
+
+---
+
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  
-> 最后更新：2026-04-29 v8.3b 完成 ✅
+> 最后更新：2026-04-29 v8.5 完成 ✅
