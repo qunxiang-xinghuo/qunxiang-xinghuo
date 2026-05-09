@@ -2,6 +2,14 @@
 // npm install --save-dev prisma dotenv
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
+import path from "path";
+
+// v8.2-fix: Prisma CLI 的工作目录是 prisma/，而应用代码是项目根目录
+// 统一 DATABASE_URL 指向根目录的 dev.db
+const rawUrl = process.env["DATABASE_URL"] || "file:./dev.db";
+const resolvedUrl = rawUrl.startsWith("file:") && rawUrl.includes("./dev.db")
+  ? `file:${path.resolve(process.cwd(), "dev.db")}`
+  : rawUrl;
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -10,6 +18,6 @@ export default defineConfig({
     seed: 'npx tsx prisma/seed.ts',
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: resolvedUrl,
   },
 });
