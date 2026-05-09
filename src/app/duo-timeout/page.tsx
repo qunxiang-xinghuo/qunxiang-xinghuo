@@ -29,6 +29,13 @@ function DuoTimeoutContent() {
 
       // v5.0-fix: 优先使用用户之前选择的brainholeId，没有才随机抽取
       let brainholeId = localStorage.getItem('xh_duo_brainhole') || undefined;
+      // v8.3-fix: 防御性处理 —— 如果 localStorage 中存的是 JSON 对象字符串，提取 id
+      if (brainholeId && brainholeId.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(brainholeId);
+          brainholeId = parsed.id || undefined;
+        } catch { brainholeId = undefined; }
+      }
       if (!brainholeId) {
         try {
           const randomRes = await fetch('/api/brainholes?mode=bubble&limit=1');
@@ -83,7 +90,14 @@ function DuoTimeoutContent() {
   const handleContinueWait = () => {
     setChoice('wait');
     // v5.0-fix: 继续等待时传递brainholeId，确保用户之前选择的脑洞不丢失
-    const savedBrainhole = localStorage.getItem('xh_duo_brainhole');
+    let savedBrainhole = localStorage.getItem('xh_duo_brainhole');
+    // v8.3-fix: 防御性处理 —— 如果 localStorage 中存的是 JSON 对象字符串，提取 id
+    if (savedBrainhole && savedBrainhole.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(savedBrainhole);
+        savedBrainhole = parsed.id || null;
+      } catch { savedBrainhole = null; }
+    }
     const params = new URLSearchParams();
     if (savedBrainhole) params.set('brainholeId', savedBrainhole);
     params.set('round', '2');

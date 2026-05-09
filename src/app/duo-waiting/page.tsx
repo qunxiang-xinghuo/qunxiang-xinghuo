@@ -149,7 +149,14 @@ function DuoWaitingContent() {
     const savedIdentity = localStorage.getItem('xh_duo_identity');
     if (!savedIdentity) { router.push('/duo-match'); return; }
     identityRef.current = savedIdentity;
-    const savedBrainhole = localStorage.getItem('xh_duo_brainhole');
+    let savedBrainhole = localStorage.getItem('xh_duo_brainhole');
+    // v8.3-fix: 防御性处理 —— 如果 localStorage 中存的是 JSON 对象字符串，提取 id
+    if (savedBrainhole && savedBrainhole.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(savedBrainhole);
+        savedBrainhole = parsed.id || null;
+      } catch { savedBrainhole = null; }
+    }
     brainholeIdRef.current = urlBrainholeId || savedBrainhole || undefined;
 
     if (brainholeIdRef.current) {

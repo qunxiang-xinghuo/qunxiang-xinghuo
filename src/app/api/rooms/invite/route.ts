@@ -19,10 +19,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { identity, brainholeId } = body;
+    let { identity, brainholeId } = body;
 
     if (!identity) {
       return NextResponse.json(apiError("BAD_REQUEST", "缺少身份参数"), { status: 400 });
+    }
+
+    // v8.3-fix: 验证 brainholeId 是否存在，不存在则清空避免外键约束失败
+    if (brainholeId) {
+      const bh = await db.brainhole.findUnique({ where: { id: brainholeId }, select: { id: true } });
+      if (!bh) {
+        console.warn(`[Invite API] brainholeId ${brainholeId} 不存在，清空`);
+        brainholeId = undefined;
+      }
     }
 
     // 确保用户存在

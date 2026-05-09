@@ -54,7 +54,7 @@ async function _findMatch(
   userId: string,
   criteria: MatchCriteriaInput
 ): Promise<MatchResult> {
-  const {
+  let {
     brainholeId,
     excludeUserId,
     preferDifferentIdentity,
@@ -100,6 +100,11 @@ async function _findMatch(
           where: { id: brainholeId },
           select: { id: true, title: true, category: true },
         });
+      }
+      // v8.3-fix: 如果 brainholeId 无效，清空以避免外键约束失败
+      if (brainholeId && !userBrainhole) {
+        console.log(`[MatchEngine] brainholeId ${brainholeId} 不存在，清空`);
+        brainholeId = undefined;
       }
 
       const now = new Date();
