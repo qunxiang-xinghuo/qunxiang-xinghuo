@@ -2,27 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  ArrowLeft, Trash2, MessageSquare, Flame, BookOpen, Users,
-  AlertTriangle, Clock, Search, UserPlus, Shield, ShieldOff,
-  X, Check, Zap,
+  ArrowLeft, Trash2, Flame, BookOpen, Shield, Search,
+  AlertTriangle, Clock, Users, Zap, Bot, UserPlus, X, Edit2,
 } from 'lucide-react';
 
-interface AbnormalRoom {
+interface RoomItem {
   id: string;
   type: string;
   status: string;
   isAiRoom: boolean;
   title: string;
   createdAt: string;
+  lastMessageAt: string | null;
   participantCount: number;
+  onlineCount: number;
   messageCount: number;
   participants: string[];
-  humanCount: number;
-  aiCount: number;
-  hasOnlineHuman: boolean;
-  isLongRunning: boolean;
 }
 
 interface SparkItem {
@@ -50,17 +47,16 @@ interface StoryItem {
   createdAt: string;
 }
 
-interface AdminUser {
+interface UserItem {
   id: string;
-  username: string | null;
   name: string | null;
   email: string | null;
+  username: string | null;
   image: string | null;
   isAdmin: boolean;
   level: number;
   sparkCount: number;
   storyCount: number;
-  reactionCount: number;
   createdAt: string;
 }
 
@@ -74,16 +70,19 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
-  const [abnormalRooms, setAbnormalRooms] = useState<AbnormalRoom[]>([]);
+  const [activeAiRooms, setActiveAiRooms] = useState<RoomItem[]>([]);
+  const [abnormalRooms, setAbnormalRooms] = useState<RoomItem[]>([]);
   const [sparks, setSparks] = useState<SparkItem[]>([]);
   const [stories, setStories] = useState<StoryItem[]>([]);
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [users, setUsers] = useState<UserItem[]>([]);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [userModalOpen, setUserModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [userForm, setUserForm] = useState({ username: '', password: '', name: '', email: '', isAdmin: false });
-  const [userActionLoading, setUserActionLoading] = useState(false);
+
+  // 用户管理弹窗
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
+  const [userForm, setUserForm] = useState({ username: '', name: '', email: '', password: '', isAdmin: false });
+  const [userFormLoading, setUserFormLoading] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -95,6 +94,7 @@ export default function AdminPage() {
         const res = await fetch('/api/admin/rooms');
         const data = await res.json();
         if (!data.success) { setError(data.error?.message || '加载失败'); return; }
+        setActiveAiRooms(data.data.activeAiRooms || []);
         setAbnormalRooms(data.data.abnormalRooms || []);
       } else if (tab === 'sparks') {
         const res = await fetch('/api/admin/sparks');
@@ -107,7 +107,8 @@ export default function AdminPage() {
         if (!data.success) { setError(data.error?.message || '加载失败'); return; }
         setStories(data.data.list || []);
       } else if (tab === 'users') {
-        const res = await fetch(`/api/admin/users${search ? `?search=${encodeURIComponent(search)}` : ''}`);
+        const url = search ? `/api/admin/users?search=${encodeURIComponent(search)}` : '/api/admin/users';
+        const res = await fetch(url);
         const data = await res.json();
         if (!data.success) { setError(data.error?.message || '加载失败'); return; }
         setUsers(data.data.list || []);
@@ -121,14 +122,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchData();
-  }, [tab]);
-
-  // 用户搜索防抖
-  useEffect(() => {
-    if (tab !== 'users') return;
-    const timer = setTimeout(() => { fetchData(); }, 400);
-    return () => clearTimeout(timer);
-  }, [search, tab]);
+  }, [tab, search]);
 
   const handleDelete = async (type: 'room' | 'spark' | 'story' | 'user', id: string) => {
     if (!confirm('确定删除？此操作不可恢复。')) return;
@@ -150,9 +144,14 @@ export default function AdminPage() {
         });
         const data = await res.json();
         if (data.success) {
-          if (type === 'room') setAbnormalRooms((prev) => prev.filter((r) => r.id !== id));
-          else if (type === 'spark') setSparks((prev) => prev.filter((s) => s.id !== id));
-          else if (type === 'story') setStories((prev) => prev.filter((s) => s.id !== id));
+          if (type === 'room') {
+            setActiveAiRooms((prev) => prev.filter((r) => r.id !== id));
+            setAbnormalRooms((prev) => prev.filter((r) => r.id !== id));
+          } else if (type === 'spark') {
+            setSparks((prev) => prev.filter((s) => s.id !== id));
+          } else if (type === 'story') {
+            setStories((prev) => prev.filter((s) => s.id !== id));
+          }
         } else {
           alert(data.error?.message || '删除失败');
         }
@@ -164,80 +163,56 @@ export default function AdminPage() {
     }
   };
 
-  const openCreateUser = () => {
-    setEditingUser(null);
-    setUserForm({ username: '', password: '', name: '', email: '', isAdmin: false });
-    setUserModalOpen(true);
-  };
-
-  const openEditUser = (user: AdminUser) => {
-    setEditingUser(user);
-    setUserForm({ username: user.username || '', password: '', name: user.name || '', email: user.email || '', isAdmin: user.isAdmin });
-    setUserModalOpen(true);
-  };
-
-  const submitUser = async () => {
-    if (!userForm.username || (!editingUser && !userForm.password)) {
-      alert('用户名和密码必填');
-      return;
-    }
-    setUserActionLoading(true);
+  const handleSaveUser = async () => {
+    if (!userForm.username.trim()) { alert('用户名必填'); return; }
+    if (!editingUser && !userForm.password) { alert('密码必填'); return; }
+    setUserFormLoading(true);
     try {
-      if (editingUser) {
-        const body: any = { id: editingUser.id };
-        if (userForm.username) body.username = userForm.username;
-        if (userForm.name) body.name = userForm.name;
-        if (userForm.email) body.email = userForm.email;
-        if (userForm.password) body.password = userForm.password;
-        body.isAdmin = userForm.isAdmin;
-        const res = await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        const data = await res.json();
-        if (data.success) {
-          setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? { ...u, ...data.data.user } : u)));
-          setUserModalOpen(false);
-        } else {
-          alert(data.error?.message || '更新失败');
-        }
+      const url = '/api/admin/users';
+      const method = editingUser ? 'PUT' : 'POST';
+      const body = editingUser
+        ? JSON.stringify({ id: editingUser.id, username: userForm.username, name: userForm.name, password: userForm.password || undefined, isAdmin: userForm.isAdmin })
+        : JSON.stringify({ username: userForm.username, name: userForm.name, email: userForm.email, password: userForm.password, isAdmin: userForm.isAdmin });
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body });
+      const data = await res.json();
+      if (data.success) {
+        setShowUserForm(false);
+        setEditingUser(null);
+        setUserForm({ username: '', name: '', email: '', password: '', isAdmin: false });
+        fetchData();
       } else {
-        const res = await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userForm),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setUsers((prev) => [data.data.user, ...prev]);
-          setUserModalOpen(false);
-        } else {
-          alert(data.error?.message || '创建失败');
-        }
+        alert(data.error?.message || '保存失败');
       }
     } catch (e) {
-      alert('操作失败');
+      alert('保存失败');
     } finally {
-      setUserActionLoading(false);
+      setUserFormLoading(false);
     }
   };
 
-  const filterBySearch = <T extends { title?: string; name?: string | null }>(list: T[]) => {
+  const openEditUser = (user: UserItem) => {
+    setEditingUser(user);
+    setUserForm({
+      username: user.username || '',
+      name: user.name || '',
+      email: user.email || '',
+      password: '',
+      isAdmin: user.isAdmin,
+    });
+    setShowUserForm(true);
+  };
+
+  const filterBySearch = <T extends { title: string }>(list: T[]) => {
     if (!search.trim() || tab === 'users') return list;
-    const kw = search.toLowerCase();
-    return list.filter((item: any) =>
-      (item.title && item.title.toLowerCase().includes(kw)) ||
-      (item.name && item.name.toLowerCase().includes(kw))
-    );
+    return list.filter((item) => item.title.toLowerCase().includes(search.toLowerCase()));
   };
 
   const tabs = [
-    { key: 'rooms' as TabType, label: '异常活跃房间', icon: Zap },
+    { key: 'rooms' as TabType, label: '房间监控', icon: Zap },
     { key: 'sparks' as TabType, label: '公开火花', icon: Flame },
     { key: 'stories' as TabType, label: '公开故事', icon: BookOpen },
-    { key: 'users' as TabType, label: '用户管理', icon: Users },
+    { key: 'users' as TabType, label: '用户管理', icon: Shield },
   ];
-
-  const activeAiRooms = abnormalRooms.filter((r) => r.isAiRoom && r.status === 'active');
-  const unclosedAiRooms = abnormalRooms.filter((r) => r.isAiRoom && r.status !== 'active');
-  const nonAiRooms = abnormalRooms.filter((r) => !r.isAiRoom);
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
@@ -274,25 +249,25 @@ export default function AdminPage() {
       </div>
 
       {/* 搜索 */}
-      <div className="shrink-0 px-4 py-2 flex items-center gap-2">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5 flex-1">
+      <div className="shrink-0 px-4 py-2">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5">
           <Search className="w-3.5 h-3.5 text-white/20" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={tab === 'users' ? '搜索用户名、昵称或邮箱...' : '搜索标题...'}
+            placeholder={tab === 'users' ? '搜索用户名、邮箱...' : '搜索标题...'}
             className="flex-1 bg-transparent text-sm text-white/70 placeholder:text-white/20 outline-none"
           />
+          {tab === 'users' && (
+            <button
+              onClick={() => { setEditingUser(null); setUserForm({ username: '', name: '', email: '', password: '', isAdmin: false }); setShowUserForm(true); }}
+              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25"
+            >
+              <UserPlus className="w-3 h-3" />
+              新增
+            </button>
+          )}
         </div>
-        {tab === 'users' && (
-          <button
-            onClick={openCreateUser}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm hover:bg-[#e2b04a]/20 transition-colors"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            新建
-          </button>
-        )}
       </div>
 
       {/* 内容区 */}
@@ -309,71 +284,40 @@ export default function AdminPage() {
             <p className="text-sm text-white/30">{error}</p>
           </div>
         ) : tab === 'rooms' ? (
-          <div className="space-y-5">
-            {/* 统计 */}
-            <div className="flex gap-3">
-              <div className="flex-1 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                <p className="text-[10px] text-white/30">活跃AI房间</p>
-                <p className="text-lg font-bold text-emerald-400">{activeAiRooms.length}</p>
-              </div>
-              <div className="flex-1 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                <p className="text-[10px] text-white/30">未关闭AI房间</p>
-                <p className="text-lg font-bold text-amber-400">{unclosedAiRooms.length}</p>
-              </div>
-              <div className="flex-1 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                <p className="text-[10px] text-white/30">真人房间</p>
-                <p className="text-lg font-bold text-white/70">{nonAiRooms.length}</p>
-              </div>
+          <div className="space-y-4">
+            {/* 活跃 AI 房间 */}
+            <div>
+              <h3 className="text-xs font-medium text-white/40 mb-2 flex items-center gap-1">
+                <Bot className="w-3 h-3 text-emerald-400" />
+                活跃 AI 房间 ({activeAiRooms.length})
+              </h3>
+              {activeAiRooms.length === 0 ? (
+                <p className="text-xs text-white/15 py-4 text-center">暂无活跃 AI 房间</p>
+              ) : (
+                <div className="space-y-2">
+                  {filterBySearch(activeAiRooms).map((room) => (
+                    <RoomCard key={room.id} room={room} mounted={mounted} deletingId={deletingId} onDelete={(id) => handleDelete('room', id)} />
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* 活跃AI房间 */}
-            {activeAiRooms.length > 0 && (
-              <div>
-                <h3 className="text-xs font-medium text-emerald-400/70 mb-2 flex items-center gap-1">
-                  <Zap className="w-3 h-3" />
-                  活跃AI房间 — 正在和刘看山聊天 ({activeAiRooms.length})
-                </h3>
+            {/* 异常活跃房间 */}
+            <div>
+              <h3 className="text-xs font-medium text-white/40 mb-2 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 text-[#e2b04a]" />
+                异常活跃房间 ({abnormalRooms.length})
+              </h3>
+              {abnormalRooms.length === 0 ? (
+                <p className="text-xs text-white/15 py-4 text-center">暂无异常活跃房间</p>
+              ) : (
                 <div className="space-y-2">
-                  {activeAiRooms.map((room) => (
-                    <RoomCard key={room.id} room={room} mounted={mounted} deletingId={deletingId} onDelete={handleDelete} />
+                  {filterBySearch(abnormalRooms).map((room) => (
+                    <RoomCard key={room.id} room={room} mounted={mounted} deletingId={deletingId} onDelete={(id) => handleDelete('room', id)} />
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* 未关闭AI房间 */}
-            {unclosedAiRooms.length > 0 && (
-              <div>
-                <h3 className="text-xs font-medium text-amber-400/70 mb-2 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  未关闭AI房间 — 用户已离开，房间未关 ({unclosedAiRooms.length})
-                </h3>
-                <div className="space-y-2">
-                  {unclosedAiRooms.map((room) => (
-                    <RoomCard key={room.id} room={room} mounted={mounted} deletingId={deletingId} onDelete={handleDelete} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 真人房间 */}
-            {nonAiRooms.length > 0 && (
-              <div>
-                <h3 className="text-xs font-medium text-white/40 mb-2 flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  真人房间 — 该关但没关 ({nonAiRooms.length})
-                </h3>
-                <div className="space-y-2">
-                  {nonAiRooms.map((room) => (
-                    <RoomCard key={room.id} room={room} mounted={mounted} deletingId={deletingId} onDelete={handleDelete} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {abnormalRooms.length === 0 && (
-              <p className="text-xs text-white/15 py-8 text-center">暂无异常活跃房间</p>
-            )}
+              )}
+            </div>
           </div>
         ) : tab === 'sparks' ? (
           <div className="space-y-2">
@@ -381,34 +325,7 @@ export default function AdminPage() {
               <p className="text-xs text-white/15 py-4 text-center">暂无公开火花</p>
             ) : (
               filterBySearch(sparks).map((spark) => (
-                <motion.div
-                  key={spark.id}
-                  initial={mounted ? { opacity: 0, y: 6 } : false}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white/80 truncate">{spark.title}</p>
-                      <p className="text-[11px] text-white/25 truncate mt-0.5">{spark.summary}</p>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="text-[10px] text-white/20">{spark.ownerName}</span>
-                        <span className="flex items-center gap-0.5 text-[10px] text-[#e2b04a]/30">
-                          <Flame className="w-3 h-3" />
-                          {spark.hotScore}
-                        </span>
-                        <span className="text-[10px] text-white/15">{spark.roomType || 'duet'}</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleDelete('spark', spark.id)}
-                      disabled={deletingId === spark.id}
-                      className="p-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-30"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </motion.div>
+                <SparkCard key={spark.id} spark={spark} mounted={mounted} deletingId={deletingId} onDelete={(id) => handleDelete('spark', id)} />
               ))
             )}
           </div>
@@ -418,34 +335,7 @@ export default function AdminPage() {
               <p className="text-xs text-white/15 py-4 text-center">暂无公开故事</p>
             ) : (
               filterBySearch(stories).map((story) => (
-                <motion.div
-                  key={story.id}
-                  initial={mounted ? { opacity: 0, y: 6 } : false}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white/80 truncate">{story.title}</p>
-                      <p className="text-[11px] text-white/25 truncate mt-0.5">{story.eraBackground}</p>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="text-[10px] text-white/20">{story.creatorName}</span>
-                        <span className="text-[10px] text-white/20">{story.status}</span>
-                        <span className="flex items-center gap-0.5 text-[10px] text-[#e2b04a]/30">
-                          <Flame className="w-3 h-3" />
-                          {story.hotScore}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleDelete('story', story.id)}
-                      disabled={deletingId === story.id}
-                      className="p-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-30"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </motion.div>
+                <StoryCard key={story.id} story={story} mounted={mounted} deletingId={deletingId} onDelete={(id) => handleDelete('story', id)} />
               ))
             )}
           </div>
@@ -464,34 +354,28 @@ export default function AdminPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/20 flex items-center justify-center text-xs text-[#e2b04a] font-bold">
-                          {(user.name || user.username || 'U').charAt(0)}
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center text-[10px] text-white/50">
+                          {user.name?.charAt(0) || user.username?.charAt(0) || '?'}
                         </div>
-                        <div>
-                          <p className="text-sm text-white/80">
-                            {user.name || user.username || '未命名'}
-                            {user.isAdmin && (
-                              <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] text-[#e2b04a] bg-[#e2b04a]/10 px-1.5 py-0.5 rounded-full">
-                                <Shield className="w-2.5 h-2.5" />管理员
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-[10px] text-white/25">@{user.username || '-'} · {user.email || '-'}</p>
-                        </div>
+                        <span className="text-sm text-white/80">{user.name || user.username || '未命名'}</span>
+                        {user.isAdmin && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#e2b04a]/10 text-[#e2b04a] border border-[#e2b04a]/20">管理员</span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-3 mt-2 ml-9">
-                        <span className="text-[10px] text-white/20">Lv.{user.level}</span>
-                        <span className="text-[10px] text-white/20">火花 {user.sparkCount}</span>
-                        <span className="text-[10px] text-white/20">故事 {user.storyCount}</span>
-                        <span className="text-[10px] text-white/20">{new Date(user.createdAt).toLocaleDateString('zh-CN')}</span>
+                      <div className="flex items-center gap-3 mt-1.5 text-[10px] text-white/20">
+                        <span>{user.email || '无邮箱'}</span>
+                        <span>Lv.{user.level}</span>
+                        <span className="flex items-center gap-0.5"><Flame className="w-3 h-3" />{user.sparkCount}</span>
+                        <span className="flex items-center gap-0.5"><BookOpen className="w-3 h-3" />{user.storyCount}</span>
+                        <span>{new Date(user.createdAt).toLocaleDateString('zh-CN')}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => openEditUser(user)}
-                        className="p-1.5 rounded-lg bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60 transition-colors"
+                        className="p-1.5 rounded-lg bg-white/5 text-white/30 hover:bg-white/10 hover:text-white/50 transition-colors"
                       >
-                        <Check className="w-3.5 h-3.5" />
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete('user', user.id)}
@@ -509,106 +393,85 @@ export default function AdminPage() {
         )}
       </div>
 
-      {/* 用户编辑/创建弹窗 */}
-      <AnimatePresence>
-        {userModalOpen && (
+      {/* 用户表单弹窗 */}
+      {showUserForm && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-6">
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
-            onClick={() => setUserModalOpen(false)}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-sm bg-[#1a1a2e] border border-white/10 rounded-2xl p-5"
           >
-            <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-[480px] bg-[#0c0c0e] border-t border-white/10 rounded-t-2xl sm:rounded-2xl p-5"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold text-white/90">
-                  {editingUser ? '编辑用户' : '新建用户'}
-                </h3>
-                <button onClick={() => setUserModalOpen(false)} className="p-1 rounded-lg hover:bg-white/5">
-                  <X className="w-4 h-4 text-white/40" />
-                </button>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-white/80">{editingUser ? '编辑用户' : '新增用户'}</h3>
+              <button onClick={() => setShowUserForm(false)} className="p-1 rounded-lg hover:bg-white/5">
+                <X className="w-4 h-4 text-white/30" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] text-white/30 mb-1 block">用户名 *</label>
+                <input
+                  value={userForm.username}
+                  onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#e2b04a]/30"
+                  placeholder="输入用户名"
+                />
               </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[11px] text-white/30 mb-1 block">用户名</label>
-                  <input
-                    value={userForm.username}
-                    onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                    placeholder="用户名"
-                    className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white/80 placeholder:text-white/20 outline-none focus:border-[#e2b04a]/30"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-white/30 mb-1 block">{editingUser ? '新密码（留空不修改）' : '密码'}</label>
-                  <input
-                    type="password"
-                    value={userForm.password}
-                    onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                    placeholder={editingUser ? '留空不修改' : '初始密码'}
-                    className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white/80 placeholder:text-white/20 outline-none focus:border-[#e2b04a]/30"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-white/30 mb-1 block">昵称</label>
-                  <input
-                    value={userForm.name}
-                    onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                    placeholder="显示名称"
-                    className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white/80 placeholder:text-white/20 outline-none focus:border-[#e2b04a]/30"
-                  />
-                </div>
+              <div>
+                <label className="text-[11px] text-white/30 mb-1 block">昵称</label>
+                <input
+                  value={userForm.name}
+                  onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#e2b04a]/30"
+                  placeholder="输入昵称"
+                />
+              </div>
+              {!editingUser && (
                 <div>
                   <label className="text-[11px] text-white/30 mb-1 block">邮箱</label>
                   <input
                     value={userForm.email}
                     onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                    placeholder="邮箱地址"
-                    className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white/80 placeholder:text-white/20 outline-none focus:border-[#e2b04a]/30"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#e2b04a]/30"
+                    placeholder="输入邮箱"
                   />
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={userForm.isAdmin}
-                    onChange={(e) => setUserForm({ ...userForm, isAdmin: e.target.checked })}
-                    className="w-4 h-4 rounded border-white/20 bg-white/[0.03] text-[#e2b04a] focus:ring-[#e2b04a]/30"
-                  />
-                  <span className="text-sm text-white/60">设为管理员</span>
-                </label>
+              )}
+              <div>
+                <label className="text-[11px] text-white/30 mb-1 block">密码 {editingUser ? '(留空不修改)' : '*'}</label>
+                <input
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#e2b04a]/30"
+                  placeholder={editingUser ? '留空不修改' : '输入密码'}
+                />
               </div>
-              <button
-                onClick={submitUser}
-                disabled={userActionLoading}
-                className="w-full mt-5 py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium hover:bg-[#e2b04a]/20 active:scale-[0.98] transition-all disabled:opacity-40"
-              >
-                {userActionLoading ? '处理中...' : editingUser ? '保存修改' : '创建用户'}
-              </button>
-            </motion.div>
+              <label className="flex items-center gap-2 text-sm text-white/50">
+                <input
+                  type="checkbox"
+                  checked={userForm.isAdmin}
+                  onChange={(e) => setUserForm({ ...userForm, isAdmin: e.target.checked })}
+                  className="rounded border-white/20 bg-white/5"
+                />
+                设为管理员
+              </label>
+            </div>
+            <button
+              onClick={handleSaveUser}
+              disabled={userFormLoading}
+              className="w-full mt-4 py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 text-sm font-medium hover:bg-[#e2b04a]/25 disabled:opacity-30 transition-all"
+            >
+              {userFormLoading ? '保存中...' : '保存'}
+            </button>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }
 
-function RoomCard({
-  room,
-  mounted,
-  deletingId,
-  onDelete,
-}: {
-  room: AbnormalRoom;
-  mounted: boolean;
-  deletingId: string | null;
-  onDelete: (type: 'room', id: string) => void;
-}) {
+function RoomCard({ room, mounted, deletingId, onDelete }: { room: RoomItem; mounted: boolean; deletingId: string | null; onDelete: (id: string) => void }) {
   return (
     <motion.div
       initial={mounted ? { opacity: 0, y: 6 } : false}
@@ -619,42 +482,95 @@ function RoomCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm text-white/80 truncate">{room.title}</p>
-            {room.isLongRunning && (
-              <span className="text-[9px] text-red-400/60 bg-red-400/10 px-1.5 py-0.5 rounded-full">超2小时</span>
+            {room.isAiRoom ? (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">AI</span>
+            ) : (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">真人</span>
             )}
           </div>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <span className="text-[10px] text-white/20">{room.type}</span>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-              room.status === 'active' ? 'bg-emerald-500/10 text-emerald-400/60' : 'bg-amber-500/10 text-amber-400/60'
-            }`}>{room.status}</span>
-            {room.isAiRoom && (
-              <span className="text-[10px] text-white/20 bg-white/5 px-1.5 py-0.5 rounded-full">AI</span>
-            )}
             <span className="flex items-center gap-1 text-[10px] text-white/20">
               <Clock className="w-3 h-3" />
               {new Date(room.createdAt).toLocaleDateString('zh-CN')}
             </span>
             <span className="flex items-center gap-1 text-[10px] text-white/20">
-              <MessageSquare className="w-3 h-3" />
-              {room.messageCount}
+              <Users className="w-3 h-3" />
+              {room.participantCount}人 ({room.onlineCount}在线)
             </span>
             <span className="flex items-center gap-1 text-[10px] text-white/20">
-              <Users className="w-3 h-3" />
-              {room.participantCount}
+              <Flame className="w-3 h-3" />
+              {room.messageCount}条
             </span>
-            {room.hasOnlineHuman && (
-              <span className="text-[9px] text-emerald-400/60">● 在线</span>
-            )}
           </div>
-          {room.participants.length > 0 && (
-            <p className="text-[10px] text-white/15 mt-1">{room.participants.join(', ')}</p>
-          )}
         </div>
         <button
-          onClick={() => onDelete('room', room.id)}
+          onClick={() => onDelete(room.id)}
           disabled={deletingId === room.id}
-          className="p-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-30 shrink-0"
+          className="p-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-30"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function SparkCard({ spark, mounted, deletingId, onDelete }: { spark: SparkItem; mounted: boolean; deletingId: string | null; onDelete: (id: string) => void }) {
+  return (
+    <motion.div
+      initial={mounted ? { opacity: 0, y: 6 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-3 rounded-xl bg-white/[0.03] border border-white/5"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-white/80 truncate">{spark.title}</p>
+          <p className="text-[11px] text-white/25 truncate mt-0.5">{spark.summary}</p>
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className="text-[10px] text-white/20">{spark.ownerName}</span>
+            <span className="flex items-center gap-0.5 text-[10px] text-[#e2b04a]/30">
+              <Flame className="w-3 h-3" />
+              {spark.hotScore}
+            </span>
+            <span className="text-[10px] text-white/15">{spark.roomType || 'duet'}</span>
+          </div>
+        </div>
+        <button
+          onClick={() => onDelete(spark.id)}
+          disabled={deletingId === spark.id}
+          className="p-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-30"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function StoryCard({ story, mounted, deletingId, onDelete }: { story: StoryItem; mounted: boolean; deletingId: string | null; onDelete: (id: string) => void }) {
+  return (
+    <motion.div
+      initial={mounted ? { opacity: 0, y: 6 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-3 rounded-xl bg-white/[0.03] border border-white/5"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-white/80 truncate">{story.title}</p>
+          <p className="text-[11px] text-white/25 truncate mt-0.5">{story.eraBackground}</p>
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className="text-[10px] text-white/20">{story.creatorName}</span>
+            <span className="text-[10px] text-white/20">{story.status}</span>
+            <span className="flex items-center gap-0.5 text-[10px] text-[#e2b04a]/30">
+              <Flame className="w-3 h-3" />
+              {story.hotScore}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={() => onDelete(story.id)}
+          disabled={deletingId === story.id}
+          className="p-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-30"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

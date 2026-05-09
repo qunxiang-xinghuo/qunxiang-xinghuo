@@ -37,6 +37,9 @@ export async function POST(request: NextRequest) {
         await db.asset.delete({ where: { id } });
         return NextResponse.json(apiResponse({ message: "火花已删除" }));
       }
+      case "user": {
+        return NextResponse.json(apiError("BAD_REQUEST", "用户删除请使用 /api/admin/users?id=xxx"), { status: 400 });
+      }
       case "story": {
         const rooms = await db.room.findMany({ where: { storyId: id }, select: { id: true } });
         for (const room of rooms) {
