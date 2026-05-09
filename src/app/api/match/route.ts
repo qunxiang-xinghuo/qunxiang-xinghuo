@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { matchRequestSchema } from "@/lib/validators/match";
 import { findMatch } from "@/server/match-engine";
@@ -43,6 +44,15 @@ export async function POST(request: NextRequest) {
 
     const validatedData = matchRequestSchema.parse(body);
     console.log("[MatchAPI] 数据验证通过 - identity:", validatedData.identity, "brainholeId:", validatedData.brainholeId, "mode:", validatedData.mode);
+
+    // v8.3-fix: guest 用户必须先 upsert 到 User 表，否则 roomParticipant 外键约束会报 500
+    if (!token && guestId) {
+      await db.user.upsert({
+        where: { id: guestId },
+        update: {},
+        create: { id: guestId, name: '访客', email: `${guestId}@guest.local` },
+      });
+    }
 
     console.log("[MatchAPI] 正在调用 findMatch v6.0...");
     const matchResult = await findMatch(userId, {

@@ -80,9 +80,10 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
     return () => ctrl.abort();
   }, [data.roomId]);
 
-  // v8.3-fix: 根据 senderId 判断消息归属
-  // AI 消息（senderId 以 agent_ 开头）始终显示在左边
-  const isAiMessage = (msg: Message) => msg.senderId?.startsWith('agent_') || false;
+  // v8.3-fix: 根据 senderId 或 identity 判断消息归属
+  // AI 消息（senderId 以 agent_ 开头，或 identity 是刘看山）始终显示在左边
+  const isAiMessage = (msg: Message) =>
+    msg.senderId?.startsWith('agent_') || msg.identity?.includes('刘看山') || false;
   const isMyMessage = (msg: Message) => msg.senderId === data.ownerId && !isAiMessage(msg);
 
   // v8.1: 点赞功能
