@@ -230,7 +230,7 @@ export default function SpectateRoomPage() {
       <div className="shrink-0 border-b border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
-            onClick={() => router.push('/spectate')}
+            onClick={() => router.back()}
             className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-white/50" />
