@@ -51,3 +51,4 @@ DEPLOYMENT_SECRETS.md
 secrets.*
 *credential*
 
+*.bundle
