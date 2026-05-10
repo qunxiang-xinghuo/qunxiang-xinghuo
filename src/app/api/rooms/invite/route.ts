@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
       const randomBh = await db.brainhole.findFirst({
         where: { status: 'approved' },
         orderBy: { hotScore: 'desc' },
-        take: 50,
       });
       if (randomBh) {
         brainholeId = randomBh.id;
@@ -48,11 +47,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 确保用户存在
-    await db.user.upsert({
-      where: { id: effectiveUserId },
-      update: { name: identity },
-      create: { id: effectiveUserId, name: identity, email: `${effectiveUserId}@guest.local` },
-    });
+    try {
+      // v8.5-fix: email 去除特殊字符，避免格式错误
+      const safeEmail = `${effectiveUserId.replace(/[^a-zA-Z0-9_-]/g, '')}@guest.local`;
+      await db.user.upsert({
+        where: { id: effectiveUserId },
+        update: { name: identity },
+        create: { id: effectiveUserId, name: identity, email: safeEmail },
+      });
+    } catch (userErr: any) {
+      console.error('[Invite API] 用户创建失败:', userErr.message, 'userId=', effectiveUserId);
+      return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "用户创建失败: " + userErr.message), { status: 500 });
+    }
 
     // v7.0-test15: 使用try/catch捕获P2002唯一约束冲突，结合重试生成邀请码
     let inviteCode = generateInviteCode();
@@ -87,11 +93,14 @@ export async function POST(request: NextRequest) {
           inviteCode,
         }), { status: 201 });
       } catch (err: any) {
-        if (err?.code === 'P2002' && err?.meta?.target?.includes('inviteCode')) {
+        if (err?.code === 'P2002') {
+          // P2002 可能是 inviteCode 重复，重试
+          console.log(`[Invite API] inviteCode 冲突，重试 (${attempts + 1}/${maxAttempts})`);
           inviteCode = generateInviteCode();
           attempts++;
           continue;
         }
+        console.error('[Invite API] 创建房间失败:', err.message);
         throw err;
       }
     }

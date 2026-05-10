@@ -115,6 +115,8 @@ export default function RoomPage() {
 
   // 当前用户ID
   const userId = authUser?.id || (typeof window !== 'undefined' ? localStorage.getItem('xh_user_id') : null);
+  const userIdRef = useRef(userId);
+  useEffect(() => { userIdRef.current = userId; }, [userId]);
 
   // 滚动到底部
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
@@ -246,13 +248,16 @@ export default function RoomPage() {
     if (hasJoinedRef.current) return; // 防止重复加入
     hasJoinedRef.current = true;
 
-    joinRoom(roomId, userId, myRoleName || '我');
+    // v8.5-fix: 使用 userIdRef.current 避免 userId 变化导致监听器被反复移除/重注册
+    const currentUserId = userIdRef.current || userId || 'me';
+    joinRoom(roomId, currentUserId, myRoleName || '我');
 
     const handleNewMessage = (data: any) => {
       const raw = data.message || data;
       const msgId = raw.id || `msg-${Date.now()}`;
       const senderId = raw.senderId || raw.userId;
-      if (senderId === userId) return;
+      // 使用 ref 获取最新 userId，避免闭包陈旧
+      if (senderId === userIdRef.current) return;
       setMessages((prev) => {
         if (prev.some((m) => m.id === msgId)) return prev;
         return [...prev, {
@@ -265,7 +270,7 @@ export default function RoomPage() {
     // v8.5: 对方离开提示
     const handleOpponentLeft = (data: any) => {
       const leftUserId = data.userId;
-      if (leftUserId === userId) return;
+      if (leftUserId === userIdRef.current) return;
       alert('对方已结束对白，即将返回发现页');
       router.push('/home');
     };
@@ -274,10 +279,11 @@ export default function RoomPage() {
     return () => {
       off('new-message', handleNewMessage);
       off('opponent-left', handleOpponentLeft);
-      leaveRoom(roomId, userId);
+      leaveRoom(roomId, currentUserId);
       hasJoinedRef.current = false;
     };
-  }, [roomId, userId, myRoleName, roomStatus, joinRoom, leaveRoom, on, off]);
+    // 移除 userId 依赖，避免 temp ID 初始变化时导致监听器被移除
+  }, [roomId, myRoleName, roomStatus, joinRoom, leaveRoom, on, off]);
 
   // AI 催化（按消息数）— 使用 ref 标记已调用
   useEffect(() => {
@@ -549,6 +555,35 @@ export default function RoomPage() {
   // 不再在 beforeunload 中调用 finish，避免无认证信息导致 401 或重复创建 Asset
 
   const isReadonly = roomStatus === 'closed' || finished;
+
+  // v8.5-fix: 拦截浏览器返回/关闭/刷新，防止误操作丢失对话
+  useEffect(() => {
+    if (isReadonly) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isReadonly]);
+
+  useEffect(() => {
+    if (isReadonly) return;
+    // 压入一个空状态，使 popstate 能被拦截
+    history.pushState({ roomGuard: true }, '');
+    const handlePopState = (e: PopStateEvent) => {
+      if (!isReadonly) {
+        if (confirm('房间仍在进行中，确定要返回吗？')) {
+          // 允许返回
+          return;
+        }
+        // 阻止返回：重新压入状态并停留
+        history.pushState({ roomGuard: true }, '');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isReadonly]);
   // v8.0-fix: 增强标题回退链，使用 room.scene 作为最终回退
   // v8.5-fix: invite_duet 无脑洞时显示默认话题
   const hasBrainhole = !!brainholeTitle || !!brainholeScenario;
@@ -587,7 +622,8 @@ export default function RoomPage() {
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             onClick={() => {
-              if (!isReadonly && messages.length > 0) {
+              // v8.5-fix: 只要房间未关闭就提示，不依赖消息数量
+              if (!isReadonly) {
                 if (confirm('房间仍在进行中，离开后可以从发现页重新进入。确认离开吗？')) {
                   router.push('/home');
                 }

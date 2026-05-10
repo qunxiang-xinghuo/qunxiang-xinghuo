@@ -59,21 +59,23 @@ export async function GET(request: NextRequest) {
       spectatorCounts.map((s) => [s.roomId, s._count.roomId])
     );
 
-    const list = rooms.map((room) => ({
-      id: room.id,
-      type: room.type,
-      status: room.status,
-      brainhole: room.brainhole,
-      actors: room.participants.map((p) => ({
-        userId: p.userId,
-        identity: p.identity,
-        role: p.role,
-        isOnline: p.isOnline,
-      })),
-      spectatorCount: spectatorCountMap.get(room.id) || 0,
-      messageCount: room._count.messages,
-      createdAt: room.createdAt,
-    }));
+    const list = rooms
+      .filter((room) => room._count.messages > 0) // v8.5-fix: 过滤掉空房间（无对白内容）
+      .map((room) => ({
+        id: room.id,
+        type: room.type,
+        status: room.status,
+        brainhole: room.brainhole,
+        actors: room.participants.map((p) => ({
+          userId: p.userId,
+          identity: p.identity,
+          role: p.role,
+          isOnline: p.isOnline,
+        })),
+        spectatorCount: spectatorCountMap.get(room.id) || 0,
+        messageCount: room._count.messages,
+        createdAt: room.createdAt,
+      }));
 
     return NextResponse.json(apiResponse({ list }));
   } catch (error: any) {

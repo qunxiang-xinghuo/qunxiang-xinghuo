@@ -81,8 +81,14 @@ export function useAuth() {
     if (savedIdentity) {
       try {
         const identity = JSON.parse(savedIdentity);
+        // v8.5-fix: temp ID 持久化，避免每次渲染重新生成导致 socket room join 失败
+        let tempId = localStorage.getItem('xh_temp_id');
+        if (!tempId) {
+          tempId = 'temp-' + Date.now();
+          localStorage.setItem('xh_temp_id', tempId);
+        }
         const tempUser: User = {
-          id: 'temp-' + Date.now(),
+          id: tempId,
           name: identity.label,
           identity,
           level: 1,
@@ -100,8 +106,14 @@ export function useAuth() {
   }, [session, sessionStatus]);
 
   const saveIdentity = (identity: User['identity']) => {
+    // v8.5-fix: 复用已有的 temp ID，确保 socket room 中的 userId 稳定
+    let tempId = user?.id || localStorage.getItem('xh_temp_id');
+    if (!tempId || tempId.startsWith('temp-') === false) {
+      tempId = 'temp-' + Date.now();
+    }
+    localStorage.setItem('xh_temp_id', tempId);
     const newUser: User = {
-      id: user?.id || 'temp-' + Date.now(),
+      id: tempId,
       name: identity.label,
       identity,
       level: user?.level || 1,
@@ -171,6 +183,7 @@ export function useAuth() {
     localStorage.removeItem('xh_user');
     localStorage.removeItem('xh_identity');
     localStorage.removeItem('xh_user_id');
+    localStorage.removeItem('xh_temp_id');
   };
 
   return {

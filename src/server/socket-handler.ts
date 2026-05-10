@@ -9,7 +9,8 @@ import { db } from '@/lib/db'
 
 // v8.0-sec-fix: 简单的 UUID 格式校验
 function isValidId(id: string): boolean {
-  return /^[0-9a-fA-F-]{8,}$/.test(id)
+  // v8.5-fix: 支持 CUID 格式（如 cmoy8n6wz0000shb2bkhjby3v）
+  return typeof id === 'string' && id.length >= 10 && id.length <= 50 && /^[a-zA-Z0-9_-]+$/.test(id)
 }
 
 // v8.0-sec-fix: 验证导演权限
