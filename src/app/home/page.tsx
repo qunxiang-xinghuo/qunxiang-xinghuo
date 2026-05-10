@@ -81,7 +81,7 @@ export default function HomePage() {
       desc: '与陌生人配对，即兴对话',
       icon: MessageCircle,
       color: 'from-[#8a9ab0]/20 to-[#6c7c90]/20',
-      iconColor: 'text-[#8a9ab0]',
+      iconColor: 'text-xh-yellow',
       path: '/duo-match',
       comingSoon: false,
     },
@@ -115,7 +115,7 @@ export default function HomePage() {
         {/* v8.1: TOP3 极简文字列表 */}
         <section className="mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-[#8a9ab0]" />
+            <TrendingUp className="w-4 h-4 text-xh-yellow" />
             <h2 className="text-sm font-semibold text-white/90">今日最热火花</h2>
             <span className="text-[10px] text-white/20 ml-1">已完结对白精选</span>
           </div>
@@ -130,7 +130,7 @@ export default function HomePage() {
               <p className="text-sm text-white/30 mb-2">加载失败</p>
               <button
                 onClick={() => { setLoading(true); setLoadError(false); window.location.reload(); }}
-                className="text-xs text-[#8a9ab0]/50 hover:text-[#8a9ab0]/70 transition-colors"
+                className="text-xs text-xh-yellow/50 hover:text-xh-yellow/70 transition-colors"
               >
                 点击刷新
               </button>
@@ -157,7 +157,7 @@ export default function HomePage() {
                 >
                   {/* 排名 */}
                   <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                    idx === 0 ? 'bg-[#8a9ab0]/20 text-[#8a9ab0]' :
+                    idx === 0 ? 'bg-xh-yellow/20 text-xh-yellow' :
                     idx === 1 ? 'bg-white/10 text-white/60' :
                     'bg-[#74b9ff]/10 text-[#74b9ff]/70'
                   }`}>
@@ -191,7 +191,7 @@ export default function HomePage() {
             className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.99] transition-all"
           >
             <div className="w-9 h-9 rounded-lg bg-[#8a9ab0]/10 flex items-center justify-center">
-              <ScrollText className="w-4 h-4 text-[#8a9ab0]/60" />
+              <ScrollText className="w-4 h-4 text-xh-yellow/60" />
             </div>
             <div className="flex-1 text-left">
               <p className="text-sm font-medium text-white/80">我的故事</p>

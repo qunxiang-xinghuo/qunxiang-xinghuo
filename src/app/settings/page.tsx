@@ -310,7 +310,7 @@ export default function SettingsPage() {
               <p className="text-sm font-medium text-white/90">修改用户名</p>
               <p className="text-[11px] text-white/30 mt-0.5">{displayName}</p>
             </div>
-            <span className="text-xs text-[#8a9ab0]/60">修改</span>
+            <span className="text-xs text-xh-yellow/60">修改</span>
           </motion.button>
 
           {/* 修改密码 */}
@@ -322,13 +322,13 @@ export default function SettingsPage() {
             className="w-full flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all text-left"
           >
             <div className="w-9 h-9 rounded-lg bg-[#8a9ab0]/10 flex items-center justify-center flex-shrink-0">
-              <Lock className="w-4 h-4 text-[#8a9ab0]" />
+              <Lock className="w-4 h-4 text-xh-yellow" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white/90">修改密码</p>
               <p className="text-[11px] text-white/30 mt-0.5">********</p>
             </div>
-            <span className="text-xs text-[#8a9ab0]/60">修改</span>
+            <span className="text-xs text-xh-yellow/60">修改</span>
           </motion.button>
         </div>
 

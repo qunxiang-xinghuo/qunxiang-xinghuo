@@ -199,14 +199,9 @@ export default function ProfilePage() {
                 onClick={() => router.push(item.path)}
                 className="w-full flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all text-left"
               >
-                {(() => {
-                  const isSparkOrHealing = item.label === '个人火花' || item.label === '个人疗愈';
-                  return (
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isSparkOrHealing ? 'bg-xh-yellow/10' : 'bg-[#8a9ab0]/10'}`}>
-                      <Icon className={`w-4 h-4 ${isSparkOrHealing ? 'text-xh-yellow' : 'text-[#8a9ab0]'}`} />
-                    </div>
-                  );
-                })()}
+                <div className="w-9 h-9 rounded-lg bg-xh-yellow/10 flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-4 h-4 text-xh-yellow" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white/90">{item.label}</p>
                   <p className="text-[11px] text-white/30 mt-0.5">{item.desc}</p>
