@@ -2001,3 +2001,60 @@ npx tsx prisma/seed.ts
 | v8.3b | 2026-04-29 | ✅ 通过 | 80/80 |
 
 ---
+
+
+---
+
+## v8.5 邀请机制紧急修复 — 问题记录
+
+> 修复日期：2026-04-29
+> 状态：✅ 已修复，构建通过 81/81
+
+### 问题31：邀请机制完全失效
+
+**现象**：
+- 用户A创建邀请房间后，用户B无法通过邀请码加入
+- 用户B输入邀请码后页面报错或白屏
+- 已登录用户和 guest 用户均受影响
+
+**根因分析**：
+
+| 子问题 | 根因 | 涉及文件 |
+|--------|------|----------|
+| Guest 用户 403 | room 页面 `fetch(/api/rooms/${roomId})` 未携带 `x-guest-id`，导致权限检查失败 | `room/[id]/page.tsx` |
+| 邀请码纯数字 | 6位纯数字邀请码易被暴力枚举，安全性低 | `api/rooms/invite/route.ts` |
+| Join API 事务不稳定 | SQLite 交互式事务在并发时可能死锁 | `api/rooms/join/route.ts` |
+| 前端无错误映射 | 所有错误统一显示"加入房间失败"，用户无法定位问题 | `duo-match/page.tsx` |
+| 输入框过滤过严 | `replace(/\D/g, '')` 只接受数字，新字母数字码无法输入 | `duo-match/page.tsx` |
+
+**修复方案**：
+
+1. **room 页面 fetch 添加 `x-guest-id`**
+   - `GET /api/rooms/${roomId}`、`POST /api/rooms/${roomId}/messages`、`POST /api/rooms/${roomId}/finish` 均补充 header
+
+2. **邀请码升级为大写字母数字混合**
+   - 字符集：`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`（去除易混淆字符 0O1I）
+   - 仍保持 6 位长度
+
+3. **Join API 移除交互式事务**
+   - 改为顺序查询+创建，SQLite 单写入无需事务包裹
+   - 新增 5 项血型匹配：
+     - 400：邀请码格式不正确（正则校验 `^[A-Z0-9]{6}$`）
+     - 404：邀请码无效或房间已过期
+     - 403：房间已满（actor >= 2）
+     - 409：自己邀请自己 / 已在房间中
+     - 410：对白已结束
+
+4. **前端输入框增强**
+   - 自动去空格 + 转大写 + 仅保留字母数字
+   - 错误状态码映射为中文提示
+
+**修复文件**：
+- `src/app/room/[id]/page.tsx`
+- `src/app/api/rooms/invite/route.ts`
+- `src/app/api/rooms/join/route.ts`
+- `src/app/duo-match/page.tsx`
+
+**构建验证**：✅ 81/81 页面
+
+---

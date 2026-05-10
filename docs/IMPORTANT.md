@@ -1264,3 +1264,39 @@ pm2 restart all
 | v8.3b | 2026-04-29 | ✅ | 80/80 |
 
 ---
+
+
+---
+
+## v8.5 邀请机制修复 — 部署记录
+
+> 更新：2026-04-29
+
+### 修复文件清单
+
+| 修复项 | 文件 | 说明 |
+|--------|------|------|
+| room 页面 x-guest-id | `src/app/room/[id]/page.tsx` | 3 处 fetch 补充 header |
+| 邀请码升级 | `src/app/api/rooms/invite/route.ts` | 大写字母数字混合，去除 0O1I |
+| Join API 加固 | `src/app/api/rooms/join/route.ts` | 移除事务、5 项血型匹配 |
+| 前端输入增强 | `src/app/duo-match/page.tsx` | 自动大写、错误映射 |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 验证方法
+
+1. **用户A创建邀请**：duo-match → 跟好友匹配 → 进入房间 → 确认邀请码显示
+2. **用户B加入**：duo-match → 进入邀请房间 → 输入邀请码 → 确认跳转房间
+3. **自己邀请自己**：输入自己的邀请码 → 应提示"这是你自己的房间"
+4. **无效邀请码**：输入不存在的码 → 应提示"邀请码无效或房间已过期"
+
+---

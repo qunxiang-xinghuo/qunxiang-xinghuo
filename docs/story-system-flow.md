@@ -1000,3 +1000,54 @@ prisma/seed.ts
 
 > 文档位置：`docs/story-system-flow.md`  
 > 最后更新：2026-04-29 v8.3b 流程图补充完成 ✅
+
+
+#### 邀请房间流程（修复后）
+
+```
+链路A：生成邀请码（邀请者）
+/duo-match
+    鈹?    鈹斺攢鈹€ 点击"跟好友匹配"
+            鈹斺攢鈹€ saveIdentityAndGo('invite')
+                    鈹斺攢鈹€ /duo-waiting?mode=invite
+                            鈹斺攢鈹€ createInviteRoomAndEnter()
+                                    鈹斺攢鈹€ POST /api/rooms/invite
+                                            鈹斺攢鈹€ generateInviteCode() 鈹€ 6位大写字母数字混合
+                                                    鈹斺攢鈹€ db.room.create({ type: 'invite_duet', status: 'active', inviteCode })
+                                                            鈹斺攢鈹€ db.roomParticipant.create({ role: 'actor', userId })
+                                                                    鈹斺攢鈹€ router.push(/room/${roomId})
+                                                                            鈹斺攢鈹€ room 页面显示 inviteCode 等待好友
+
+链路B：通过邀请码加入（被邀者）
+/duo-match
+    鈹?    鈹斺攢鈹€ 点击"进入邀请房间"
+            鈹斺攢鈹€ 输入6位邀请码（自动大写去空格）
+                    鈹斺攢鈹€ 点击"进入"
+                            鈹斺攢鈹€ POST /api/rooms/join
+                                    鈹斺攢鈹€ 血型匹配① 格式校验 /^[A-Z0-9]{6}$/ 鈹€ 400
+                                            鈹斺攢鈹€ 血型匹配② 查找房间 鈹€ 404 不存在
+                                                    鈹斺攢鈹€ 血型匹配③ 房间已关闭 鈹€ 410
+                                                            鈹斺攢鈹€ 血型匹配④ 房间已满(actor>=2) 鈹€ 403
+                                                                    鈹斺攢鈹€ 血型匹配⑤ 自己邀请自己 鈹€ 409
+                                                                            鈹斺攢鈹€ 血型匹配⑥ 已在房间中 鈹€ 200 直接送入
+                                                                                    鈹斺攢鈹€ db.user.upsert() + db.roomParticipant.create()
+                                                                                            鈹斺攢鈹€ router.push(/room/${roomId})
+```
+
+#### room 页面请求头修复
+
+```
+/room/:roomId
+    鈹?    鈹斺攢鈹€ fetch(/api/rooms/${roomId})
+            鈹斺攢鈹€ 修复前：无 x-guest-id 鈹€ guest 用户 403
+                    鈹斺攢鈹€ 修复后：headers: { 'x-guest-id': userId } 鈹€ 正常访问
+            鈹斺攢鈹€ fetch(/api/rooms/${roomId}/messages) POST
+                    鈹斺攢鈹€ 修复后：补充 x-guest-id
+            鈹斺攢鈹€ fetch(/api/rooms/${roomId}/finish) POST
+                    鈹斺攢鈹€ 修复后：补充 x-guest-id
+```
+
+---
+
+> 文档位置：`docs/story-system-flow.md`  
+> 最后更新：2026-04-29 v8.5 邀请机制修复完成 ✅
