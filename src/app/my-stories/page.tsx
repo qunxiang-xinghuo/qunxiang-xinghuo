@@ -28,11 +28,11 @@ type TabType = 'participated' | 'created';
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   draft: { label: '草稿', color: 'text-white/40', icon: Clock4 },
-  pending_review: { label: '审核中', color: 'text-[#e2b04a]', icon: AlertCircle },
+  pending_review: { label: '审核中', color: 'text-[#8a9ab0]', icon: AlertCircle },
   approved: { label: '已通过', color: 'text-[#00b894]', icon: CheckCircle2 },
   rejected: { label: '未通过', color: 'text-red-400', icon: XCircle },
   recruiting: { label: '招募中', color: 'text-[#74b9ff]', icon: Users },
-  ongoing: { label: '进行中', color: 'text-[#e2b04a]', icon: MessageCircle },
+  ongoing: { label: '进行中', color: 'text-[#8a9ab0]', icon: MessageCircle },
   completed: { label: '已完结', color: 'text-white/40', icon: CheckCircle2 },
   open: { label: '开放中', color: 'text-[#74b9ff]', icon: Eye },
   closed: { label: '已关闭', color: 'text-white/40', icon: XCircle },
@@ -138,7 +138,7 @@ function MyStoriesContent() {
                 onClick={() => handleTabChange(t.key)}
                 className={`flex items-center gap-1.5 text-sm font-medium transition-colors pb-1 border-b-2 ${
                   tab === t.key
-                    ? 'text-[#e2b04a] border-[#e2b04a]'
+                    ? 'text-[#8a9ab0] border-[#8a9ab0]'
                     : 'text-white/30 border-transparent hover:text-white/50'
                 }`}
               >
@@ -155,16 +155,16 @@ function MyStoriesContent() {
             initial={mounted ? { opacity: 0, y: 8 } : false}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => router.push('/story/create')}
-            className="w-full flex items-center gap-3 p-3 mb-4 rounded-xl bg-[#e2b04a]/10 border border-[#e2b04a]/20 text-left hover:bg-[#e2b04a]/15 active:scale-[0.99] transition-all"
+            className="w-full flex items-center gap-3 p-3 mb-4 rounded-xl bg-[#8a9ab0]/10 border border-[#8a9ab0]/20 text-left hover:bg-[#8a9ab0]/15 active:scale-[0.99] transition-all"
           >
-            <div className="w-9 h-9 rounded-lg bg-[#e2b04a]/15 flex items-center justify-center">
-              <PlusCircle className="w-4 h-4 text-[#e2b04a]" />
+            <div className="w-9 h-9 rounded-lg bg-[#8a9ab0]/15 flex items-center justify-center">
+              <PlusCircle className="w-4 h-4 text-[#8a9ab0]" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-[#e2b04a]">发起新故事</p>
-              <p className="text-[11px] text-[#e2b04a]/50">创建一个场景，设定角色，等待审核</p>
+              <p className="text-sm font-medium text-[#8a9ab0]">发起新故事</p>
+              <p className="text-[11px] text-[#8a9ab0]/50">创建一个场景，设定角色，等待审核</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#e2b04a]/30" />
+            <ChevronRight className="w-4 h-4 text-[#8a9ab0]/30" />
           </motion.button>
         )}
 
@@ -231,10 +231,10 @@ function MyStoriesContent() {
                           {story.roleCount} 角色
                         </span>
                         {tab === 'participated' && story.myRole && (
-                          <span className="text-[10px] text-[#e2b04a]/40">扮演 {story.myRole}</span>
+                          <span className="text-[10px] text-[#8a9ab0]/40">扮演 {story.myRole}</span>
                         )}
                         {tab === 'created' && story.hotScore > 0 && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-[#e2b04a]/40">
+                          <span className="flex items-center gap-0.5 text-[10px] text-[#8a9ab0]/40">
                             <Eye className="w-3 h-3" />
                             {story.hotScore}
                           </span>
@@ -244,7 +244,7 @@ function MyStoriesContent() {
                       {(story.status === 'draft' || story.status === 'pending_review') && tab === 'created' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); router.push(`/story/create?edit=${story.id}`); }}
-                          className="mt-2 flex items-center gap-1 text-[10px] text-[#e2b04a]/50 hover:text-[#e2b04a] transition-colors"
+                          className="mt-2 flex items-center gap-1 text-[10px] text-[#8a9ab0]/50 hover:text-[#8a9ab0] transition-colors"
                         >
                           <Pencil className="w-3 h-3" />
                           继续编辑
@@ -281,7 +281,7 @@ export default function MyStoriesPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col min-h-full page-gradient items-center justify-center">
-        <div className="w-8 h-8 border-2 border-slate-700 border-t-[#e2b04a] rounded-full animate-spin mb-4" />
+        <div className="w-8 h-8 border-2 border-slate-700 border-t-[#8a9ab0] rounded-full animate-spin mb-4" />
         <p className="text-sm text-white/30">加载中...</p>
       </div>
     }>

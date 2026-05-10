@@ -615,7 +615,7 @@ export default function RoomPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient">
-        <div className="w-8 h-8 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin mb-4" />
+        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin mb-4" />
         <p className="text-sm text-white/30">正在加载对白室...</p>
       </div>
     );
@@ -643,9 +643,9 @@ export default function RoomPage() {
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-[#e2b04a] break-words leading-tight">{displayTitle}</h1>
+            <h1 className="text-lg font-bold text-[#8a9ab0] break-words leading-tight">{displayTitle}</h1>
             {displaySubtitle && (
-              <p className="text-[11px] text-[#e2b04a]/50 break-words mt-0.5 leading-relaxed">{displaySubtitle}</p>
+              <p className="text-[11px] text-[#8a9ab0]/50 break-words mt-0.5 leading-relaxed">{displaySubtitle}</p>
             )}
             {/* v8.1-fix: 人机模式不显示重复的身份提示，故事模式才显示 */}
             {myRoleName && story && (
@@ -738,14 +738,14 @@ export default function RoomPage() {
           {openingInfoCollapsed ? (
             <button
               onClick={() => setOpeningInfoCollapsed(false)}
-              className="flex items-center gap-1.5 text-[11px] text-[#e2b04a]/40 hover:text-[#e2b04a]/60 transition-colors"
+              className="flex items-center gap-1.5 text-[11px] text-[#8a9ab0]/40 hover:text-[#8a9ab0]/60 transition-colors"
             >
               <span>📋</span>
               <span>查看开场信息</span>
             </button>
           ) : (
             <p className="text-[11px] text-white/40 leading-relaxed">
-              <span className="text-[#e2b04a]/50 font-medium">你的开场信息：</span>
+              <span className="text-[#8a9ab0]/50 font-medium">你的开场信息：</span>
               {myOpeningInfo}
             </p>
           )}
@@ -754,10 +754,10 @@ export default function RoomPage() {
 
       {/* AI 催化提示 */}
       {showAiPrompt && aiPrompt && (
-        <div className="shrink-0 px-4 py-2 border-b border-[#e2b04a]/10 bg-[#e2b04a]/5">
+        <div className="shrink-0 px-4 py-2 border-b border-[#8a9ab0]/10 bg-[#8a9ab0]/5">
           <div className="flex items-start gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#e2b04a]/60 mt-0.5 shrink-0" />
-            <p className="text-[11px] text-[#e2b04a]/70 leading-relaxed">{aiPrompt}</p>
+            <Sparkles className="w-3.5 h-3.5 text-[#8a9ab0]/60 mt-0.5 shrink-0" />
+            <p className="text-[11px] text-[#8a9ab0]/70 leading-relaxed">{aiPrompt}</p>
           </div>
         </div>
       )}
@@ -777,11 +777,11 @@ export default function RoomPage() {
             <div key={msg.id} className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               <div className={`flex-shrink-0 ${isMe ? 'ml-2' : 'mr-2'}`}>
                 {isMe ? (
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/20 flex items-center justify-center overflow-hidden">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#8a9ab0]/20 to-[#6c7c90]/20 border border-[#8a9ab0]/20 flex items-center justify-center overflow-hidden">
                     {authUser?.avatar ? (
                       <Image src={authUser.avatar} alt="" width={32} height={32} className="object-cover" />
                     ) : (
-                      <span className="text-xs text-[#e2b04a] font-bold">{myRoleName.charAt(0) || '我'}</span>
+                      <span className="text-xs text-[#8a9ab0] font-bold">{myRoleName.charAt(0) || '我'}</span>
                     )}
                   </div>
                 ) : (
@@ -798,16 +798,16 @@ export default function RoomPage() {
                 <span className="text-[10px] text-white/25 mb-1 px-1">{isMe ? (myRoleName || '我') : (msg.identity || '对方')}</span>
                 <div className={`relative px-3.5 py-2.5 rounded-2xl ${
                   msg.isSpark
-                    ? 'bg-[#e2b04a]/8 border-2 border-[#e2b04a]/40 text-white/90 shadow-[0_0_12px_rgba(226,176,74,0.12)]'
+                    ? 'bg-[#8a9ab0]/8 border-2 border-[#8a9ab0]/40 text-white/90 shadow-[0_0_12px_rgba(226,176,74,0.12)]'
                     : isMe
-                      ? 'bg-[#e2b04a]/15 border border-[#e2b04a]/20 text-white/90 rounded-br-md'
+                      ? 'bg-[#8a9ab0]/15 border border-[#8a9ab0]/20 text-white/90 rounded-br-md'
                       : 'bg-white/[0.05] border border-white/5 text-white/80 rounded-bl-md'
                 }`}>
                   <p className="text-sm leading-relaxed">{msg.content}</p>
                   <div className={`flex items-center gap-2 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    <span className={`text-[10px] ${isMe ? 'text-[#e2b04a]/30' : 'text-white/20'}`}>{msg.timestamp}</span>
+                    <span className={`text-[10px] ${isMe ? 'text-[#8a9ab0]/30' : 'text-white/20'}`}>{msg.timestamp}</span>
                     {msg.isSpark && (
-                      <span className="text-[10px] text-[#e2b04a] flex items-center gap-0.5">
+                      <span className="text-[10px] text-[#8a9ab0] flex items-center gap-0.5">
                         <Flame className="w-3 h-3" />火花
                       </span>
                     )}
@@ -895,20 +895,20 @@ export default function RoomPage() {
             <span className="text-[10px] text-white/15">{messages.length} 条消息</span>
           </div>
           <div className="flex items-end gap-2">
-            <div className="flex-1 bg-white/[0.05] rounded-2xl border border-white/10 px-4 py-2.5 focus-within:border-[#e2b04a]/30 transition-colors">
+            <div className="flex-1 bg-white/[0.05] rounded-2xl border border-white/10 px-4 py-2.5 focus-within:border-[#8a9ab0]/30 transition-colors">
               <input
                 ref={inputRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="写下你的反应..."
-                className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#e2b04a]"
+                className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#8a9ab0]"
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               />
             </div>
             <button
               onClick={handleSend}
               disabled={!inputValue.trim()}
-              className="p-3 rounded-full transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 hover:bg-[#e2b04a]/25 active:scale-95"
+              className="p-3 rounded-full transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 active:scale-95"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -926,10 +926,10 @@ export default function RoomPage() {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-[#e2b04a]/20 max-w-[340px] w-full"
+            className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-[#8a9ab0]/20 max-w-[340px] w-full"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-[#e2b04a]">谜底揭晓</h3>
+              <h3 className="text-base font-bold text-[#8a9ab0]">谜底揭晓</h3>
               <button onClick={() => setShowTruth(false)} className="p-1 rounded hover:bg-white/5">
                 <X className="w-4 h-4 text-white/30" />
               </button>
@@ -942,7 +942,7 @@ export default function RoomPage() {
                 { label: '合', text: story.act4Truth },
               ].map((item) => (
                 <div key={item.label} className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
-                  <span className="text-xs font-bold text-[#e2b04a]/60">{item.label}</span>
+                  <span className="text-xs font-bold text-[#8a9ab0]/60">{item.label}</span>
                   <p className="text-xs text-white/50 leading-relaxed mt-1">{item.text}</p>
                 </div>
               ))}
@@ -950,7 +950,7 @@ export default function RoomPage() {
             <div className="space-y-2">
               <button
                 onClick={() => setShowTruth(false)}
-                className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/25"
+                className="w-full py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/25"
               >
                 知道了
               </button>
@@ -991,7 +991,7 @@ export default function RoomPage() {
             <div className="space-y-2.5">
               <button
                 onClick={() => { setShowInviteTimeoutModal(false); router.push('/solo-match'); }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/30 text-[#e2b04a] text-sm font-medium hover:from-[#e2b04a]/30 hover:to-orange-500/30 active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#8a9ab0]/20 to-[#6c7c90]/20 border border-[#8a9ab0]/30 text-[#8a9ab0] text-sm font-medium hover:from-[#8a9ab0]/30 hover:to-xh-gold-dark/30 active:scale-[0.97] transition-all flex items-center justify-center gap-2"
               >
                 <Bot className="w-4 h-4" />
                 与刘看山对话
@@ -1033,18 +1033,18 @@ export default function RoomPage() {
       {isReadonly && story && (
         <div className="shrink-0 px-4 py-3 border-b border-white/5">
           <div className="flex items-center gap-2 mb-2">
-            <Lock className="w-3.5 h-3.5 text-[#e2b04a]/40" />
-            <span className="text-xs text-[#e2b04a]/40">完整故事线</span>
+            <Lock className="w-3.5 h-3.5 text-[#8a9ab0]/40" />
+            <span className="text-xs text-[#8a9ab0]/40">完整故事线</span>
             <button
               onClick={() => setShowTruth(true)}
-              className="text-[10px] text-[#e2b04a]/60 underline ml-auto"
+              className="text-[10px] text-[#8a9ab0]/60 underline ml-auto"
             >
               查看谜底
             </button>
           </div>
           <div className="grid grid-cols-4 gap-1.5">
             {[
-              { label: '起', text: story.act1Reveal, color: 'text-[#e2b04a]/50', delay: 0 },
+              { label: '起', text: story.act1Reveal, color: 'text-[#8a9ab0]/50', delay: 0 },
               { label: '承', text: story.act2Reveal, color: 'text-white/30', delay: 0.1 },
               { label: '转', text: story.act3Reveal, color: 'text-white/30', delay: 0.2 },
               { label: '合', text: story.act4Truth, color: 'text-white/30', delay: 0.3 },
@@ -1073,20 +1073,20 @@ export default function RoomPage() {
               <span className="text-xs text-white/40">评论 ({comments.length})</span>
             </div>
             <div className="flex items-end gap-2 mb-3">
-              <div className="flex-1 bg-white/[0.05] rounded-xl border border-white/10 px-3 py-2 focus-within:border-[#e2b04a]/30 transition-colors">
+              <div className="flex-1 bg-white/[0.05] rounded-xl border border-white/10 px-3 py-2 focus-within:border-[#8a9ab0]/30 transition-colors">
                 <input
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
                   placeholder="写下你的看法..."
                   maxLength={500}
-                  className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#e2b04a]"
+                  className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#8a9ab0]"
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
                 />
               </div>
               <button
                 onClick={submitComment}
                 disabled={!commentInput.trim() || commentLoading}
-                className="p-2.5 rounded-xl transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 hover:bg-[#e2b04a]/25 active:scale-95"
+                className="p-2.5 rounded-xl transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 active:scale-95"
               >
                 {commentLoading ? (
                   <span className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin block" />
@@ -1098,7 +1098,7 @@ export default function RoomPage() {
             <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
               {commentsLoading ? (
                 <div className="flex justify-center py-2">
-                  <span className="w-4 h-4 border border-white/20 border-t-[#e2b04a] rounded-full animate-spin" />
+                  <span className="w-4 h-4 border border-white/20 border-t-[#8a9ab0] rounded-full animate-spin" />
                 </div>
               ) : comments.length === 0 ? (
                 <p className="text-[11px] text-white/15 text-center py-2">还没有评论，来抢沙发吧</p>

@@ -48,7 +48,7 @@ const CLUSTER_CENTERS: Record<string, { x: number; y: number }> = {
 const CATEGORY_COLORS: Record<string, string> = {
   medical: '#e74c3c',
   legal: '#3498db',
-  workplace: '#f39c12',
+  workplace: '#a09070',
   life: '#2ecc71',
   education: '#9b59b6',
   tech: '#1abc9c',
@@ -256,7 +256,7 @@ export function getDifficultyLabel(difficulty: string): string {
 export function getDifficultyColor(difficulty: string): string {
   const colors: Record<string, string> = {
     easy: '#2ecc71',
-    medium: '#f39c12',
+    medium: '#a09070',
     hard: '#e74c3c',
   };
   return colors[difficulty] || '#95a5a6';

@@ -216,7 +216,7 @@ export default function SpectateRoomPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient">
-        <div className="w-8 h-8 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin mb-4" />
+        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin mb-4" />
         <p className="text-sm text-white/30">正在进入围观房间...</p>
       </div>
     );
@@ -258,8 +258,8 @@ export default function SpectateRoomPage() {
                 在线
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-[10px] text-amber-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span className="flex items-center gap-1 text-[10px] text-xh-gold">
+                <span className="w-1.5 h-1.5 rounded-full bg-xh-gold" />
                 连接中
               </span>
             )}
@@ -302,7 +302,7 @@ export default function SpectateRoomPage() {
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[10px] text-white/20">{msg.timestamp}</span>
                     {msg.isSpark && (
-                      <span className="text-[10px] text-[#e2b04a] flex items-center gap-0.5">
+                      <span className="text-[10px] text-[#8a9ab0] flex items-center gap-0.5">
                         <Flame className="w-3 h-3" />
                         火花
                       </span>
@@ -328,7 +328,7 @@ export default function SpectateRoomPage() {
                   initial={mounted ? { opacity: 1, y: 0, scale: 1 } : false}
                   animate={{ opacity: 0, y: -60 - i * 15, scale: 1.5, x: (i - 2) * 20 }}
                   transition={{ duration: 1.2, delay: i * 0.08 }}
-                  className="absolute text-[#e2b04a] text-xl"
+                  className="absolute text-[#8a9ab0] text-xl"
                 >
                   ❤️
                 </motion.div>
@@ -373,7 +373,7 @@ export default function SpectateRoomPage() {
                 if (mountedRef.current) setLikeCount((prev) => Math.max(0, prev - 1));
               }, 1500);
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#e2b04a]/10 text-[#e2b04a] border border-[#e2b04a]/20 text-xs hover:bg-[#e2b04a]/20 active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#8a9ab0]/10 text-[#8a9ab0] border border-[#8a9ab0]/20 text-xs hover:bg-[#8a9ab0]/20 active:scale-95 transition-all"
           >
             <Flame className="w-3.5 h-3.5" />
             点赞

@@ -127,7 +127,7 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
                       >
                         {option.type === 'zhihu' && <User className="w-4 h-4 text-xh-gold" />}
                         {option.type === 'ai' && <Sparkles className="w-4 h-4 text-violet-400" />}
-                        {option.type === 'custom' && <Edit3 className="w-4 h-4 text-orange-400" />}
+                        {option.type === 'custom' && <Edit3 className="w-4 h-4 text-xh-gold" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -197,7 +197,7 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
                               value={customLabel}
                               onChange={(e) => setCustomLabel(e.target.value)}
                               placeholder="例如：急诊科护士、北漂创业者..."
-                              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-orange-400/50"
+                              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-xh-gold/50"
                               maxLength={20}
                               onClick={(e) => e.stopPropagation()}
                             />
@@ -214,7 +214,7 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
               <button
                 onClick={handleConfirm}
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {loading ? '正在进入...' : '确认身份，开始匹配'}
               </button>

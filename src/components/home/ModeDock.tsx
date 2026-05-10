@@ -12,8 +12,8 @@ const modes = [
     desc: '真实反应记录',
     icon: User,
     color: '#ff9f43',
-    bgColor: 'from-orange-500/20 to-rose-500/20',
-    borderColor: 'border-orange-500/30',
+    bgColor: 'from-xh-gold/20 to-xh-gold-dark/20',
+    borderColor: 'border-xh-gold/30',
     available: true,
   },
   {
@@ -86,7 +86,7 @@ export default function ModeDock() {
     <div className="w-full">
       {/* 标题 */}
       <div className="flex items-center gap-2 px-4 mb-3">
-        <div className="w-1 h-4 rounded-full bg-gradient-to-b from-orange-400 to-rose-400" />
+        <div className="w-1 h-4 rounded-full bg-gradient-to-b from-xh-gold-light to-xh-gold" />
         <span className="text-xs text-white/50">选择创作模式</span>
       </div>
 

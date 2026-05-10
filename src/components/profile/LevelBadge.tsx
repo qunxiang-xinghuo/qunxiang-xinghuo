@@ -12,7 +12,7 @@ interface LevelBadgeProps {
 export default function LevelBadge({ level, currentExp, nextLevelExp, className = '' }: LevelBadgeProps) {
   const progress = Math.min(100, Math.max(0, (currentExp / nextLevelExp) * 100));
   return (
-    <div className={`bg-gradient-to-br from-xh-gold/20 to-orange-500/20 rounded-xl p-4 border border-xh-gold/30 ${className}`}>
+    <div className={`bg-gradient-to-br from-xh-gold/20 to-xh-gold-dark/20 rounded-xl p-4 border border-xh-gold/30 ${className}`}>
       <div className="flex items-center justify-between mb-3">
         <div>
           <p className="text-xs text-gray-400 mb-0.5">当前等级</p>
@@ -25,7 +25,7 @@ export default function LevelBadge({ level, currentExp, nextLevelExp, className 
       </div>
       <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-xh-gold to-orange-500 transition-all duration-500"
+          className="h-full bg-gradient-to-r from-xh-gold to-xh-gold-dark transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>

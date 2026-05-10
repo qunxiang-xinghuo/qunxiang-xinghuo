@@ -65,7 +65,7 @@ export default function BubbleDetailModal({ brainholeId, onClose }: BubbleDetail
   };
 
   const difficultyColors: Record<string, string> = {
-    hard: '#e74c3c', medium: '#f39c12', easy: '#2ecc71',
+    hard: '#e74c3c', medium: '#a09070', easy: '#2ecc71',
   };
 
   return (
@@ -186,7 +186,7 @@ export default function BubbleDetailModal({ brainholeId, onClose }: BubbleDetail
 
                 <button
                   onClick={handleStart}
-                  className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-orange-500 to-rose-500 text-white hover:opacity-90 transition-opacity"
+                  className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white hover:opacity-90 transition-opacity"
                 >
                   <Sparkles className="w-4 h-4" />
                   选择此脑洞

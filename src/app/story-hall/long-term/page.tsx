@@ -29,8 +29,8 @@ export default function LongTermPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#e2b04a]/20 to-orange-500/10 border border-[#e2b04a]/25 flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-[#e2b04a]" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#8a9ab0]/20 to-[#6c7c90]/10 border border-[#8a9ab0]/25 flex items-center justify-center mx-auto mb-4">
+            <BookOpen className="w-8 h-8 text-[#8a9ab0]" />
           </div>
           <h1 className="text-lg font-bold text-white/90 mb-1">长期连载</h1>
           <p className="text-sm text-white/40">从玩故事到写故事</p>
@@ -60,7 +60,7 @@ export default function LongTermPage() {
           className="mb-6"
         >
           <p className="text-sm text-white/60 mb-3 font-medium flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#e2b04a]/60" />
+            <Sparkles className="w-3.5 h-3.5 text-[#8a9ab0]/60" />
             怎样运作
           </p>
           <div className="space-y-3">
@@ -82,7 +82,7 @@ export default function LongTermPage() {
               },
             ].map((item, i) => (
               <div key={i} className="flex gap-3">
-                <span className="text-sm text-[#e2b04a]/50 font-bold shrink-0 mt-0.5">{item.step}</span>
+                <span className="text-sm text-[#8a9ab0]/50 font-bold shrink-0 mt-0.5">{item.step}</span>
                 <div>
                   <p className="text-sm text-white/70 font-medium">{item.title}</p>
                   <p className="text-xs text-white/30 leading-relaxed mt-0.5">{item.desc}</p>
@@ -100,7 +100,7 @@ export default function LongTermPage() {
           className="mb-8"
         >
           <p className="text-sm text-white/60 mb-3 font-medium flex items-center gap-1.5">
-            <Lightbulb className="w-3.5 h-3.5 text-[#e2b04a]/60" />
+            <Lightbulb className="w-3.5 h-3.5 text-[#8a9ab0]/60" />
             为什么这个故事模式有未来
           </p>
           <div className="space-y-3">
@@ -123,7 +123,7 @@ export default function LongTermPage() {
               },
             ].map((item, i) => (
               <div key={i} className="flex gap-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#e2b04a]/40 shrink-0 mt-2" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#8a9ab0]/40 shrink-0 mt-2" />
                 <div>
                   <p className="text-sm text-white/60 font-medium">{item.title}</p>
                   <p className="text-xs text-white/30 leading-relaxed mt-0.5">{item.desc}</p>

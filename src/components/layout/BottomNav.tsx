@@ -56,18 +56,18 @@ export default function BottomNav() {
               {isActive && (
                 <motion.div
                   layoutId="bottomNavIndicator"
-                  className="absolute -top-0.5 w-8 h-0.5 bg-[#e2b04a] rounded-full"
+                  className="absolute -top-0.5 w-8 h-0.5 bg-[#8a9ab0] rounded-full"
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
               <Icon
                 className={`w-5 h-5 mb-0.5 transition-colors ${
-                  isActive ? 'text-[#e2b04a]' : 'text-white/30'
+                  isActive ? 'text-[#8a9ab0]' : 'text-white/30'
                 }`}
               />
               <span
                 className={`text-[10px] transition-colors ${
-                  isActive ? 'text-[#e2b04a] font-medium' : 'text-white/30'
+                  isActive ? 'text-[#8a9ab0] font-medium' : 'text-white/30'
                 }`}
               >
                 {item.label}

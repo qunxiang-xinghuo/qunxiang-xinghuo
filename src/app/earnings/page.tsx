@@ -49,18 +49,18 @@ export default function EarningsPage() {
         <motion.div
           initial={mounted ? { opacity: 0, y: 10 } : false}
           animate={{ opacity: 1, y: 0 }}
-          className="p-5 rounded-2xl bg-gradient-to-br from-[#e2b04a]/10 to-orange-500/5 border border-[#e2b04a]/15 mb-5"
+          className="p-5 rounded-2xl bg-gradient-to-br from-[#8a9ab0]/10 to-[#6c7c90]/5 border border-[#8a9ab0]/15 mb-5"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Coins className="w-5 h-5 text-[#e2b04a]" />
+              <Coins className="w-5 h-5 text-[#8a9ab0]" />
               <span className="text-sm text-white/60">盐粒余额</span>
             </div>
             <span className="text-[11px] text-white/25">1 盐粒 = ¥0.01</span>
           </div>
-          <p className="text-3xl font-bold text-[#e2b04a] mb-1">
+          <p className="text-3xl font-bold text-[#8a9ab0] mb-1">
             {total.toLocaleString()}
-            <span className="text-sm font-normal text-[#e2b04a]/60 ml-1">盐粒</span>
+            <span className="text-sm font-normal text-[#8a9ab0]/60 ml-1">盐粒</span>
           </p>
           <p className="text-xs text-white/30 mb-4">≈ ¥{(total / 100).toFixed(2)}</p>
           <div className="flex items-center gap-4 pt-3 border-t border-white/5">
@@ -76,7 +76,7 @@ export default function EarningsPage() {
           <button
             onClick={() => { /* 提现功能即将开放 */ }}
             disabled
-            className="w-full mt-4 py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/20 hover:bg-[#e2b04a]/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
+            className="w-full mt-4 py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/20 hover:bg-[#8a9ab0]/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
           >
             <Wallet className="w-4 h-4" />
             提现
@@ -91,7 +91,7 @@ export default function EarningsPage() {
               onClick={() => setActiveTab(tab)}
               className={`text-sm font-medium transition-colors pb-1 border-b-2 ${
                 activeTab === tab
-                  ? 'text-[#e2b04a] border-[#e2b04a]'
+                  ? 'text-[#8a9ab0] border-[#8a9ab0]'
                   : 'text-white/30 border-transparent hover:text-white/50'
               }`}
             >
@@ -112,8 +112,8 @@ export default function EarningsPage() {
                 transition={{ delay: idx * 0.05 }}
                 className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5"
               >
-                <div className="w-9 h-9 rounded-lg bg-[#e2b04a]/10 flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-[#e2b04a]/60" />
+                <div className="w-9 h-9 rounded-lg bg-[#8a9ab0]/10 flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-4 h-4 text-[#8a9ab0]/60" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white/80 truncate">{item.source}</p>
@@ -123,13 +123,13 @@ export default function EarningsPage() {
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                       item.status === 'settled'
                         ? 'bg-emerald-500/10 text-emerald-400'
-                        : 'bg-amber-500/10 text-amber-400'
+                        : 'bg-xh-gold/10 text-xh-gold'
                     }`}>
                       {item.status === 'settled' ? '已结算' : '待结算'}
                     </span>
                   </div>
                 </div>
-                <span className="text-sm font-medium text-[#e2b04a]">+{item.amount}</span>
+                <span className="text-sm font-medium text-[#8a9ab0]">+{item.amount}</span>
               </motion.div>
             );
           })}

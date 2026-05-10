@@ -6,6 +6,7 @@
  */
 
 import { getIO } from '@/server/io'
+import { getPersona } from '@/lib/ai/personas'
 
 export interface Spark {
   content: string
@@ -103,22 +104,7 @@ export async function generateBranchOptions(
 ): Promise<BranchGenerateResponse> {
   const { messages, storyTitle } = request
 
-  const systemPrompt = `你是一位资深编剧和故事分析师，擅长从群像对白的剧情中挖掘潜在的剧情分支。
-
-你的任务：
-1. 分析当前对白的发展方向和角色的动机冲突
-2. 提出一个剧情分支点（一个关键的选择时刻）
-3. 生成3个不同的分支选项，每个选项代表故事可能走向的不同方向
-
-输出格式必须是严格的 JSON：
-{
-  "content": "剧情分支描述（50字以内，说明当前面临的选择）",
-  "options": [
-    { "text": "选项A标题（10字以内）", "description": "选项A的简要描述（30字以内）" },
-    { "text": "选项B标题（10字以内）", "description": "选项B的简要描述（30字以内）" },
-    { "text": "选项C标题（10字以内）", "description": "选项C的简要描述（30字以内）" }
-  ]
-}`
+  const systemPrompt = getPersona('dungeon_master').systemPrompt
 
   const userPrompt = `故事标题：${storyTitle || '未命名故事'}
 
@@ -177,24 +163,7 @@ export async function weaveStory(
 ): Promise<StoryWeaveResponse> {
   const { sparks, format, tone, length = 'medium' } = request
 
-  const systemPrompt = `你是一位专业的小说编剧和创意写作教练，擅长将真实对话片段串联成引人入胜的群像故事。
-
-你的任务：
-1. 根据提供的对话"火花"，创作一个完整、连贯的故事
-2. 保持每个角色的职业真实性和语言风格
-3. 根据指定的格式（剧本/叙事/对白）输出
-4. 分析每个角色的性格特征和在故事中的作用
-
-输出格式必须是严格的 JSON，格式如下：
-{
-  "title": "故事标题",
-  "story": "完整的故事内容",
-  "summary": "一句话总结",
-  "characterProfiles": [
-    { "identity": "角色身份", "traits": ["特征1", "特征2"], "role": "在故事中的角色定位" }
-  ],
-  "estimatedReadingTime": 预计阅读时间（分钟，整数）
-}`
+  const systemPrompt = getPersona('story_weaver').systemPrompt
 
   const sparksText = sparks
     .map(
@@ -321,14 +290,7 @@ export async function analyzeStoryStructure(
   characterArcs: string[]
   suggestedFormat: string
 }> {
-  const systemPrompt = `你是一位故事结构分析专家。请分析提供的对话片段，指出潜在的情节发展点和角色成长弧线。
-
-输出格式必须是严格的 JSON：
-{
-  "potentialPlotPoints": ["情节点1", "情节点2", "情节点3"],
-  "characterArcs": ["角色弧线1", "角色弧线2"],
-  "suggestedFormat": "推荐的输出格式(script/narrative/dialogue)"
-}`
+  const systemPrompt = getPersona('summarizer').systemPrompt
 
   const sparksText = sparks
     .map((s) => `- ${s.identity}: "${s.content}" [情感：${s.emotionTags?.join('、') || '未标注'}]`)

@@ -36,11 +36,11 @@ const aiIdentities = [
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   medical: { bg: 'bg-red-500/10', border: 'border-red-500/20', text: 'text-red-400' },
   legal: { bg: 'bg-blue-500/10', border: 'border-blue-500/20', text: 'text-blue-400' },
-  workplace: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400' },
+  workplace: { bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', text: 'text-xh-gold' },
   life: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400' },
   education: { bg: 'bg-purple-500/10', border: 'border-purple-500/20', text: 'text-purple-400' },
   tech: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400' },
-  emergency: { bg: 'bg-orange-500/10', border: 'border-orange-500/20', text: 'text-orange-400' },
+  emergency: { bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', text: 'text-xh-gold' },
   general: { bg: 'bg-slate-500/10', border: 'border-slate-500/20', text: 'text-slate-400' },
 };
 
@@ -260,7 +260,7 @@ function MultiMatchContent() {
                     }`}>
                       {option.type === 'zhihu' && <User className="w-4 h-4 text-xh-gold" />}
                       {option.type === 'ai' && <Sparkles className="w-4 h-4 text-violet-400" />}
-                      {option.type === 'custom' && <Edit3 className="w-4 h-4 text-orange-400" />}
+                      {option.type === 'custom' && <Edit3 className="w-4 h-4 text-xh-gold" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -305,7 +305,7 @@ function MultiMatchContent() {
                         <div>
                           <input type="text" value={customLabel} onChange={(e) => setCustomLabel(e.target.value)}
                             placeholder="例如：急诊科护士、北漂创业者..."
-                            className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-orange-400/40"
+                            className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-gold/40"
                             maxLength={20} onClick={(e) => e.stopPropagation()} />
                           <p className="text-[10px] text-slate-600 mt-1 text-right">{customLabel.length}/20</p>
                         </div>
@@ -325,7 +325,7 @@ function MultiMatchContent() {
                 取消
               </button>
               <button onClick={handleConfirm} disabled={isMatching}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50">
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50">
                 {isMatching ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (

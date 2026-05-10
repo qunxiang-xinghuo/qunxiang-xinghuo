@@ -123,7 +123,7 @@ export default function ProfilePage() {
   if (pageLoading) {
     return (
       <div className="flex items-center justify-center h-screen page-gradient">
-        <div className="w-6 h-6 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin" />
       </div>
     );
   }
@@ -131,8 +131,8 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center h-screen page-gradient px-6">
-        <div className="w-16 h-16 rounded-2xl bg-[#e2b04a]/10 flex items-center justify-center mb-4">
-          <Sparkles className="w-8 h-8 text-[#e2b04a]" />
+        <div className="w-16 h-16 rounded-2xl bg-[#8a9ab0]/10 flex items-center justify-center mb-4">
+          <Sparkles className="w-8 h-8 text-[#8a9ab0]" />
         </div>
         <h2 className="text-lg font-bold text-white/90 mb-2">
           {loadError ? '加载失败' : '请先登录'}
@@ -142,7 +142,7 @@ export default function ProfilePage() {
         </p>
         <button
           onClick={() => loadError ? loadUserFromApi() : router.push('/login')}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#e2b04a] to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
+          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#8a9ab0] to-[#6c7c90] text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
           {loadError ? '重试' : '去登录'}
         </button>
@@ -199,8 +199,8 @@ export default function ProfilePage() {
                 onClick={() => router.push(item.path)}
                 className="w-full flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all text-left"
               >
-                <div className="w-9 h-9 rounded-lg bg-[#e2b04a]/10 flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-[#e2b04a]" />
+                <div className="w-9 h-9 rounded-lg bg-[#8a9ab0]/10 flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-4 h-4 text-[#8a9ab0]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white/90">{item.label}</p>

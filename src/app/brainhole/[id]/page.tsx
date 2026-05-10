@@ -118,7 +118,7 @@ export default function BrainholeDetailPage() {
           <div className="mb-8">
             <div className="relative inline-block">
               <div className="w-32 h-32 rounded-full border-2 border-dashed border-xh-gold/30 absolute inset-0 animate-spin" style={{ animationDuration: '20s' }}></div>
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-xh-gold/20 to-orange-500/20 flex items-center justify-center border border-xh-gold/30 animate-pulse-glow">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-xh-gold/20 to-xh-gold-dark/20 flex items-center justify-center border border-xh-gold/30 animate-pulse-glow">
                 <Sparkles className="w-12 h-12 text-xh-gold" />
               </div>
             </div>

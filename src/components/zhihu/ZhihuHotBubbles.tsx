@@ -37,7 +37,7 @@ export default function ZhihuHotBubbles() {
     return (
       <div className="w-full px-4 py-3">
         <div className="flex items-center gap-2 mb-3">
-          <Flame className="w-4 h-4 text-orange-400" />
+          <Flame className="w-4 h-4 text-xh-gold" />
           <span className="text-xs text-gray-400">知乎热榜加载中...</span>
         </div>
         <div className="flex gap-2 overflow-x-auto">
@@ -59,8 +59,8 @@ export default function ZhihuHotBubbles() {
   return (
     <div className="w-full px-4 py-3">
       <div className="flex items-center gap-2 mb-3">
-        <Flame className="w-4 h-4 text-orange-400" />
-        <span className="text-xs font-medium text-orange-300">
+        <Flame className="w-4 h-4 text-xh-gold" />
+        <span className="text-xs font-medium text-xh-gold-light">
           知乎热榜 · 实时脑洞素材
         </span>
       </div>
@@ -79,18 +79,18 @@ export default function ZhihuHotBubbles() {
             whileTap={{ scale: 0.95 }}
           >
             <div className="relative h-16 px-4 rounded-full flex items-center gap-2
-              bg-gradient-to-r from-orange-500/10 to-red-500/10
-              border border-orange-500/20 backdrop-blur-sm
-              hover:border-orange-400/40 transition-colors
+              bg-gradient-to-r from-xh-gold/10 to-xh-gold-dark/10
+              border border-xh-gold/20 backdrop-blur-sm
+              hover:border-xh-gold/40 transition-colors
               max-w-[200px]"
             >
-              <span className="text-xs font-bold text-orange-400 w-4 flex-shrink-0">
+              <span className="text-xs font-bold text-xh-gold w-4 flex-shrink-0">
                 {idx + 1}
               </span>
               <span className="text-xs text-gray-200 truncate leading-tight">
                 {item.Title}
               </span>
-              <ExternalLink className="w-3 h-3 text-orange-400/60 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ExternalLink className="w-3 h-3 text-xh-gold/60 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </motion.a>
         ))}

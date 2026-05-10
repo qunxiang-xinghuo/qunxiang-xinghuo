@@ -242,7 +242,7 @@ export default function StoryRoomPage() {
       <TopBar title={story?.title || '对白室'} showBack onBack={() => router.back()} />
 
       {/* 脑洞信息区 - 金色剧场风格 */}
-      <div className="shrink-0 px-4 py-3 bg-gradient-to-r from-xh-gold/8 to-orange-500/5 border-b border-xh-gold/15">
+      <div className="shrink-0 px-4 py-3 bg-gradient-to-r from-xh-gold/8 to-xh-gold-dark/5 border-b border-xh-gold/15">
         <div className="flex items-start gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-xh-gold/15 flex items-center justify-center shrink-0 border border-xh-gold/20">
             <Sparkles className="w-4 h-4 text-xh-gold" />
@@ -259,8 +259,8 @@ export default function StoryRoomPage() {
       {/* 状态栏 - 更精致 */}
       <div className="shrink-0 flex items-center justify-between px-4 py-2.5 bg-slate-800/30 border-b border-slate-700/20">
         <div className="flex items-center gap-2.5">
-          <span className={`flex items-center gap-1 text-[10px] ${isConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
+          <span className={`flex items-center gap-1 text-[10px] ${isConnected ? 'text-emerald-400' : 'text-xh-gold'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-xh-gold'} animate-pulse`} />
             <Users className="w-3 h-3" />
             {isConnected ? '实时连接' : '连接中...'}
           </span>

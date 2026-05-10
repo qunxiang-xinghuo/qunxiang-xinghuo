@@ -1,5 +1,51 @@
 # 群像·星火 — 重要操作记录
 
+## v9.0a 全局配色优化 — 部署教程
+
+> 最后更新：2026-04-29
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 配色系统重构 | `src/app/globals.css` | 核心品牌色 `#e2b04a` → `#8a9ab0`，`xh-accent` 新增定义 `#7a8aa0` |
+| 硬编码颜色替换 | 50+ 文件 | `#e2b04a` / `#f39c12` / `#f59e0b` / `#f5d78c` / `#b88a3d` 全部替换 |
+| Tailwind 类名替换 | 50+ 文件 | `orange-*` / `amber-*` / `yellow-*` → `xh-gold` / `xh-gold-dark` 体系 |
+| 未定义变量修复 | `globals.css` | 补全 `--color-xh-accent: #7a8aa0`（此前大量代码引用但无定义） |
+| 设置页颜色数组 | `settings/page.tsx` | `bg-orange-500` / `bg-amber-500` → `bg-xh-gold` / `bg-slate-500` |
+| 种子数据颜色 | `prisma/seed.ts` | `workplace` 分类色 `#f39c12` → `#a09070` |
+
+### 配色映射表
+
+| 旧色值 | 旧用途 | 新色值 | 新用途 |
+|--------|--------|--------|--------|
+| `#e2b04a` | 主强调色（橙金） | `#8a9ab0` | 主强调色（柔和蓝灰） |
+| `#f5d78c` | 亮色 | `#a8b8c8` | 亮色（浅蓝灰） |
+| `#b88a3d` | 暗色 | `#6c7c90` | 暗色（深蓝灰） |
+| `#f39c12` | 中等难度/警告 | `#a09070` | 低饱和暖棕 |
+| `#f59e0b` | 警告色 | `#a09070` | 低饱和暖棕 |
+| `orange-500` | Tailwind 渐变 | `xh-gold` / `xh-gold-dark` | 统一渐变 |
+| `amber-400` | 状态标签 | `xh-gold` | 蓝灰标签 |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 部署验证记录
+
+| 时间 | 版本 | 构建 | 页面数 | PM2 |
+|------|------|------|--------|-----|
+| 2026-04-29 | v9.0a | ✅ | 81/81 | ✅ online |
+
+---
+
 ## v8.3c + v8.5 热修复 — 部署教程
 
 > 最后更新：2026-04-29
@@ -749,6 +795,51 @@ curl -I -s -o /dev/null -w "%{http_code}" http://localhost/login
 # 检查3：守卫拦截
 curl -I -s -o /dev/null -w "%{http_code}" --cookie "" http://localhost/home
 # 预期：307
+```
+
+---
+
+## v8.6 刘看山11角色Prompt深度优化 — 部署记录
+
+> 更新：2026-04-29
+> 状态：✅ 已完成，构建通过 81/81 页面
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 统一内核约束 | `src/lib/ai/personas.ts` | 所有角色共享 CORE_KERNEL：禁止套话、强化角色感 |
+| 11角色深度优化 | `src/lib/ai/personas.ts` | companion/dungeon_master/story_fallback/assistant_director/catalyst/healer/reviewer/summarizer/knowledge_feeder/mediator/creative |
+| 角色兜底回复 | `src/lib/ai/fallback-replies.ts` | 新建，11角色各5-10条兜底回复，非通用套话 |
+| 移除内联prompt | `src/app/api/ai/chat/route.ts` | 移除 LIUKANSHAN_SYSTEM_PROMPT，统一从 personas.ts 获取 |
+| 按角色兜底 | `src/app/api/ai/chat/route.ts` | fallback 改为 getFallbackReply(personaKey) |
+| 兼容旧key | `src/app/api/ai/chat/route.ts` | liukanshan + assistant_director 均注入话题/上下文 |
+
+### 11角色快速对照
+
+| 角色key | 使用场景 | 说话方式 |
+|---------|---------|---------|
+| companion | AI房间人机对话 | 像朋友聊天，围绕话题 |
+| dungeon_master | 短故事守夜人 | 神秘、暗示、不剧透 |
+| story_fallback | 匹配超时兜底 | 完全融入角色 |
+| assistant_director | 长故事辅助导演 | 建议性、尊重导演决定权 |
+| catalyst | 双人对话催化 | 旁观者提问，点到为止 |
+| healer | 个人疗愈 | 倾听、不评判、不急于给建议 |
+| reviewer | 内容审核 | 只查脏话和人身攻击，宽松 |
+| summarizer | 火花总结 | 一句话提炼精彩瞬间 |
+| knowledge_feeder | 后台知识投喂 | 高质量信息密集型 |
+| mediator | 多人调解 | 中立、确保每个人声音被听到 |
+| creative | 创作辅助 | 提供选项，不给标准答案 |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
 ```
 
 ---

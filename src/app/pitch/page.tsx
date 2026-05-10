@@ -62,7 +62,7 @@ function S3() {
         {[
           { icon: Users, title: '双人对白', desc: '8大职业身份，31个冲突情境，10秒匹配陌生人实时对白', color: 'from-blue-400 to-blue-600' },
           { icon: BookOpen, title: '故事系统', desc: '5个太仓解密故事，起承转合四幕结构，你只知道自己的身份', color: 'from-emerald-400 to-emerald-600' },
-          { icon: Zap, title: 'AI 催化', desc: 'DeepSeek + 知乎直答双引擎，对话每6-10条自动推动剧情', color: 'from-amber-400 to-amber-600' },
+          { icon: Zap, title: 'AI 催化', desc: 'DeepSeek + 知乎直答双引擎，对话每6-10条自动推动剧情', color: 'from-xh-gold to-xh-gold-dark' },
         ].map((c, idx) => (
           <motion.div key={idx} initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: idx * 0.15 }} className="p-6 rounded-2xl bg-white border border-slate-100 shadow-sm flex flex-col">
             <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${c.color} flex items-center justify-center mb-4 shadow-lg`}>

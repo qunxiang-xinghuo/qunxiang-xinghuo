@@ -30,7 +30,7 @@ const features = [
     icon: Zap,
     title: "AI 双引擎催化",
     desc: "DeepSeek 故事串联 + 知乎直答双模型驱动，三级降级策略确保可用",
-    color: "from-amber-500 to-orange-500",
+    color: "from-xh-gold to-xh-gold-dark",
   },
   {
     icon: MessageCircle,
@@ -72,13 +72,13 @@ export default function RoadshowPage() {
           transition={{ duration: 0.8 }}
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6">
-            <Sparkles className="w-4 h-4 text-[#e2b04a]" />
+            <Sparkles className="w-4 h-4 text-[#8a9ab0]" />
             <span className="text-sm text-gray-300">群像·星火 v4.0 路演版</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             每一个认真生活的人
             <br />
-            <span className="text-[#e2b04a]">都能成为故事的一部分</span>
+            <span className="text-[#8a9ab0]">都能成为故事的一部分</span>
           </h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-8">
             基于真实职业经验的多人协同创作平台。让不同职业背景的普通人，
@@ -87,7 +87,7 @@ export default function RoadshowPage() {
           <Link
             href="/home"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full
-              bg-gradient-to-r from-[#e2b04a] to-[#f0c050]
+              bg-gradient-to-r from-[#8a9ab0] to-[#f0c050]
               text-[#0f0f23] font-semibold
               hover:scale-105 transition-transform"
           >
@@ -108,7 +108,7 @@ export default function RoadshowPage() {
               key={idx}
               className="p-4 rounded-2xl bg-white/5 border border-white/10"
             >
-              <div className="text-3xl font-bold text-[#e2b04a] mb-1">
+              <div className="text-3xl font-bold text-[#8a9ab0] mb-1">
                 {stat.value}
               </div>
               <div className="text-xs text-gray-400">{stat.label}</div>
@@ -200,8 +200,8 @@ export default function RoadshowPage() {
           <Link
             href="/home"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full
-              border border-[#e2b04a]/40 text-[#e2b04a]
-              hover:bg-[#e2b04a]/10 transition-colors"
+              border border-[#8a9ab0]/40 text-[#8a9ab0]
+              hover:bg-[#8a9ab0]/10 transition-colors"
           >
             进入泡泡云
             <ArrowRight className="w-4 h-4" />

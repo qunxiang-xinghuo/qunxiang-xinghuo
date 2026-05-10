@@ -241,7 +241,7 @@ function DuoWaitingContent() {
             <motion.div
               animate={{ scale: [1, 2.5], opacity: [0.3, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
-              className="absolute w-40 h-40 rounded-full border border-[#e2b04a]/20"
+              className="absolute w-40 h-40 rounded-full border border-[#8a9ab0]/20"
             />
           </div>
         )}
@@ -265,7 +265,7 @@ function DuoWaitingContent() {
               className="text-center w-full relative z-10"
             >
               <div className="mb-4">
-                <div className="w-8 h-8 border-2 border-slate-700 border-t-[#e2b04a] rounded-full animate-spin mx-auto mb-3" />
+                <div className="w-8 h-8 border-2 border-slate-700 border-t-[#8a9ab0] rounded-full animate-spin mx-auto mb-3" />
                 <p className="text-base font-medium text-slate-100">正在创建邀请房间...</p>
                 <p className="text-xs text-slate-500 mt-1">请稍等</p>
               </div>
@@ -308,8 +308,8 @@ function DuoWaitingContent() {
                   className="mb-4 mx-auto max-w-xs card-elevated p-3"
                 >
                   <div className="flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3 h-3 text-[#e2b04a]" />
-                    <span className="text-[10px] text-[#e2b04a]/70 font-medium">对撞话题</span>
+                    <Sparkles className="w-3 h-3 text-[#8a9ab0]" />
+                    <span className="text-[10px] text-[#8a9ab0]/70 font-medium">对撞话题</span>
                   </div>
                   <p className="text-sm text-slate-100 font-medium truncate">{brainholeInfo.title}</p>
                 </motion.div>
@@ -317,17 +317,17 @@ function DuoWaitingContent() {
 
               <div className="mb-4">
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <Radar className="w-4 h-4 text-[#e2b04a] animate-pulse" />
+                  <Radar className="w-4 h-4 text-[#8a9ab0] animate-pulse" />
                   <p className="text-base font-medium text-slate-100">正在匹配中...</p>
                 </div>
                 <p className="text-xs text-slate-500">刘看山正在帮你找人</p>
               </div>
 
               <div className="mb-4">
-                <p className="text-4xl font-bold text-[#e2b04a] mb-2">{remaining}</p>
+                <p className="text-4xl font-bold text-[#8a9ab0] mb-2">{remaining}</p>
                 <div className="w-64 h-2 bg-slate-700/30 rounded-full overflow-hidden mx-auto">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-[#e2b04a] to-orange-400"
+                    className="h-full rounded-full bg-gradient-to-r from-[#8a9ab0] to-[#a8b8c8]"
                     style={{ width: `${((MATCH_TIMEOUT - remaining) / MATCH_TIMEOUT) * 100}%` }}
                     transition={{ duration: 0.3 }}
                   />
@@ -370,8 +370,8 @@ function DuoWaitingContent() {
                   className="mb-4 mx-auto max-w-xs card-elevated p-3"
                 >
                   <div className="flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3 h-3 text-[#e2b04a]" />
-                    <span className="text-[10px] text-[#e2b04a]/70 font-medium">对撞话题</span>
+                    <Sparkles className="w-3 h-3 text-[#8a9ab0]" />
+                    <span className="text-[10px] text-[#8a9ab0]/70 font-medium">对撞话题</span>
                   </div>
                   <p className="text-sm text-slate-100 font-medium truncate">{brainholeInfo.title}</p>
                 </motion.div>
@@ -384,10 +384,10 @@ function DuoWaitingContent() {
                 <button
                   onClick={createAiRoom}
                   disabled={creatingAiRoom}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#e2b04a]/20 to-orange-500/20 border border-[#e2b04a]/30 text-[#e2b04a] text-sm font-medium hover:from-[#e2b04a]/30 hover:to-orange-500/30 active:scale-[0.97] transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#8a9ab0]/20 to-[#6c7c90]/20 border border-[#8a9ab0]/30 text-[#8a9ab0] text-sm font-medium hover:from-[#8a9ab0]/30 hover:to-xh-gold-dark/30 active:scale-[0.97] transition-all"
                 >
                   {creatingAiRoom ? (
-                    <div className="w-4 h-4 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin" />
                   ) : (
                     <>
                       <Bot className="w-4 h-4" />
@@ -440,7 +440,7 @@ function DuoWaitingContent() {
         <div className="flex items-center justify-center gap-4 text-[10px] text-slate-600">
           <span>已等待 {elapsedTime} 秒</span>
           <span>|</span>
-          <span className="text-[#e2b04a]/60">v6.0 双人对白</span>
+          <span className="text-[#8a9ab0]/60">v6.0 双人对白</span>
         </div>
       </div>
     </div>
@@ -451,7 +451,7 @@ export default function DuoWaitingPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col h-full page-gradient items-center justify-center">
-        <div className="w-8 h-8 border-2 border-slate-700 border-t-[#e2b04a] rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-slate-700 border-t-[#8a9ab0] rounded-full animate-spin" />
       </div>
     }>
       <DuoWaitingContent />

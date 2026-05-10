@@ -80,8 +80,8 @@ export default function HomePage() {
       title: '双人对白模式',
       desc: '与陌生人配对，即兴对话',
       icon: MessageCircle,
-      color: 'from-[#e2b04a]/20 to-orange-500/20',
-      iconColor: 'text-[#e2b04a]',
+      color: 'from-[#8a9ab0]/20 to-[#6c7c90]/20',
+      iconColor: 'text-[#8a9ab0]',
       path: '/duo-match',
       comingSoon: false,
     },
@@ -115,7 +115,7 @@ export default function HomePage() {
         {/* v8.1: TOP3 极简文字列表 */}
         <section className="mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-[#e2b04a]" />
+            <TrendingUp className="w-4 h-4 text-[#8a9ab0]" />
             <h2 className="text-sm font-semibold text-white/90">今日最热火花</h2>
             <span className="text-[10px] text-white/20 ml-1">已完结对白精选</span>
           </div>
@@ -130,7 +130,7 @@ export default function HomePage() {
               <p className="text-sm text-white/30 mb-2">加载失败</p>
               <button
                 onClick={() => { setLoading(true); setLoadError(false); window.location.reload(); }}
-                className="text-xs text-[#e2b04a]/50 hover:text-[#e2b04a]/70 transition-colors"
+                className="text-xs text-[#8a9ab0]/50 hover:text-[#8a9ab0]/70 transition-colors"
               >
                 点击刷新
               </button>
@@ -157,7 +157,7 @@ export default function HomePage() {
                 >
                   {/* 排名 */}
                   <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                    idx === 0 ? 'bg-[#e2b04a]/20 text-[#e2b04a]' :
+                    idx === 0 ? 'bg-[#8a9ab0]/20 text-[#8a9ab0]' :
                     idx === 1 ? 'bg-white/10 text-white/60' :
                     'bg-[#74b9ff]/10 text-[#74b9ff]/70'
                   }`}>
@@ -169,7 +169,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[11px] text-white/30">{item.identityPair}</span>
                       <span className="text-[10px] text-white/15">·</span>
-                      <span className="flex items-center gap-0.5 text-[11px] text-[#e2b04a]/40">
+                      <span className="flex items-center gap-0.5 text-[11px] text-[#8a9ab0]/40">
                         <Flame className="w-3 h-3" />
                         {item.sparkCount}
                       </span>
@@ -190,8 +190,8 @@ export default function HomePage() {
             onClick={() => router.push('/my-stories')}
             className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.99] transition-all"
           >
-            <div className="w-9 h-9 rounded-lg bg-[#e2b04a]/10 flex items-center justify-center">
-              <ScrollText className="w-4 h-4 text-[#e2b04a]/60" />
+            <div className="w-9 h-9 rounded-lg bg-[#8a9ab0]/10 flex items-center justify-center">
+              <ScrollText className="w-4 h-4 text-[#8a9ab0]/60" />
             </div>
             <div className="flex-1 text-left">
               <p className="text-sm font-medium text-white/80">我的故事</p>
@@ -274,12 +274,12 @@ export default function HomePage() {
             className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-white/10 max-w-[280px] w-full text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <Flame className="w-8 h-8 text-[#e2b04a]/60 mx-auto mb-3" />
+            <Flame className="w-8 h-8 text-[#8a9ab0]/60 mx-auto mb-3" />
             <p className="text-base font-semibold text-white/90 mb-1">{showComingSoon}</p>
             <p className="text-sm text-white/40 mb-4">即将开放，敬请期待</p>
             <button
               onClick={() => setShowComingSoon(null)}
-              className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/20"
+              className="w-full py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/20"
             >
               知道了
             </button>

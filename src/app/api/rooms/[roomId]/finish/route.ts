@@ -15,7 +15,8 @@ export async function POST(
 ) {
   try {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    const guestId = request.headers.get("x-guest-id");
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
     if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }

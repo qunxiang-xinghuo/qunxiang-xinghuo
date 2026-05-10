@@ -106,7 +106,7 @@ export default function SoloMatchPage() {
             <button
               onClick={() => setMode('preset')}
               className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
-                mode === 'preset' ? 'bg-[#e2b04a]/20 text-[#e2b04a] border border-[#e2b04a]/30' : 'bg-white/[0.03] text-white/30 border border-white/5'
+                mode === 'preset' ? 'bg-[#8a9ab0]/20 text-[#8a9ab0] border border-[#8a9ab0]/30' : 'bg-white/[0.03] text-white/30 border border-white/5'
               }`}
             >
               预设身份
@@ -114,7 +114,7 @@ export default function SoloMatchPage() {
             <button
               onClick={() => setMode('random')}
               className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
-                mode === 'random' ? 'bg-[#e2b04a]/20 text-[#e2b04a] border border-[#e2b04a]/30' : 'bg-white/[0.03] text-white/30 border border-white/5'
+                mode === 'random' ? 'bg-[#8a9ab0]/20 text-[#8a9ab0] border border-[#8a9ab0]/30' : 'bg-white/[0.03] text-white/30 border border-white/5'
               }`}
             >
               <Shuffle className="w-3 h-3 inline mr-1" />
@@ -123,7 +123,7 @@ export default function SoloMatchPage() {
             <button
               onClick={() => setMode('custom')}
               className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
-                mode === 'custom' ? 'bg-[#e2b04a]/20 text-[#e2b04a] border border-[#e2b04a]/30' : 'bg-white/[0.03] text-white/30 border border-white/5'
+                mode === 'custom' ? 'bg-[#8a9ab0]/20 text-[#8a9ab0] border border-[#8a9ab0]/30' : 'bg-white/[0.03] text-white/30 border border-white/5'
               }`}
             >
               <User className="w-3 h-3 inline mr-1" />
@@ -140,11 +140,11 @@ export default function SoloMatchPage() {
                   onClick={() => setSelectedIdentity(item.label)}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     selectedIdentity === item.label
-                      ? 'bg-[#e2b04a]/10 border-[#e2b04a]/30'
+                      ? 'bg-[#8a9ab0]/10 border-[#8a9ab0]/30'
                       : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06]'
                   }`}
                 >
-                  <p className={`text-sm font-medium ${selectedIdentity === item.label ? 'text-[#e2b04a]' : 'text-white/80'}`}>
+                  <p className={`text-sm font-medium ${selectedIdentity === item.label ? 'text-[#8a9ab0]' : 'text-white/80'}`}>
                     {item.label}
                   </p>
                   <p className="text-[11px] text-white/30 mt-0.5">{item.desc}</p>
@@ -169,7 +169,7 @@ export default function SoloMatchPage() {
 
           {mode === 'random' && (
             <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 text-center">
-              <Sparkles className="w-5 h-5 text-[#e2b04a]/60 mx-auto mb-2" />
+              <Sparkles className="w-5 h-5 text-[#8a9ab0]/60 mx-auto mb-2" />
               <p className="text-sm text-white/60">刘看山会为你随机分配一个身份</p>
             </div>
           )}
@@ -188,7 +188,7 @@ export default function SoloMatchPage() {
         <button
           onClick={handleStart}
           disabled={creating || (mode === 'preset' && !selectedIdentity) || (mode === 'custom' && !customIdentity.trim())}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#e2b04a] to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#8a9ab0] to-[#6c7c90] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
         >
           {creating ? (
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

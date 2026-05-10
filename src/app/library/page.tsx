@@ -136,7 +136,7 @@ export default function SparksPage() {
                 onClick={() => setCategory(cat.key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
                   active
-                    ? 'bg-[#e2b04a]/15 text-[#e2b04a] border-[#e2b04a]/25'
+                    ? 'bg-[#8a9ab0]/15 text-[#8a9ab0] border-[#8a9ab0]/25'
                     : 'bg-white/[0.03] text-white/40 border-white/5 hover:bg-white/[0.06] hover:text-white/60'
                 }`}
               >
@@ -158,7 +158,7 @@ export default function SparksPage() {
               onClick={() => setTab(t.key as TabType)}
               className={`text-sm font-medium transition-colors pb-1 border-b-2 ${
                 tab === t.key
-                  ? 'text-[#e2b04a] border-[#e2b04a]'
+                  ? 'text-[#8a9ab0] border-[#8a9ab0]'
                   : 'text-white/30 border-transparent hover:text-white/50'
               }`}
             >
@@ -194,7 +194,7 @@ export default function SparksPage() {
                   transition={{ delay: idx * 0.05 }}
                   className="p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
                 >
-                  <p className="text-[11px] text-[#e2b04a]/50 mb-1.5 font-medium">{spark.brainholeTitle}</p>
+                  <p className="text-[11px] text-[#8a9ab0]/50 mb-1.5 font-medium">{spark.brainholeTitle}</p>
 
                   <div onClick={() => handleSparkClick(spark)} className="cursor-pointer">
                     <p className="text-sm text-white/80 leading-relaxed line-clamp-3">{spark.content}</p>
@@ -224,7 +224,7 @@ export default function SparksPage() {
                           disabled={likeLoadingId === spark.id}
                           className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-all active:scale-95 ${
                             spark.likedByMe
-                              ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25'
+                              ? 'bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25'
                               : 'bg-white/[0.03] text-white/30 border border-white/5 hover:bg-white/[0.06] hover:text-white/50'
                           }`}
                         >

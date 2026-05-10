@@ -105,7 +105,7 @@ export default function BubblePreview({ bubble, position, onClose, onCollect }: 
               <span>{bubble.reactionCount} 条反应</span>
             </div>
             <div className="flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-orange-400" />
+              <Flame className="w-3.5 h-3.5 text-xh-gold" />
               <span>热度 {Math.round(bubble.hotScore)}</span>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function BubblePreview({ bubble, position, onClose, onCollect }: 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleEnter}
-              className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2"
+              className="flex-1 bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2"
             >
               <ArrowRight className="w-4 h-4" />
               立即进入

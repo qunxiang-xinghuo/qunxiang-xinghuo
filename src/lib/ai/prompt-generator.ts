@@ -11,6 +11,7 @@
  */
 
 import { getFallbackPrompt } from './fallback-prompts'
+import { getPersona } from '@/lib/ai/personas'
 
 interface DeepSeekMessage {
   role: string
@@ -69,13 +70,7 @@ export async function generatePromptFromContext(
   tags?: string[]
 ): Promise<string> {
   try {
-    const systemPrompt = `你是一位专业的创意写作教练和群像剧导演。
-你的任务是根据提供的"脑洞"情境，生成一个简短、尖锐、能激发用户创作欲望的引导问题（催化提示）。
-要求：
-1. 问题要直接指向情境的核心矛盾或冲突
-2. 语言要有画面感和代入感
-3. 问题长度控制在30字以内
-4. 只输出问题本身，不要任何解释`
+    const systemPrompt = getPersona('knowledge_feeder').systemPrompt
 
     const userPrompt = `请为以下脑洞生成一个催化提示：
 

@@ -201,7 +201,7 @@ export default function StoryDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient">
-        <div className="w-8 h-8 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin mb-4" />
+        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin mb-4" />
         <p className="text-sm text-white/30">正在加载故事...</p>
       </div>
     );
@@ -224,8 +224,8 @@ export default function StoryDetailPage() {
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold text-[#e2b04a] truncate">{story.title}</h1>
-            <p className="text-[11px] text-[#e2b04a]/50 truncate">{story.eraBackground}</p>
+            <h1 className="text-base font-bold text-[#8a9ab0] truncate">{story.title}</h1>
+            <p className="text-[11px] text-[#8a9ab0]/50 truncate">{story.eraBackground}</p>
           </div>
         </div>
       </div>
@@ -239,7 +239,7 @@ export default function StoryDetailPage() {
         {/* 起（公开可见） */}
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-bold text-[#e2b04a]/60">起</span>
+            <span className="text-xs font-bold text-[#8a9ab0]/60">起</span>
             <span className="text-[10px] text-white/20">已解锁</span>
           </div>
           <p className="text-sm text-white/60 leading-relaxed">{story.act1Reveal}</p>
@@ -260,13 +260,13 @@ export default function StoryDetailPage() {
         <div className="mt-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#e2b04a]" />
+              <Users className="w-4 h-4 text-[#8a9ab0]" />
               <h2 className="text-sm font-semibold text-white/90">选择角色</h2>
             </div>
             <button
               onClick={handleRandomRole}
               disabled={joinLoading || story.roles.every((r) => !!r.claimedBy)}
-              className="flex items-center gap-1 text-[11px] text-[#e2b04a]/50 hover:text-[#e2b04a]/70 transition-colors disabled:opacity-20"
+              className="flex items-center gap-1 text-[11px] text-[#8a9ab0]/50 hover:text-[#8a9ab0]/70 transition-colors disabled:opacity-20"
             >
               <Dices className="w-3.5 h-3.5" />
               <span>随机分配</span>
@@ -282,7 +282,7 @@ export default function StoryDetailPage() {
                     !!role.claimedBy
                       ? 'bg-white/[0.02] border-white/5 opacity-40'
                       : selectedRoleId === role.id
-                        ? 'bg-[#e2b04a]/10 border-[#e2b04a]/30'
+                        ? 'bg-[#8a9ab0]/10 border-[#8a9ab0]/30'
                         : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06]'
                   }`}
                 >
@@ -331,7 +331,7 @@ export default function StoryDetailPage() {
       {joinLoading && (
         <div className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm flex items-center justify-center">
           <div className="flex flex-col items-center">
-            <div className="w-10 h-10 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin mb-3" />
+            <div className="w-10 h-10 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin mb-3" />
             <p className="text-sm text-white/50">正在进入故事...</p>
           </div>
         </div>
@@ -355,12 +355,12 @@ export default function StoryDetailPage() {
             >
               {matchResult === 'waiting' && (
                 <>
-                  <div className="w-12 h-12 rounded-full border-2 border-[#e2b04a]/30 border-t-[#e2b04a] animate-spin mx-auto mb-4" />
+                  <div className="w-12 h-12 rounded-full border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] animate-spin mx-auto mb-4" />
                   <p className="text-base font-semibold text-white/90 mb-1">正在匹配搭档...</p>
                   <p className="text-sm text-white/40 mb-4">{waitingSeconds} 秒后揭晓</p>
                   <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden mb-4">
                     <div
-                      className="h-full bg-[#e2b04a]/50 rounded-full transition-all duration-1000"
+                      className="h-full bg-[#8a9ab0]/50 rounded-full transition-all duration-1000"
                       style={{ width: `${(waitingSeconds / 10) * 100}%` }}
                     />
                   </div>
@@ -375,12 +375,12 @@ export default function StoryDetailPage() {
 
               {matchResult === 'matched' && (
                 <>
-                  <Sparkles className="w-8 h-8 text-[#e2b04a] mx-auto mb-3" />
+                  <Sparkles className="w-8 h-8 text-[#8a9ab0] mx-auto mb-3" />
                   <p className="text-base font-semibold text-white/90 mb-1">匹配成功！</p>
                   <p className="text-sm text-white/40 mb-4">找到你的对戏搭档了</p>
                   <button
                     onClick={handleEnterRoom}
-                    className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/25 hover:bg-[#e2b04a]/25 transition-colors"
+                    className="w-full py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 transition-colors"
                   >
                     进入对白室
                   </button>
@@ -389,7 +389,7 @@ export default function StoryDetailPage() {
 
               {matchResult === 'timeout' && (
                 <>
-                  <MessageCircle className="w-8 h-8 text-[#e2b04a]/60 mx-auto mb-3" />
+                  <MessageCircle className="w-8 h-8 text-[#8a9ab0]/60 mx-auto mb-3" />
                   <p className="text-base font-semibold text-white/90 mb-1">暂时没有找到真人搭档</p>
                   <p className="text-sm text-white/40 mb-1">要让刘看山陪你玩吗？</p>
                   <p className="text-xs text-white/25 mb-4">刘看山会扮演另一个角色，和你一起解开这个故事。</p>
@@ -397,7 +397,7 @@ export default function StoryDetailPage() {
                     <button
                       onClick={handleJoinAi}
                       disabled={joinLoading}
-                      className="w-full py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm font-medium border border-[#e2b04a]/25 hover:bg-[#e2b04a]/25 transition-colors"
+                      className="w-full py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 transition-colors"
                     >
                       {joinLoading ? '创建中...' : '🦊 和刘看山玩'}
                     </button>

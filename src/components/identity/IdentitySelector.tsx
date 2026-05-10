@@ -36,7 +36,7 @@ const identityOptions: IdentityOption[] = [
     desc: '自定义简短标签，自由表达身份',
     detail: '输入你的专属身份标签',
     badge: '最自由',
-    color: 'from-orange-500 to-rose-500',
+    color: 'from-xh-gold to-xh-gold-dark',
   },
 ];
 

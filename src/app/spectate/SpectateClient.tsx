@@ -96,7 +96,7 @@ export default function SpectatePage() {
   const getRoomTypeColor = (type: string) => {
     switch (type) {
       case 'ai_duet': return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20';
-      case 'duet': return 'bg-[#e2b04a]/15 text-[#e2b04a] border-[#e2b04a]/20';
+      case 'duet': return 'bg-[#8a9ab0]/15 text-[#8a9ab0] border-[#8a9ab0]/20';
       case 'multi': return 'bg-[#74b9ff]/15 text-[#74b9ff] border-[#74b9ff]/20';
       default: return 'bg-white/5 text-white/40 border-white/10';
     }

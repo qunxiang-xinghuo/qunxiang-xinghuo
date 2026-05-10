@@ -46,7 +46,7 @@ export default function TopBar({ title, showBack = false, onBack }: TopBarProps)
         </h2>
       ) : (
         <div className="flex-1 flex items-center justify-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-xh-gold to-orange-500 flex items-center justify-center shadow-lg shadow-xh-gold/20">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-xh-gold to-xh-gold-dark flex items-center justify-center shadow-lg shadow-xh-gold/20">
             <svg className="w-4.5 h-4.5 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z" />
             </svg>

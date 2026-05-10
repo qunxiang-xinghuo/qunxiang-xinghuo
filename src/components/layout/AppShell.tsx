@@ -28,7 +28,7 @@ class ErrorBoundary extends Component<EBProps, EBState> {
           <p className="text-xs text-white/20 mb-4">页面遇到了一点问题，请刷新重试</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] text-sm border border-[#e2b04a]/25"
+            className="px-4 py-2 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm border border-[#8a9ab0]/25"
           >
             刷新页面
           </button>

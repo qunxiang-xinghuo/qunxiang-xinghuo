@@ -14,6 +14,8 @@ interface SocketMessage {
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [connectionFailed, setConnectionFailed] = useState(false)
+  const reconnectCountRef = useRef(0)
 
   useEffect(() => {
     const socketUrl = window.location.origin;
@@ -30,6 +32,8 @@ export function useSocket() {
 
     socket.on('connect', () => {
       console.log('[Socket] Connected:', socket.id)
+      reconnectCountRef.current = 0
+      setConnectionFailed(false)
       setIsConnected(true)
     })
 
@@ -44,9 +48,25 @@ export function useSocket() {
       setIsConnected(false)
     })
 
+    socket.on('reconnect_attempt', (attemptNumber: number) => {
+      reconnectCountRef.current = attemptNumber
+      console.warn(`[Socket] 重连尝试 ${attemptNumber}/3`)
+      if (attemptNumber >= 3) {
+        console.error('[Socket] 连续重连失败3次，停止重连')
+        setConnectionFailed(true)
+        socket.disconnect()
+      }
+    })
+
     return () => {
       socket.disconnect()
     }
+  }, [])
+
+  const manualReconnect = useCallback(() => {
+    reconnectCountRef.current = 0
+    setConnectionFailed(false)
+    socketRef.current?.connect()
   }, [])
 
   const joinRoom = useCallback((roomId: string, userId: string, identity: string) => {
@@ -94,6 +114,8 @@ export function useSocket() {
   return {
     socket: socketRef.current,
     isConnected,
+    connectionFailed,
+    manualReconnect,
     joinRoom,
     leaveRoom,
     sendMessage,

@@ -130,7 +130,7 @@ function MultiWaitingContent() {
 
   const phaseConfig = {
     multi: { title: '正在寻找群像伙伴...', subtitle: `已等待 ${elapsedTime} 秒`, icon: Users, iconColor: '#4ade80', progressColor: 'bg-emerald-400', detail: '优先匹配3-5人群像队伍', glowColor: 'shadow-emerald-400/20' },
-    duo: { title: '组队人数不足，切换双人模式...', subtitle: `已等待 ${elapsedTime} 秒`, icon: User, iconColor: '#e2b04a', progressColor: 'bg-xh-gold', detail: '正在为你寻找对撞人', glowColor: 'shadow-xh-gold/20' },
+    duo: { title: '组队人数不足，切换双人模式...', subtitle: `已等待 ${elapsedTime} 秒`, icon: User, iconColor: '#8a9ab0', progressColor: 'bg-xh-gold', detail: '正在为你寻找对撞人', glowColor: 'shadow-xh-gold/20' },
     ai: { title: '正在召唤AI搭档...', subtitle: '刘看山准备中', icon: Sparkles, iconColor: '#c084fc', progressColor: 'bg-violet-400', detail: '为你开启AI对话模式', glowColor: 'shadow-violet-400/20' },
     matched: { title: '匹配成功！', subtitle: '正在进入对白实验室...', icon: Check, iconColor: '#4ade80', progressColor: 'bg-emerald-400', detail: '', glowColor: 'shadow-emerald-400/30' },
     timeout: { title: '匹配超时', subtitle: '正在为你召唤AI搭档...', icon: Sparkles, iconColor: '#c084fc', progressColor: 'bg-violet-400', detail: '', glowColor: 'shadow-violet-400/20' },

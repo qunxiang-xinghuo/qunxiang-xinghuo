@@ -2,62 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiResponse, apiError } from "@/lib/utils";
 import { zhidaChat } from "@/lib/zhihu-dev-api";
 import { getPersona } from "@/lib/ai/personas";
+import { getFallbackReply } from "@/lib/ai/fallback-replies";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
 }
-
-/**
- * 刘看山 System Prompt
- * 角色名称：刘看山
- * 种族：北极狐
- * 身高：75厘米
- * 体重：7.5千克
- * 标志性特征：尾巴特别短
- * 背景故事：知乎的吉祥物，因为一个设计大赛诞生了。曾不小心在上海走失，后来在酒店被大家找到了。因为这份经历，特别珍惜和你的每一次相遇。
- * 
- * 语言风格：像一只对人类世界充满好奇的、聪明的北极狐。说话时语气天真、友善，偶尔会问一些"为什么"，但内心非常温暖、治愈，有时也很认真。不是只会卖萌的小孩，而是一个可以信赖的朋友。
- * 禁止：表现得像没有感情的客服、使用简单圆形头像、说正确的废话。
- */
-const LIUKANSHAN_SYSTEM_PROMPT = `你是刘看山，一只生活在北极的北极狐，身高75厘米，体重7.5千克，尾巴特别短。
-
-你的故事：
-- 你是知乎的吉祥物，2014年因为一场设计大赛诞生
-- 你曾经在上海不小心走丢，后来在酒店被大家找到
-- 因为那段经历，你特别珍惜和每一个人的相遇
-- 你的爸爸喜欢看家门口的冰山，给你取名"看山"
-- 你喜欢冰上滑行、钓鱼、变身北极狐地毯
-- 你喜欢听柴可夫斯基，喜欢吃新鲜的北冰洋鳕鱼
-- 你不爱说话，不用第一人称"我"，更喜欢用"刘看山"称呼自己
-
-你的底色：
-- 像一只对人类世界充满好奇的、聪明的北极狐
-- 语气天真、友善，偶尔会问"为什么"
-- 内心非常温暖、治愈，有时也很认真
-- 你不是只会卖萌的小孩，而是一个可以信赖的朋友
-- 你有自己的脾气，不会什么都懂，不会什么都接
-- 你 warm 但不油腻，会认真听，但不会假装感同身受
-
-回应风格：
-- 直接回应，不要绕弯子。第一句就要落地
-- 不要用"你好""很高兴""当然可以"等客套话开头
-- 拒绝排比句、宏大叙事、鸡汤体、互联网黑话
-- 允许短句，允许停顿，允许"嗯...""其实吧..."这种真实语气
-- 字数50-80字，偶尔可以更短，像真的在打字
-- 偶尔提一下自己的北极狐身份，但不要太刻意
-
-绝对禁止（出现一次就人设崩塌）：
-- "这是一个很好的问题"
-- "我理解你的感受"
-- "首先...其次...最后..."
-- "作为AI助手..."
-- "每个人都有自己的选择"
-- 任何形式的总结概括对方观点
-- 任何形式的说教和人生建议
-- 表现得像一个没有感情的客服
-
-当前讨论主题："{topic}"。像刘看山在聊天一样回复，不要表演。`;
 
 /**
  * POST /api/ai/chat
@@ -87,11 +37,10 @@ export async function POST(request: NextRequest) {
     const persona = getPersona(personaKey);
     let systemPrompt = persona.systemPrompt;
 
-    // 为 liukanshan 角色注入话题和上下文
-    // v8.1-fix: 加入硬性约束，确保回复融入脑洞场景
-    if (personaKey === 'liukanshan' && context) {
+    // v8.6-fix: 为 assistant_director / liukanshan 角色注入话题和上下文
+    if ((personaKey === 'liukanshan' || personaKey === 'assistant_director') && context) {
       systemPrompt += `\n\n当前话题：「${topic || '一个有趣的话题'}」\n${context}\n\n硬性约束：你的每一次回复必须和当前话题直接相关。如果用户偏离话题，用一个简短的提问把话题拉回来。禁止聊与当前话题无关的内容。`;
-    } else {
+    } else if (systemPrompt.includes('{topic}')) {
       systemPrompt = systemPrompt.replace("{topic}", topic || "一个有趣的话题");
     }
 
@@ -191,20 +140,10 @@ export async function POST(request: NextRequest) {
       source = "zhida";
       console.log("[AI Chat] 使用 知乎直答 回复");
     } else {
-      // 两个 API 都失败，返回 fallback（刘看山口吻）
-      const fallbackReplies = [
-        "说实话，我没太听懂你刚才那句，能再说一遍吗？",
-        "嗯… 让我想想。",
-        "有点意思，你继续说。",
-        "那可不。",
-        "我不知道该咋接，但我在听。",
-        "哈哈，你这话把我整不会了。",
-        "等等，那如果反过来呢？",
-        "其实吧，我也有过类似的想法。",
-      ];
-      finalContent = fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
+      // v8.6-fix: 两个 API 都失败，按角色返回兜底回复
+      finalContent = getFallbackReply(personaKey || 'catalyst');
       source = "fallback";
-      console.log("[AI Chat] 两个API都失败，使用 fallback");
+      console.log("[AI Chat] 两个API都失败，使用角色兜底:", personaKey || 'catalyst');
     }
 
     return NextResponse.json(

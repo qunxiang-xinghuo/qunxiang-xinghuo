@@ -208,7 +208,7 @@ function DuoMatchContent() {
               >
                 {option.type === 'zhihu' && <User className="w-5 h-5 text-xh-gold" />}
                 {option.type === 'ai' && <Sparkles className="w-5 h-5 text-violet-400" />}
-                {option.type === 'custom' && <Edit3 className="w-5 h-5 text-orange-400" />}
+                {option.type === 'custom' && <Edit3 className="w-5 h-5 text-xh-gold" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -277,7 +277,7 @@ function DuoMatchContent() {
                       value={customLabel}
                       onChange={(e) => setCustomLabel(e.target.value)}
                       placeholder="例如：急诊科护士、北漂创业者..."
-                      className="w-full bg-slate-700/30 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-orange-400/50"
+                      className="w-full bg-slate-700/30 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/50"
                       maxLength={20}
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -313,7 +313,7 @@ function DuoMatchContent() {
             {/* 3. 快速匹配 */}
             <button
               onClick={handleConfirm}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
               快速匹配

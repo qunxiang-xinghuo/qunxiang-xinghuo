@@ -23,12 +23,16 @@ export async function GET(
       return NextResponse.json(apiError("ROOM_NOT_FOUND", "房间不存在"), { status: 404 });
     }
 
-    // v6.2-fix6: 允许参与者（actor/ai_agent）和观众（spectator）访问
-    const isParticipant = userId && (room as any).participants.some(
-      (p: any) => p.userId === userId && (p.role === 'actor' || p.role === 'ai_agent')
+    // v8.5-sec-fix: 已登录用户直接放行；guest 用户校验参与者身份
+    if (token) {
+      return NextResponse.json(apiResponse(room));
+    }
+
+    const isParticipant = guestId && (room as any).participants.some(
+      (p: any) => p.userId === guestId && (p.role === 'actor' || p.role === 'ai_agent')
     );
-    const isSpectator = userId && (room as any).participants.some(
-      (p: any) => p.userId === userId && p.role === 'spectator'
+    const isSpectator = guestId && (room as any).participants.some(
+      (p: any) => p.userId === guestId && p.role === 'spectator'
     );
 
     if (!isParticipant && !isSpectator) {

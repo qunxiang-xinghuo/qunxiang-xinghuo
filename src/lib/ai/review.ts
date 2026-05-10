@@ -3,6 +3,7 @@
  * v8.1: 从 finish API 提取为共享模块，供 visibility 等接口复用
  */
 import { zhidaChat } from "@/lib/zhihu-dev-api";
+import { getPersona } from "@/lib/ai/personas";
 
 export interface ReviewResult {
   approved: boolean;
@@ -16,20 +17,8 @@ export interface ReviewResult {
  * 全部失败时默认不通过（安全优先）
  */
 export async function liukanshanReview(content: string): Promise<ReviewResult> {
-  const reviewPrompt = `你现在是一位资深的内容编辑，负责审核用户生成的对白。
-
-请检查以下对话中是否包含不文明用语、人身攻击、色情低俗、政治敏感、广告引流或其他违规内容。
-
-如果内容健康、有价值，请返回 JSON:
-{ "approved": true, "summary": "用一句话总结这段对话的亮点（20字以内）" }
-
-如果内容违规，请返回 JSON:
-{ "approved": false, "reason": "简要说明违规原因" }
-
-只返回JSON，不要任何其他解释或格式标记。
-
-对话内容：
-${content.slice(0, 3000)}`;
+  const persona = getPersona('reviewer');
+  const userPrompt = `请审核以下对话内容：\n\n${content.slice(0, 3000)}`;
 
   // 优先调用 DeepSeek
   const apiKey = process.env.DEEPSEEK_API_KEY;
@@ -46,8 +35,8 @@ ${content.slice(0, 3000)}`;
         body: JSON.stringify({
           model: "deepseek-chat",
           messages: [
-            { role: "system", content: "你是一个严格但公正的内容审核编辑。只输出JSON格式。" },
-            { role: "user", content: reviewPrompt },
+            { role: "system", content: persona.systemPrompt },
+            { role: "user", content: userPrompt },
           ],
           temperature: 0.3,
           max_tokens: 150,
@@ -83,8 +72,8 @@ ${content.slice(0, 3000)}`;
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     const zhidaResult = await zhidaChat(
       [
-        { role: "user", content: `[系统设定] 你是一个严格但公正的内容审核编辑。只输出JSON格式。` },
-        { role: "user", content: reviewPrompt },
+        { role: "user", content: `[系统设定] ${persona.systemPrompt}` },
+        { role: "user", content: userPrompt },
       ],
       "zhida-thinking-1p5",
       controller.signal

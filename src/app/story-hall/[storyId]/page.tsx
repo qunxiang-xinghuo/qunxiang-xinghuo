@@ -29,13 +29,13 @@ interface StoryDetail {
 
 const statusConfig: Record<string, any> = {
   recruiting: { text: '招募演员', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Users, barColor: 'bg-emerald-500', gradient: 'from-emerald-500/10 to-teal-500/5' },
-  ongoing: { text: '正在上演', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock, barColor: 'bg-xh-gold', gradient: 'from-xh-gold/10 to-orange-500/5' },
+  ongoing: { text: '正在上演', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock, barColor: 'bg-xh-gold', gradient: 'from-xh-gold/10 to-xh-gold-dark/5' },
   completed: { text: '已杀青', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: MessageSquare, barColor: 'bg-blue-500', gradient: 'from-blue-500/10 to-cyan-500/5' },
 };
 
 const claimConfig: Record<string, any> = {
   unclaimed: { text: '待认领', color: 'text-slate-400', bg: 'bg-slate-700/20', border: 'border-slate-600/20', icon: UserCircle, avatarBg: 'bg-slate-700/40' },
-  pending: { text: '试镜中', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Clock, avatarBg: 'bg-amber-500/20' },
+  pending: { text: '试镜中', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock, avatarBg: 'bg-xh-gold/20' },
   approved: { text: '已入组', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Check, avatarBg: 'bg-emerald-500/20' },
   rejected: { text: '未通过', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: X, avatarBg: 'bg-red-500/20' },
 };
@@ -231,7 +231,7 @@ export default function StoryDetailPage() {
                 </div>
                 <div className="h-2 bg-slate-700/20 rounded-full overflow-hidden">
                   <motion.div initial={mounted ? { width: 0 } : false} animate={{ width: `${progress}%` }} transition={{ duration: 0.8 }}
-                    className={`h-full rounded-full ${progress >= 100 ? 'bg-gradient-to-r from-emerald-400 to-teal-400' : 'bg-gradient-to-r from-xh-gold to-orange-400'}`} />
+                    className={`h-full rounded-full ${progress >= 100 ? 'bg-gradient-to-r from-emerald-400 to-teal-400' : 'bg-gradient-to-r from-xh-gold to-xh-gold-light'}`} />
                 </div>
               </div>
 
@@ -244,7 +244,7 @@ export default function StoryDetailPage() {
                 <p className="text-xs text-slate-400 leading-relaxed">{story.worldview}</p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-xh-gold/8 to-orange-500/5 border border-xh-gold/15">
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-xh-gold/8 to-xh-gold-dark/5 border border-xh-gold/15">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Flame className="w-3.5 h-3.5 text-xh-gold/70" />
                   <span className="text-[10px] text-xh-gold/70 font-medium uppercase tracking-wider">核心冲突</span>
@@ -286,7 +286,7 @@ export default function StoryDetailPage() {
                 <motion.div key={role.id} initial={mounted ? { opacity: 0, x: -8 } : false} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.04 }}
                   className={`card-elevated p-3.5 relative overflow-hidden ${
                     role.claimStatus === 'approved' ? 'border-l-2 border-l-emerald-500' :
-                    role.claimStatus === 'pending' ? 'border-l-2 border-l-amber-400' : ''
+                    role.claimStatus === 'pending' ? 'border-l-2 border-l-xh-gold' : ''
                   }`}>
                   <div className="flex items-start gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${cs.avatarBg} ${cs.color} border ${cs.border}`}>
@@ -299,7 +299,7 @@ export default function StoryDetailPage() {
                           <CSIcon size={9} />{cs.text}
                         </span>
                         {isMyClaim && role.claimStatus === 'pending' && (
-                          <span className="text-[10px] text-amber-400 font-medium">我的申请</span>
+                          <span className="text-[10px] text-xh-gold font-medium">我的申请</span>
                         )}
                       </div>
                       <p className="text-xs text-slate-500 mb-1.5">{role.description}</p>
@@ -331,7 +331,7 @@ export default function StoryDetailPage() {
                       {/* 认领者信息 */}
                       {role.claimedBy && role.user && (
                         <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-800/30 border border-slate-700/15 mt-1.5">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-xh-gold/30 to-orange-500/20 flex items-center justify-center text-[10px] text-xh-gold font-bold border border-xh-gold/20">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-xh-gold/30 to-xh-gold-dark/20 flex items-center justify-center text-[10px] text-xh-gold font-bold border border-xh-gold/20">
                             {role.user.name?.charAt(0) || '?'}
                           </div>
                           <span className="text-xs text-slate-400 font-medium">{role.user.name || '匿名演员'}</span>
@@ -373,10 +373,10 @@ export default function StoryDetailPage() {
         {/* 导演待审核 */}
         {isDirector && pendingRoles.length > 0 && story.status === 'recruiting' && (
           <motion.div initial={mounted ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} className="px-4 pb-3">
-            <div className="bg-amber-500/[0.04] rounded-xl p-3.5 border border-amber-500/15">
+            <div className="bg-xh-gold/[0.04] rounded-xl p-3.5 border border-xh-gold/15">
               <div className="flex items-center gap-2 mb-1">
-                <Clock className="w-4 h-4 text-amber-400" />
-                <span className="text-sm font-medium text-amber-400">待审核试镜 ({pendingRoles.length})</span>
+                <Clock className="w-4 h-4 text-xh-gold" />
+                <span className="text-sm font-medium text-xh-gold">待审核试镜 ({pendingRoles.length})</span>
               </div>
               <p className="text-[11px] text-slate-500">通过所有角色的审核后，即可启动故事</p>
             </div>
@@ -414,7 +414,7 @@ export default function StoryDetailPage() {
                   返回剧场
                 </button>
                 <button onClick={() => router.push('/story-hall')}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-xs font-medium flex items-center justify-center gap-1.5">
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-xs font-medium flex items-center justify-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />发起我的剧本
                 </button>
               </div>
@@ -426,7 +426,7 @@ export default function StoryDetailPage() {
         {story.status === 'ongoing' && (
           <motion.div initial={mounted ? { opacity: 0, y: 16 } : false} animate={{ opacity: 1, y: 0 }} className="px-4 pb-6">
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => router.push(`/story-hall/${storyId}/room`)}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-bold shadow-lg shadow-xh-gold/20 hover:shadow-xl hover:shadow-xh-gold/30 transition-all flex items-center justify-center gap-2">
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-sm font-bold shadow-lg shadow-xh-gold/20 hover:shadow-xl hover:shadow-xh-gold/30 transition-all flex items-center justify-center gap-2">
               <Sparkles className="w-5 h-5" />进入对白实验室<ArrowRight className="w-4 h-4" />
             </motion.button>
           </motion.div>

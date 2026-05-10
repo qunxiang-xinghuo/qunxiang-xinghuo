@@ -131,9 +131,9 @@ export default function LoginForm() {
     <div className="flex flex-col h-full page-gradient relative overflow-hidden">
       {/* ====== 装饰背景光斑 ====== */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#e2b04a]/8 blur-xl" />
+        <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#8a9ab0]/8 blur-xl" />
         <div className="absolute top-32 right-6 w-20 h-20 rounded-full bg-[#74b9ff]/8 blur-xl" />
-        <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#e2b04a]/4 blur-lg" />
+        <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#8a9ab0]/4 blur-lg" />
       </div>
 
       {/* ====== 右下角装饰性透明泡泡 ====== */}
@@ -211,9 +211,9 @@ export default function LoginForm() {
           transition={{ duration: 0.6 }}
           className="flex items-center justify-center gap-2 mb-3"
         >
-          <Flame className="w-5 h-5 text-[#e2b04a]/60" />
+          <Flame className="w-5 h-5 text-[#8a9ab0]/60" />
           <h1 className="text-3xl font-bold tracking-wider text-white/90">群像·星火</h1>
-          <Flame className="w-5 h-5 text-[#e2b04a]/60" />
+          <Flame className="w-5 h-5 text-[#8a9ab0]/60" />
         </motion.div>
 
         <motion.p
@@ -250,7 +250,7 @@ export default function LoginForm() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="请输入用户名"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#e2b04a]/50 transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
               maxLength={30}
             />
           </div>
@@ -263,7 +263,7 @@ export default function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="请输入密码"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#e2b04a]/50 transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
                 maxLength={100}
               />
               <button
@@ -289,7 +289,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#e2b04a] to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#8a9ab0] to-[#6c7c90] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -306,9 +306,9 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => router.push('/register')}
-            className="text-sm text-white/40 hover:text-[#e2b04a] transition-colors"
+            className="text-sm text-white/40 hover:text-[#8a9ab0] transition-colors"
           >
-            没有账号？<span className="text-[#e2b04a]/80 hover:text-[#e2b04a]">去注册</span>
+            没有账号？<span className="text-[#8a9ab0]/80 hover:text-[#8a9ab0]">去注册</span>
           </button>
         </div>
       </motion.form>

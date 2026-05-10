@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiResponse, apiError } from "@/lib/utils";
 import { zhidaChat } from "@/lib/zhihu-dev-api";
+import { getPersona } from "@/lib/ai/personas";
 
 /**
  * v6.0: AI 催化问题生成
@@ -9,17 +10,7 @@ import { zhidaChat } from "@/lib/zhihu-dev-api";
  * Body: { topic, messages, identity }
  */
 
-const CATALYST_SYSTEM_PROMPT = `你是一个对话催化剂。基于给定的对话主题和上下文，生成3个简短、开放的追问问题。
-
-要求：
-- 每个问题不超过20字
-- 问题要有针对性，引导对话深入
-- 避免重复、避免封闭式问题（不要是/否问题）
-- 语气轻松自然，像朋友之间的闲聊
-- 如果对话已经比较深入，可以提一些"如果...会怎样"的假设性问题
-- 基于对方的身份标签调整问题角度
-
-只返回3个问题，每行一个，不要任何前缀、编号或解释。`;
+const CATALYST_SYSTEM_PROMPT = getPersona('catalyst').systemPrompt;
 
 export async function POST(request: NextRequest) {
   try {

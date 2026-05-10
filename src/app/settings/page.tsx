@@ -22,7 +22,7 @@ interface UserData {
 function DefaultAvatar({ name, size = 48 }: { name: string; size?: number }) {
   const initial = name?.charAt(0)?.toUpperCase() || '?';
   const colors = [
-    'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-green-500',
+    'bg-red-500', 'bg-xh-gold', 'bg-slate-500', 'bg-green-500',
     'bg-emerald-500', 'bg-teal-500', 'bg-cyan-500', 'bg-sky-500',
     'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-purple-500',
     'bg-fuchsia-500', 'bg-pink-500', 'bg-rose-500',
@@ -244,7 +244,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen page-gradient">
-        <div className="w-6 h-6 border-2 border-[#e2b04a]/30 border-t-[#e2b04a] rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin" />
       </div>
     );
   }
@@ -267,7 +267,7 @@ export default function SettingsPage() {
             className="relative group"
             disabled={saving}
           >
-            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[#e2b04a]/30">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[#8a9ab0]/30">
               <UserAvatar user={user} size={80} />
             </div>
             <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -310,7 +310,7 @@ export default function SettingsPage() {
               <p className="text-sm font-medium text-white/90">修改用户名</p>
               <p className="text-[11px] text-white/30 mt-0.5">{displayName}</p>
             </div>
-            <span className="text-xs text-[#e2b04a]/60">修改</span>
+            <span className="text-xs text-[#8a9ab0]/60">修改</span>
           </motion.button>
 
           {/* 修改密码 */}
@@ -321,14 +321,14 @@ export default function SettingsPage() {
             onClick={() => setShowPasswordModal(true)}
             className="w-full flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all text-left"
           >
-            <div className="w-9 h-9 rounded-lg bg-[#e2b04a]/10 flex items-center justify-center flex-shrink-0">
-              <Lock className="w-4 h-4 text-[#e2b04a]" />
+            <div className="w-9 h-9 rounded-lg bg-[#8a9ab0]/10 flex items-center justify-center flex-shrink-0">
+              <Lock className="w-4 h-4 text-[#8a9ab0]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white/90">修改密码</p>
               <p className="text-[11px] text-white/30 mt-0.5">********</p>
             </div>
-            <span className="text-xs text-[#e2b04a]/60">修改</span>
+            <span className="text-xs text-[#8a9ab0]/60">修改</span>
           </motion.button>
         </div>
 
@@ -368,7 +368,7 @@ export default function SettingsPage() {
                 placeholder="输入新用户名"
                 maxLength={30}
                 autoFocus
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#e2b04a]/50 transition-colors mb-4"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors mb-4"
               />
               <div className="flex gap-3">
                 <button
@@ -380,7 +380,7 @@ export default function SettingsPage() {
                 <button
                   onClick={saveUsername}
                   disabled={saving || !usernameValue.trim()}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#e2b04a] to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#8a9ab0] to-[#6c7c90] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
                   {saving ? '保存中...' : '保存'}
                 </button>
@@ -424,7 +424,7 @@ export default function SettingsPage() {
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
                     placeholder="旧密码"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#e2b04a]/50 transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
                   />
                   <button
                     type="button"
@@ -441,7 +441,7 @@ export default function SettingsPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="新密码（至少6个字符）"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#e2b04a]/50 transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
                   />
                   <button
                     type="button"
@@ -458,7 +458,7 @@ export default function SettingsPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="确认新密码"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#e2b04a]/50 transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
                   />
                   <button
                     type="button"
@@ -479,7 +479,7 @@ export default function SettingsPage() {
                 <button
                   onClick={savePassword}
                   disabled={saving}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#e2b04a] to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#8a9ab0] to-[#6c7c90] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
                   {saving ? '保存中...' : '保存'}
                 </button>

@@ -223,7 +223,7 @@ export default function AdminPage() {
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1">
-            <h1 className="text-base font-bold text-[#e2b04a]">管理员后台</h1>
+            <h1 className="text-base font-bold text-[#8a9ab0]">管理员后台</h1>
             <p className="text-[11px] text-white/30">清理与管理</p>
           </div>
         </div>
@@ -238,7 +238,7 @@ export default function AdminPage() {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`flex items-center gap-1.5 text-sm font-medium transition-colors pb-1 border-b-2 whitespace-nowrap ${
-                tab === t.key ? 'text-[#e2b04a] border-[#e2b04a]' : 'text-white/30 border-transparent hover:text-white/50'
+                tab === t.key ? 'text-[#8a9ab0] border-[#8a9ab0]' : 'text-white/30 border-transparent hover:text-white/50'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -261,7 +261,7 @@ export default function AdminPage() {
           {tab === 'users' && (
             <button
               onClick={() => { setEditingUser(null); setUserForm({ username: '', name: '', email: '', password: '', isAdmin: false }); setShowUserForm(true); }}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25"
+              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25"
             >
               <UserPlus className="w-3 h-3" />
               新增
@@ -305,7 +305,7 @@ export default function AdminPage() {
             {/* 异常活跃房间 */}
             <div>
               <h3 className="text-xs font-medium text-white/40 mb-2 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3 text-[#e2b04a]" />
+                <AlertTriangle className="w-3 h-3 text-[#8a9ab0]" />
                 异常活跃房间 ({abnormalRooms.length})
               </h3>
               {abnormalRooms.length === 0 ? (
@@ -359,7 +359,7 @@ export default function AdminPage() {
                         </div>
                         <span className="text-sm text-white/80">{user.name || user.username || '未命名'}</span>
                         {user.isAdmin && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#e2b04a]/10 text-[#e2b04a] border border-[#e2b04a]/20">管理员</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#8a9ab0]/10 text-[#8a9ab0] border border-[#8a9ab0]/20">管理员</span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 mt-1.5 text-[10px] text-white/20">
@@ -413,7 +413,7 @@ export default function AdminPage() {
                 <input
                   value={userForm.username}
                   onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#e2b04a]/30"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#8a9ab0]/30"
                   placeholder="输入用户名"
                 />
               </div>
@@ -422,7 +422,7 @@ export default function AdminPage() {
                 <input
                   value={userForm.name}
                   onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#e2b04a]/30"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#8a9ab0]/30"
                   placeholder="输入昵称"
                 />
               </div>
@@ -432,7 +432,7 @@ export default function AdminPage() {
                   <input
                     value={userForm.email}
                     onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#e2b04a]/30"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#8a9ab0]/30"
                     placeholder="输入邮箱"
                   />
                 </div>
@@ -443,7 +443,7 @@ export default function AdminPage() {
                   type="password"
                   value={userForm.password}
                   onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#e2b04a]/30"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#8a9ab0]/30"
                   placeholder={editingUser ? '留空不修改' : '输入密码'}
                 />
               </div>
@@ -460,7 +460,7 @@ export default function AdminPage() {
             <button
               onClick={handleSaveUser}
               disabled={userFormLoading}
-              className="w-full mt-4 py-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 text-sm font-medium hover:bg-[#e2b04a]/25 disabled:opacity-30 transition-all"
+              className="w-full mt-4 py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25 text-sm font-medium hover:bg-[#8a9ab0]/25 disabled:opacity-30 transition-all"
             >
               {userFormLoading ? '保存中...' : '保存'}
             </button>
@@ -528,7 +528,7 @@ function SparkCard({ spark, mounted, deletingId, onDelete }: { spark: SparkItem;
           <p className="text-[11px] text-white/25 truncate mt-0.5">{spark.summary}</p>
           <div className="flex items-center gap-3 mt-1.5">
             <span className="text-[10px] text-white/20">{spark.ownerName}</span>
-            <span className="flex items-center gap-0.5 text-[10px] text-[#e2b04a]/30">
+            <span className="flex items-center gap-0.5 text-[10px] text-[#8a9ab0]/30">
               <Flame className="w-3 h-3" />
               {spark.hotScore}
             </span>
@@ -561,7 +561,7 @@ function StoryCard({ story, mounted, deletingId, onDelete }: { story: StoryItem;
           <div className="flex items-center gap-3 mt-1.5">
             <span className="text-[10px] text-white/20">{story.creatorName}</span>
             <span className="text-[10px] text-white/20">{story.status}</span>
-            <span className="flex items-center gap-0.5 text-[10px] text-[#e2b04a]/30">
+            <span className="flex items-center gap-0.5 text-[10px] text-[#8a9ab0]/30">
               <Flame className="w-3 h-3" />
               {story.hotScore}
             </span>

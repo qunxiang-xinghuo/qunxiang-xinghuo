@@ -181,7 +181,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-6">
         {/* 对白记录标题 */}
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-[#e2b04a]/60" />
+          <Sparkles className="w-4 h-4 text-[#8a9ab0]/60" />
           <span className="text-xs text-white/40 font-medium">对白记录</span>
           <span className="text-[10px] text-white/20">({data.messageCount} 条)</span>
         </div>
@@ -208,7 +208,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
                     {msg.identity}
                   </span>
                   {msg.isSpark && (
-                    <span className="flex items-center gap-0.5 text-[10px] text-[#e2b04a]">
+                    <span className="flex items-center gap-0.5 text-[10px] text-[#8a9ab0]">
                       <Sparkles className="w-3 h-3" />
                       火花
                     </span>
@@ -218,7 +218,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
                 <div
                   className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
                     isMyMessage(msg)
-                      ? 'bg-[#e2b04a]/15 text-white/85 rounded-tr-sm border border-[#e2b04a]/20'
+                      ? 'bg-[#8a9ab0]/15 text-white/85 rounded-tr-sm border border-[#8a9ab0]/20'
                       : isAiMessage(msg)
                         ? 'bg-emerald-500/10 text-white/85 rounded-tl-sm border border-emerald-500/20'
                         : 'bg-white/[0.06] text-white/85 rounded-tl-sm border border-white/5'
@@ -265,7 +265,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
             disabled={likeLoading}
             className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all active:scale-95 ${
               liked
-                ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25'
+                ? 'bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25'
                 : 'bg-white/[0.03] text-white/30 border border-white/5 hover:bg-white/[0.06] hover:text-white/50'
             }`}
           >
@@ -301,7 +301,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
               <button
                 onClick={submitComment}
                 disabled={!commentInput.trim() || commentLoading}
-                className="p-2.5 rounded-xl bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25 hover:bg-[#e2b04a]/25 transition-colors disabled:opacity-20"
+                className="p-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 transition-colors disabled:opacity-20"
               >
                 {commentLoading ? (
                   <span className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin block" />

@@ -138,7 +138,7 @@ export default function MySparksPage() {
                   className="p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
                 >
                   {/* 脑洞标题 */}
-                  <p className="text-[11px] text-[#e2b04a]/50 mb-1.5 font-medium">{spark.brainholeTitle}</p>
+                  <p className="text-[11px] text-[#8a9ab0]/50 mb-1.5 font-medium">{spark.brainholeTitle}</p>
 
                   {/* 内容（可点击跳转详情） */}
                   <div

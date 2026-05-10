@@ -38,7 +38,7 @@ const TEMPLATES: StoryTemplate[] = [
     ],
   },
   {
-    id: 'workplace', name: '职场风云', icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
+    id: 'workplace', name: '职场风云', icon: Zap, color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20',
     worldview: '互联网大厂年会前夜。HR总监独自加班，手中握着明天要公布的裁员名单。公司要裁掉整个内容审核部门，以应对投资人的压力。',
     conflict: '名单第一页赫然是自己最好的朋友。更意外的是，朋友在名单确认栏签了自己的名字——她早就知道，而且自愿被裁。但她的工位抽屉里，藏着一份能让整个公司震动的内部举报材料。',
     roles: [
@@ -288,7 +288,7 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
           {step === 'edit' && (
             <div className="shrink-0 px-5 py-4 border-t border-slate-700/15">
               <button onClick={handleSubmit} disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50">
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50">
                 {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   : <><Sparkles className="w-4 h-4" />发布故事</>}
               </button>

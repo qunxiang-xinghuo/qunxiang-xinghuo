@@ -1,5 +1,84 @@
 # 群像·星火 — 问题排查记录
 
+## v9.0a 全局配色优化
+
+---
+
+### 问题32：界面"颜色杂、廉价感强"
+
+**现象**：
+- 用户反馈界面"很丑、颜色杂、廉价感强"
+- 橙色 `#e2b04a` 被滥用为全局主强调色，覆盖 50+ 文件
+- 硬编码十六进制与 Tailwind `orange-*` / `amber-*` 类名混用，不统一
+- 大量 `text-xh-gold` / `bg-xh-gold` 等类名在 `globals.css` 中定义，但还有大量 `text-orange-400` / `bg-orange-500` 等直接硬编码
+- `--color-xh-accent` 变量被大量代码引用但**从未在 `globals.css` 中定义**，导致样式失效
+
+**根因**：
+- 早期快速迭代中，橙色 `#e2b04a`（"金色"）被随意用作高亮色，缺乏统一设计规范
+- Tailwind v4 无传统 `tailwind.config.ts`，颜色管理完全依赖 `@theme inline` + 硬编码，容易失控
+- `xh-accent` 和 `xh-gold` 两个命名并存，但 `xh-accent` 从未定义，导致代码中大量无效引用
+
+**解决**：
+1. 重新设计配色方案：
+   - 主强调色 `#8a9ab0`（柔和蓝灰）替代 `#e2b04a`（橙金）
+   - 亮色 `#a8b8c8`，暗色 `#6c7c90`，警告 `#a09070`
+2. 在 `globals.css` `@theme inline` 中统一定义所有品牌色变量
+3. 新增 `--color-xh-accent: #7a8aa0`，使之前所有无效引用生效
+4. 全局替换硬编码十六进制（`#e2b04a` / `#f39c12` / `#f59e0b` / `#f5d78c` / `#b88a3d`）
+5. 全局替换 Tailwind `orange-*` / `amber-*` / `yellow-*` 类名为 `xh-gold` 体系
+6. 更新 `rgba(226, 176, 74, ...)` 动画颜色为新的蓝灰 rgba
+
+**踩坑记录（编码问题）**：
+- 第一次批量替换使用 PowerShell `Set-Content`，默认非 UTF-8 编码，导致 25 个文件的中文字符被截断（如 `门禁` → `门�?`）
+- 修复方法：`git show HEAD:<file>` 恢复原始内容 → Python UTF-8 重新应用替换
+- **教训**：Windows 上绝不用 PowerShell `Set-Content` 写含中文的代码文件，必须用 Python/Node.js 显式 `encoding='utf-8'`
+
+**文件**：
+- `src/app/globals.css` — 配色变量定义（+ `xh-accent`）
+- 50+ 页面/组件文件 — 颜色替换
+- `prisma/seed.ts` — 种子数据颜色更新
+
+---
+
+## v8.6 刘看山套话问题
+
+---
+
+### 问题31：刘看山回复像通用AI助手，缺乏角色感
+
+**现象**：
+- AI房间中刘看山回复出现"这是一个很好的问题""我理解你的感受"等套话
+- 不同场景下（人机陪伴/故事DM/疗愈/创作辅助）说话方式没有明显区别
+- fallback 回复是通用的8条，没有按角色区分
+- 部分角色的 systemPrompt 散落在业务模块中（review.ts/story-weaver.ts/prompt-generator.ts），未统一管理
+
+**根因**：
+- personas.ts 中只有5个角色定义，其余6个角色以独立函数形式散落在各业务模块
+- 没有统一的角色内核约束，每个角色各自为政
+- chat/route.ts 中有内联的 LIUKANSHAN_SYSTEM_PROMPT，与 personas.ts 中的定义重复且不同步
+- fallback 回复是硬编码的通用列表，没有按角色定制
+
+**解决**：
+1. 在 personas.ts 顶部定义 `CORE_KERNEL` 统一内核约束（所有角色共享）
+2. 将11个角色全部集中到 personas.ts 中统一管理
+3. 每个角色 systemPrompt 包含：角色定位 + 场景上下文 + 行为准则 + 具体示例 + 禁止事项
+4. 新建 `fallback-replies.ts`，为每个角色准备5-10条角色专属兜底回复
+5. chat/route.ts 移除内联 prompt，统一从 personas.ts 获取；fallback 改为 `getFallbackReply(personaKey)`
+
+**新增约束（防回潮）**：
+- 所有角色共享统一内核，禁止套话清单是强制性的
+- 任何新增角色必须从 personas.ts 注册，不允许再散落在业务模块中
+- fallback 回复必须通过 fallback-replies.ts 注册
+- 字数限制 30-80 字（reviewer/summarizer 除外）
+- 不用第一人称"我"，用"刘看山"称呼自己
+
+**文件**：
+- `src/lib/ai/personas.ts` — 11角色完整定义
+- `src/lib/ai/fallback-replies.ts` — 新建，角色兜底回复
+- `src/app/api/ai/chat/route.ts` — 移除内联prompt，按角色兜底
+
+---
+
 ## v8.5 邀请房间流程问题
 
 ---

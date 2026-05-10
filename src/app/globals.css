@@ -2,9 +2,10 @@
 
 @theme inline {
   /* ===== 核心品牌色 ===== */
-  --color-xh-gold: #e2b04a;
-  --color-xh-gold-light: #f5d78c;
-  --color-xh-gold-dark: #b88a3d;
+  --color-xh-gold: #8a9ab0;
+  --color-xh-gold-light: #a8b8c8;
+  --color-xh-gold-dark: #6c7c90;
+  --color-xh-accent: #7a8aa0;
 
   /* ===== 背景色系 ===== */
   --color-xh-primary: #0a0e1a;
@@ -14,7 +15,7 @@
 
   /* ===== 语义色 ===== */
   --color-xh-success: #10b981;
-  --color-xh-warning: #f59e0b;
+  --color-xh-warning: #a09070;
   --color-xh-danger: #ef4444;
   --color-xh-info: #3b82f6;
 
@@ -87,8 +88,8 @@
   .animate-float { animation: float 3s ease-in-out infinite; }
 
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(226, 176, 74, 0.3); }
-    50% { box-shadow: 0 0 32px 10px rgba(226, 176, 74, 0.12); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(138, 154, 176, 0.3); }
+    50% { box-shadow: 0 0 32px 10px rgba(138, 154, 176, 0.12); }
   }
   .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
@@ -208,17 +209,17 @@
   .bubble-pressed {
     box-shadow:
       inset 0 1px 3px rgba(255,255,255,0.4),
-      inset 0 0 20px rgba(226, 176, 74, 0.2),
-      0 0 36px rgba(226, 176, 74, 0.5),
+      inset 0 0 20px rgba(138, 154, 176, 0.2),
+      0 0 36px rgba(138, 154, 176, 0.5),
       0 0 16px rgba(255,255,255,0.25);
-    border-color: rgba(226, 176, 74, 0.7);
+    border-color: rgba(138, 154, 176, 0.7);
   }
 
   .bubble-selected-glow {
     position: absolute;
     inset: -10px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(226, 176, 74, 0.3) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(138, 154, 176, 0.3) 0%, transparent 60%);
     animation: bubble-glow-expand 0.8s ease-out forwards;
     pointer-events: none;
     z-index: 1;
@@ -228,7 +229,7 @@
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    border: 2.5px solid rgba(226, 176, 74, 0.55);
+    border: 2.5px solid rgba(138, 154, 176, 0.55);
     animation: bubble-ripple-out 0.6s ease-out forwards;
     pointer-events: none;
     z-index: 3;

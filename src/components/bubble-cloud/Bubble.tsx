@@ -122,7 +122,7 @@ export default function Bubble({ item, index, onClick, bgColor, borderColor }: B
                 {/* v6.0: 金色「匹配」按钮 */}
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleClick(); }}
-                  className="flex items-center gap-1 text-[10px] text-white bg-gradient-to-r from-xh-gold to-orange-500 hover:from-orange-400 hover:to-orange-600 px-2.5 py-1 rounded-full transition-all shadow-sm shadow-xh-gold/20"
+                  className="flex items-center gap-1 text-[10px] text-white bg-gradient-to-r from-xh-gold to-xh-gold-dark hover:from-xh-gold-light hover:to-xh-gold-dark px-2.5 py-1 rounded-full transition-all shadow-sm shadow-xh-gold/20"
                 >
                   <Zap className="w-2.5 h-2.5" />
                   匹配
