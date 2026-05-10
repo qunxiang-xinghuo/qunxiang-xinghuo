@@ -36,7 +36,7 @@ const aiIdentities = [
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   medical: { bg: 'bg-red-500/10', border: 'border-red-500/20', text: 'text-red-400' },
   legal: { bg: 'bg-blue-500/10', border: 'border-blue-500/20', text: 'text-blue-400' },
-  workplace: { bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', text: 'text-xh-gold' },
+  workplace: { bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', text: 'text-xh-yellow' },
   life: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400' },
   education: { bg: 'bg-purple-500/10', border: 'border-purple-500/20', text: 'text-purple-400' },
   tech: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400' },
@@ -214,7 +214,7 @@ function MultiMatchContent() {
                         {catLabel}
                       </span>
                       <span className="flex items-center gap-1 text-[10px] text-slate-600">
-                        <Flame className="w-3 h-3 text-xh-gold" />
+                        <Flame className="w-3 h-3 text-xh-yellow" />
                         {bh.hotScore}
                       </span>
                     </div>

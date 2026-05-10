@@ -93,7 +93,7 @@ export default function AssetDetailPage() {
           <p className="text-white/40 text-sm">{error || '素材不存在'}</p>
           <button
             onClick={() => router.back()}
-            className="mt-4 flex items-center gap-1 text-xs text-xh-gold hover:opacity-80"
+            className="mt-4 flex items-center gap-1 text-xs text-xh-yellow hover:opacity-80"
           >
             <ArrowLeft className="w-3 h-3" />
             返回素材库
@@ -112,11 +112,11 @@ export default function AssetDetailPage() {
       {/* 素材信息卡 */}
       <div className="shrink-0 px-4 py-3 bg-xh-gold/10 border-b border-xh-gold/20">
         <div className="flex items-start gap-2">
-          <Sparkles className="w-5 h-5 text-xh-gold mt-0.5 shrink-0" />
+          <Sparkles className="w-5 h-5 text-xh-yellow mt-0.5 shrink-0" />
           <div className="min-w-0">
-            <h3 className="text-base font-bold text-xh-gold truncate">{asset.title}</h3>
+            <h3 className="text-base font-bold text-xh-yellow truncate">{asset.title}</h3>
             {asset.summary && (
-              <p className="text-[11px] text-xh-gold/60 mt-0.5 line-clamp-2">{asset.summary}</p>
+              <p className="text-[11px] text-xh-yellow/60 mt-0.5 line-clamp-2">{asset.summary}</p>
             )}
             <div className="flex items-center gap-3 mt-2 text-[10px] text-white/50">
               <span className="flex items-center gap-1">
@@ -128,7 +128,7 @@ export default function AssetDetailPage() {
                 {asset.messageCount} 条对白
               </span>
               <span className="flex items-center gap-1">
-                <Flame className="w-3 h-3 text-xh-gold" />
+                <Flame className="w-3 h-3 text-xh-yellow" />
                 {asset.sparkCount} 火花
               </span>
             </div>
@@ -170,8 +170,8 @@ export default function AssetDetailPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-white/40">{formatTime(msg.createdAt)}</span>
                     {msg.isSpark && (
-                      <span className="flex items-center gap-0.5 text-[10px] text-xh-gold">
-                        <Flame className="w-3 h-3 fill-xh-gold" />
+                      <span className="flex items-center gap-0.5 text-[10px] text-xh-yellow">
+                        <Flame className="w-3 h-3 fill-xh-yellow" />
                         火花
                       </span>
                     )}

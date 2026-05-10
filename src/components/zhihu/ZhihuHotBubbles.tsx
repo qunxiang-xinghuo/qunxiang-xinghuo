@@ -37,7 +37,7 @@ export default function ZhihuHotBubbles() {
     return (
       <div className="w-full px-4 py-3">
         <div className="flex items-center gap-2 mb-3">
-          <Flame className="w-4 h-4 text-xh-gold" />
+          <Flame className="w-4 h-4 text-xh-yellow" />
           <span className="text-xs text-gray-400">知乎热榜加载中...</span>
         </div>
         <div className="flex gap-2 overflow-x-auto">
@@ -59,7 +59,7 @@ export default function ZhihuHotBubbles() {
   return (
     <div className="w-full px-4 py-3">
       <div className="flex items-center gap-2 mb-3">
-        <Flame className="w-4 h-4 text-xh-gold" />
+        <Flame className="w-4 h-4 text-xh-yellow" />
         <span className="text-xs font-medium text-xh-gold-light">
           知乎热榜 · 实时脑洞素材
         </span>

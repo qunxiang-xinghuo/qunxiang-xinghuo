@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { signOut } from 'next-auth/react';
 import {
   Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins, ScrollText, UserCircle,
-  Shield,
+  Shield, Heart,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -152,7 +152,7 @@ export default function ProfilePage() {
 
   const menuItems = [
     { icon: Coins, label: '我的收益', desc: '盐粒收益明细', path: '/earnings' },
-    { icon: Flame, label: '个人疗愈', desc: '私密对话空间', path: '/healing' },
+    { icon: Heart, label: '个人疗愈', desc: '私密对话空间', path: '/healing' },
     { icon: Flame, label: '我的火花', desc: '管理你的灵感片段', path: '/profile/sparks' },
     { icon: ScrollText, label: '我发起的故事', desc: '创建和管理你的故事', path: '/my-stories?tab=created' },
     { icon: UserCircle, label: '我参与的故事', desc: '你扮演过的角色和对白', path: '/my-stories?tab=participated' },
@@ -199,9 +199,14 @@ export default function ProfilePage() {
                 onClick={() => router.push(item.path)}
                 className="w-full flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.98] transition-all text-left"
               >
-                <div className="w-9 h-9 rounded-lg bg-[#8a9ab0]/10 flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-[#8a9ab0]" />
-                </div>
+                {(() => {
+                  const isSparkOrHealing = item.label === '个人火花' || item.label === '个人疗愈';
+                  return (
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isSparkOrHealing ? 'bg-xh-yellow/10' : 'bg-[#8a9ab0]/10'}`}>
+                      <Icon className={`w-4 h-4 ${isSparkOrHealing ? 'text-xh-yellow' : 'text-[#8a9ab0]'}`} />
+                    </div>
+                  );
+                })()}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white/90">{item.label}</p>
                   <p className="text-[11px] text-white/30 mt-0.5">{item.desc}</p>

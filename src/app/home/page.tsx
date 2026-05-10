@@ -169,7 +169,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[11px] text-white/30">{item.identityPair}</span>
                       <span className="text-[10px] text-white/15">·</span>
-                      <span className="flex items-center gap-0.5 text-[11px] text-[#8a9ab0]/40">
+                      <span className="flex items-center gap-0.5 text-[11px] text-xh-yellow/40">
                         <Flame className="w-3 h-3" />
                         {item.sparkCount}
                       </span>
@@ -274,12 +274,12 @@ export default function HomePage() {
             className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-white/10 max-w-[280px] w-full text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <Flame className="w-8 h-8 text-[#8a9ab0]/60 mx-auto mb-3" />
+            <Flame className="w-8 h-8 text-xh-yellow/60 mx-auto mb-3" />
             <p className="text-base font-semibold text-white/90 mb-1">{showComingSoon}</p>
             <p className="text-sm text-white/40 mb-4">即将开放，敬请期待</p>
             <button
               onClick={() => setShowComingSoon(null)}
-              className="w-full py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/20"
+              className="w-full py-2.5 rounded-xl bg-xh-yellow/15 text-xh-yellow text-sm font-medium border border-xh-yellow/20"
             >
               知道了
             </button>

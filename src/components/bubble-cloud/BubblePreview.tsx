@@ -105,7 +105,7 @@ export default function BubblePreview({ bubble, position, onClose, onCollect }: 
               <span>{bubble.reactionCount} 条反应</span>
             </div>
             <div className="flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-xh-gold" />
+              <Flame className="w-3.5 h-3.5 text-xh-yellow" />
               <span>热度 {Math.round(bubble.hotScore)}</span>
             </div>
           </div>

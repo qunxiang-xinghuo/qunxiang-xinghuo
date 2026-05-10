@@ -35,7 +35,7 @@ export default function StoryCard({
       <p className="text-sm text-gray-400 leading-relaxed mb-3 line-clamp-2">{preview}</p>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 text-xs text-xh-gold">
-          <Flame className="w-3 h-3 fill-xh-gold" />
+          <Flame className="w-3 h-3 fill-xh-yellow" />
           <span>{sparkCount} 火花</span>
         </div>
         <button className="text-xs text-xh-accent hover:underline">查看详情</button>

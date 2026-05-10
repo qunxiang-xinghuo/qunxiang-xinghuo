@@ -13,6 +13,7 @@ declare module "next-auth" {
       username?: string | null;
       level: number;
       sparkCount: number;
+      isAdmin?: boolean;
     };
   }
 
@@ -21,6 +22,7 @@ declare module "next-auth" {
     level: number;
     sparkCount: number;
     username?: string | null;
+    isAdmin?: boolean;
   }
 }
 
@@ -30,6 +32,7 @@ declare module "next-auth/jwt" {
     level?: number;
     sparkCount?: number;
     username?: string | null;
+    isAdmin?: boolean;
   }
 }
 
@@ -134,6 +137,7 @@ export const authOptions: NextAuthOptions = {
             username: user.username,
             level: user.level,
             sparkCount: user.sparkCount,
+            isAdmin: user.isAdmin,
           };
         } catch (error) {
           console.error('[Auth] authorize 异常');
@@ -149,6 +153,7 @@ export const authOptions: NextAuthOptions = {
         token.level = user.level;
         token.sparkCount = user.sparkCount;
         token.username = user.username;
+        token.isAdmin = user.isAdmin;
       }
       return token;
     },
@@ -158,6 +163,7 @@ export const authOptions: NextAuthOptions = {
         session.user.level = (token.level as number) ?? 1;
         session.user.sparkCount = (token.sparkCount as number) ?? 0;
         session.user.username = token.username as string | null;
+        session.user.isAdmin = (token.isAdmin as boolean) ?? false;
       }
       return session;
     },

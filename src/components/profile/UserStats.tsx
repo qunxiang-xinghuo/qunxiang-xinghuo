@@ -20,7 +20,7 @@ export default function UserStats({ reactionCount, sparkCount, matchCount, story
       color: 'bg-blue-500/10 border-blue-500/20',
     },
     {
-      icon: <Flame className="w-4 h-4 text-xh-gold" />,
+      icon: <Flame className="w-4 h-4 text-xh-yellow" />,
       label: '火花数',
       value: sparkCount,
       color: 'bg-xh-gold/10 border-xh-gold/20',

@@ -246,7 +246,7 @@ export default function StoryDetailPage() {
 
               <div className="p-3.5 rounded-xl bg-gradient-to-r from-xh-gold/8 to-xh-gold-dark/5 border border-xh-gold/15">
                 <div className="flex items-center gap-1.5 mb-2">
-                  <Flame className="w-3.5 h-3.5 text-xh-gold/70" />
+                  <Flame className="w-3.5 h-3.5 text-xh-yellow/70" />
                   <span className="text-[10px] text-xh-gold/70 font-medium uppercase tracking-wider">核心冲突</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">{story.conflict}</p>

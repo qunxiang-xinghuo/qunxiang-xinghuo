@@ -24,7 +24,7 @@ export default function SparkWall({ isOpen, onClose, sparkedMessages, className 
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
           <div className="flex items-center gap-2">
-            <Flame className="w-5 h-5 text-xh-gold" />
+            <Flame className="w-5 h-5 text-xh-yellow" />
             <h3 className="text-white font-medium">火花墙</h3>
           </div>
           <button
@@ -47,8 +47,8 @@ export default function SparkWall({ isOpen, onClose, sparkedMessages, className 
               </div>
               <p className="text-sm text-gray-200 leading-relaxed">{message.content}</p>
               <div className="flex justify-end mt-2">
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-xh-gold/20 text-xh-gold text-xs">
-                  <Flame className="w-3 h-3 fill-xh-gold" />
+                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-xh-yellow/20 text-xh-yellow text-xs">
+                  <Flame className="w-3 h-3 fill-xh-yellow" />
                   <span>{message.sparkCount}</span>
                 </div>
               </div>

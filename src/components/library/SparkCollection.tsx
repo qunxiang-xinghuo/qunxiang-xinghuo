@@ -24,7 +24,7 @@ export default function SparkCollection({
     <div className={`bg-gray-800/50 rounded-2xl p-4 border border-gray-700/30 ${className}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
-          <Flame className="w-4 h-4 text-xh-gold" />
+          <Flame className="w-4 h-4 text-xh-yellow" />
           <span className="text-xs font-medium text-white">火花收藏</span>
         </div>
         <span className="text-[10px] text-gray-500">{createdAt}</span>

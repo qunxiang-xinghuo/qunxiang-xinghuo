@@ -20,7 +20,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const DIFFICULTY_LABELS: Record<string, string> = { easy: '简单', medium: '中等', hard: '困难' };
-const DIFFICULTY_COLORS: Record<string, string> = { easy: 'text-emerald-400', medium: 'text-xh-gold', hard: 'text-red-400' };
+const DIFFICULTY_COLORS: Record<string, string> = { easy: 'text-emerald-400', medium: 'text-xh-yellow', hard: 'text-red-400' };
 
 export default function Bubble({ item, index, onClick, bgColor, borderColor }: BubbleProps) {
   const [isPopping, setIsPopping] = useState(false);
@@ -116,8 +116,8 @@ export default function Bubble({ item, index, onClick, bgColor, borderColor }: B
               {/* 底部：热度 + 匹配按钮 */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-xh-gold" />
-                  <span className="text-[11px] text-xh-gold font-semibold">{item.hotScore}</span>
+                  <Flame className="w-3 h-3 text-xh-yellow" />
+                  <span className="text-[11px] text-xh-yellow font-semibold">{item.hotScore}</span>
                 </div>
                 {/* v6.0: 金色「匹配」按钮 */}
                 <button 

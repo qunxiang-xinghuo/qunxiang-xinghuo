@@ -224,14 +224,14 @@ export default function SparksPage() {
                           disabled={likeLoadingId === spark.id}
                           className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-all active:scale-95 ${
                             spark.likedByMe
-                              ? 'bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25'
+                              ? 'bg-xh-yellow/15 text-xh-yellow border border-xh-yellow/25'
                               : 'bg-white/[0.03] text-white/30 border border-white/5 hover:bg-white/[0.06] hover:text-white/50'
                           }`}
                         >
                           {likeLoadingId === spark.id ? (
                             <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <Flame className={`w-3.5 h-3.5 ${spark.likedByMe ? 'fill-current drop-shadow-[0_0_4px_rgba(226,176,74,0.5)]' : ''}`} />
+                            <Flame className={`w-3.5 h-3.5 ${spark.likedByMe ? 'fill-current drop-shadow-[0_0_4px_rgba(212,184,48,0.5)]' : ''}`} />
                           )}
                           {spark.hotScore || 0}
                         </button>

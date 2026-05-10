@@ -272,7 +272,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
             {likeLoading ? (
               <span className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" />
             ) : (
-              <Flame className={`w-4 h-4 ${liked ? 'fill-current drop-shadow-[0_0_4px_rgba(226,176,74,0.5)]' : ''}`} />
+              <Flame className={`w-4 h-4 ${liked ? 'fill-current drop-shadow-[0_0_4px_rgba(212,184,48,0.5)]' : ''}`} />
             )}
             <span className="text-sm">{liked ? '已点赞' : '点赞'}</span>
             <span className="text-sm font-medium">{hotScore}</span>

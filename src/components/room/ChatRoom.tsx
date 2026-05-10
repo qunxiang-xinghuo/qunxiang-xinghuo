@@ -112,11 +112,11 @@ export default function ChatRoom({
         <div className="flex items-center justify-between mt-2.5 px-1">
           <button
             onClick={() => setShowSparkWall(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-xh-gold/10 text-xh-gold text-xs border border-xh-gold/20 hover:bg-xh-gold/15 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-xh-yellow/10 text-xh-yellow text-xs border border-xh-yellow/20 hover:bg-xh-yellow/15 transition-colors"
           >
             <Flame className="w-3 h-3" />
             火花墙
-            <span className="bg-xh-gold text-slate-900 text-[10px] px-1.5 rounded-full font-bold min-w-[16px] text-center">
+            <span className="bg-xh-yellow text-slate-900 text-[10px] px-1.5 rounded-full font-bold min-w-[16px] text-center">
               {sparkCount}
             </span>
           </button>
@@ -124,7 +124,7 @@ export default function ChatRoom({
           {showStoryButton && onGoToStory && (
             <button
               onClick={onGoToStory}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-xh-gold/15 border border-xh-gold/20 text-xh-gold text-sm font-medium hover:bg-xh-gold/20 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-xh-yellow/15 border border-xh-yellow/20 text-xh-yellow text-sm font-medium hover:bg-xh-yellow/20 transition-colors"
             >
               <Flame className="w-4 h-4" />
               串联故事

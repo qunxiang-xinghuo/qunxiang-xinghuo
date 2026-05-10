@@ -35,11 +35,11 @@ export default function SparkButton({
       onClick={onClick}
       className={`flex items-center gap-1 rounded-full transition-all ${sizeClasses[size]} ${
         isSparked
-          ? 'bg-xh-gold/20 text-xh-gold border border-xh-gold/30'
+          ? 'bg-xh-yellow/20 text-xh-yellow border border-xh-yellow/30'
           : 'bg-gray-800 text-gray-400 border border-gray-700 hover:text-white'
       } ${className}`}
     >
-      <Flame className={`${iconSizes[size]} ${isSparked ? 'fill-xh-gold' : ''}`} />
+      <Flame className={`${iconSizes[size]} ${isSparked ? 'fill-xh-yellow' : ''}`} />
       {count !== undefined && <span className="font-medium">{count}</span>}
     </button>
   );
