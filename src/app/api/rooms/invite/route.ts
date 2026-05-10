@@ -4,7 +4,12 @@ import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 
 function generateInviteCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去除易混淆字符 0O1I
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }
 
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠

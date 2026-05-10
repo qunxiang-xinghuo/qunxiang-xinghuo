@@ -114,8 +114,9 @@ function DuoMatchContent() {
   const handleInvite = () => saveIdentityAndGo('invite');
 
   const handleJoinRoom = async () => {
-    if (!joinCode || joinCode.length !== 6) {
-      setJoinError('请输入6位房间号');
+    const normalizedCode = joinCode.trim().toUpperCase();
+    if (!normalizedCode || normalizedCode.length !== 6) {
+      setJoinError('请输入6位邀请码');
       return;
     }
     setJoining(true);
@@ -127,7 +128,7 @@ function DuoMatchContent() {
       const res = await fetch('/api/rooms/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
-        body: JSON.stringify({ inviteCode: joinCode.trim(), identity }),
+        body: JSON.stringify({ inviteCode: normalizedCode, identity }),
       });
       const result = await res.json();
       if (result.success && result.data?.roomId) {
@@ -136,7 +137,17 @@ function DuoMatchContent() {
         localStorage.setItem('xh_duo_identity', identity);
         router.push(`/room/${result.data.roomId}`);
       } else {
-        setJoinError(result.message || '加入房间失败');
+        // v8.5-fix: 状态码映射
+        const statusMap: Record<number, string> = {
+          400: '邀请码格式不正确',
+          401: '请先登录',
+          403: '房间已满',
+          404: '邀请码无效或房间已过期',
+          409: result.message || '你已在房间中',
+          410: '对白已结束',
+          500: '服务器错误，请稍后重试',
+        };
+        setJoinError(statusMap[res.status] || result.message || '加入房间失败');
       }
     } catch {
       setJoinError('网络异常，请重试');
@@ -319,11 +330,12 @@ function DuoMatchContent() {
                 type="text"
                 value={joinCode}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  // v8.5-fix: 自动去空格+转大写+仅保留字母数字
+                  const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
                   setJoinCode(val);
                   setJoinError('');
                 }}
-                placeholder="输入6位房间号"
+                placeholder="输入6位邀请码"
                 className="flex-1 bg-slate-700/30 border border-slate-600/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/50 text-center tracking-widest"
                 maxLength={6}
               />

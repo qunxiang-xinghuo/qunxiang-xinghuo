@@ -133,7 +133,10 @@ export default function RoomPage() {
     if (!roomId) return;
     setRoomError(false);
     const ctrl = new AbortController();
-    fetch(`/api/rooms/${roomId}`, { signal: ctrl.signal })
+    fetch(`/api/rooms/${roomId}`, {
+      signal: ctrl.signal,
+      headers: { ...(userId ? { 'x-guest-id': userId } : {}) },
+    })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -486,7 +489,7 @@ export default function RoomPage() {
     try {
       await fetch(`/api/rooms/${roomId}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(userId ? { 'x-guest-id': userId } : {}) },
         body: JSON.stringify({ content, identity: myRoleName }),
       });
     } catch (e) { console.error('消息保存失败:', e); }
@@ -530,7 +533,10 @@ export default function RoomPage() {
     if (finishing || finished) return;
     setFinishing(true);
     try {
-      const res = await fetch(`/api/rooms/${roomId}/finish`, { method: 'POST' });
+      const res = await fetch(`/api/rooms/${roomId}/finish`, {
+        method: 'POST',
+        headers: { ...(userId ? { 'x-guest-id': userId } : {}) },
+      });
       const data = await res.json();
       if (data.success) {
         setFinished(true);

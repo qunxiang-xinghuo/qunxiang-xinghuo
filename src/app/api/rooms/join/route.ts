@@ -3,7 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 
-// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
+// v8.5-fix: 邀请码加入房间 — 加固血型匹配 + 移除 SQLite 交互式事务
 export async function POST(request: NextRequest) {
   try {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -17,61 +17,78 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { inviteCode, identity } = body;
 
-    if (!inviteCode || !identity) {
-      return NextResponse.json(apiError("BAD_REQUEST", "缺少邀请码或身份参数"), { status: 400 });
+    // 1. 邀请码格式校验（6位大写字母数字）
+    const normalizedCode = typeof inviteCode === 'string' ? inviteCode.toUpperCase().trim() : '';
+    if (!normalizedCode || !/^[A-Z0-9]{6}$/.test(normalizedCode)) {
+      return NextResponse.json(apiError("BAD_REQUEST", "邀请码格式不正确，请输入6位字母数字组合"), { status: 400 });
+    }
+    if (!identity || typeof identity !== 'string' || identity.trim().length === 0) {
+      return NextResponse.json(apiError("BAD_REQUEST", "缺少身份参数"), { status: 400 });
     }
 
-    // v7.0-test15: 使用事务包裹，消除并发竞态条件
-    const result = await db.$transaction(async (tx) => {
-      const room = await tx.room.findUnique({
-        where: { inviteCode },
-        include: { participants: true },
-      });
-
-      if (!room) return { error: "NOT_FOUND" as const };
-      if (room.status === "closed") return { error: "GONE" as const };
-
-      const actorCount = room.participants.filter((p) => p.role === "actor").length;
-      if (actorCount >= 2) return { error: "FULL" as const };
-
-      const alreadyIn = room.participants.some((p) => p.userId === effectiveUserId);
-      if (alreadyIn) return { roomId: room.id, alreadyJoined: true };
-
-      await tx.user.upsert({
-        where: { id: effectiveUserId },
-        update: { name: identity },
-        create: { id: effectiveUserId, name: identity, email: `${effectiveUserId}@guest.local` },
-      });
-
-      await tx.roomParticipant.create({
-        data: {
-          roomId: room.id,
-          userId: effectiveUserId,
-          identity,
-          role: "actor",
-          isOnline: true,
-        },
-      });
-
-      return { roomId: room.id, alreadyJoined: false };
+    // 2. 查找房间
+    const room = await db.room.findUnique({
+      where: { inviteCode: normalizedCode },
+      include: { participants: true },
     });
 
-    if (result.error === "NOT_FOUND") {
-      return NextResponse.json(apiError("NOT_FOUND", "房间不存在，请检查邀请码"), { status: 404 });
-    }
-    if (result.error === "GONE") {
-      return NextResponse.json(apiError("GONE", "房间已关闭"), { status: 410 });
-    }
-    if (result.error === "FULL") {
-      return NextResponse.json(apiError("FORBIDDEN", "房间已满员"), { status: 403 });
+    // 血型匹配①：码不存在
+    if (!room) {
+      return NextResponse.json(apiError("NOT_FOUND", "邀请码无效或房间已过期"), { status: 404 });
     }
 
+    // 血型匹配②：房间已结束
+    if (room.status === "closed" || room.status === "finished") {
+      return NextResponse.json(apiError("GONE", "对白已结束"), { status: 410 });
+    }
+
+    // 血型匹配③：房间已满
+    const actorCount = room.participants.filter((p) => p.role === "actor").length;
+    if (actorCount >= 2) {
+      return NextResponse.json(apiError("FORBIDDEN", "房间已满"), { status: 403 });
+    }
+
+    // 血型匹配④：自己邀请自己
+    const isSelfInvite = room.participants.length === 1 &&
+      room.participants[0].userId === effectiveUserId;
+    if (isSelfInvite) {
+      return NextResponse.json(apiError("CONFLICT", "这是你自己的房间，快去分享邀请码给好友吧"), { status: 409 });
+    }
+
+    // 血型匹配⑤：已在房间中 → 直接送进去
+    const alreadyIn = room.participants.some((p) => p.userId === effectiveUserId);
+    if (alreadyIn) {
+      return NextResponse.json(apiResponse({
+        roomId: room.id,
+        alreadyJoined: true,
+      }), { status: 200 });
+    }
+
+    // 3. 确保用户存在（upsert）
+    const safeEmail = `${effectiveUserId.replace(/[^a-zA-Z0-9_-]/g, '')}@guest.local`;
+    await db.user.upsert({
+      where: { id: effectiveUserId },
+      update: { name: identity.trim() },
+      create: { id: effectiveUserId, name: identity.trim(), email: safeEmail },
+    });
+
+    // 4. 加入房间
+    await db.roomParticipant.create({
+      data: {
+        roomId: room.id,
+        userId: effectiveUserId,
+        identity: identity.trim(),
+        role: "actor",
+        isOnline: true,
+      },
+    });
+
     return NextResponse.json(apiResponse({
-      roomId: result.roomId,
-      alreadyJoined: result.alreadyJoined,
+      roomId: room.id,
+      alreadyJoined: false,
     }), { status: 200 });
   } catch (error: any) {
     console.error("[Join API] 错误:", error instanceof Error ? error.message : String(error));
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "加入房间失败"), { status: 500 });
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "服务器错误，请稍后重试"), { status: 500 });
   }
 }
