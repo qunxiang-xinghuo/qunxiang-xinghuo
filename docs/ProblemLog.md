@@ -79,6 +79,58 @@ duo-waiting 页面：
 
 ---
 
+## v8.5 邀请房间流程问题（已修复）
+
+---
+
+### 问题26：duo-match 按钮重排 + duo-waiting 分享按钮去重
+
+**修复**：
+- duo-match 三个按钮顺序：进入邀请房间(灰) / 跟好友匹配(灰) / 快速匹配(金)
+- duo-waiting auto 模式去掉"邀请好友"按钮和邀请码展示
+
+**文件**：`duo-match/page.tsx`, `duo-waiting/page.tsx`
+
+---
+
+### 问题27：邀请房间无脑洞显示
+
+**根因**：invite API 未指定 brainholeId 时 room.brainhole 为 null
+
+**修复**：invite API 无 brainholeId 时随机分配 approved 脑洞
+
+**文件**：`api/rooms/invite/route.ts`
+
+---
+
+### 问题28：空房间变僵尸
+
+**根因**：用户进入 invite_duet 房间看一眼就退出，房间仍标记 active
+
+**修复**：socket-handler 新增 `maybeCloseEmptyRoom`，检查消息数，无实际对话则自动关闭
+
+**文件**：`socket-handler.ts`
+
+---
+
+### 问题29：一方离开后另一方无提示
+
+**根因**：room 页面未监听 `opponent-left` WebSocket 事件
+
+**修复**：添加 `opponent-left` 监听，alert "对方已结束对白" + 跳转 /home
+
+**文件**：`room/[id]/page.tsx`
+
+---
+
+### 问题30：返回后找不到未结束房间
+
+**修复**：room 页面返回按钮添加 confirm 提示"房间仍在进行中，离开后可以从发现页重新进入"
+
+**文件**：`room/[id]/page.tsx`
+
+---
+
 ## v8.1 改造过程中的关键问题
 
 ---

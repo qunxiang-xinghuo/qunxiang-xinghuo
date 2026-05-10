@@ -31,6 +31,16 @@ pm2 restart all
 | 时间 | 版本 | 构建 | 页面数 | PM2 |
 |------|------|------|--------|-----|
 | 2026-04-29 | v8.3c+v8.5 | ✅ | 81/81 | ✅ online |
+| 2026-04-29 | v8.5b | ✅ | 81/81 | ✅ online |
+
+**v8.5b 修复清单**：
+- duo-match 按钮重排（进入邀请房间/跟好友匹配/快速匹配）
+- duo-waiting 去掉分享按钮
+- invite API 无脑洞时随机分配
+- socket-handler 空房间自动关闭
+- room 页面 opponent-left 监听
+- room 返回按钮确认提示
+- duo-waiting 404 防御
 
 ---
 

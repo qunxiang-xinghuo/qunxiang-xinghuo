@@ -2143,6 +2143,18 @@ tx.matchRequest.update({
 |------|------|----------|--------|
 | v8.5 | 2026-04-29 | ✅ 通过 | 81/81 |
 
+#### 21.11.4 v8.5 后续修复
+
+| 问题 | 修复 | 文件 |
+|------|------|------|
+| duo-match 按钮顺序 | 进入邀请房间(灰)/跟好友匹配(灰)/快速匹配(金) | `duo-match/page.tsx` |
+| duo-waiting 分享按钮 | 去掉 auto 模式下邀请好友按钮和邀请码展示 | `duo-waiting/page.tsx` |
+| 邀请房间无脑洞 | invite API 无 brainholeId 时随机分配 approved 脑洞 | `api/rooms/invite/route.ts` |
+| 空房间变僵尸 | socket-handler 新增 maybeCloseEmptyRoom，无对话自动关闭 | `socket-handler.ts` |
+| 一方离开无提示 | room 页面添加 opponent-left 监听，alert+跳转 /home | `room/[id]/page.tsx` |
+| 返回后找不到房间 | room 返回按钮添加 confirm 提示 | `room/[id]/page.tsx` |
+| 404 反复请求 | duo-waiting 404 时清空 localStorage xh_duo_brainhole | `duo-waiting/page.tsx` |
+
 ---
 
 > 文档位置：`docs/qunxiangxinhuo-TDD-v8.0.md`  

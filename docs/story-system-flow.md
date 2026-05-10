@@ -864,11 +864,14 @@ POST /api/stories/:storyId/like
 ```
 /duo-match
     │
-    ├── 选择身份 → 点击"开始"
-    │       └── 进入 /duo-waiting
+    ├── 选择身份 → 点击"快速匹配"
+    │       └── 进入 /duo-waiting?mode=auto
     │
-    └── 选择身份 → 点击"邀请好友"（新增按钮）
-            └── 进入 /duo-waiting?mode=invite
+    ├── 选择身份 → 点击"跟好友匹配"
+    │       └── 进入 /duo-waiting?mode=invite
+    │
+    └── 选择身份 → 点击"进入邀请房间"
+            └── 展开输入框 → 输入6位邀请码 → /room/:roomId
 
 /duo-waiting?mode=auto（默认）
     │
@@ -876,8 +879,7 @@ POST /api/stories/:storyId/like
     │       ├── 匹配成功 → /room/:roomId
     │       └── 15秒超时
     │               ├── 与刘看山对话 → /room/:aiRoomId
-    │               ├── 再次尝试匹配（重启15秒）
-    │               └── 邀请好友 → 切换 mode=invite
+    │               └── 再次尝试匹配（重启15秒）
     │
     └── 轮询 /api/match/:matchId（每2秒）
             └── matched → /room/:roomId
@@ -907,8 +909,11 @@ POST /api/stories/:storyId/like
     │
     ├── 顶部显示脑洞标题（brainhole?.title || "自由对话"）
     ├── 显示邀请码（仅当 participantCount < 2）
+    ├── 2分钟倒计时（房主端）
     ├── 朋友加入后邀请码消失
-    └── 满2人后开始实时对话
+    ├── 满2人后开始实时对话
+    ├── 一方离开 → WebSocket opponent-left → 另一方 alert+跳转 /home
+    └── 空房间（无对话消息）→ socket disconnect/leave-room 自动关闭
 ```
 
 #### 房间分享修复
