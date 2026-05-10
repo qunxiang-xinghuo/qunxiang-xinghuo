@@ -212,6 +212,32 @@ export function registerSocketHandlers(io: SocketIOServer): void {
       }
     }
 
+    // v8.5: 空房间防僵尸 —— 没有实际对话的房间直接关闭
+    async function maybeCloseEmptyRoom(roomId: string) {
+      try {
+        const room = await db.room.findUnique({
+          where: { id: roomId },
+          include: { messages: { orderBy: { createdAt: 'asc' } } },
+        });
+        if (!room || room.status === 'closed') return;
+        // 只处理 invite_duet 和 duet 类型（真人房间）
+        if (room.type !== 'invite_duet' && room.type !== 'duet') return;
+        // 检查是否有实际对话消息（排除系统消息：senderId 以 agent_ 开头或 userId 为 null）
+        const realMessages = room.messages.filter(
+          (m) => m.senderId && !m.senderId.startsWith('agent_') && m.content?.length > 0
+        );
+        if (realMessages.length === 0) {
+          await db.room.update({
+            where: { id: roomId },
+            data: { status: 'closed', closedAt: new Date() },
+          });
+          console.log(`[Socket] 空房间已自动关闭: ${roomId}`);
+        }
+      } catch (err: any) {
+        console.error('[Socket] 空房间关闭失败:', err.message);
+      }
+    }
+
     // 离开房间 —— v6.2-fix6: 同上，静默更新 viewer count
     // v7.0-fix7: 向对方广播 opponent-left 事件
     socket.on('leave-room', async ({ roomId, userId }: LeaveRoomData) => {
@@ -240,6 +266,8 @@ export function registerSocketHandlers(io: SocketIOServer): void {
 
       // v8.1-fix5: AI房间用户离开后自动关闭
       await maybeCloseAiRoom(roomId);
+      // v8.5: 空房间防僵尸
+      await maybeCloseEmptyRoom(roomId);
     })
 
     // 转发消息 —— v6.1-fix: 排除发送者避免重复
@@ -384,6 +412,8 @@ export function registerSocketHandlers(io: SocketIOServer): void {
 
         // v8.1-fix5: AI房间用户断开后自动关闭
         await maybeCloseAiRoom(roomId);
+        // v8.5: 空房间防僵尸
+        await maybeCloseEmptyRoom(roomId);
       }
       joinedRooms.clear()
     })

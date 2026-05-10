@@ -297,7 +297,7 @@ function DuoMatchContent() {
               className="w-full py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
             >
               <Share2 className="w-4 h-4" />
-              跟好友对戏
+              跟好友匹配
             </button>
             {/* 3. 快速匹配 */}
             <button

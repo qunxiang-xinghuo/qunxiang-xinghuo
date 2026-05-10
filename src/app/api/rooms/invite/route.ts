@@ -34,6 +34,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // v8.5-fix: 没有指定脑洞时随机分配一个
+    if (!brainholeId) {
+      const randomBh = await db.brainhole.findFirst({
+        where: { status: 'approved' },
+        orderBy: { hotScore: 'desc' },
+        take: 50,
+      });
+      if (randomBh) {
+        brainholeId = randomBh.id;
+        console.log('[Invite API] 未指定脑洞，随机分配:', randomBh.title);
+      }
+    }
+
     // 确保用户存在
     await db.user.upsert({
       where: { id: effectiveUserId },

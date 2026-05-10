@@ -262,9 +262,18 @@ export default function RoomPage() {
         }];
       });
     };
+    // v8.5: 对方离开提示
+    const handleOpponentLeft = (data: any) => {
+      const leftUserId = data.userId;
+      if (leftUserId === userId) return;
+      alert('对方已结束对白，即将返回发现页');
+      router.push('/home');
+    };
     on('new-message', handleNewMessage);
+    on('opponent-left', handleOpponentLeft);
     return () => {
       off('new-message', handleNewMessage);
+      off('opponent-left', handleOpponentLeft);
       leaveRoom(roomId, userId);
       hasJoinedRef.current = false;
     };
@@ -541,8 +550,10 @@ export default function RoomPage() {
 
   const isReadonly = roomStatus === 'closed' || finished;
   // v8.0-fix: 增强标题回退链，使用 room.scene 作为最终回退
-  const displayTitle = story?.title || brainholeTitle || (brainholeScenario ? '自由对话' : '对白室');
-  const displaySubtitle = story?.eraBackground || brainholeScenario || '';
+  // v8.5-fix: invite_duet 无脑洞时显示默认话题
+  const hasBrainhole = !!brainholeTitle || !!brainholeScenario;
+  const displayTitle = story?.title || brainholeTitle || (hasBrainhole ? '自由对话' : '对白室');
+  const displaySubtitle = story?.eraBackground || brainholeScenario || (roomType === 'invite_duet' && !hasBrainhole ? '你们的话题由对话自然生发' : '');
 
   if (roomError) {
     return (
@@ -574,7 +585,19 @@ export default function RoomPage() {
       {/* 顶部标题栏 */}
       <div className="shrink-0 border-b border-white/5 bg-[#0c0c0e]/80 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => router.push('/home')} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" title="返回发现页">
+          <button
+            onClick={() => {
+              if (!isReadonly && messages.length > 0) {
+                if (confirm('房间仍在进行中，离开后可以从发现页重新进入。确认离开吗？')) {
+                  router.push('/home');
+                }
+              } else {
+                router.push('/home');
+              }
+            }}
+            className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+            title="返回发现页"
+          >
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1 min-w-0">

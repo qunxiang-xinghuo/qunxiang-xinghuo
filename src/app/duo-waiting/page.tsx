@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Radar, Sparkles, User, Bot, ArrowRight, RefreshCw, Copy, Check, Share2,
+  Radar, Sparkles, User, Bot, ArrowRight, RefreshCw,
 } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
@@ -38,16 +38,12 @@ function DuoWaitingContent() {
   const [matchId, setMatchId] = useState<string | null>(null);
   const [matchError, setMatchError] = useState<string>('');
   const [creatingAiRoom, setCreatingAiRoom] = useState(false);
-  const [inviteCode, setInviteCode] = useState<string>('');
-  const [showInvite, setShowInvite] = useState(false);
   const [creatingInvite, setCreatingInvite] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const identityRef = useRef<string>('');
   const brainholeIdRef = useRef<string | undefined>(undefined);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const navTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const copiedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const pollMatchStatus = useCallback(async (currentMatchId: string) => {
     if (!currentMatchId || status !== 'matching') return false;
@@ -70,36 +66,6 @@ function DuoWaitingContent() {
       return false;
     } catch { return false; }
   }, [status, router]);
-
-  // 创建邀请房间
-  const createInviteRoom = useCallback(async () => {
-    setCreatingInvite(true);
-    setMatchError('');
-    try {
-      const guestId = localStorage.getItem('xh_user_id');
-      const identity = identityRef.current;
-      const res = await fetch('/api/rooms/invite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
-        body: JSON.stringify({
-          brainholeId: brainholeIdRef.current,
-          identity: identity || '我',
-        }),
-      });
-      const result = await res.json();
-      if (result.success && result.data?.inviteCode) {
-        setInviteCode(result.data.inviteCode);
-        setShowInvite(true);
-      } else {
-        setMatchError(result.error?.message || '创建邀请房间失败');
-      }
-    } catch (err) {
-      console.error('创建邀请房间失败:', err);
-      setMatchError('网络异常，创建邀请房间失败');
-    } finally {
-      setCreatingInvite(false);
-    }
-  }, []);
 
   // v8.5: 邀请模式 — 创建房间后直接进入
   const createInviteRoomAndEnter = useCallback(async () => {
@@ -129,16 +95,6 @@ function DuoWaitingContent() {
       setCreatingInvite(false);
     }
   }, [router]);
-
-  const copyInviteCode = () => {
-    if (inviteCode) {
-      navigator.clipboard.writeText(inviteCode).then(() => {
-        setCopied(true);
-        if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
-        copiedTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
-      }).catch(() => {});
-    }
-  };
 
   // 创建AI房间
   const createAiRoom = useCallback(async () => {
@@ -171,7 +127,6 @@ function DuoWaitingContent() {
   useEffect(() => {
     return () => {
       if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current);
-      if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
     };
   }, []);
 
@@ -379,43 +334,7 @@ function DuoWaitingContent() {
                 </div>
               </div>
 
-              {/* 邀请好友按钮 */}
-              {!showInvite && (
-                <button
-                  onClick={createInviteRoom}
-                  disabled={creatingInvite}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white/50 text-xs hover:bg-white/[0.06] active:scale-[0.97] transition-all"
-                >
-                  {creatingInvite ? (
-                    <div className="w-3 h-3 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Share2 className="w-3 h-3" />
-                      邀请好友
-                    </>
-                  )}
-                </button>
-              )}
 
-              {/* 邀请码展示 */}
-              {showInvite && inviteCode && (
-                <motion.div
-                  initial={mounted ? { opacity: 0, y: 10 } : false}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20"
-                >
-                  <p className="text-[10px] text-emerald-400/70 mb-1">房间号（分享给好友）</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-emerald-400 tracking-widest">{inviteCode}</span>
-                    <button
-                      onClick={copyInviteCode}
-                      className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
-                    >
-                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-emerald-400/70" />}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
             </motion.div>
           )}
 
