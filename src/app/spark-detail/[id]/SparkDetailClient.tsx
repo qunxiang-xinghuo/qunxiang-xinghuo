@@ -168,23 +168,6 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
           <h1 className="text-base font-bold text-white/90 truncate">{data.brainholeTitle || data.title}</h1>
           <p className="text-[11px] text-white/30">{data.identityPair}</p>
         </div>
-        {/* v8.1: 点赞按钮 */}
-        <button
-          onClick={handleLike}
-          disabled={likeLoading}
-          className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-all active:scale-95 ${
-            liked
-              ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25'
-              : 'bg-white/[0.03] text-white/30 border border-white/5 hover:bg-white/[0.06] hover:text-white/50'
-          }`}
-        >
-          {likeLoading ? (
-            <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Flame className={`w-3.5 h-3.5 ${liked ? 'fill-current drop-shadow-[0_0_4px_rgba(226,176,74,0.5)]' : ''}`} />
-          )}
-          {hotScore}
-        </button>
       </div>
 
       {/* 场景描述 */}
@@ -194,10 +177,23 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
         </div>
       )}
 
-      {/* 消息列表 */}
+      {/* 对白记录区域 — 只读 */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-6">
+        {/* 对白记录标题 */}
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-[#e2b04a]/60" />
+          <span className="text-xs text-white/40 font-medium">对白记录</span>
+          <span className="text-[10px] text-white/20">({data.messageCount} 条)</span>
+        </div>
+
         <div className="space-y-4">
-          {data.messages.map((msg, idx) => (
+          {data.messages.length === 0 && data.content ? (
+            /* fallback: 当 messages 为空时展示 content */
+            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
+              <pre className="text-sm text-white/60 whitespace-pre-wrap leading-relaxed font-sans">{data.content}</pre>
+            </div>
+          ) : (
+            data.messages.map((msg, idx) => (
             <motion.div
               key={msg.id}
               initial={mounted ? { opacity: 0, y: 10 } : false}
@@ -236,7 +232,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
                 </span>
               </div>
             </motion.div>
-          ))}
+          )))}
         </div>
 
         {/* 结束提示 */}
@@ -255,12 +251,41 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
           </div>
         ) : null}
 
+        {/* 分隔线 */}
+        <div className="my-6 flex items-center gap-3">
+          <div className="flex-1 h-px bg-white/5" />
+          <span className="text-[10px] text-white/15">对白结束</span>
+          <div className="flex-1 h-px bg-white/5" />
+        </div>
+
+        {/* v8.2-fix: 点赞按钮 — 移至下方 */}
+        <div className="flex items-center justify-center mb-4">
+          <button
+            onClick={handleLike}
+            disabled={likeLoading}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all active:scale-95 ${
+              liked
+                ? 'bg-[#e2b04a]/15 text-[#e2b04a] border border-[#e2b04a]/25'
+                : 'bg-white/[0.03] text-white/30 border border-white/5 hover:bg-white/[0.06] hover:text-white/50'
+            }`}
+          >
+            {likeLoading ? (
+              <span className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Flame className={`w-4 h-4 ${liked ? 'fill-current drop-shadow-[0_0_4px_rgba(226,176,74,0.5)]' : ''}`} />
+            )}
+            <span className="text-sm">{liked ? '已点赞' : '点赞'}</span>
+            <span className="text-sm font-medium">{hotScore}</span>
+          </button>
+        </div>
+
         {/* v8.2: 评论区 */}
         {data.roomId && (
-          <div className="mt-6 pt-4 border-t border-white/5">
+          <div className="mt-4 pt-4 border-t border-white/5">
             <div className="flex items-center gap-2 mb-3">
               <MessageCircle className="w-4 h-4 text-white/30" />
-              <span className="text-xs text-white/40">评论 ({comments.length})</span>
+              <span className="text-xs text-white/40 font-medium">评论</span>
+              <span className="text-[10px] text-white/20">({comments.length})</span>
             </div>
 
             {/* 评论输入 */}
