@@ -279,21 +279,40 @@ function DuoMatchContent() {
         ))}
       </div>
 
-      {/* 加入房间区域 */}
-      <div className="shrink-0 px-6 py-3 border-t border-slate-700/15">
+      {/* 入口按钮区域 */}
+      <div className="shrink-0 px-6 py-5 border-t border-slate-700/15 space-y-3 mt-2">
         {!showJoinInput ? (
-          <button
-            onClick={() => setShowJoinInput(true)}
-            className="w-full py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white/50 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
-          >
-            <DoorOpen className="w-4 h-4" />
-            加入房间
-          </button>
+          <>
+            {/* 1. 进入邀请房间 */}
+            <button
+              onClick={() => setShowJoinInput(true)}
+              className="w-full py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+            >
+              <DoorOpen className="w-4 h-4" />
+              进入邀请房间
+            </button>
+            {/* 2. 跟好友对戏 */}
+            <button
+              onClick={handleInvite}
+              className="w-full py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              跟好友对戏
+            </button>
+            {/* 3. 快速匹配 */}
+            <button
+              onClick={handleConfirm}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              快速匹配
+            </button>
+          </>
         ) : (
           <motion.div
             initial={false}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-2"
+            className="space-y-3"
           >
             <div className="flex gap-2">
               <input
@@ -319,40 +338,12 @@ function DuoMatchContent() {
             {joinError && <p className="text-[11px] text-red-400/70 text-center">{joinError}</p>}
             <button
               onClick={() => { setShowJoinInput(false); setJoinCode(''); setJoinError(''); }}
-              className="w-full text-[10px] text-slate-600 hover:text-slate-500"
+              className="w-full py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white/40 text-sm hover:bg-white/[0.06] transition-all"
             >
-              取消，返回随机匹配
+              取消，返回
             </button>
           </motion.div>
         )}
-      </div>
-
-      {/* 底部确认按钮 */}
-      <div className="shrink-0 px-6 py-4 border-t border-slate-700/15 space-y-3">
-        <button
-          onClick={handleConfirm}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-        >
-          {fromBubble ? (
-            <>
-              <Sparkles className="w-4 h-4" />
-              确认身份，开始匹配
-              <ArrowRight className="w-4 h-4" />
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              确认身份，进入匹配
-            </>
-          )}
-        </button>
-        <button
-          onClick={handleInvite}
-          className="w-full py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm hover:bg-white/[0.06] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
-        >
-          <Share2 className="w-4 h-4" />
-          邀请好友对戏
-        </button>
       </div>
     </div>
   );

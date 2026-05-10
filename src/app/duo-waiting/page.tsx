@@ -192,7 +192,14 @@ function DuoWaitingContent() {
 
     if (brainholeIdRef.current) {
       fetch(`/api/brainholes/${brainholeIdRef.current}`)
-        .then(r => r.json())
+        .then(r => {
+          if (r.status === 404) {
+            // v8.5-fix: 无效的 brainholeId 清空 localStorage，避免反复 404
+            localStorage.removeItem('xh_duo_brainhole');
+            brainholeIdRef.current = undefined;
+          }
+          return r.json();
+        })
         .then(res => {
           if (res.success && res.data) {
             setBrainholeInfo({ id: res.data.id, title: res.data.title, scenario: res.data.scenario });
