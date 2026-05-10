@@ -40,6 +40,84 @@
 
 ---
 
+## v9.0b 颜色修复 + 图标区分 + 管理员登录
+
+---
+
+### 问题33：火花/点赞黄色被全局配色覆盖为蓝灰
+
+**现象**：
+- v9.0a 全局配色优化把 `#e2b04a` 全部替换为 `#8a9ab0`（蓝灰）
+- 火花标记（Flame 图标）、点赞状态、热度计数等应该保持黄色的元素变成了蓝灰色
+- 用户反馈"颜色变了"
+
+**根因**：
+- v9.0a 配色替换时未区分"主强调色"和"火花/热度语义色"
+- 所有 `text-xh-gold` / `fill-xh-gold` 统一被替换，包括 Flame 图标
+
+**解决**：
+1. 在 `globals.css` 新增 `--color-xh-yellow: #D4B830`（标准黄色）
+2. 所有 Flame 图标相关的 `text-xh-gold` / `fill-xh-gold` → `text-xh-yellow` / `fill-xh-yellow`
+3. 火花标记消息气泡边框/背景/阴影改为黄色体系
+4. 旧的 `rgba(226,176,74,...)` 阴影统一替换为 `rgba(212,184,48,...)`
+5. 主按钮、输入框 focus、标题高亮等保持蓝灰 `xh-gold` 不变
+
+**文件**：
+- `src/app/globals.css` — 新增 `xh-yellow`
+- `src/components/reaction/SparkButton.tsx`
+- `src/components/room/SparkWall.tsx`
+- `src/components/room/ChatRoom.tsx`
+- `src/components/library/StoryCard.tsx`
+- `src/components/library/SparkCollection.tsx`
+- `src/components/bubble-cloud/Bubble.tsx`
+- `src/components/bubble-cloud/BubblePreview.tsx`
+- `src/components/profile/UserStats.tsx`
+- `src/components/zhihu/ZhihuHotBubbles.tsx`
+- `src/app/library/page.tsx` / `[id]/page.tsx`
+- `src/app/room/[id]/page.tsx`
+- `src/app/home/page.tsx`
+- `src/app/story-hall/[storyId]/page.tsx`
+- `src/app/multi-match/page.tsx`
+- `src/app/spark-detail/[id]/SparkDetailClient.tsx`
+
+---
+
+### 问题34：个人疗愈和个人火花图标相同
+
+**现象**：
+- `/profile` 页面中"个人疗愈"和"我的火花"都使用 `Flame` 图标
+- 用户无法一眼区分两个菜单项
+
+**解决**：
+- "个人疗愈"图标 `Flame` → `Heart`
+- 两个菜单项的图标背景/颜色统一为黄色 `xh-yellow`
+
+**文件**：`src/app/profile/page.tsx`
+
+---
+
+### 问题35：管理员登录后无法访问后台
+
+**现象**：
+- 管理员账号 `xingxing` 能正常登录
+- 但访问 `/admin` 时，admin API 可能返回 403，或 session 中缺少管理员标识
+
+**根因**：
+- `src/lib/auth.ts` 中 `authorize` 函数返回值缺少 `isAdmin` 字段
+- JWT callback 未将 `isAdmin` 写入 token
+- Session callback 未将 `isAdmin` 写入 session
+- 导致 `useSession` 获取不到管理员身份，中间件或前端逻辑可能误判
+
+**解决**：
+1. `authorize` 返回值添加 `isAdmin: user.isAdmin`
+2. JWT callback 添加 `token.isAdmin = user.isAdmin`
+3. Session callback 添加 `session.user.isAdmin = token.isAdmin`
+4. TypeScript 类型声明扩展 `isAdmin?: boolean`
+
+**文件**：`src/lib/auth.ts`
+
+---
+
 ## v8.6 刘看山套话问题
 
 ---

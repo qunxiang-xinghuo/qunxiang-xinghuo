@@ -1,5 +1,36 @@
 # 群像·星火 — 重要操作记录
 
+## v9.0b 颜色修复 + 图标区分 + 管理员登录 — 部署教程
+
+> 最后更新：2026-04-29
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 恢复标准黄色 | `globals.css` + 16 文件 | 新增 `--color-xh-yellow: #D4B830`，Flame/火花/点赞从蓝灰恢复为黄色 |
+| 疗愈图标区分 | `profile/page.tsx` | 个人疗愈 `Flame` → `Heart`，火花保持 `Flame` |
+| 管理员登录修复 | `lib/auth.ts` | `authorize`/`jwt`/`session` callbacks 补全 `isAdmin` 字段 |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 部署验证记录
+
+| 时间 | 版本 | 构建 | 页面数 | PM2 |
+|------|------|------|--------|-----|
+| 2026-04-29 | v9.0b | ✅ | 81/81 | ✅ online |
+
+---
+
 ## v9.0a 全局配色优化 — 部署教程
 
 > 最后更新：2026-04-29
