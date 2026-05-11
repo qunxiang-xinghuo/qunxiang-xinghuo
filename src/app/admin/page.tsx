@@ -261,7 +261,7 @@ export default function AdminPage() {
           {tab === 'users' && (
             <button
               onClick={() => { setEditingUser(null); setUserForm({ username: '', name: '', email: '', password: '', isAdmin: false }); setShowUserForm(true); }}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25"
+              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/25"
             >
               <UserPlus className="w-3 h-3" />
               新增
@@ -460,7 +460,7 @@ export default function AdminPage() {
             <button
               onClick={handleSaveUser}
               disabled={userFormLoading}
-              className="w-full mt-4 py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25 text-sm font-medium hover:bg-[#8a9ab0]/25 disabled:opacity-30 transition-all"
+              className="w-full mt-4 py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/25 text-sm font-medium hover:bg-[#3B82F6]/25 disabled:opacity-30 transition-all"
             >
               {userFormLoading ? '保存中...' : '保存'}
             </button>

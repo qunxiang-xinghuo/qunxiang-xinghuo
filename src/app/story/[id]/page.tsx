@@ -380,7 +380,7 @@ export default function StoryDetailPage() {
                   <p className="text-sm text-white/40 mb-4">找到你的对戏搭档了</p>
                   <button
                     onClick={handleEnterRoom}
-                    className="w-full py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 transition-colors"
+                    className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25 hover:bg-[#8a9ab0]/25 transition-colors"
                   >
                     进入对白室
                   </button>
@@ -397,7 +397,7 @@ export default function StoryDetailPage() {
                     <button
                       onClick={handleJoinAi}
                       disabled={joinLoading}
-                      className="w-full py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 transition-colors"
+                      className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25 hover:bg-[#8a9ab0]/25 transition-colors"
                     >
                       {joinLoading ? '创建中...' : '🦊 和刘看山玩'}
                     </button>

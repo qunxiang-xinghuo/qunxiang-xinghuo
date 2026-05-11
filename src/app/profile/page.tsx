@@ -142,7 +142,7 @@ export default function ProfilePage() {
         </p>
         <button
           onClick={() => loadError ? loadUserFromApi() : router.push('/login')}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#8a9ab0] to-[#6c7c90] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
           {loadError ? '重试' : '去登录'}
         </button>

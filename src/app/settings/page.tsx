@@ -380,7 +380,7 @@ export default function SettingsPage() {
                 <button
                   onClick={saveUsername}
                   disabled={saving || !usernameValue.trim()}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#8a9ab0] to-[#6c7c90] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
                   {saving ? '保存中...' : '保存'}
                 </button>
@@ -479,7 +479,7 @@ export default function SettingsPage() {
                 <button
                   onClick={savePassword}
                   disabled={saving}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#8a9ab0] to-[#6c7c90] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
                   {saving ? '保存中...' : '保存'}
                 </button>

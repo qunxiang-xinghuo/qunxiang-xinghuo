@@ -171,7 +171,7 @@ function DuoTimeoutContent() {
           <button
             onClick={handleChooseAI}
             disabled={choice !== null}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-btn to-xh-btn-dark text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {choice === 'ai' ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

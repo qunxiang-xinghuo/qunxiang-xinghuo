@@ -67,7 +67,7 @@ function IdentityPageContent() {
           disabled={!isValid}
           className={`w-full py-4 rounded-xl font-medium text-center transition-all ${
             isValid
-              ? 'bg-gradient-to-r from-xh-accent to-rose-600 text-white shadow-lg'
+              ? 'bg-gradient-to-r from-xh-btn to-xh-btn-dark text-white shadow-lg'
             : 'bg-gray-800 text-gray-500 cursor-not-allowed'
           }`}
         >

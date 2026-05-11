@@ -8,6 +8,10 @@
   --color-xh-accent: #7a8aa0;
   --color-xh-yellow: #D4B830;
 
+  /* 按钮主色 - PPT蓝风格 */
+  --color-xh-btn: #3B82F6;
+  --color-xh-btn-dark: #2563EB;
+
   /* ===== 背景色系 ===== */
   --color-xh-primary: #0a0e1a;
   --color-xh-surface: #131b2e;

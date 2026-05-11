@@ -50,7 +50,7 @@ export default function MatchSuccessModal({
 
         <button
           onClick={onEnterChat}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-xh-accent to-rose-600 text-white py-4 rounded-xl font-medium shadow-lg"
+          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-xh-btn to-xh-btn-dark text-white py-4 rounded-xl font-medium shadow-lg"
         >
           <MessageSquare className="w-4 h-4" />
           进入双人对白室

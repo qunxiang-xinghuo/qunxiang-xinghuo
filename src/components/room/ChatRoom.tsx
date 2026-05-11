@@ -102,7 +102,7 @@ export default function ChatRoom({
           <button
             onClick={handleSend}
             disabled={!inputValue.trim()}
-            className="p-3 rounded-full transition-all disabled:bg-slate-800/30 disabled:text-slate-600 disabled:border-slate-700/20 bg-xh-gold/15 text-xh-gold border border-xh-gold/25 hover:bg-xh-gold/25 active:scale-95"
+            className="p-3 rounded-full transition-all disabled:bg-slate-800/30 disabled:text-slate-600 disabled:border-slate-700/20 bg-xh-btn/15 text-xh-btn border border-xh-btn/25 hover:bg-xh-gold/25 active:scale-95"
           >
             <Send className="w-4 h-4" />
           </button>

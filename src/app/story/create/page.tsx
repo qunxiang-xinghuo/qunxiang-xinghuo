@@ -248,7 +248,7 @@ export default function CreateStoryPage() {
               <button
                 onClick={() => validateStep(1) && setStep(2)}
                 disabled={!validateStep(1)}
-                className="w-full py-3 rounded-xl bg-[#D4B830]/15 text-[#D4B830] text-sm font-medium border border-[#D4B830]/20 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-full py-3 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/20 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 下一步：设定角色
               </button>
@@ -337,10 +337,10 @@ export default function CreateStoryPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={!validateStep(2) || submitting}
-                  className="flex-1 py-3 rounded-xl bg-[#D4B830]/15 text-[#D4B830] text-sm font-medium border border-[#D4B830]/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                  className="flex-1 py-3 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                 >
                   {submitting ? (
-                    <span className="w-4 h-4 border-2 border-[#D4B830]/30 border-t-[#D4B830] rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 border-[#3B82F6]/30 border-t-[#3B82F6] rounded-full animate-spin" />
                   ) : (
                     <>
                       <ScrollText className="w-3.5 h-3.5" />

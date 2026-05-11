@@ -56,7 +56,7 @@ export default function ReactionInput({
         <button
           onClick={onSubmit}
           disabled={disabled || !value.trim()}
-          className="flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-all disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed bg-gradient-to-r from-xh-accent to-rose-600 text-white shadow-lg"
+          className="flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-all disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed bg-gradient-to-r from-xh-btn to-xh-btn-dark text-white shadow-lg"
         >
           <Send className="w-4 h-4" />
           <span>记录这个反应</span>

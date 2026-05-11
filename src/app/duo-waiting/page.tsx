@@ -384,7 +384,7 @@ function DuoWaitingContent() {
                 <button
                   onClick={createAiRoom}
                   disabled={creatingAiRoom}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#8a9ab0]/20 to-[#6c7c90]/20 border border-[#8a9ab0]/30 text-[#8a9ab0] text-sm font-medium hover:from-[#8a9ab0]/30 hover:to-xh-gold-dark/30 active:scale-[0.97] transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#3B82F6]/20 to-[#2563EB]/20 border border-[#3B82F6]/30 text-[#3B82F6] text-sm font-medium hover:from-[#8a9ab0]/30 hover:to-xh-gold-dark/30 active:scale-[0.97] transition-all"
                 >
                   {creatingAiRoom ? (
                     <div className="w-4 h-4 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin" />

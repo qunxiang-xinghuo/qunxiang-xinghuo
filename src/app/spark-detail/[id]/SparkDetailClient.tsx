@@ -265,7 +265,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
             disabled={likeLoading}
             className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all active:scale-95 ${
               liked
-                ? 'bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25'
+                ? 'bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/25'
                 : 'bg-white/[0.03] text-white/30 border border-white/5 hover:bg-white/[0.06] hover:text-white/50'
             }`}
           >
@@ -301,7 +301,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
               <button
                 onClick={submitComment}
                 disabled={!commentInput.trim() || commentLoading}
-                className="p-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 transition-colors disabled:opacity-20"
+                className="p-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/25 hover:bg-[#8a9ab0]/25 transition-colors disabled:opacity-20"
               >
                 {commentLoading ? (
                   <span className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin block" />

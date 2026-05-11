@@ -908,7 +908,7 @@ export default function RoomPage() {
             <button
               onClick={handleSend}
               disabled={!inputValue.trim()}
-              className="p-3 rounded-full transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 active:scale-95"
+              className="p-3 rounded-full transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/25 hover:bg-[#3B82F6]/25 active:scale-95"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -950,7 +950,7 @@ export default function RoomPage() {
             <div className="space-y-2">
               <button
                 onClick={() => setShowTruth(false)}
-                className="w-full py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/25"
+                className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25"
               >
                 知道了
               </button>
@@ -991,7 +991,7 @@ export default function RoomPage() {
             <div className="space-y-2.5">
               <button
                 onClick={() => { setShowInviteTimeoutModal(false); router.push('/solo-match'); }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#8a9ab0]/20 to-[#6c7c90]/20 border border-[#8a9ab0]/30 text-[#8a9ab0] text-sm font-medium hover:from-[#8a9ab0]/30 hover:to-xh-gold-dark/30 active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#3B82F6]/20 to-[#2563EB]/20 border border-[#3B82F6]/30 text-[#3B82F6] text-sm font-medium hover:from-[#8a9ab0]/30 hover:to-xh-gold-dark/30 active:scale-[0.97] transition-all flex items-center justify-center gap-2"
               >
                 <Bot className="w-4 h-4" />
                 与刘看山对话
@@ -1086,7 +1086,7 @@ export default function RoomPage() {
               <button
                 onClick={submitComment}
                 disabled={!commentInput.trim() || commentLoading}
-                className="p-2.5 rounded-xl transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#8a9ab0]/15 text-[#8a9ab0] border border-[#8a9ab0]/25 hover:bg-[#8a9ab0]/25 active:scale-95"
+                className="p-2.5 rounded-xl transition-all disabled:bg-white/[0.03] disabled:text-white/10 disabled:border-white/5 bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/25 hover:bg-[#3B82F6]/25 active:scale-95"
               >
                 {commentLoading ? (
                   <span className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin block" />

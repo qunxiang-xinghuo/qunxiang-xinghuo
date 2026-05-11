@@ -214,7 +214,7 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
               <button
                 onClick={handleConfirm}
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-xh-btn to-xh-btn-dark text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {loading ? '正在进入...' : '确认身份，开始匹配'}
               </button>

@@ -313,7 +313,7 @@ function DuoMatchContent() {
             {/* 3. 快速匹配 */}
             <button
               onClick={handleConfirm}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-xh-btn to-xh-btn-dark text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
               快速匹配
@@ -342,9 +342,9 @@ function DuoMatchContent() {
               <button
                 onClick={handleJoinRoom}
                 disabled={joining || joinCode.length !== 6}
-                className="px-4 py-2.5 rounded-xl bg-xh-gold/15 border border-xh-gold/30 text-xh-gold text-sm font-medium hover:bg-xh-gold/25 disabled:opacity-40 transition-all"
+                className="px-4 py-2.5 rounded-xl bg-xh-btn/15 border border-xh-btn/30 text-xh-btn text-sm font-medium hover:bg-xh-btn/25 disabled:opacity-40 transition-all"
               >
-                {joining ? <div className="w-4 h-4 border-2 border-xh-gold/30 border-t-xh-gold rounded-full animate-spin" /> : '进入'}
+                {joining ? <div className="w-4 h-4 border-2 border-xh-btn/30 border-t-xh-btn rounded-full animate-spin" /> : '进入'}
               </button>
             </div>
             {joinError && <p className="text-[11px] text-red-400/70 text-center">{joinError}</p>}

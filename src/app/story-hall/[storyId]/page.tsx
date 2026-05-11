@@ -414,7 +414,7 @@ export default function StoryDetailPage() {
                   返回剧场
                 </button>
                 <button onClick={() => router.push('/story-hall')}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-xs font-medium flex items-center justify-center gap-1.5">
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-xh-btn to-xh-btn-dark text-white text-xs font-medium flex items-center justify-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />发起我的剧本
                 </button>
               </div>
@@ -426,7 +426,7 @@ export default function StoryDetailPage() {
         {story.status === 'ongoing' && (
           <motion.div initial={mounted ? { opacity: 0, y: 16 } : false} animate={{ opacity: 1, y: 0 }} className="px-4 pb-6">
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => router.push(`/story-hall/${storyId}/room`)}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-xh-gold to-xh-gold-dark text-white text-sm font-bold shadow-lg shadow-xh-gold/20 hover:shadow-xl hover:shadow-xh-gold/30 transition-all flex items-center justify-center gap-2">
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-xh-btn to-xh-btn-dark text-white text-sm font-bold shadow-lg shadow-xh-btn/20 hover:shadow-xl hover:shadow-xh-btn/30 transition-all flex items-center justify-center gap-2">
               <Sparkles className="w-5 h-5" />进入对白实验室<ArrowRight className="w-4 h-4" />
             </motion.button>
           </motion.div>
