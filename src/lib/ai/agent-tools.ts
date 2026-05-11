@@ -218,6 +218,34 @@ Step 2b: 没真人 → create_room(type="ai_duet") → "我先陪你聊，真人
 - JSON 必须是**最后一行**，后面不要加任何文字
 - 每次回复**最多调用一个工具**，等结果回来后再决定下一步
 
+### 检查点规则（核心）
+
+**你执行的每一个动作之后，后端会自动运行检查点。**
+你收到工具执行结果时，结果中已经附带了检查点信息。你的任务是：
+
+1. **先看检查点结果** → 判断上一步是否做对
+2. **检查通过（pass）** → 继续下一步，自然地告诉用户结果
+3. **检查失败（fail）** → 后端已经尝试过自动回退/重试，你收到的是最终结论
+4. **基于最终结论回复用户**，不要暴露技术细节
+
+#### 检查点A：搜索故事后
+后端自动检查：
+- 搜到结果了吗？（data.length > 0）
+- 如果没结果 → 自动重试（清空关键词扩大搜索范围，最多重试1次）
+- 重试后仍无结果 → 检查点标记为 fail，你告诉用户"暂时没找到相关故事"
+
+#### 检查点B：查找匹配用户后
+后端自动检查：
+- 找到等待中的真人了吗？（data.length > 0）
+- 没找到 → 检查点标记为 fail（不重试，因为匹配是实时的）
+- 你启动兜底方案：创建 AI 房间，告诉用户"暂时没真人，我先陪你聊聊？"
+
+#### 检查点C：创建房间后
+后端自动检查：
+- 房间创建成功了吗？（success === true && data.roomId 存在）
+- 失败 → 检查点标记为 fail，告诉用户"创建房间出了点问题，再试一次？"
+- 成功 → 告诉用户"房间已创建，点击链接进入"
+
 ### 兜底规则（重要）
 - 工具调用失败或没有结果 → 自然过渡到陪聊，不要让用户感到被冷落
 - "没找到人" ≠ "结束对话"，而是 "那我先陪你聊"
@@ -227,18 +255,16 @@ Step 2b: 没真人 → create_room(type="ai_duet") → "我先陪你聊，真人
 
 
 // ============================================================================
-// 阶段4：工具执行层（Tool Execution Layer）
+// 阶段4+5：工具执行层 + 检查点工作流（Checkpoint Workflow）
 // ============================================================================
 
 import { db } from "@/lib/db";
 
 /** 解析 AI 回复末尾的工具调用 JSON */
 export function parseToolCall(content: string): ToolCall | null {
-  // 匹配回复末尾的 JSON 对象（包含 "tool" 和 "params" 字段）
   const lines = content.trim().split("\n");
   const lastLine = lines[lines.length - 1].trim();
 
-  // 如果最后一行是 JSON，尝试解析
   if (lastLine.startsWith("{") && lastLine.endsWith("}")) {
     try {
       const parsed = JSON.parse(lastLine);
@@ -255,7 +281,6 @@ export function parseToolCall(content: string): ToolCall | null {
     }
   }
 
-  // 尝试在整个内容末尾匹配 JSON
   const match = content.match(/\{[\s\S]*"tool"\s*:[\s\S]*"params"\s*:[\s\S]*\}\s*$/);
   if (match) {
     try {
@@ -287,30 +312,213 @@ export interface ToolContext {
   identity?: string;
 }
 
-/** 执行工具调用 */
+// ── 检查点类型与配置 ──
+
+export interface CheckpointResult {
+  tool: string;
+  pass: boolean;
+  checks: {
+    id: string;
+    name: string;
+    pass: boolean;
+    message: string;
+  }[];
+  retried: boolean;
+  retryCount: number;
+}
+
+/** 可重试工具的配置 */
+const RETRY_CONFIG: Record<
+  string,
+  {
+    maxRetries: number;
+    transform: (params: Record<string, any>, attempt: number) => Record<string, any>;
+  }
+> = {
+  search_stories: {
+    maxRetries: 1,
+    transform: (p, attempt) => {
+      if (attempt === 0) return { ...p, keyword: "" }; // 清空关键词扩大搜索
+      return p;
+    },
+  },
+  search_brainholes: {
+    maxRetries: 1,
+    transform: (p, attempt) => {
+      if (attempt === 0) return { ...p, category: undefined }; // 去掉分类限制
+      return p;
+    },
+  },
+};
+
+/** 运行检查点 */
+async function runCheckpoint(
+  tool: string,
+  result: ToolResult,
+  params: Record<string, any>
+): Promise<CheckpointResult> {
+  const checks: CheckpointResult["checks"] = [];
+  let pass = true;
+
+  switch (tool) {
+    case "search_stories": {
+      const hasResults =
+        result.success && Array.isArray(result.data) && result.data.length > 0;
+      checks.push({
+        id: "has_results",
+        name: "搜索结果非空",
+        pass: hasResults,
+        message: hasResults
+          ? `找到 ${result.data.length} 个故事`
+          : "未找到匹配的故事",
+      });
+      if (!hasResults) pass = false;
+
+      // 相关性检查（仅当有关键词时）
+      if (hasResults && params.keyword) {
+        const keyword = params.keyword.toString().toLowerCase();
+        const hasRelevant = result.data.some(
+          (s: any) =>
+            (s.title?.toLowerCase() || "").includes(keyword) ||
+            (s.era?.toLowerCase() || "").includes(keyword) ||
+            (s.summary?.toLowerCase() || "").includes(keyword)
+        );
+        checks.push({
+          id: "relevant",
+          name: "结果相关性",
+          pass: hasRelevant,
+          message: hasRelevant
+            ? "结果包含相关故事"
+            : "结果可能不完全匹配关键词，但仍有可玩的故事",
+        });
+        // 相关性不强时只警告，不阻断
+      }
+      break;
+    }
+
+    case "search_brainholes": {
+      const hasBH =
+        result.success && Array.isArray(result.data) && result.data.length > 0;
+      checks.push({
+        id: "has_results",
+        name: "搜索结果非空",
+        pass: hasBH,
+        message: hasBH
+          ? `找到 ${result.data.length} 个话题`
+          : "未找到匹配的话题",
+      });
+      if (!hasBH) pass = false;
+      break;
+    }
+
+    case "find_online_user": {
+      const hasMatches =
+        result.success && Array.isArray(result.data) && result.data.length > 0;
+      checks.push({
+        id: "has_matches",
+        name: "找到匹配用户",
+        pass: hasMatches,
+        message: hasMatches
+          ? `找到 ${result.data.length} 个等待中的用户`
+          : "暂无等待中的用户，建议启动兜底陪聊",
+      });
+      // 没找到匹配是正常情况，不标记为 fail（让 AI 启动兜底）
+      // 但检查点信息会告诉 AI "没有匹配"
+      break;
+    }
+
+    case "create_room": {
+      const created = result.success && !!result.data?.roomId;
+      checks.push({
+        id: "room_created",
+        name: "房间创建成功",
+        pass: created,
+        message: created
+          ? `房间 ${result.data.roomId} 创建成功`
+          : "房间创建失败",
+      });
+      if (!created) pass = false;
+      break;
+    }
+
+    default:
+      checks.push({
+        id: "unknown",
+        name: "未知工具",
+        pass: true,
+        message: "无检查点配置，默认通过",
+      });
+  }
+
+  return { tool, pass, checks, retried: false, retryCount: 0 };
+}
+
+/** 执行单次工具（不含检查点） */
+async function executeSingleTool(
+  tool: string,
+  params: any,
+  context: ToolContext
+): Promise<ToolResult> {
+  switch (tool) {
+    case "search_stories":
+      return await execSearchStories(params);
+    case "search_brainholes":
+      return await execSearchBrainholes(params);
+    case "find_online_user":
+      return await execFindOnlineUser(params);
+    case "create_room":
+      return await execCreateRoom(params, context);
+    default:
+      return { success: false, error: `未知工具: ${tool}` };
+  }
+}
+
+/** 执行工具调用（含检查点 + 自动重试） */
 export async function executeToolCall(
   toolCall: ToolCall,
   context: ToolContext
-): Promise<ToolResult> {
+): Promise<ToolResult & { checkpoint?: CheckpointResult }> {
   const { tool, params } = toolCall;
   console.log(`[Agent Tool] 执行工具: ${tool}, 参数:`, params);
 
-  try {
-    switch (tool) {
-      case "search_stories":
-        return await execSearchStories(params);
-      case "search_brainholes":
-        return await execSearchBrainholes(params);
-      case "find_online_user":
-        return await execFindOnlineUser(params);
-      case "create_room":
-        return await execCreateRoom(params, context);
-      default:
-        return { success: false, error: `未知工具: ${tool}` };
+  const retryConfig = RETRY_CONFIG[tool];
+  let currentParams = { ...params };
+  let result: ToolResult;
+  let checkpoint: CheckpointResult;
+
+  for (let attempt = 0; ; attempt++) {
+    // 执行工具
+    try {
+      result = await executeSingleTool(tool, currentParams, context);
+    } catch (err: any) {
+      console.error(`[Agent Tool] ${tool} 执行异常:`, err.message);
+      result = { success: false, error: err.message || "工具执行失败" };
     }
-  } catch (err: any) {
-    console.error(`[Agent Tool] ${tool} 执行失败:`, err.message);
-    return { success: false, error: err.message || "工具执行失败" };
+
+    // 运行检查点
+    checkpoint = await runCheckpoint(tool, result, currentParams);
+
+    if (checkpoint.pass) {
+      return {
+        ...result,
+        checkpoint: { ...checkpoint, retried: attempt > 0, retryCount: attempt },
+      };
+    }
+
+    // 检查失败，判断是否可重试
+    if (!retryConfig || attempt >= retryConfig.maxRetries) {
+      return {
+        ...result,
+        checkpoint: { ...checkpoint, retried: attempt > 0, retryCount: attempt },
+      };
+    }
+
+    // 重试：变换参数
+    currentParams = retryConfig.transform(currentParams, attempt);
+    console.log(
+      `[Agent Checkpoint] ${tool} 检查失败，第${attempt + 2}次尝试，参数:`,
+      currentParams
+    );
   }
 }
 
@@ -434,18 +642,14 @@ async function execCreateRoom(
     return { success: false, error: "需要登录才能创建房间" };
   }
 
-  // 确保用户记录存在
   const user = await db.user.findUnique({
     where: { id: context.userId },
     select: { name: true },
   });
 
   let userIdentity = identity || context.identity || user?.name || "我";
-
-  // 兼容：story_duet/duet 在当前架构下都转为 ai_duet（Agent 兜底陪聊）
   const roomType = type === "ai_duet" ? "ai_duet" : "ai_duet";
 
-  // 获取 brainhole
   let finalBrainholeId = brainholeId;
   let brainholeTitle = "";
   let brainholeScenario = "";
@@ -462,7 +666,6 @@ async function execCreateRoom(
     }
   }
 
-  // 未指定 brainhole 时，热度加权随机选一个
   if (!finalBrainholeId && !storyId) {
     const pool = await db.brainhole.findMany({
       where: { status: "approved" },
@@ -486,7 +689,6 @@ async function execCreateRoom(
     }
   }
 
-  // 如果指定了 storyId，获取故事信息
   let storyTitle = "";
   let storyScene = "";
   if (storyId) {

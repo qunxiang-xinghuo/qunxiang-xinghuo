@@ -159,15 +159,18 @@ export async function POST(request: NextRequest) {
           toolCalls = [toolCall];
           toolResults = [toolResult];
 
-          // 二次调用 DeepSeek：将工具结果回传，让 AI 基于结果生成最终回复
+          // 二次调用 DeepSeek：将工具结果 + 检查点信息回传，让 AI 基于结果生成最终回复
           const naturalReply = stripToolCall(finalContent) || finalContent;
+          const checkpointInfo = toolResult.checkpoint
+            ? `\n\n【检查点结果】\n${toolResult.checkpoint.checks.map((c: any) => `- ${c.name}: ${c.pass ? '✅' : '❌'} ${c.message}`).join('\n')}\n\n总体: ${toolResult.checkpoint.pass ? '检查通过，继续下一步' : '检查未通过，后端已尝试自动回退/重试，以上是最终结论'}`
+            : '';
           const followUpMessages = [
             { role: "system" as const, content: systemPrompt },
             ...messages.filter((m: ChatMessage) => m.role !== 'system'),
             { role: "assistant" as const, content: naturalReply },
             {
               role: "user" as const,
-              content: `你刚才调用了工具 "${toolCall.tool}"，执行结果如下：\n${JSON.stringify(toolResult.data || toolResult.error, null, 2)}\n\n请基于这个结果，自然地回复用户。如果工具执行失败，如实告诉用户并建议其他方案。`,
+              content: `你刚才调用了工具 "${toolCall.tool}"，执行结果如下：\n${JSON.stringify(toolResult.data || toolResult.error, null, 2)}${checkpointInfo}\n\n请基于这个已通过检查的结果，自然地回复用户。不要暴露检查点的技术细节，像正常人一样说话。`,
             },
           ];
 
