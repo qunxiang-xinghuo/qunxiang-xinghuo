@@ -123,9 +123,10 @@
 - 优先尝试 DeepSeek Embedding API 获取语义向量
 - 嵌入 API 不可用时自动降级到关键词倒排索引
 - 纯 JS 余弦相似度，零 npm 依赖
-- 中文关键词提取：二字/三字词组 + 单字兜底（v9.3-fix）
+- 中文关键词提取：二字/三字词组，过滤单字和停用词，英文≥2字符，数字≥2位（v9.3-fix）
 - 嵌入结果 LRU 缓存（100条）（v9.3-fix）
-- 关键词搜索 BM25 式评分（v9.3-fix）
+- 嵌入 API 批量调用：`getEmbeddingsBatch()` 一次请求多个文档（v9.3-fix）
+- 关键词搜索评分：`matched / queryKeywords.length`（v9.3-fix）
 
 **意图路由**（`rag-engine.ts` + `intent-router.ts`）：
 - 关键词快速预分类（故事/脑洞/疗愈/检索/闲聊）

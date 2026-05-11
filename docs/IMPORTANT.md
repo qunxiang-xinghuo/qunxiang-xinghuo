@@ -11,17 +11,18 @@
 | S1 | `roomType` 硬编码为 `ai_duet` | `type === "story_duet" ? "story_duet" : "ai_duet"` |
 | S2 | 工作流返回硬编码字符串 | 工作流只执行工具，自然语言由 DeepSeek 基于工具结果生成 |
 | S3 | 工作流依赖前端 `workflowState` | 从消息历史推断阶段（`inferWorkflowStage`）和用户选择（`inferUserChoice`） |
-| S4 | 中文关键词按字提取 | 改为提取二字/三字词组 + 单字兜底 |
+| S4 | 中文关键词按字提取 | 提取二字/三字词组，过滤单字和停用词，英文≥2字符，数字≥2位 |
 | A5 | AI 分类 prompt 英文 | 改为中文 prompt |
 | A6 | `" bored"` 前导空格 | 删除前导空格 |
 | A7 | 索引构建阻塞首次请求 | 改为后台异步构建（`.then`），不阻塞请求 |
-| A8 | 嵌入降级后永不恢复 | 非 404 错误临时降级，下次请求自动重试 |
+| A8 | 嵌入降级后永不恢复 | 非 404 错误临时降级；新增定时重试（每5分钟检查，恢复后自动重建索引） |
 | A10 | 疗愈/检索模式返回空 content | `suggestedPersona` 机制切换 healer，工具摘要注入 systemPrompt |
 | A11 | 无用户取消信号处理 | 新增 `isUserCancel` 检测（算了/不用了/取消等） |
 | B12 | 无嵌入缓存 | 新增 LRU 缓存（100条） |
 | B13 | 未使用导入 | 清理 `parseToolCall`/`stripToolCall` |
+| B14 | 嵌入API逐个调用 | 新增 `getEmbeddingsBatch()` 批量嵌入（`input: string[]`） |
 | B15 | `JSON.parse` 无 try-catch | 增加 try-catch 兜底 |
-| B16 | 关键词评分对长文档不公平 | 改为 `queryCoverage * 0.7 + docDensity * 0.3` |
+| B16 | 关键词评分对长文档不公平 | 改为 `matched / queryKeywords.length` |
 
 ### 核心修复说明
 
