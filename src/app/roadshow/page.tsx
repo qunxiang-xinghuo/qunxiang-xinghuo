@@ -87,7 +87,7 @@ export default function RoadshowPage() {
           <Link
             href="/home"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full
-              bg-gradient-to-r from-[#8a9ab0] to-[#f0c050]
+              bg-gradient-to-r from-[#3B82F6] to-[#a8b8c8]
               text-[#0f0f23] font-semibold
               hover:scale-105 transition-transform"
           >
@@ -201,7 +201,7 @@ export default function RoadshowPage() {
             href="/home"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full
               border border-[#8a9ab0]/40 text-[#8a9ab0]
-              hover:bg-[#8a9ab0]/10 transition-colors"
+              hover:bg-[#3B82F6]/10 transition-colors"
           >
             进入泡泡云
             <ArrowRight className="w-4 h-4" />

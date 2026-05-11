@@ -53,14 +53,14 @@ export default function EarningsPage() {
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Coins className="w-5 h-5 text-[#8a9ab0]" />
+              <Coins className="w-5 h-5 text-[#3B82F6]" />
               <span className="text-sm text-white/60">盐粒余额</span>
             </div>
             <span className="text-[11px] text-white/25">1 盐粒 = ¥0.01</span>
           </div>
-          <p className="text-3xl font-bold text-[#8a9ab0] mb-1">
+          <p className="text-3xl font-bold text-[#a8b8c8] mb-1">
             {total.toLocaleString()}
-            <span className="text-sm font-normal text-[#8a9ab0]/60 ml-1">盐粒</span>
+            <span className="text-sm font-normal text-[#60A5FA]/60 ml-1">盐粒</span>
           </p>
           <p className="text-xs text-white/30 mb-4">≈ ¥{(total / 100).toFixed(2)}</p>
           <div className="flex items-center gap-4 pt-3 border-t border-white/5">
@@ -76,7 +76,7 @@ export default function EarningsPage() {
           <button
             onClick={() => { /* 提现功能即将开放 */ }}
             disabled
-            className="w-full mt-4 py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/20 hover:bg-[#8a9ab0]/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
+            className="w-full mt-4 py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/20 hover:bg-[#3B82F6]/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
           >
             <Wallet className="w-4 h-4" />
             提现

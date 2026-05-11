@@ -1,5 +1,50 @@
 # 群像·星火 — 重要操作记录
 
+## v9.0f PPT蓝白风全局配色优化 — 部署教程
+
+> 最后更新：2026-04-29
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 登录页全面重配色 | `LoginForm.tsx` | 火花标志金色、标题纯白、slogan蓝灰亮色、输入框焦点蓝、链接蓝、装饰光晕蓝 |
+| 注册页同步优化 | `register/page.tsx` | 同上策略，统一登录/注册视觉体验 |
+| 全局背景微调 | `globals.css` | `#0a0e1a` → `#0a1628`（更偏蓝的PPT深色背景） |
+| 焦点环+caret统一 | 15+ 文件 | 所有输入框 `focus:border` 和 `caret` 从蓝灰 `#8a9ab0` → 蓝色 `#3B82F6` |
+| Spinner统一蓝色 | 20+ 文件 | 全站加载动画 `border-t` 从蓝灰 → 蓝色 |
+| Hover状态统一 | 15+ 文件 | `hover:bg`/`hover:text`/`hover:from` 从蓝灰 → 蓝色 |
+| 关键页面提亮 | 10+ 文件 | 标题/图标/进度条/AI横幅等从暗淡蓝灰 `#8a9ab0` → 鲜明蓝 `#3B82F6` 或亮蓝灰 `#a8b8c8` |
+| 新增PPT文字变量 | `globals.css` | `--color-xh-text-ppt` / `-secondary` / `-muted` 层级定义 |
+
+### PPT风格配色原则
+
+- 🔵 **蓝色 `#3B82F6`** = 所有可交互元素（按钮、链接、焦点环、hover、spinner）
+- 🟡 **金色 `#D4B830`** = 品牌火花标志、激活态、点赞、热度
+- ⚪ **冷白 `#e2e8f0`** = 主文字
+- 🔷 **亮蓝灰 `#a8b8c8`** = slogan、标题、重要信息
+- 🔹 **蓝灰 `#94a3b8`** = 次要文字、标签
+- ⚫ **深蓝黑 `#0a1628`** = 页面背景
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 部署验证记录
+
+| 时间 | 版本 | 构建 | 页面数 | PM2 |
+|------|------|------|--------|-----|
+| 2026-04-29 | v9.0f | ✅ | 81/81 | ✅ online |
+
+---
+
 ## v9.0e 按钮颜色统一为PPT蓝 — 部署教程
 
 > 最后更新：2026-04-29

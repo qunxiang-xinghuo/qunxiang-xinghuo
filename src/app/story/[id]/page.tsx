@@ -201,7 +201,7 @@ export default function StoryDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient">
-        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin mb-4" />
+        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin mb-4" />
         <p className="text-sm text-white/30">正在加载故事...</p>
       </div>
     );
@@ -224,7 +224,7 @@ export default function StoryDetailPage() {
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold text-[#8a9ab0] truncate">{story.title}</h1>
+            <h1 className="text-base font-bold text-[#a8b8c8] truncate">{story.title}</h1>
             <p className="text-[11px] text-[#8a9ab0]/50 truncate">{story.eraBackground}</p>
           </div>
         </div>
@@ -266,7 +266,7 @@ export default function StoryDetailPage() {
             <button
               onClick={handleRandomRole}
               disabled={joinLoading || story.roles.every((r) => !!r.claimedBy)}
-              className="flex items-center gap-1 text-[11px] text-[#8a9ab0]/50 hover:text-[#8a9ab0]/70 transition-colors disabled:opacity-20"
+              className="flex items-center gap-1 text-[11px] text-[#8a9ab0]/50 hover:text-[#3B82F6]/70 transition-colors disabled:opacity-20"
             >
               <Dices className="w-3.5 h-3.5" />
               <span>随机分配</span>
@@ -331,7 +331,7 @@ export default function StoryDetailPage() {
       {joinLoading && (
         <div className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm flex items-center justify-center">
           <div className="flex flex-col items-center">
-            <div className="w-10 h-10 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin mb-3" />
+            <div className="w-10 h-10 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin mb-3" />
             <p className="text-sm text-white/50">正在进入故事...</p>
           </div>
         </div>
@@ -355,7 +355,7 @@ export default function StoryDetailPage() {
             >
               {matchResult === 'waiting' && (
                 <>
-                  <div className="w-12 h-12 rounded-full border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] animate-spin mx-auto mb-4" />
+                  <div className="w-12 h-12 rounded-full border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] animate-spin mx-auto mb-4" />
                   <p className="text-base font-semibold text-white/90 mb-1">正在匹配搭档...</p>
                   <p className="text-sm text-white/40 mb-4">{waitingSeconds} 秒后揭晓</p>
                   <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden mb-4">
@@ -380,7 +380,7 @@ export default function StoryDetailPage() {
                   <p className="text-sm text-white/40 mb-4">找到你的对戏搭档了</p>
                   <button
                     onClick={handleEnterRoom}
-                    className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25 hover:bg-[#8a9ab0]/25 transition-colors"
+                    className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25 hover:bg-[#3B82F6]/25 transition-colors"
                   >
                     进入对白室
                   </button>
@@ -397,7 +397,7 @@ export default function StoryDetailPage() {
                     <button
                       onClick={handleJoinAi}
                       disabled={joinLoading}
-                      className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25 hover:bg-[#8a9ab0]/25 transition-colors"
+                      className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25 hover:bg-[#3B82F6]/25 transition-colors"
                     >
                       {joinLoading ? '创建中...' : '🦊 和刘看山玩'}
                     </button>

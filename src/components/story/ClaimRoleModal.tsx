@@ -98,7 +98,7 @@ export default function ClaimRoleModal({
               value={identityTag}
               onChange={(e) => setIdentityTag(e.target.value)}
               placeholder="例如：急诊科医生"
-              className="w-full bg-slate-700/30 border border-slate-600/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 mb-3"
+              className="w-full bg-slate-700/30 border border-slate-600/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-btn/40 mb-3"
               maxLength={40}
             />
 
@@ -107,7 +107,7 @@ export default function ClaimRoleModal({
               value={performanceDirection}
               onChange={(e) => setPerformanceDirection(e.target.value)}
               placeholder="例如：理性与情感交织，关键时刻会为了患者打破规则..."
-              className="w-full bg-slate-700/30 border border-slate-600/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 resize-none mb-3"
+              className="w-full bg-slate-700/30 border border-slate-600/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-btn/40 resize-none mb-3"
               rows={2}
               maxLength={150}
             />
@@ -118,7 +118,7 @@ export default function ClaimRoleModal({
               value={claimReason}
               onChange={(e) => setClaimReason(e.target.value)}
               placeholder="例如：我是一名急诊科医生，面对生死抉择时总是理性与情感交织..."
-              className="w-full bg-slate-700/30 border border-slate-600/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 resize-none"
+              className="w-full bg-slate-700/30 border border-slate-600/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-btn/40 resize-none"
               rows={2}
               maxLength={150}
             />

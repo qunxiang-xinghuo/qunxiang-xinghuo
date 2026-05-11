@@ -148,7 +148,7 @@ export default function StoryDetailPage() {
       <div className="flex flex-col h-full page-gradient">
         <TopBar title="剧本详情" showBack onBack={() => router.back()} />
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-gold rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-btn rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -346,7 +346,7 @@ export default function StoryDetailPage() {
 
                     {canClaim && (
                       <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); setClaimingRole(role); }}
-                        className="shrink-0 px-3 py-1.5 rounded-lg bg-xh-gold/15 text-xh-gold text-xs font-medium hover:bg-xh-gold/25 transition-colors border border-xh-gold/20">
+                        className="shrink-0 px-3 py-1.5 rounded-lg bg-xh-gold/15 text-xh-gold text-xs font-medium hover:bg-xh-btn/25 transition-colors border border-xh-gold/20">
                         认领
                       </motion.button>
                     )}

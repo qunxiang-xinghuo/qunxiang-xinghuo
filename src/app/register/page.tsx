@@ -81,9 +81,9 @@ export default function RegisterPage() {
     <div className="flex flex-col h-full page-gradient relative overflow-hidden">
       {/* 装饰泡泡背景 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#8a9ab0]/10 blur-xl" />
+        <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#3B82F6]/10 blur-xl" />
         <div className="absolute top-32 right-6 w-20 h-20 rounded-full bg-[#74b9ff]/10 blur-xl" />
-        <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#8a9ab0]/5 blur-lg" />
+        <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#3B82F6]/5 blur-lg" />
       </div>
 
       {/* 顶部 */}
@@ -92,10 +92,10 @@ export default function RegisterPage() {
           onClick={() => router.push('/login')}
           className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 text-white/60" />
+          <ArrowLeft className="w-4 h-4 text-[#94a3b8]" />
         </button>
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#8a9ab0]/60" />
+          <Sparkles className="w-4 h-4 text-[#D4B830]/80" />
           <h1 className="text-lg font-bold tracking-wider text-white/90">群像·星火</h1>
         </div>
       </div>
@@ -113,7 +113,7 @@ export default function RegisterPage() {
           initial={mounted ? { y: 10, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="text-xs text-white/50"
+          className="text-xs text-[#94a3b8]"
         >
           开启你的群像故事之旅
         </motion.p>
@@ -130,33 +130,33 @@ export default function RegisterPage() {
         <div className="space-y-4">
           {/* 用户名 */}
           <div>
-            <label className="block text-xs text-white/40 mb-1.5 ml-1">用户名</label>
+            <label className="block text-xs text-[#94a3b8] mb-1.5 ml-1">用户名</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="请输入用户名（2-30字符）"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#3B82F6]/50 transition-colors"
               maxLength={30}
             />
           </div>
 
           {/* 密码 */}
           <div>
-            <label className="block text-xs text-white/40 mb-1.5 ml-1">密码</label>
+            <label className="block text-xs text-[#94a3b8] mb-1.5 ml-1">密码</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="请输入密码（至少6位）"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#3B82F6]/50 transition-colors"
                 maxLength={100}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/50 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#a8b8c8] transition-colors"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -165,13 +165,13 @@ export default function RegisterPage() {
 
           {/* 确认密码 */}
           <div>
-            <label className="block text-xs text-white/40 mb-1.5 ml-1">确认密码</label>
+            <label className="block text-xs text-[#94a3b8] mb-1.5 ml-1">确认密码</label>
             <input
               type={showPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="请再次输入密码"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#3B82F6]/50 transition-colors"
               maxLength={100}
             />
           </div>
@@ -209,16 +209,16 @@ export default function RegisterPage() {
           <button
             type="button"
             onClick={() => router.push('/login')}
-            className="text-sm text-white/40 hover:text-[#8a9ab0] transition-colors"
+            className="text-sm text-[#94a3b8] hover:text-[#3B82F6] transition-colors"
           >
-            已有账号？<span className="text-[#8a9ab0]/80 hover:text-[#8a9ab0]">去登录</span>
+            已有账号？<span className="text-[#3B82F6]/80 hover:text-[#3B82F6]">去登录</span>
           </button>
         </div>
       </motion.form>
 
       {/* 底部装饰 */}
       <div className="px-6 pb-6 text-center">
-        <p className="text-[10px] text-white/15">注册即表示同意用户协议和隐私政策</p>
+        <p className="text-[10px] text-[#64748b]">注册即表示同意用户协议和隐私政策</p>
       </div>
     </div>
   );

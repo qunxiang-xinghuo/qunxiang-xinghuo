@@ -281,7 +281,7 @@ export default function MultiWaitingPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col h-full page-gradient items-center justify-center">
-        <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-gold rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-btn rounded-full animate-spin" />
       </div>
     }>
       <MultiWaitingContent />

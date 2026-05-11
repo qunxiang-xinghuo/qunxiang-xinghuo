@@ -169,7 +169,7 @@ function MultiMatchContent() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-4 space-y-2.5">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-slate-700 border-t-xh-gold rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-slate-700 border-t-xh-btn rounded-full animate-spin" />
           </div>
         ) : brainholes.length === 0 ? (
           <div className="text-center py-16">
@@ -305,7 +305,7 @@ function MultiMatchContent() {
                         <div>
                           <input type="text" value={customLabel} onChange={(e) => setCustomLabel(e.target.value)}
                             placeholder="例如：急诊科护士、北漂创业者..."
-                            className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-gold/40"
+                            className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-btn/40"
                             maxLength={20} onClick={(e) => e.stopPropagation()} />
                           <p className="text-[10px] text-slate-600 mt-1 text-right">{customLabel.length}/20</p>
                         </div>
@@ -344,7 +344,7 @@ export default function MultiMatchPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col h-full page-gradient items-center justify-center">
-        <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-gold rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-btn rounded-full animate-spin" />
       </div>
     }>
       <MultiMatchContent />

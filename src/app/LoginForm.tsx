@@ -131,9 +131,9 @@ export default function LoginForm() {
     <div className="flex flex-col h-full page-gradient relative overflow-hidden">
       {/* ====== 装饰背景光斑 ====== */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#8a9ab0]/8 blur-xl" />
+        <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#3B82F6]/8 blur-xl" />
         <div className="absolute top-32 right-6 w-20 h-20 rounded-full bg-[#74b9ff]/8 blur-xl" />
-        <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#8a9ab0]/4 blur-lg" />
+        <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#3B82F6]/4 blur-lg" />
       </div>
 
       {/* ====== 右下角装饰性透明泡泡 ====== */}
@@ -211,16 +211,16 @@ export default function LoginForm() {
           transition={{ duration: 0.6 }}
           className="flex items-center justify-center gap-2 mb-3"
         >
-          <Flame className="w-5 h-5 text-[#8a9ab0]/60" />
-          <h1 className="text-3xl font-bold tracking-wider text-white/90">群像·星火</h1>
-          <Flame className="w-5 h-5 text-[#8a9ab0]/60" />
+          <Flame className="w-5 h-5 text-[#D4B830]/80" />
+          <h1 className="text-3xl font-bold tracking-wider text-white">群像·星火</h1>
+          <Flame className="w-5 h-5 text-[#D4B830]/80" />
         </motion.div>
 
         <motion.p
           initial={mounted ? { y: 10, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.15 }}
-          className="text-sm text-white/60 leading-relaxed mb-2"
+          className="text-sm text-[#a8b8c8] leading-relaxed mb-2"
         >
           让真实发光，让思想变现
         </motion.p>
@@ -228,7 +228,7 @@ export default function LoginForm() {
           initial={mounted ? { y: 10, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.25 }}
-          className="text-xs text-white/40 leading-relaxed max-w-[280px] mx-auto"
+          className="text-xs text-[#94a3b8] leading-relaxed max-w-[280px] mx-auto"
         >
           在这里，你不再是别人故事的看客，<br />而是创造自己故事的主角
         </motion.p>
@@ -244,32 +244,32 @@ export default function LoginForm() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-xs text-white/40 mb-1.5 ml-1">用户名</label>
+            <label className="block text-xs text-[#94a3b8] mb-1.5 ml-1">用户名</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="请输入用户名"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#3B82F6]/50 transition-colors"
               maxLength={30}
             />
           </div>
 
           <div>
-            <label className="block text-xs text-white/40 mb-1.5 ml-1">密码</label>
+            <label className="block text-xs text-[#94a3b8] mb-1.5 ml-1">密码</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="请输入密码"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#8a9ab0]/50 transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#3B82F6]/50 transition-colors"
                 maxLength={100}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/50 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#a8b8c8] transition-colors"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -306,15 +306,15 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => router.push('/register')}
-            className="text-sm text-white/40 hover:text-[#8a9ab0] transition-colors"
+            className="text-sm text-[#94a3b8] hover:text-[#3B82F6] transition-colors"
           >
-            没有账号？<span className="text-[#8a9ab0]/80 hover:text-[#8a9ab0]">去注册</span>
+            没有账号？<span className="text-[#3B82F6]/80 hover:text-[#3B82F6]">去注册</span>
           </button>
         </div>
       </motion.form>
 
       <div className="px-6 pb-6 text-center relative z-10">
-        <p className="text-[10px] text-white/15">登录即表示同意用户协议和隐私政策 · v7.0</p>
+        <p className="text-[10px] text-[#64748b]">登录即表示同意用户协议和隐私政策 · v7.0</p>
       </div>
     </div>
   );

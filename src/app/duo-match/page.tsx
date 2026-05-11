@@ -277,7 +277,7 @@ function DuoMatchContent() {
                       value={customLabel}
                       onChange={(e) => setCustomLabel(e.target.value)}
                       placeholder="例如：急诊科护士、北漂创业者..."
-                      className="w-full bg-slate-700/30 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/50"
+                      className="w-full bg-slate-700/30 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-xh-btn/50"
                       maxLength={20}
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -336,7 +336,7 @@ function DuoMatchContent() {
                   setJoinError('');
                 }}
                 placeholder="输入6位邀请码"
-                className="flex-1 bg-slate-700/30 border border-slate-600/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-gold/50 text-center tracking-widest"
+                className="flex-1 bg-slate-700/30 border border-slate-600/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-xh-btn/50 text-center tracking-widest"
                 maxLength={6}
               />
               <button

@@ -123,7 +123,7 @@ export default function ProfilePage() {
   if (pageLoading) {
     return (
       <div className="flex items-center justify-center h-screen page-gradient">
-        <div className="w-6 h-6 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin" />
       </div>
     );
   }
@@ -131,8 +131,8 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center h-screen page-gradient px-6">
-        <div className="w-16 h-16 rounded-2xl bg-[#8a9ab0]/10 flex items-center justify-center mb-4">
-          <Sparkles className="w-8 h-8 text-[#8a9ab0]" />
+        <div className="w-16 h-16 rounded-2xl bg-[#3B82F6]/10 flex items-center justify-center mb-4">
+          <Sparkles className="w-8 h-8 text-[#3B82F6]" />
         </div>
         <h2 className="text-lg font-bold text-white/90 mb-2">
           {loadError ? '加载失败' : '请先登录'}

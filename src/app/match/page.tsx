@@ -26,7 +26,7 @@ export default function MatchPage() {
   if (loading) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="w-12 h-12 border-4 border-xh-gold/30 border-t-xh-gold rounded-full animate-spin mb-4"></div>
+        <div className="w-12 h-12 border-4 border-xh-gold/30 border-t-xh-btn rounded-full animate-spin mb-4"></div>
         <p className="text-gray-400 text-sm">加载脑洞中...</p>
       </div>
     );

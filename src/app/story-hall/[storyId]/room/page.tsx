@@ -231,7 +231,7 @@ export default function StoryRoomPage() {
       <div className="flex flex-col h-full page-gradient">
         <TopBar title="对白室" showBack onBack={() => router.back()} />
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-gold rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-slate-700 border-t-xh-btn rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -312,8 +312,8 @@ export default function StoryRoomPage() {
                   <Vote className="w-3.5 h-3.5 text-xh-gold" />剧情分支
                 </span>
                 <button onClick={handleGenerateBranch} disabled={generatingBranch}
-                  className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-xh-gold/12 text-xh-gold hover:bg-xh-gold/20 transition-colors disabled:opacity-50 border border-xh-gold/20">
-                  {generatingBranch ? <div className="w-3 h-3 border-2 border-xh-gold/30 border-t-xh-gold rounded-full animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-xh-gold/12 text-xh-gold hover:bg-xh-btn/20 transition-colors disabled:opacity-50 border border-xh-gold/20">
+                  {generatingBranch ? <div className="w-3 h-3 border-2 border-xh-gold/30 border-t-xh-btn rounded-full animate-spin" /> : <Sparkles className="w-3 h-3" />}
                   AI生成分支
                 </button>
               </div>
@@ -338,7 +338,7 @@ export default function StoryRoomPage() {
                               </button>
                               {isDirector && branch.status !== 'resolved' && (
                                 <button onClick={() => handleResolveBranch(branch.id, idx)}
-                                  className="text-[10px] px-2.5 py-1.5 rounded-md bg-xh-gold/12 text-xh-gold hover:bg-xh-gold/20 transition-colors border border-xh-gold/20">采纳</button>
+                                  className="text-[10px] px-2.5 py-1.5 rounded-md bg-xh-gold/12 text-xh-gold hover:bg-xh-btn/20 transition-colors border border-xh-gold/20">采纳</button>
                               )}
                             </div>
                           ))}
@@ -457,7 +457,7 @@ export default function StoryRoomPage() {
                 onChange={handleInputChange}
                 placeholder={`以 ${myIdentity} 的身份发言...`}
                 rows={1}
-                className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-600 resize-none focus:outline-none max-h-24 caret-xh-gold"
+                className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-600 resize-none focus:outline-none max-h-24 caret-xh-btn"
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               />
             </div>

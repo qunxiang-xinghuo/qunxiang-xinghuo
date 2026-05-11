@@ -99,7 +99,7 @@ export default function IdentitySelector({
                 value={customLabel}
                 onChange={(e) => onCustomLabelChange(e.target.value)}
                 placeholder="例如：北漂程序员、三胎妈妈、退休教师..."
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-xh-gold transition-colors"
+                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-xh-btn transition-colors"
                 maxLength={20}
                 onClick={(e) => e.stopPropagation()}
               />

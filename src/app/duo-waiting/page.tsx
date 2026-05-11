@@ -241,7 +241,7 @@ function DuoWaitingContent() {
             <motion.div
               animate={{ scale: [1, 2.5], opacity: [0.3, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
-              className="absolute w-40 h-40 rounded-full border border-[#8a9ab0]/20"
+              className="absolute w-40 h-40 rounded-full border border-[#3B82F6]/20"
             />
           </div>
         )}
@@ -265,7 +265,7 @@ function DuoWaitingContent() {
               className="text-center w-full relative z-10"
             >
               <div className="mb-4">
-                <div className="w-8 h-8 border-2 border-slate-700 border-t-[#8a9ab0] rounded-full animate-spin mx-auto mb-3" />
+                <div className="w-8 h-8 border-2 border-slate-700 border-t-[#3B82F6] rounded-full animate-spin mx-auto mb-3" />
                 <p className="text-base font-medium text-slate-100">正在创建邀请房间...</p>
                 <p className="text-xs text-slate-500 mt-1">请稍等</p>
               </div>
@@ -327,7 +327,7 @@ function DuoWaitingContent() {
                 <p className="text-4xl font-bold text-[#8a9ab0] mb-2">{remaining}</p>
                 <div className="w-64 h-2 bg-slate-700/30 rounded-full overflow-hidden mx-auto">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-[#8a9ab0] to-[#a8b8c8]"
+                    className="h-full rounded-full bg-gradient-to-r from-[#3B82F6] to-[#60A5FA]"
                     style={{ width: `${((MATCH_TIMEOUT - remaining) / MATCH_TIMEOUT) * 100}%` }}
                     transition={{ duration: 0.3 }}
                   />
@@ -384,10 +384,10 @@ function DuoWaitingContent() {
                 <button
                   onClick={createAiRoom}
                   disabled={creatingAiRoom}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#3B82F6]/20 to-[#2563EB]/20 border border-[#3B82F6]/30 text-[#3B82F6] text-sm font-medium hover:from-[#8a9ab0]/30 hover:to-xh-gold-dark/30 active:scale-[0.97] transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#3B82F6]/20 to-[#2563EB]/20 border border-[#3B82F6]/30 text-[#3B82F6] text-sm font-medium hover:from-[#3B82F6]/30 hover:to-xh-btn-dark/30 active:scale-[0.97] transition-all"
                 >
                   {creatingAiRoom ? (
-                    <div className="w-4 h-4 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin" />
                   ) : (
                     <>
                       <Bot className="w-4 h-4" />
@@ -451,7 +451,7 @@ export default function DuoWaitingPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col h-full page-gradient items-center justify-center">
-        <div className="w-8 h-8 border-2 border-slate-700 border-t-[#8a9ab0] rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-slate-700 border-t-[#3B82F6] rounded-full animate-spin" />
       </div>
     }>
       <DuoWaitingContent />

@@ -50,7 +50,10 @@
 | `--color-xh-yellow` | `#D4B830` | 标准黄色（v9.0b 新增），用于火花/点赞/热度 |
 | `--color-xh-btn` | `#3B82F6` | 按钮主色（v9.0e 新增），PPT蓝风格，用于所有CTA按钮 |
 | `--color-xh-btn-dark` | `#2563EB` | 按钮暗色（v9.0e 新增），用于渐变终点 |
-| `--color-xh-primary` | `#0a0e1a` | 页面背景（深蓝黑） |
+| `--color-xh-text-ppt` | `#e2e8f0` | 主文字 - 偏冷白（v9.0f 新增） |
+| `--color-xh-text-ppt-secondary` | `#94a3b8` | 次要文字（v9.0f 新增） |
+| `--color-xh-text-ppt-muted` | `#64748b` | 微弱文字（v9.0f 新增） |
+| `--color-xh-primary` | `#0a1628` | 页面背景（深蓝黑，v9.0f 从 `#0a0e1a` 微调） |
 | `--color-xh-surface` | `#131b2e` | 卡片/表面背景 |
 | `--color-xh-text` | `#f1f5f9` | 主文字色 |
 | `--color-xh-text-secondary` | `#94a3b8` | 次要文字 |

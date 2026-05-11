@@ -236,21 +236,21 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
                 <label className="text-xs text-slate-500 mb-1.5 block">故事标题</label>
                 <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
                   placeholder={`例如：《${selectedTemplate.name}·2026》`}
-                  className="w-full bg-slate-800/50 border border-slate-700/20 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-gold/40"
+                  className="w-full bg-slate-800/50 border border-slate-700/20 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-btn/40"
                   maxLength={40} />
               </div>
 
               <div>
                 <label className="text-xs text-slate-500 mb-1.5 block flex items-center gap-1"><Theater className="w-3 h-3" />世界观背景</label>
                 <textarea value={worldview} onChange={(e) => setWorldview(e.target.value)} rows={3} maxLength={300}
-                  className="w-full bg-slate-800/50 border border-slate-700/20 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 resize-none" />
+                  className="w-full bg-slate-800/50 border border-slate-700/20 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-btn/40 resize-none" />
                 <p className="text-[10px] text-slate-600 mt-1 text-right">{worldview.length}/300</p>
               </div>
 
               <div>
                 <label className="text-xs text-slate-500 mb-1.5 block flex items-center gap-1"><Flame className="w-3 h-3" />核心冲突</label>
                 <textarea value={conflict} onChange={(e) => setConflict(e.target.value)} rows={2} maxLength={200}
-                  className="w-full bg-slate-800/50 border border-slate-700/20 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 resize-none" />
+                  className="w-full bg-slate-800/50 border border-slate-700/20 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-btn/40 resize-none" />
                 <p className="text-[10px] text-slate-600 mt-1 text-right">{conflict.length}/200</p>
               </div>
 
@@ -263,11 +263,11 @@ export default function CreateStoryModal({ onClose, onCreated }: CreateStoryModa
                   {roles.map((role, index) => (
                     <div key={index} className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/15">
                       <input type="text" value={role.name} onChange={(e) => updateRole(index, 'name', e.target.value)}
-                        placeholder="角色名" className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 mb-2" />
+                        placeholder="角色名" className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-btn/40 mb-2" />
                       <textarea value={role.description} onChange={(e) => updateRole(index, 'description', e.target.value)}
-                        placeholder="人物设定" rows={2} className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-gold/40 resize-none mb-2" />
+                        placeholder="人物设定" rows={2} className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-xh-btn/40 resize-none mb-2" />
                       <input type="text" value={role.secret || ''} onChange={(e) => updateRole(index, 'secret', e.target.value)}
-                        placeholder="隐藏秘密（可选，增加戏剧张力）" className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-xh-gold/40" />
+                        placeholder="隐藏秘密（可选，增加戏剧张力）" className="w-full bg-slate-700/20 border border-slate-600/20 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-xh-btn/40" />
                     </div>
                   ))}
                 </div>

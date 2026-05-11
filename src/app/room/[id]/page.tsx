@@ -615,7 +615,7 @@ export default function RoomPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient">
-        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin mb-4" />
+        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin mb-4" />
         <p className="text-sm text-white/30">正在加载对白室...</p>
       </div>
     );
@@ -738,7 +738,7 @@ export default function RoomPage() {
           {openingInfoCollapsed ? (
             <button
               onClick={() => setOpeningInfoCollapsed(false)}
-              className="flex items-center gap-1.5 text-[11px] text-[#8a9ab0]/40 hover:text-[#8a9ab0]/60 transition-colors"
+              className="flex items-center gap-1.5 text-[11px] text-[#8a9ab0]/40 hover:text-[#3B82F6]/60 transition-colors"
             >
               <span>📋</span>
               <span>查看开场信息</span>
@@ -754,10 +754,10 @@ export default function RoomPage() {
 
       {/* AI 催化提示 */}
       {showAiPrompt && aiPrompt && (
-        <div className="shrink-0 px-4 py-2 border-b border-[#8a9ab0]/10 bg-[#8a9ab0]/5">
+        <div className="shrink-0 px-4 py-2 border-b border-[#3B82F6]/10 bg-[#3B82F6]/5">
           <div className="flex items-start gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#8a9ab0]/60 mt-0.5 shrink-0" />
-            <p className="text-[11px] text-[#8a9ab0]/70 leading-relaxed">{aiPrompt}</p>
+            <Sparkles className="w-3.5 h-3.5 text-[#3B82F6]/60 mt-0.5 shrink-0" />
+            <p className="text-[11px] text-[#60A5FA]/70 leading-relaxed">{aiPrompt}</p>
           </div>
         </div>
       )}
@@ -895,13 +895,13 @@ export default function RoomPage() {
             <span className="text-[10px] text-white/15">{messages.length} 条消息</span>
           </div>
           <div className="flex items-end gap-2">
-            <div className="flex-1 bg-white/[0.05] rounded-2xl border border-white/10 px-4 py-2.5 focus-within:border-[#8a9ab0]/30 transition-colors">
+            <div className="flex-1 bg-white/[0.05] rounded-2xl border border-white/10 px-4 py-2.5 focus-within:border-[#3B82F6]/30 transition-colors">
               <input
                 ref={inputRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="写下你的反应..."
-                className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#8a9ab0]"
+                className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#3B82F6]"
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               />
             </div>
@@ -991,7 +991,7 @@ export default function RoomPage() {
             <div className="space-y-2.5">
               <button
                 onClick={() => { setShowInviteTimeoutModal(false); router.push('/solo-match'); }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#3B82F6]/20 to-[#2563EB]/20 border border-[#3B82F6]/30 text-[#3B82F6] text-sm font-medium hover:from-[#8a9ab0]/30 hover:to-xh-gold-dark/30 active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#3B82F6]/20 to-[#2563EB]/20 border border-[#3B82F6]/30 text-[#3B82F6] text-sm font-medium hover:from-[#3B82F6]/30 hover:to-xh-btn-dark/30 active:scale-[0.97] transition-all flex items-center justify-center gap-2"
               >
                 <Bot className="w-4 h-4" />
                 与刘看山对话
@@ -1073,13 +1073,13 @@ export default function RoomPage() {
               <span className="text-xs text-white/40">评论 ({comments.length})</span>
             </div>
             <div className="flex items-end gap-2 mb-3">
-              <div className="flex-1 bg-white/[0.05] rounded-xl border border-white/10 px-3 py-2 focus-within:border-[#8a9ab0]/30 transition-colors">
+              <div className="flex-1 bg-white/[0.05] rounded-xl border border-white/10 px-3 py-2 focus-within:border-[#3B82F6]/30 transition-colors">
                 <input
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
                   placeholder="写下你的看法..."
                   maxLength={500}
-                  className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#8a9ab0]"
+                  className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none caret-[#3B82F6]"
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
                 />
               </div>
@@ -1098,7 +1098,7 @@ export default function RoomPage() {
             <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
               {commentsLoading ? (
                 <div className="flex justify-center py-2">
-                  <span className="w-4 h-4 border border-white/20 border-t-[#8a9ab0] rounded-full animate-spin" />
+                  <span className="w-4 h-4 border border-white/20 border-t-[#3B82F6] rounded-full animate-spin" />
                 </div>
               ) : comments.length === 0 ? (
                 <p className="text-[11px] text-white/15 text-center py-2">还没有评论，来抢沙发吧</p>

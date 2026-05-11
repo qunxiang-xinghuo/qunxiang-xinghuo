@@ -197,7 +197,7 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
                               value={customLabel}
                               onChange={(e) => setCustomLabel(e.target.value)}
                               placeholder="例如：急诊科护士、北漂创业者..."
-                              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-xh-gold/50"
+                              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-xh-btn/50"
                               maxLength={20}
                               onClick={(e) => e.stopPropagation()}
                             />

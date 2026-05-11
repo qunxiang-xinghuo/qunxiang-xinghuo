@@ -216,7 +216,7 @@ export default function SpectateRoomPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient">
-        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin mb-4" />
+        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin mb-4" />
         <p className="text-sm text-white/30">正在进入围观房间...</p>
       </div>
     );
@@ -373,7 +373,7 @@ export default function SpectateRoomPage() {
                 if (mountedRef.current) setLikeCount((prev) => Math.max(0, prev - 1));
               }, 1500);
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#8a9ab0]/10 text-[#8a9ab0] border border-[#8a9ab0]/20 text-xs hover:bg-[#8a9ab0]/20 active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#8a9ab0]/10 text-[#8a9ab0] border border-[#8a9ab0]/20 text-xs hover:bg-[#3B82F6]/20 active:scale-95 transition-all"
           >
             <Flame className="w-3.5 h-3.5" />
             点赞

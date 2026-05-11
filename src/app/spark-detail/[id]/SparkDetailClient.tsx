@@ -181,7 +181,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-6">
         {/* 对白记录标题 */}
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-[#8a9ab0]/60" />
+          <Sparkles className="w-4 h-4 text-[#3B82F6]/60" />
           <span className="text-xs text-white/40 font-medium">对白记录</span>
           <span className="text-[10px] text-white/20">({data.messageCount} 条)</span>
         </div>
@@ -301,7 +301,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
               <button
                 onClick={submitComment}
                 disabled={!commentInput.trim() || commentLoading}
-                className="p-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/25 hover:bg-[#8a9ab0]/25 transition-colors disabled:opacity-20"
+                className="p-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/25 hover:bg-[#3B82F6]/25 transition-colors disabled:opacity-20"
               >
                 {commentLoading ? (
                   <span className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin block" />

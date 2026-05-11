@@ -223,7 +223,7 @@ export default function AdminPage() {
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1">
-            <h1 className="text-base font-bold text-[#8a9ab0]">管理员后台</h1>
+            <h1 className="text-base font-bold text-[#a8b8c8]">管理员后台</h1>
             <p className="text-[11px] text-white/30">清理与管理</p>
           </div>
         </div>
@@ -413,7 +413,7 @@ export default function AdminPage() {
                 <input
                   value={userForm.username}
                   onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#8a9ab0]/30"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#3B82F6]/30"
                   placeholder="输入用户名"
                 />
               </div>
@@ -422,7 +422,7 @@ export default function AdminPage() {
                 <input
                   value={userForm.name}
                   onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#8a9ab0]/30"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#3B82F6]/30"
                   placeholder="输入昵称"
                 />
               </div>
@@ -432,7 +432,7 @@ export default function AdminPage() {
                   <input
                     value={userForm.email}
                     onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#8a9ab0]/30"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#3B82F6]/30"
                     placeholder="输入邮箱"
                   />
                 </div>
@@ -443,7 +443,7 @@ export default function AdminPage() {
                   type="password"
                   value={userForm.password}
                   onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#8a9ab0]/30"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/70 outline-none focus:border-[#3B82F6]/30"
                   placeholder={editingUser ? '留空不修改' : '输入密码'}
                 />
               </div>

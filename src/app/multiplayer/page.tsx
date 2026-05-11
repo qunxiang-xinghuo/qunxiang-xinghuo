@@ -32,8 +32,8 @@ export default function MultiplayerPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#8a9ab0]/20 to-[#6c7c90]/10 border border-[#8a9ab0]/25 flex items-center justify-center mx-auto mb-4">
-            <Theater className="w-8 h-8 text-[#8a9ab0]" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3B82F6]/20 to-[#2563EB]/10 border border-[#3B82F6]/25 flex items-center justify-center mx-auto mb-4">
+            <Theater className="w-8 h-8 text-[#3B82F6]" />
           </div>
           <h1 className="text-lg font-bold text-white/90 mb-1">多人即兴碰撞</h1>
           <p className="text-sm text-white/40">一群人，一个场景，N 种身份</p>

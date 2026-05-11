@@ -27,7 +27,7 @@ export default function TagFilter({ tags, onTagChange }: TagFilterProps) {
           className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
             selectedTags.includes(tag)
               ? 'bg-xh-gold text-xh-primary'
-              : 'bg-xh-gold/15 text-xh-gold border border-xh-gold/30 hover:bg-xh-gold/25'
+              : 'bg-xh-gold/15 text-xh-gold border border-xh-gold/30 hover:bg-xh-btn/25'
           }`}
         >
           {tag}

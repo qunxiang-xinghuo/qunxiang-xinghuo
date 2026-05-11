@@ -79,7 +79,7 @@ export default function AssetDetailPage() {
       <div className="flex flex-col h-full page-gradient">
         <TopBar title="素材详情" showBack onBack={() => router.back()} />
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-white/20 border-t-xh-gold rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-white/20 border-t-xh-btn rounded-full animate-spin" />
         </div>
       </div>
     );
