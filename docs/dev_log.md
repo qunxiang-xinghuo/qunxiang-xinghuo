@@ -153,3 +153,33 @@
 | `npm run build` | ✅ 23 路由 + 37 页面成功 |
 | Prisma 迁移 | ✅ init 迁移已应用 |
 | Prisma 生成 | ✅ 客户端已生成 |
+
+
+---
+
+## 2026-04-29 — v9.1 Agent 阶段2：刘看山思维升级
+
+### 概述
+为刘看山 `companion` 角色注入 Agent 能力，使其具备"主动调用工具"的思维框架，为后续阶段3（流程串联）铺垫。
+
+### 变更内容
+
+**新增 Agent 工具注册 (`src/lib/ai/agent-tools.ts`)**
+- `search_stories(keyword?, era?)` — 搜索公开解密故事
+- `search_brainholes(keyword?, category?)` — 搜索公开脑洞话题
+- `find_online_user(storyId?)` — 查找等待匹配的在线用户
+- `create_room(type, participants, storyId?, brainholeId?)` — 创建对白房间
+- 类型定义：`ToolCall` / `ToolResult`
+- 辅助函数：`renderToolsAsMarkdown()` — 将工具列表转为提示词 Markdown
+
+**改造 companion 角色 (`src/lib/ai/personas.ts`)**
+- 注入 Agent 核心规则："你不再是只能动嘴的AI。当用户提出要求时，必须判断是否能通过调用工具来更高效地完成，而不是用语言去搪塞。"
+- 注入工具说明 Markdown（通过 `renderToolsAsMarkdown()`）
+- 注入任务规划示例：选故事 → 配真人 → 兜底陪聊的 5 步流程
+
+### 构建验证
+- `npm run build` — ✅ 81/81 页面成功
+- 已推送 `fqunxiang dev`
+
+### 下一步
+- **阶段3（流程串联）**：在提示词中增加更具体的任务分解示例，完善"选故事→配真人→兜底"的完整决策链
