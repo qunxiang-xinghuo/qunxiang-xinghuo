@@ -603,24 +603,25 @@ curl -X POST http://localhost:3000/api/crawler \
 
 **催化频率**：用户对话每 6-10 条消息出现一次
 
-### D.4 RAG + 工作流引擎（v9.3 新增）
-
-刘看山 Agent 具备完整的 RAG 检索 + 工作流执行能力：
+### D.4 RAG + 工作流引擎（v9.3 + v9.3-fix）
 
 **双模式向量存储**：
 - 优先尝试 DeepSeek `/v1/embeddings` API 获取语义向量
 - 嵌入 API 不可用时（404/400/异常）自动降级到关键词倒排索引
 - 纯 JS 余弦相似度计算，零 npm 依赖
+- 嵌入结果 LRU 缓存（100条）
+- 嵌入 API 批量调用（`getEmbeddingsBatch`）
+- 关键词评分：`matched / queryKeywords.length`
 
 **意图分类流程**：
 ```
 用户消息
   ↓
-关键词快速分类（零成本）
+关键词快速分类（零成本，中文二字/三字词组，过滤停用词和单字）
   ↓ 置信度 ≥ 0.7
 直接使用分类结果
   ↓ 置信度 < 0.7
-DeepSeek AI 深度分类（5秒超时）
+DeepSeek AI 深度分类（5秒超时，中文prompt）
   ↓
 确定工作流类型
 ```
@@ -634,19 +635,42 @@ DeepSeek AI 深度分类（5秒超时）
 | search | "查一下"、"是什么" | 查资料 → 回答 |
 | chat | "今天天气"、"你好" | 正常 companion 聊天 |
 
-**故事模式完整闭环**：
+**状态推断（不依赖前端）**：
+```
+消息历史
+  ↓
+inferWorkflowStage
+  - 检测上一条助手回复是否包含列表（1. 2. 3.）
+  - 判断是"首次请求"还是"已展示等待选择"
+  ↓
+inferUserChoice
+  - 解析数字（"1"/"第一个"）
+  - 匹配名称
+  - 默认第一个
+  ↓
+执行对应阶段工具
+```
+
+**自然语言生成流程**：
 ```
 用户："我想玩明朝故事"
-  → intent: story
-  → search_stories(keyword="明朝")
-  → 检查点：有结果？相关？摘要≤300字？
-  → AI："找到3个明朝故事..."
+  → 工作流：search_stories → toolResult
+  → toolSummary = "【故事检索结果】找到以下故事..."
+  → systemPrompt += toolSummary
+  → DeepSeek 生成："哈，我这正好有几个明朝的故事..."
   → 用户："第一个"
-  → find_online_user()
-  → 检查点：有匹配？
-  → 有 → create_room(type="story_duet")
-  → 无 → create_room(type="ai_duet") + story_fallback 角色
-  → AI："房间已创建！"
+  → 工作流：inferUserChoice → find_online_user → create_room
+  → toolSummary = "【匹配结果】匹配到了真人..."
+  → systemPrompt += toolSummary
+  → DeepSeek 生成："匹配到了！进来吧！"
+```
+
+**用户取消处理**：
+```
+用户："算了"
+  → isUserCancel = true
+  → 工作流终止
+  → AI："好，那我们先不玩故事了。聊点别的？"
 ```
 
 ### D.5 状态切换规则（v9.2）

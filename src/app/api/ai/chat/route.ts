@@ -11,8 +11,8 @@ import {
   type ToolCall,
   type ToolResult,
 } from "@/lib/ai/agent-tools";
-import { WorkflowEngine, type WorkflowResult } from "@/lib/ai/workflow-engine";
-import { buildVectorIndex } from "@/lib/ai/vector-store";
+import { WorkflowEngine } from "@/lib/ai/workflow-engine";
+import { buildVectorIndex, forceKeywordMode } from "@/lib/ai/vector-store";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -30,25 +30,36 @@ interface ChatMessage {
  *   persona: "catalyst" | "creative" | "healer" | "mediator"  (可选，默认 catalyst)
  * }
  */
-// v9.3: 确保向量索引已构建（首次请求时）
-let indexInitialized = false;
+
+// v9.3-fix: 索引在后台异步构建，不阻塞请求
+let indexBuilding = false;
+let indexBuilt = false;
 async function ensureIndex() {
-  if (!indexInitialized) {
-    try {
-      await buildVectorIndex();
-      indexInitialized = true;
-    } catch (err: any) {
-      console.warn("[AI Chat] 索引构建失败:", err.message);
-    }
+  if (indexBuilt || indexBuilding) return;
+  indexBuilding = true;
+  try {
+    // 后台构建，不 await（不阻塞请求）
+    buildVectorIndex().then(() => {
+      indexBuilt = true;
+      indexBuilding = false;
+    }).catch((err: any) => {
+      console.warn("[AI Chat] 后台索引构建失败:", err.message);
+      forceKeywordMode();
+      indexBuilding = false;
+    });
+  } catch (err: any) {
+    console.warn("[AI Chat] 索引启动失败:", err.message);
+    indexBuilding = false;
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    await ensureIndex();
+    // 启动后台索引构建（不阻塞）
+    ensureIndex();
 
     const body = await request.json();
-    const { messages, topic, persona: personaKey, context, state, workflowState } = body;
+    const { messages, topic, persona: personaKey, context, state } = body;
 
     // v9.2 Agent: 如果前端传入了当前状态，注入到 systemPrompt 中辅助角色判断
     let stateHint = "";
@@ -69,67 +80,77 @@ export async function POST(request: NextRequest) {
     }
 
     // v6.1: 支持多角色切换
-    // v8.1-fix: liukanshan 角色使用 personas.ts 中的完整 systemPrompt，注入话题/上下文
-    const persona = getPersona(personaKey);
+    let effectivePersonaKey = personaKey || 'catalyst';
+    const persona = getPersona(effectivePersonaKey);
     let systemPrompt = persona.systemPrompt;
 
     // v8.6-fix: 为 assistant_director / liukanshan 角色注入话题和上下文
-    if ((personaKey === 'liukanshan' || personaKey === 'assistant_director') && context) {
+    if ((effectivePersonaKey === 'liukanshan' || effectivePersonaKey === 'assistant_director') && context) {
       systemPrompt += `\n\n当前话题：「${topic || '一个有趣的话题'}」\n${context}\n\n硬性约束：你的每一次回复必须和当前话题直接相关。如果用户偏离话题，用一个简短的提问把话题拉回来。禁止聊与当前话题无关的内容。`;
     } else if (systemPrompt.includes('{topic}')) {
       systemPrompt = systemPrompt.replace("{topic}", topic || "一个有趣的话题");
     }
 
-    // v9.2 Agent: 注入状态提示（如前端传入了当前状态）
+    // v9.2 Agent: 注入状态提示
     if (stateHint) {
       systemPrompt += stateHint;
     }
 
-    console.log("[AI Chat] 使用角色:", persona.name, "key:", personaKey || "catalyst");
+    console.log("[AI Chat] 使用角色:", persona.name, "key:", effectivePersonaKey);
     console.log("[AI Chat] 收到请求, topic:", topic, "history长度:", messages.length);
 
-    // ==================== v9.3: 工作流引擎 ====================
-    let workflowResult: WorkflowResult | undefined;
+    // ==================== v9.3-fix: 工作流引擎 ====================
+    let workflowToolSummary = "";
+    let workflowToolCalls: ToolCall[] | undefined;
+    let workflowToolResults: ToolResult[] | undefined;
+    let workflowType = "chat";
 
     // 仅对 companion 角色启用工作流
-    if (personaKey === 'companion' && userId) {
+    if (effectivePersonaKey === 'companion' && userId) {
       const lastUserMessage = messages
         .filter((m: ChatMessage) => m.role === 'user')
         .pop()?.content || "";
 
       if (lastUserMessage) {
-        workflowResult = await WorkflowEngine.process(lastUserMessage, {
+        const workflowResult = await WorkflowEngine.process(lastUserMessage, {
           userId,
           messages: messages.filter((m: ChatMessage) => m.role !== 'system').map((m: ChatMessage) => ({
             role: m.role as "user" | "assistant",
             content: m.content,
           })),
-          stepIndex: workflowState?.stepIndex || 0,
-          selectedStoryId: workflowState?.selectedStoryId,
-          selectedBrainholeId: workflowState?.selectedBrainholeId,
-          history: [],
         });
 
+        workflowType = workflowResult.workflow;
         console.log(
-          "[AI Chat] 工作流结果:", workflowResult.workflow,
+          "[AI Chat] 工作流:", workflowResult.workflow,
           "step:", workflowResult.state.step,
           "waitUser:", workflowResult.shouldWaitUser
         );
+
+        // 处理建议切换 persona（如疗愈模式）
+        if (workflowResult.suggestedPersona) {
+          effectivePersonaKey = workflowResult.suggestedPersona;
+          const newPersona = getPersona(effectivePersonaKey);
+          systemPrompt = newPersona.systemPrompt;
+          console.log("[AI Chat] 工作流建议切换角色:", newPersona.name);
+        }
+
+        // 收集工具结果摘要
+        if (workflowResult.toolSummary) {
+          workflowToolSummary = workflowResult.toolSummary;
+        }
+        if (workflowResult.toolCalls) {
+          workflowToolCalls = workflowResult.toolCalls;
+        }
+        if (workflowResult.toolResults) {
+          workflowToolResults = workflowResult.toolResults;
+        }
       }
     }
 
-    // 如果工作流已经生成了内容（如展示故事列表），直接返回
-    if (workflowResult?.content) {
-      const responsePayload: any = {
-        content: workflowResult.content,
-        source: "workflow",
-        workflow: workflowResult.workflow,
-        workflowState: workflowResult.state,
-      };
-      if (workflowResult.toolCalls) responsePayload.toolCalls = workflowResult.toolCalls;
-      if (workflowResult.toolResults) responsePayload.toolResults = workflowResult.toolResults;
-
-      return NextResponse.json(apiResponse(responsePayload));
+    // 注入工作流工具结果到 systemPrompt
+    if (workflowToolSummary) {
+      systemPrompt += `\n\n${workflowToolSummary}\n\n请基于以上信息，用刘看山的口吻自然地回复用户。不要暴露任何技术细节（如"检索结果""工具调用"等），像朋友一样说话。`;
     }
 
     // ==================== DeepSeek API ====================
@@ -139,7 +160,6 @@ export async function POST(request: NextRequest) {
 
     if (apiKey) {
       try {
-        // v8.1-fix: 过滤掉前端传来的 system message，避免重复
         const userMessages = messages.filter((m: ChatMessage) => m.role !== 'system');
         const deepseekMessages = [
           { role: "system", content: systemPrompt },
@@ -186,8 +206,6 @@ export async function POST(request: NextRequest) {
     let zhidaOk = false;
 
     try {
-      // 知乎直答不支持 system role，把 system prompt 作为第一条 user 消息
-      // v8.1-fix: 过滤掉前端传来的 system message，避免重复
       const userMessages = messages.filter((m: ChatMessage) => m.role !== 'system');
       const zhidaMessages = [
         { role: "user" as const, content: `[系统设定] ${systemPrompt}` },
@@ -198,7 +216,6 @@ export async function POST(request: NextRequest) {
       ];
       console.log("[AI Chat] 调用 知乎直答 API...");
 
-      // v7.0-test17: 知乎直答添加15秒超时
       const zhidaController = new AbortController();
       const zhidaTimeout = setTimeout(() => zhidaController.abort(), 15000);
       const zhidaResult = await zhidaChat(zhidaMessages, "zhida-thinking-1p5", zhidaController.signal);
@@ -217,13 +234,12 @@ export async function POST(request: NextRequest) {
     let toolResults: ToolResult[] | undefined;
 
     if (deepseekOk) {
-      // 优先使用 DeepSeek 结果
       finalContent = deepseekContent;
       source = "deepseek";
       console.log("[AI Chat] 使用 DeepSeek 回复");
 
-      // v9.1 Agent 阶段4: 仅对 companion 角色启用工具调用闭环
-      if (personaKey === 'companion' && userId) {
+      // v9.1 Agent: 仅对 companion 角色启用工具调用闭环
+      if (effectivePersonaKey === 'companion' && userId) {
         const toolCall = parseToolCall(finalContent);
         if (toolCall) {
           console.log("[AI Chat] Agent 检测到工具调用:", toolCall.tool);
@@ -231,7 +247,6 @@ export async function POST(request: NextRequest) {
           toolCalls = [toolCall];
           toolResults = [toolResult];
 
-          // 二次调用 DeepSeek：将工具结果 + 检查点信息回传，让 AI 基于结果生成最终回复
           const naturalReply = stripToolCall(finalContent) || finalContent;
           const checkpointInfo = toolResult.checkpoint
             ? `\n\n【检查点结果】\n${toolResult.checkpoint.checks.map((c: any) => `- ${c.name}: ${c.pass ? '✅' : '❌'} ${c.message}`).join('\n')}\n\n总体: ${toolResult.checkpoint.pass ? '检查通过，继续下一步' : '检查未通过，后端已尝试自动回退/重试，以上是最终结论'}`
@@ -277,30 +292,28 @@ export async function POST(request: NextRequest) {
             }
           } catch (err: any) {
             console.error("[AI Chat] Agent 二次调用异常:", err.message);
-            // 二次调用失败时，保留第一次回复（已包含工具调用 JSON）
           }
         }
       }
     } else if (zhidaOk) {
-      // DeepSeek 失败，使用知乎直答
       finalContent = zhidaContent;
       source = "zhida";
       console.log("[AI Chat] 使用 知乎直答 回复");
     } else {
-      // v8.6-fix: 两个 API 都失败，按角色返回兜底回复
-      finalContent = getFallbackReply(personaKey || 'catalyst');
+      finalContent = getFallbackReply(effectivePersonaKey || 'catalyst');
       source = "fallback";
-      console.log("[AI Chat] 两个API都失败，使用角色兜底:", personaKey || 'catalyst');
+      console.log("[AI Chat] 两个API都失败，使用角色兜底:", effectivePersonaKey || 'catalyst');
     }
 
     const responsePayload: any = {
       content: finalContent,
       source,
-      workflow: workflowResult?.workflow || "chat",
+      workflow: workflowType,
     };
     if (toolCalls) responsePayload.toolCalls = toolCalls;
     if (toolResults) responsePayload.toolResults = toolResults;
-    if (workflowResult?.state) responsePayload.workflowState = workflowResult.state;
+    if (workflowToolCalls) responsePayload.workflowToolCalls = workflowToolCalls;
+    if (workflowToolResults) responsePayload.workflowToolResults = workflowToolResults;
 
     return NextResponse.json(apiResponse(responsePayload));
   } catch (error: any) {

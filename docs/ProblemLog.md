@@ -1,5 +1,89 @@
 # 群像·星火 — 问题排查记录
 
+## v9.3-fix 刘看山 Agent 16项问题修复
+
+> 时间：2026-04-29
+> 状态：✅ 已完成，构建 81/81
+
+### 检测方式
+代码审查（vector-store.ts / rag-engine.ts / workflow-engine.ts / chat/route.ts / agent-tools.ts）
+
+### 修复内容
+
+#### S级（严重 - 功能故障）
+
+**S1: `agent-tools.ts:667` roomType 硬编码**
+- 问题：`const roomType = type === "ai_duet" ? "ai_duet" : "ai_duet";`
+- 后果：真人房间 `story_duet` 永远无法创建
+- 修复：`const roomType = type === "story_duet" ? "story_duet" : "ai_duet";`
+
+**S2: 工作流返回硬编码字符串**
+- 问题：workflow-engine.ts 直接拼接 content（"找到几个故事..."）
+- 后果：刘看山人设崩塌，回复像机器人
+- 修复：工作流只返回 `toolSummary`，由 chat/route.ts 注入 systemPrompt，DeepSeek 生成自然语言
+
+**S3: 工作流状态依赖前端未实现字段**
+- 问题：需要 `workflowState.stepIndex` / `selectedStoryId`
+- 后果：工作流永远卡在 Step 0
+- 修复：新增 `inferWorkflowStage`（从消息历史推断阶段）和 `inferUserChoice`（解析用户选择）
+
+**S4: 中文关键词按字提取**
+- 问题：`extractKeywords` 把每个中文字当成关键词
+- 后果：500 字故事产生 500 个关键词，索引极度稀疏
+- 修复：提取二字/三字词组，过滤单字和停用词（的/了/在/是/我/有等），英文保留≥2字符，数字保留≥2位
+
+#### A级（中等 - 影响体验/可靠性）
+
+**A5: AI 意图分类 prompt 英文**
+- 修复：分类规则改成中文 prompt
+
+**A6: `"bored"` 前导空格**
+- 修复：删除前导空格
+
+**A7: 索引构建阻塞首次请求**
+- 修复：改为后台异步构建（`.then`），首次请求不被阻塞
+
+**A8: 嵌入 API 降级后自动恢复**
+- 修复：非 404 错误临时降级，下次请求重试
+- 新增：定时重试机制（每5分钟检查嵌入API是否恢复，恢复后自动重建索引并切换回向量模式）
+
+**A9: 全局变量 Serverless 风险**
+- 修复：加 WARNING 注释标注风险；当前腾讯云单机部署可用，未来迁移需改为外部存储
+
+**A10: 疗愈/检索模式 content 为空**
+- 修复：`suggestedPersona` 机制切换 healer persona
+
+**A11: 用户取消信号**
+- 修复：新增 `isUserCancel` 检测（算了/不用了/取消/放弃/不用/别/停）
+
+#### B级（轻微 - 优化）
+
+**B12: 嵌入结果 LRU 缓存**
+- 修复：100条缓存，key为文本前200字符
+
+**B13: 清理未使用导入**
+- 修复：删除 `parseToolCall`/`stripToolCall` 冗余导入
+
+**B14: 嵌入 API 批量调用**
+- 修复：新增 `getEmbeddingsBatch()`，将多个文档合并为一次 `input: string[]` 请求
+
+**B15: JSON.parse 异常保护**
+- 修复：增加 try-catch，解析失败返回默认分类
+
+**B16: 关键词搜索评分公式**
+- 修复：`score = matched / queryKeywords.length`（对长文档更公平）
+
+### 关键决策
+
+- 工作流引擎只做"工具执行层"，自然语言生成交给 DeepSeek —— 这是保持人设的关键
+- 状态从消息历史推断 —— 避免前端改造，降低接入成本
+- 后台异步构建索引 —— 首次请求不被阻塞
+- 嵌入 API 批量调用 —— `getEmbeddingsBatch()` 将多个文档合并为一次请求，减少 API 调用次数
+- 嵌入 API 定时重试 —— 每5分钟检查一次，恢复后自动重建索引切换回向量模式
+- 关键词过滤停用词和单字 —— 提取二字/三字词组，避免索引稀疏
+
+---
+
 ## v9.3 刘看山 Agent RAG + 工作流 + 状态切换
 
 > 时间：2026-04-29

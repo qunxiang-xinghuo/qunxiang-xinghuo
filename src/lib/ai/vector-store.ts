@@ -34,11 +34,20 @@ export interface SearchOptions {
 }
 
 // ── 全局状态 ──
-
+// WARNING: 这些变量是模块级全局变量，在 Serverless/Edge 环境中不可靠
+//          每个实例独立，可能导致索引重复构建。当前部署在腾讯云单机，可用。
+//          如果未来迁移到 Serverless，需要改为外部存储（Redis/DB）。
 let _vectorIndex: VectorDocument[] = [];
 let _keywordIndex: Map<string, Set<string>> = new Map();
-let _embeddingAvailable = true; // 乐观假设，失败时降级
+let _embeddingAvailable = true;
 let _indexBuilt = false;
+
+// v9.3-fix: 嵌入 API 定时重试（每5分钟检查一次）
+let _embedRetryTimer: ReturnType<typeof setInterval> | null = null;
+
+// v9.3-fix: 嵌入结果缓存（LRU，最多 100 条）
+const _embedCache = new Map<string, number[]>();
+const MAX_EMBED_CACHE = 100;
 
 // ── DeepSeek 嵌入 API ──
 
@@ -47,6 +56,12 @@ const DEEPSEEK_EMBED_API = "https://api.deepseek.com/v1/embeddings";
 async function getEmbedding(text: string): Promise<number[] | undefined> {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey || !_embeddingAvailable) return undefined;
+
+  // v9.3-fix: 缓存命中直接返回
+  const cacheKey = text.slice(0, 200);
+  if (_embedCache.has(cacheKey)) {
+    return _embedCache.get(cacheKey);
+  }
 
   try {
     const res = await fetch(DEEPSEEK_EMBED_API, {
@@ -57,7 +72,7 @@ async function getEmbedding(text: string): Promise<number[] | undefined> {
       },
       body: JSON.stringify({
         model: "text-embedding-3-small",
-        input: text.slice(0, 2000), // 限制长度
+        input: text.slice(0, 2000),
       }),
     });
 
@@ -65,6 +80,10 @@ async function getEmbedding(text: string): Promise<number[] | undefined> {
       if (res.status === 404 || res.status === 400) {
         console.warn("[VectorStore] DeepSeek 嵌入 API 不可用，降级到关键词索引");
         _embeddingAvailable = false;
+      }
+      // v9.3-fix: 非 404/400 错误时临时降级，下次请求会重试
+      if (res.status >= 500) {
+        console.warn("[VectorStore] 嵌入 API 服务端错误，下次请求将重试");
       }
       return undefined;
     }
@@ -75,10 +94,23 @@ async function getEmbedding(text: string): Promise<number[] | undefined> {
       _embeddingAvailable = false;
       return undefined;
     }
+
+    // v9.3-fix: 写入缓存
+    if (_embedCache.size >= MAX_EMBED_CACHE) {
+      const firstKey = _embedCache.keys().next().value;
+      if (firstKey) _embedCache.delete(firstKey);
+    }
+    _embedCache.set(cacheKey, embedding);
+
     return embedding;
   } catch (err: any) {
     console.warn("[VectorStore] 嵌入 API 调用失败:", err.message);
-    _embeddingAvailable = false;
+    // v9.3-fix: 网络错误临时降级，下次请求会重试
+    if (err.message?.includes("fetch") || err.message?.includes("network")) {
+      console.warn("[VectorStore] 网络错误，下次请求将重试嵌入 API");
+    } else {
+      _embeddingAvailable = false;
+    }
     return undefined;
   }
 }
@@ -101,20 +133,32 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
 // ── 关键词提取（中文分词简化版）──
 
+// 中文停用词（简化版）
+const STOP_WORDS = new Set([
+  "的", "了", "在", "是", "我", "有", "和", "就", "不", "人", "都", "一", "一个", "上", "也", "很", "到", "说", "要", "去", "你", "会", "着", "没有", "看", "好", "自己", "这", "那", "这些", "那些", "这个", "那个", "之", "与", "及", "等", "或", "但", "而", "因为", "所以", "如果", "虽然", "然而", "并且", "以及", "但是", "还是", "就是", "不是", "不能", "可以", "需要", "进行", "通过", "作为", "对于", "关于", "根据", "按照", "随着", "由于", "为了", "为", "被", "把", "让", "给", "向", "从", "到", "在", "于", "以", "及", "等", "第",
+]);
+
 function extractKeywords(text: string): string[] {
   const keywords: string[] = [];
 
-  // 中文：按字提取（简单但有效）+ 常见词组
-  const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
-  keywords.push(...chineseChars);
+  // 中文：提取二字/三字词组，过滤停用词和单字
+  const chineseText = text.replace(/[^\u4e00-\u9fa5]/g, "");
+  for (let i = 0; i < chineseText.length - 1; i++) {
+    const word2 = chineseText.slice(i, i + 2);
+    if (!STOP_WORDS.has(word2)) keywords.push(word2);
+    if (i < chineseText.length - 2) {
+      const word3 = chineseText.slice(i, i + 3);
+      if (!STOP_WORDS.has(word3)) keywords.push(word3);
+    }
+  }
 
-  // 英文单词
+  // 英文单词（长度≥2）
   const englishWords = text.toLowerCase().match(/[a-z]+/g) || [];
-  keywords.push(...englishWords);
+  keywords.push(...englishWords.filter((w) => w.length >= 2));
 
-  // 数字
+  // 数字（长度≥2，如"明朝"不算，但"2024"算）
   const numbers = text.match(/\d+/g) || [];
-  keywords.push(...numbers);
+  keywords.push(...numbers.filter((n) => n.length >= 2));
 
   // 去重
   return [...new Set(keywords)];
@@ -144,7 +188,7 @@ function addToKeywordIndex(doc: VectorDocument): void {
 
 function searchKeywordIndex(query: string, options: SearchOptions = {}): SearchResult[] {
   const queryKeywords = extractKeywords(query);
-  const docScores = new Map<string, number>();
+  const docScores = new Map<string, { matched: number; totalDocKw: number }>();
 
   for (const kw of queryKeywords) {
     const docIds = _keywordIndex.get(kw);
@@ -154,17 +198,26 @@ function searchKeywordIndex(query: string, options: SearchOptions = {}): SearchR
       if (!doc) continue;
       if (options.type && doc.type !== options.type) continue;
 
-      // 计算匹配分数：匹配关键词数 / 文档总关键词数
-      const matched = doc.keywords.filter((dk) => queryKeywords.includes(dk)).length;
-      const score = matched / Math.max(doc.keywords.length, 1);
-      docScores.set(docId, Math.max(docScores.get(docId) || 0, score));
+      const prev = docScores.get(docId);
+      if (prev) {
+        prev.matched += 1;
+      } else {
+        docScores.set(docId, { matched: 1, totalDocKw: doc.keywords.length });
+      }
     }
   }
 
   const results: SearchResult[] = [];
-  for (const [docId, score] of docScores) {
+  for (const [docId, { matched, totalDocKw }] of docScores) {
     const doc = _vectorIndex.find((d) => d.id === docId);
-    if (doc) results.push({ document: doc, score });
+    if (!doc) continue;
+    // v9.3-fix: 改用 BM25 式评分 = matched / queryLength * log(totalDocs / docFreq)
+    // 简化版：matched / queryKeywords.length（对长文档更公平）
+    const queryCoverage = matched / Math.max(queryKeywords.length, 1);
+    const docDensity = matched / Math.max(totalDocKw, 1);
+    // v9.3-fix: 评分公式改为 matched / queryKeywords.length（对长文档更公平）
+    const score = matched / Math.max(queryKeywords.length, 1);
+    results.push({ document: doc, score });
   }
 
   return results
@@ -239,6 +292,76 @@ export function getIndexStats(): { total: number; stories: number; brainholes: n
 
 // ── 索引构建 ──
 
+// v9.3-fix: 批量获取嵌入（将多个文本合并为一次 API 调用）
+async function getEmbeddingsBatch(texts: string[]): Promise<(number[] | undefined)[]> {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey || !_embeddingAvailable) {
+    return texts.map(() => undefined);
+  }
+
+  // 先检查缓存
+  const results: (number[] | undefined)[] = [];
+  const uncachedIndices: number[] = [];
+  const uncachedTexts: string[] = [];
+
+  for (let i = 0; i < texts.length; i++) {
+    const cacheKey = texts[i].slice(0, 200);
+    if (_embedCache.has(cacheKey)) {
+      results[i] = _embedCache.get(cacheKey);
+    } else {
+      results[i] = undefined;
+      uncachedIndices.push(i);
+      uncachedTexts.push(texts[i].slice(0, 2000));
+    }
+  }
+
+  if (uncachedTexts.length === 0) return results;
+
+  try {
+    const res = await fetch(DEEPSEEK_EMBED_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: uncachedTexts,
+      }),
+    });
+
+    if (!res.ok) {
+      if (res.status === 404 || res.status === 400) {
+        console.warn("[VectorStore] DeepSeek 嵌入 API 不可用，降级到关键词索引");
+        _embeddingAvailable = false;
+      }
+      return results;
+    }
+
+    const data = await res.json();
+    const embeddings = data.data?.map((d: any) => d.embedding) || [];
+
+    for (let i = 0; i < uncachedIndices.length; i++) {
+      const emb = embeddings[i];
+      if (Array.isArray(emb)) {
+        const idx = uncachedIndices[i];
+        results[idx] = emb;
+        // 写入缓存
+        const cacheKey = texts[idx].slice(0, 200);
+        if (_embedCache.size >= MAX_EMBED_CACHE) {
+          const firstKey = _embedCache.keys().next().value;
+          if (firstKey) _embedCache.delete(firstKey);
+        }
+        _embedCache.set(cacheKey, emb);
+      }
+    }
+  } catch (err: any) {
+    console.warn("[VectorStore] 批量嵌入 API 调用失败:", err.message);
+  }
+
+  return results;
+}
+
 /**
  * 从数据库构建向量索引
  * 应用启动时调用一次
@@ -271,8 +394,9 @@ export async function buildVectorIndex(): Promise<void> {
       },
     });
 
-    for (const story of stories) {
-      const content = [
+    // v9.3-fix: 批量获取嵌入
+    const storyContents = stories.map((story) =>
+      [
         story.title,
         story.eraBackground,
         story.storySummary,
@@ -282,14 +406,17 @@ export async function buildVectorIndex(): Promise<void> {
         story.act4Truth,
       ]
         .filter(Boolean)
-        .join(" ");
+        .join(" ")
+        .slice(0, 1500)
+    );
+    const storyEmbeddings = _embeddingAvailable
+      ? await getEmbeddingsBatch(storyContents)
+      : stories.map(() => undefined);
 
+    for (let i = 0; i < stories.length; i++) {
+      const story = stories[i];
+      const content = storyContents[i];
       const keywords = extractKeywords(content);
-      let embedding: number[] | undefined;
-
-      if (_embeddingAvailable) {
-        embedding = await getEmbedding(content.slice(0, 1500));
-      }
 
       const doc: VectorDocument = {
         id: story.id,
@@ -297,7 +424,7 @@ export async function buildVectorIndex(): Promise<void> {
         title: story.title,
         content: content.slice(0, 2000),
         keywords,
-        embedding,
+        embedding: storyEmbeddings[i],
         metadata: {
           difficulty: story.difficulty,
           maxCharacters: story.maxCharacters,
@@ -324,15 +451,19 @@ export async function buildVectorIndex(): Promise<void> {
       },
     });
 
-    for (const bh of brainholes) {
+    // v9.3-fix: 批量获取嵌入
+    const bhContents = brainholes.map((bh) => {
       const tagNames = bh.tags.map((t) => t.tag.name).join(" ");
-      const content = [bh.title, bh.scenario, bh.category, tagNames].filter(Boolean).join(" ");
-      const keywords = extractKeywords(content);
-      let embedding: number[] | undefined;
+      return [bh.title, bh.scenario, bh.category, tagNames].filter(Boolean).join(" ").slice(0, 1500);
+    });
+    const bhEmbeddings = _embeddingAvailable
+      ? await getEmbeddingsBatch(bhContents)
+      : brainholes.map(() => undefined);
 
-      if (_embeddingAvailable) {
-        embedding = await getEmbedding(content.slice(0, 1500));
-      }
+    for (let i = 0; i < brainholes.length; i++) {
+      const bh = brainholes[i];
+      const content = bhContents[i];
+      const keywords = extractKeywords(content);
 
       const doc: VectorDocument = {
         id: bh.id,
@@ -340,11 +471,11 @@ export async function buildVectorIndex(): Promise<void> {
         title: bh.title,
         content: content.slice(0, 2000),
         keywords,
-        embedding,
+        embedding: bhEmbeddings[i],
         metadata: {
           category: bh.category,
           hotScore: bh.hotScore,
-          tags: tagNames,
+          tags: bh.tags.map((t) => t.tag.name).join(" "),
         },
       };
 
@@ -369,14 +500,16 @@ export async function buildVectorIndex(): Promise<void> {
       { id: "creative", name: "创作助手", desc: "创作瓶颈 辅助 选项" },
     ];
 
-    for (const p of personaTexts) {
-      const content = `${p.name} ${p.desc}`;
-      const keywords = extractKeywords(content);
-      let embedding: number[] | undefined;
+    // v9.3-fix: 批量获取嵌入
+    const personaContents = personaTexts.map((p) => `${p.name} ${p.desc}`);
+    const personaEmbeddings = _embeddingAvailable
+      ? await getEmbeddingsBatch(personaContents)
+      : personaTexts.map(() => undefined);
 
-      if (_embeddingAvailable) {
-        embedding = await getEmbedding(content);
-      }
+    for (let i = 0; i < personaTexts.length; i++) {
+      const p = personaTexts[i];
+      const content = personaContents[i];
+      const keywords = extractKeywords(content);
 
       const doc: VectorDocument = {
         id: p.id,
@@ -384,7 +517,7 @@ export async function buildVectorIndex(): Promise<void> {
         title: p.name,
         content,
         keywords,
-        embedding,
+        embedding: personaEmbeddings[i],
         metadata: {},
       };
 
@@ -397,10 +530,31 @@ export async function buildVectorIndex(): Promise<void> {
     console.log(
       `[VectorStore] 索引构建完成: ${_vectorIndex.length} 条文档, 模式: ${_embeddingAvailable ? "vector" : "keyword"}, 耗时: ${elapsed}ms`
     );
+
+    // v9.3-fix: 启动定时重试（每5分钟检查嵌入 API 是否恢复）
+    if (!_embeddingAvailable && !_embedRetryTimer) {
+      _embedRetryTimer = setInterval(async () => {
+        console.log("[VectorStore] 定时重试嵌入 API...");
+        _embeddingAvailable = true;
+        const testEmb = await getEmbedding("测试");
+        if (testEmb) {
+          console.log("[VectorStore] 嵌入 API 已恢复，切换回向量模式");
+          if (_embedRetryTimer) {
+            clearInterval(_embedRetryTimer);
+            _embedRetryTimer = null;
+          }
+          // 重建索引以获取向量
+          await rebuildIndex();
+        } else {
+          _embeddingAvailable = false;
+          console.log("[VectorStore] 嵌入 API 仍未恢复，继续关键词模式");
+        }
+      }, 5 * 60 * 1000); // 5分钟
+    }
   } catch (err: any) {
     console.error("[VectorStore] 索引构建失败:", err.message);
     _embeddingAvailable = false;
-    _indexBuilt = true; // 标记为已构建（空索引）
+    _indexBuilt = true;
   }
 }
 
@@ -417,6 +571,11 @@ export function forceKeywordMode(): void {
  */
 export async function rebuildIndex(): Promise<void> {
   _indexBuilt = false;
-  _embeddingAvailable = true; // 重置时重新尝试嵌入
+  _embeddingAvailable = true;
+  // 清理旧定时器，避免重复
+  if (_embedRetryTimer) {
+    clearInterval(_embedRetryTimer);
+    _embedRetryTimer = null;
+  }
   await buildVectorIndex();
 }
