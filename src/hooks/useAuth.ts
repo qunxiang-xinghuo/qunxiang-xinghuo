@@ -21,25 +21,12 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
-    // v6.3-auth-fix3: session 明确为未认证时，无条件清除本地残留数据
     if (sessionStatus === 'unauthenticated') {
-      const savedUser = localStorage.getItem('xh_user');
-      const savedUserId = localStorage.getItem('xh_user_id');
-      const savedIdentity = localStorage.getItem('xh_identity');
-
-      if (savedUser || savedUserId || savedIdentity) {
-        console.log('[useAuth] Session 已失效，清除所有本地残留用户数据');
-        localStorage.removeItem('xh_user');
-        localStorage.removeItem('xh_identity');
-        localStorage.removeItem('xh_user_id');
-      }
-      if (isMounted) { setUser(null); setLoading(false); }
+      setUser(null);
+      setLoading(false);
       return;
     }
 
-    // 1. 优先从 NextAuth session 读取（最可信），始终覆盖本地缓存
     if (sessionStatus === 'authenticated' && session?.user) {
       const authUser: User = {
         id: session.user.id || 'user-' + Date.now(),
@@ -52,147 +39,22 @@ export function useAuth() {
         level: session.user.level || 1,
         sparkCount: session.user.sparkCount || 0,
       };
-      if (isMounted) {
-        setUser(authUser);
-        // v8.0-auth-fix: 始终用 session 最新数据覆盖本地缓存，避免名字不一致
-        localStorage.setItem('xh_user', JSON.stringify(authUser));
-        if (authUser.id) localStorage.setItem('xh_user_id', authUser.id);
-        setLoading(false);
-      }
+      setUser(authUser);
+      setLoading(false);
       return;
     }
 
-    // 2. session 还在加载中，用 localStorage 做临时兜底
-    if (sessionStatus === 'loading') {
-      const savedUser = localStorage.getItem('xh_user');
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser);
-          if (isMounted) { setUser(parsed); setLoading(false); }
-          return;
-        } catch {
-          localStorage.removeItem('xh_user');
-        }
-      }
-    }
-
-    // 3. 最后从 identity 创建临时用户（仅用于匿名模式）
-    const savedIdentity = localStorage.getItem('xh_identity');
-    if (savedIdentity) {
-      try {
-        const identity = JSON.parse(savedIdentity);
-        // v8.5-fix: temp ID 持久化，避免每次渲染重新生成导致 socket room join 失败
-        let tempId = localStorage.getItem('xh_temp_id');
-        if (!tempId) {
-          tempId = 'temp-' + Date.now();
-          localStorage.setItem('xh_temp_id', tempId);
-        }
-        const tempUser: User = {
-          id: tempId,
-          name: identity.label,
-          identity,
-          level: 1,
-          sparkCount: 0,
-        };
-        if (isMounted) { setUser(tempUser); setLoading(false); }
-        return;
-      } catch {
-        localStorage.removeItem('xh_identity');
-      }
-    }
-
-    if (isMounted) setLoading(false);
-    return () => { isMounted = false; };
+    setLoading(false);
   }, [session, sessionStatus]);
 
-  const saveIdentity = (identity: User['identity']) => {
-    // v8.5-fix: 复用已有的 temp ID，确保 socket room 中的 userId 稳定
-    let tempId = user?.id || localStorage.getItem('xh_temp_id');
-    if (!tempId || tempId.startsWith('temp-') === false) {
-      tempId = 'temp-' + Date.now();
-    }
-    localStorage.setItem('xh_temp_id', tempId);
-    const newUser: User = {
-      id: tempId,
-      name: identity.label,
-      identity,
-      level: user?.level || 1,
-      sparkCount: user?.sparkCount || 0,
-    };
-    setUser(newUser);
-    localStorage.setItem('xh_user', JSON.stringify(newUser));
-    localStorage.setItem('xh_identity', JSON.stringify(identity));
-  };
-
-  const login = async (email: string, _password: string) => {
-    // v8.0-auth-fix: login 仅做本地状态过渡，真实用户数据由 NextAuth session 提供
-    // 避免本地缓存的名字与 session 不一致
-    const saved = localStorage.getItem('xh_user');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.id) {
-          setUser(parsed);
-          return;
-        }
-      } catch { /* ignore */ }
-    }
-    const identity = user?.identity || { type: 'real' as const, label: email.split('@')[0] };
-    const newUser: User = {
-      id: user?.id || 'user-' + Date.now(),
-      name: email.split('@')[0],
-      avatar: undefined,
-      identity,
-      level: user?.level || 1,
-      sparkCount: user?.sparkCount || 0,
-    };
-    setUser(newUser);
-    localStorage.setItem('xh_user', JSON.stringify(newUser));
-  };
-
-  const register = async (email: string, _password: string, name?: string) => {
-    const identity = { type: 'real' as const, label: name || email.split('@')[0] };
-    const newUser: User = {
-      id: 'user-' + Date.now(),
-      name: name || email.split('@')[0],
-      avatar: undefined,
-      identity,
-      level: 1,
-      sparkCount: 0,
-    };
-    setUser(newUser);
-    localStorage.setItem('xh_user', JSON.stringify(newUser));
-  };
-
   const updateIdentity = (identity: User['identity']) => {
-    const updatedUser: User = {
-      id: user?.id || 'temp-' + Date.now(),
-      name: user?.name || identity.label,
-      avatar: user?.avatar,
-      identity,
-      level: user?.level || 1,
-      sparkCount: user?.sparkCount || 0,
-    };
-    setUser(updatedUser);
-    localStorage.setItem('xh_user', JSON.stringify(updatedUser));
-    localStorage.setItem('xh_identity', JSON.stringify(identity));
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('xh_user');
-    localStorage.removeItem('xh_identity');
-    localStorage.removeItem('xh_user_id');
-    localStorage.removeItem('xh_temp_id');
+    if (!user) return;
+    setUser({ ...user, identity });
   };
 
   return {
     user,
     loading,
-    saveIdentity,
-    login,
-    register,
     updateIdentity,
-    logout,
   };
 }
