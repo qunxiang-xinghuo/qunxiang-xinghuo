@@ -250,6 +250,58 @@
 - 已推送 `fqunxiang dev`
 
 ### 下一步
-- **前端适配**：在调用 `/api/ai/chat` 的组件中消费 `toolCalls`/`toolResults`，实现"展示故事列表"、"跳转到新房间"等交互
-- **多轮工具调用**：支持一次对话中连续调用多个工具（如先 search_stories 再 find_online_user 再 create_room）
-- **真人匹配集成**：让 `create_room` 在找到真人时创建真人房间（需要与匹配引擎联动）
+- ~~前端适配~~ / ~~多轮工具调用~~ / ~~真人匹配集成~~ — 这些已在阶段5中以检查点工作流的形式部分解决
+
+---
+
+## 2026-04-29 — v9.1 Agent 阶段5：带检查点的工作流
+
+### 概述
+为刘看山 Agent 引入"检查点"机制，确保每个工具执行后都经过验证，失败时自动回退重试，而不是硬着头皮继续。
+
+### 变更内容
+
+**`src/lib/ai/agent-tools.ts` — 提示词层升级**
+- `AGENT_TASK_EXAMPLE` 新增**检查点规则**章节，明确告诉 AI：
+  - 每次工具执行后后端会自动运行检查点
+  - 检查点A（搜索故事后）：结果非空？相关性？失败则自动重试
+  - 检查点B（查找匹配后）：有无真人？无则启动兜底陪聊
+  - 检查点C（创建房间后）：房间是否创建成功？
+
+**`src/lib/ai/agent-tools.ts` — 执行层升级**
+- 新增 `CheckpointResult` 类型（tool/pass/checks/retried/retryCount）
+- 新增 `runCheckpoint()` 函数：为4个工具配置检查点逻辑
+  - `search_stories`：检查 `data.length > 0` + 关键词相关性
+  - `search_brainholes`：检查 `data.length > 0`
+  - `find_online_user`：检查 `data.length > 0`（不阻断，仅提示 AI 启动兜底）
+  - `create_room`：检查 `success && data.roomId`
+- 新增 `RETRY_CONFIG`：配置可重试工具的重试策略
+  - `search_stories`：失败时清空关键词扩大搜索，最多重试1次
+  - `search_brainholes`：失败时去掉分类限制，最多重试1次
+- `executeToolCall()` 升级为循环执行：执行 → 检查 → 重试（如配置允许）→ 返回最终结果
+
+**`src/app/api/ai/chat/route.ts` — 二次调用升级**
+- 二次调用时，将检查点结果（每个检查的 pass/fail + 消息）格式化为 Markdown 列表传给 AI
+- AI 收到的是"已验证"的结论，只需自然地回复用户，不需要暴露技术细节
+
+### 工作流示例（"我想玩明朝故事"）
+
+```
+Step 1: AI 调用 search_stories(keyword="明朝")
+        → 检查点A：搜到0个结果 → 自动重试（keyword=""）
+        → 重试后搜到3个故事 → 检查点A通过
+Step 2: AI 展示故事列表，用户选择
+Step 3: AI 调用 find_online_user(storyId=xxx)
+        → 检查点B：找到0个匹配 → 不重试（匹配是实时的）
+        → AI 启动兜底：调用 create_room 创建 AI 房间
+Step 4: AI 调用 create_room
+        → 检查点C：房间创建成功 → 告诉用户"房间已创建"
+```
+
+### 构建验证
+- `npm run build` — ✅ 81/81 页面成功
+- 已推送 `fqunxiang dev`
+
+### 下一步
+- **前端适配**：消费 `toolCalls`/`toolResults`/`checkpoint`，实现"展示故事列表→跳转房间"的交互流
+- **多轮工具调用**：当前每次请求最多1个工具+1次二次调用，需支持链式多工具（如搜索→匹配→创建房间在一个工作流中完成）
