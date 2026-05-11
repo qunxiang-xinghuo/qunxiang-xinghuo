@@ -101,6 +101,32 @@
 
 ---
 
+### 问题39：人机模式消息错发到评论区
+
+**现象**：
+- 用户进入双人匹配，选择"与刘看山对话"
+- 进入对白室后，自己发的消息没有出现在聊天区域
+- 消息出现在了评论区（或用户只能看到评论区输入框）
+
+**根因**：
+1. **socket 短暂断开导致 AI 房间被立即关闭**：`socket-handler.ts` 中的 `maybeCloseAiRoom` 在检测到 `onlineActors === 0` 时**立即**关闭房间。如果用户 socket 短暂断开（页面切换、网络抖动），`isOnline` 被设为 `false`，房间立即被关闭。用户重新连接后房间已是 `closed` 状态。
+2. **`isOnline` 检查不一致导致消息保存失败**：`POST /api/rooms/[roomId]/messages` API 的 participant 检查**不要求** `isOnline: true`，但 `sendMessage`（room-manager.ts）中的 participant 检查**要求** `isOnline: true`。socket 断开后，HTTP 消息保存会失败（返回 403），但前端 `fetch` 没有检查 `response.ok`，用户无感知。
+3. **房间关闭后 `isReadonly = true`**：`isReadonly = roomStatus === 'closed' || finished`。房间关闭后，聊天输入区隐藏，评论区显示。用户只能在评论区输入消息。
+
+**解决**：
+1. **`src/server/room-manager.ts`**：移除 `sendMessage` 中的 `isOnline: true` 检查，统一与 `POST` API 的 participant 检查逻辑（允许离线 participant 通过 HTTP 发送消息）。
+2. **`src/server/socket-handler.ts`**：给 AI 房间关闭添加 **30 秒延迟**（`setTimeout`），并在关闭前再次检查用户是否已重新连接。如果用户重新连接，取消关闭。
+
+**验证**：
+- 人机模式消息正常显示在聊天区域 ✅
+- 评论区在人机模式下不可见（除非房间已正常关闭）✅
+- 结束对白后火花正常保存 ✅
+- 构建通过 81/81 ✅
+
+**文件**：2 个文件修改
+
+---
+
 ## v9.0f PPT蓝白风全局配色优化
 
 ---

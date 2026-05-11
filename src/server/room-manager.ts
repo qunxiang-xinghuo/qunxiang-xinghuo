@@ -125,12 +125,13 @@ export async function sendMessage(
 ) {
   const { roleCharacter, isAiPrompt, isDirectorNote, reactionId } = options || {};
 
-  // 检查发送者是否是房间参与者
+  // 检查发送者是否是房间参与者（v9.1-fix: 移除 isOnline 检查，
+  // 因为 POST /api/rooms/[roomId]/messages 已经检查过 participant 存在性，
+  // 且 socket 断开不应阻止 HTTP 消息保存）
   const participant = await db.roomParticipant.findFirst({
     where: {
       roomId,
       userId: senderId,
-      isOnline: true,
     },
   });
 

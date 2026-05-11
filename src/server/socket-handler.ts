@@ -151,6 +151,9 @@ export function registerSocketHandlers(io: SocketIOServer): void {
 
     // v8.1-fix5: AI房间用户离开后自动关闭
     // v8.2: 同时自动创建 Asset，防止用户不点击"结束对白"直接离开导致数据丢失
+    // v9.1-fix: 延迟关闭 AI 房间，防止 socket 短暂断开导致房间被误关
+    const aiRoomCloseTimers = new Map<string, NodeJS.Timeout>();
+
     async function maybeCloseAiRoom(roomId: string) {
       try {
         const room = await db.room.findUnique({
@@ -173,39 +176,59 @@ export function registerSocketHandlers(io: SocketIOServer): void {
             },
           });
           if (onlineActors === 0) {
-            // 关闭房间
-            await db.room.update({
-              where: { id: roomId },
-              data: { status: 'closed', closedAt: new Date() },
-            });
-            console.log(`[Socket] AI房间已自动关闭: ${roomId}`);
-
-            // v8.2: 自动创建 Asset（如果还没有）
-            const existingAsset = await db.asset.findFirst({ where: { roomId } });
-            if (!existingAsset && room.messages.length > 0) {
-              const humanParticipant = room.participants.find(
-                (p) => !p.userId.startsWith('agent_') && p.role === 'actor'
-              );
-              const content = room.messages.map((m) => `${m.identity}: ${m.content}`).join('\n');
-              const sparkCount = room.messages.filter((m) => m.isSpark).length;
-              if (humanParticipant) {
-                await db.asset.create({
-                  data: {
-                    userId: humanParticipant.userId,
-                    roomId,
-                    brainholeId: room.brainholeId || undefined,
-                    title: room.brainhole?.title || room.story?.title || '故事对白',
-                    summary: room.story?.act4Truth || '',
-                    content: content.slice(0, 5000),
-                    identity: humanParticipant.identity || '匿名',
-                    messageCount: room.messages.length,
-                    sparkCount,
-                    isPublic: true,
-                  },
-                });
-                console.log(`[Socket] AI房间 Asset 已自动创建: ${roomId}`);
+            // v9.1-fix: 延迟 30 秒关闭房间，给用户重新连接的时间
+            const existingTimer = aiRoomCloseTimers.get(roomId);
+            if (existingTimer) clearTimeout(existingTimer);
+            const timer = setTimeout(async () => {
+              aiRoomCloseTimers.delete(roomId);
+              // 再次检查，如果用户已重新连接则不关闭
+              const stillOnline = await db.roomParticipant.count({
+                where: {
+                  roomId,
+                  role: 'actor',
+                  isOnline: true,
+                  userId: { not: { startsWith: 'agent_' } },
+                },
+              });
+              if (stillOnline > 0) {
+                console.log(`[Socket] AI房间用户已重新连接，取消关闭: ${roomId}`);
+                return;
               }
-            }
+              // 关闭房间
+              await db.room.update({
+                where: { id: roomId },
+                data: { status: 'closed', closedAt: new Date() },
+              });
+              console.log(`[Socket] AI房间已自动关闭: ${roomId}`);
+
+              // v8.2: 自动创建 Asset（如果还没有）
+              const existingAsset = await db.asset.findFirst({ where: { roomId } });
+              if (!existingAsset && room.messages.length > 0) {
+                const humanParticipant = room.participants.find(
+                  (p) => !p.userId.startsWith('agent_') && p.role === 'actor'
+                );
+                const content = room.messages.map((m) => `${m.identity}: ${m.content}`).join('\n');
+                const sparkCount = room.messages.filter((m) => m.isSpark).length;
+                if (humanParticipant) {
+                  await db.asset.create({
+                    data: {
+                      userId: humanParticipant.userId,
+                      roomId,
+                      brainholeId: room.brainholeId || undefined,
+                      title: room.brainhole?.title || room.story?.title || '故事对白',
+                      summary: room.story?.act4Truth || '',
+                      content: content.slice(0, 5000),
+                      identity: humanParticipant.identity || '匿名',
+                      messageCount: room.messages.length,
+                      sparkCount,
+                      isPublic: true,
+                    },
+                  });
+                  console.log(`[Socket] AI房间 Asset 已自动创建: ${roomId}`);
+                }
+              }
+            }, 30000);
+            aiRoomCloseTimers.set(roomId, timer);
           }
         }
       } catch (err: any) {
