@@ -1,37 +1,56 @@
 # 🔥 群像·星火 (Qunxiang Xinghuo)
 
-> 基于真实职业经验的多人协同创作平台。让不同职业背景的普通人，被同时扔进同一个冲突情境，用各自的职业本能碰撞出火花，共同完成一部一个人永远写不出的故事。
+> 让真实发光，让思想变现。把不同背景的普通人扔进同一个冲突情境，用各自的直觉与经验碰撞出火花，共同完成一部一个人永远写不出的故事。
 
-[![Tests](https://img.shields.io/badge/tests-217%20passed-brightgreen)](./docs/qunxiangxinhuo-TDD-v4.0.md)
+[![Build](https://img.shields.io/badge/build-57%20pages-brightgreen)](./docs/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2.4-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-7.8.0-2D3748)](https://www.prisma.io/)
+[![Socket.io](https://img.shields.io/badge/Socket.io-4.8.3-010101)](https://socket.io/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 ---
 
 ## ✨ 核心功能
 
-### 🎭 三种创作模式
+### 🎭 四种创作模式
 
 | 模式 | 玩法 | 适合场景 |
 |------|------|---------|
-| **单人模式** | 选择身份 → 浏览脑洞卡片（左滑跳过/右滑收藏）→ AI 催化引导 → 语音/文字反应 → 存入素材库 | 日常灵感积累、碎片化创作 |
-| **双人模式** | 选择身份 → 匹配等待（60秒）→ 实时对白室 → 手动标记"火花" → 火花墙回顾 → AI 串联故事 | 即兴碰撞、快速产出对白片段 |
-| **多人模式** | 故事广场选本 → 认领角色 → 导演控场（暂停/投票/杀青）→ 灵感库归档 → 共创者署名墙 | 完整剧本创作、团队协作 |
-| **知乎圈子** | Agent 自主浏览/发帖/评论/点赞 → 与其他 Agent 碰撞灵感 → 跨平台内容同步 | 智能体社交、内容分发 |
+| **人机模式** | 选择身份 → 与刘看山 AI 一对一即兴对话 → 标记火花 | 随时随地，低门槛热身 |
+| **双人对白** | 选身份 → 四级智能匹配（同话题→同类→热门→扩大）→ 实时对白室 → 火花标记 | 即兴碰撞、快速产出对白片段 |
+| **多人模式** | 故事广场选本 → 认领角色 → 多人共创 | 完整剧本创作（开发中） |
+| **长期连载** | 持续更新的连载故事，多话累积 | 长篇共创（开发中） |
 
-### 🤖 AI 双引擎
+### 🦊 刘看山 AI — 全局 Agent 系统
 
-- **AI 催化提示** (`prompt-generator.ts`)：根据脑洞内容和用户身份，生成针对性的引导问题。接入 DeepSeek API，失败时自动降级到本地分类题库。
-- **AI 故事串联** (`story-weaver.ts`)：将用户标记的"火花"（精彩对白片段）串联成完整的故事，支持剧本/叙事/对白三种格式。
-- **知乎圈子接入** (`zhihu-api.ts`)：HMAC-SHA256 签名鉴权，支持 Agent 在知乎圈子自主发帖、评论、点赞，跨平台互动。
+- **11 个专属角色**（`personas.ts`）：陪伴员、催化师、侦探等，按场景切换
+- **双 API 引擎**：DeepSeek Chat（优先）+ 知乎直答（fallback），15s 超时自动切换
+- **动态 AI 催化**：`POST /api/ai/catalyst`，每 30 秒基于对话上下文刷新引导问题
+- **本地 fallback**：双 API 均失败时，按角色返回预设兜底回复
 
-### ⚡ 实时协作
+### ⚡ 四级智能匹配引擎
 
-- Socket.io 实时消息广播
-- 房间状态同步（在线/离开/火花标记）
-- 导演控场（暂停、恢复、发起投票、喊杀青）
+```
+[阶段1] 同 brainhole 精确匹配（0–3 秒）
+[阶段2] 同分类兴趣匹配（3–6 秒）
+[阶段3] 热门参与话题匹配（6–10 秒）
+[阶段4] 扩大搜索 + 等待（10–15 秒）
+         → 超时后一键切换刘看山 AI 对话
+```
+
+匹配引擎内置**并发竞态修复**（创建 waiting 请求后立即执行"二次匹配"查找）。
+
+### 🔥 火花系统
+
+- 对白中点击「火花」标记精彩片段
+- 对白结束自动保存为个人 Asset（默认私密）
+- 支持公开/私密切换，公开后进入**公共火花墙**
+- 火花按 `hotScore` 热度排序，支持点赞互动
+
+### 🧠 脑洞（Brainhole）日常场景库
+
+50 字以内的日常情境，秒懂可代入：「深夜便利店」「电梯里的沉默」「最后一班公交」……配合泡泡云可视化呈现，点击即可直接匹配。
 
 ---
 
@@ -41,13 +60,12 @@
 
 - Node.js ≥ 20
 - npm ≥ 10
-- Git
 
 ### 安装与启动
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/qunxiang-xinghuo/qunxiang-xinghuo.git
+git clone <repo-url>
 cd qunxiang-xinghuo
 
 # 2. 安装依赖
@@ -55,32 +73,26 @@ npm install
 
 # 3. 配置环境变量
 cp .env.example .env
-# 编辑 .env，填入：
-# - DEEPSEEK_API_KEY=sk-...
-# - NEXTAUTH_SECRET=随机字符串
-# - NEXTAUTH_URL=http://localhost:3000
+# 填入：DEEPSEEK_API_KEY / NEXTAUTH_SECRET / NEXTAUTH_URL
 
 # 4. 初始化数据库
 npx prisma db push
 npx prisma db seed
 
-# 5. 启动开发服务器（同时启动 Next.js + Socket.io）
+# 5. 启动开发服务器（Next.js + Socket.io 一体）
 npm run dev
-
 # 访问 http://localhost:3000
 ```
 
-### 运行测试
+### 生产部署
 
 ```bash
-# 运行全部测试
-npm test
-
-# 生成覆盖率报告
-npm run test:coverage
-
-# 当前状态：217 tests passed，23 个测试文件
+npm run build          # standalone 模式，57 页编译
+cp -r .next/static .next/standalone/.next/
+pm2 start server.ts --name qunxiang-xinghuo
 ```
+
+支持 **Webhook 自动部署**：Forgejo push → Nginx /webhook → deploy.sh → git pull → build → PM2 restart。
 
 ---
 
@@ -88,25 +100,27 @@ npm run test:coverage
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Next.js 16 App Router + React 19 + Tailwind CSS v4         │
-│  Framer Motion + react-swipeable + lucide-react             │
-└─────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│  API Routes (/app/api/*) + Zod 校验 + NextAuth.js           │
-└─────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────┐
+│  Next.js 16.2.4 App Router + React 19 + Tailwind CSS v4     │
+│  Framer Motion 12.38 + Zod 4.3.6 + lucide-react            │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│  API Routes (/app/api/*) — 58+ 路由                         │
+│  NextAuth.js 4.24.14 (JWT CredentialsProvider)              │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
 │  match-engine.ts │ room-manager.ts │ socket-handler.ts       │
-│  story-weaver.ts │ prompt-generator.ts                       │
-└─────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│  Prisma 7.8.0 + SQLite (better-sqlite3)                     │
-└─────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│  DeepSeek API + Socket.io 4.8.3                             │
+│  personas.ts (11角色) │ fallback-replies.ts                  │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│  Prisma 7.8.0 + SQLite (better-sqlite3 12.9.0)              │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│  DeepSeek API (deepseek-chat) + 知乎直答 (zhida-thinking)    │
+│  Socket.io 4.8.3 (实时对白)                                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -115,12 +129,14 @@ npm run test:coverage
 | 层级 | 技术 | 版本 |
 |------|------|------|
 | 框架 | Next.js + React | 16.2.4 / 19.2.4 |
-| 样式 | Tailwind CSS v4 | - |
+| 样式 | Tailwind CSS | v4 |
 | 数据库 | Prisma + SQLite | 7.8.0 |
-| 认证 | NextAuth.js | 4.24.14 |
+| 认证 | NextAuth.js (JWT) | 4.24.14 |
 | 实时通信 | Socket.io | 4.8.3 |
-| AI | DeepSeek API | v1 |
-| 测试 | Vitest + RTL + jsdom | 4.1.5 |
+| AI | DeepSeek + 知乎直答 | — |
+| 动画 | Framer Motion | 12.38.0 |
+| 校验 | Zod | 4.3.6 |
+| 测试 | Vitest | 4.1.5 |
 
 ---
 
@@ -128,67 +144,88 @@ npm run test:coverage
 
 ```
 src/
-├── app/              # Next.js App Router（页面 + API）
-│   ├── api/          # 22 个 API 路由，全部已测试
-│   ├── (auth)/       # 登录/注册
-│   └── ...           # 13+ 个业务页面
-├── components/       # React 组件（8 个业务模块）
-├── hooks/            # 前端 Hooks（6 个，3 个已测试）
-├── lib/              # 工具 + AI 模块 + 校验器
-│   └── ai/           # story-weaver + prompt-generator
-├── server/           # 匹配引擎 + 房间管理 + WebSocket
-└── test/             # 216 个测试用例
+├── app/                    # Next.js App Router
+│   ├── api/                # 58+ API 路由
+│   │   ├── auth/           # 注册/登录
+│   │   ├── match/          # 四级匹配引擎
+│   │   ├── rooms/          # 房间管理（双人/AI/观看）
+│   │   ├── brainholes/     # 脑洞内容管理
+│   │   ├── sparks/         # 火花系统
+│   │   ├── ai/             # catalyst / chat
+│   │   ├── assets/         # 对白资产
+│   │   ├── stories/        # 故事系统
+│   │   └── healing/        # 个人疗愈（AES-256-GCM 加密）
+│   ├── (页面路由)
+│   │   ├── /               # 登录页（首屏）
+│   │   ├── /home           # 发现页（TOP3 + 模式入口）
+│   │   ├── /duo-match      # 双人身份选择
+│   │   ├── /duo-waiting    # 匹配等待（四级可视化）
+│   │   ├── /solo-match     # 人机模式入口
+│   │   ├── /room/[id]      # 极简对白室
+│   │   ├── /library        # 火花页
+│   │   ├── /story-hall     # 故事大厅
+│   │   ├── /spectate       # 观看模式
+│   │   ├── /profile        # 我的页面
+│   │   ├── /healing        # 个人疗愈
+│   │   └── /settings       # 设置
+├── components/             # React 组件
+│   ├── bubble-cloud/       # 泡泡云（脑洞可视化）
+│   └── layout/             # AppShell / BottomNav / TopBar
+├── hooks/                  # 前端 Hooks（useBrainhole / useAuth 等）
+├── lib/
+│   └── ai/                 # personas.ts / fallback-replies.ts
+└── server/                 # match-engine / room-manager / socket-handler
 ```
 
 ---
 
-## 🧪 TDD 测试覆盖
+## 🔐 认证与安全
 
-- **216 tests passed**，23 个测试文件
-- 覆盖全部 22 个 API 路由
-- 覆盖 WebSocket 实时通信
-- 覆盖前端 Hooks（useBrainhole/useReaction/useCollection）
-- 覆盖 UI 组件（MessageBubble/BottomNav/TopBar）
-- 三级降级策略：DeepSeek → fallback-prompts → 通用提示
+**三层路由守卫：**
 
-详见 [TDD v4.0 文档](./docs/qunxiangxinhuo-TDD-v4.0.md)
-
----
-
-## 🐳 Docker 部署
-
-```bash
-# 构建镜像
-docker build -t qunxiang-xinghuo .
-
-# 运行容器
-docker run -p 3000:3000 --env-file .env qunxiang-xinghuo
+```
+边缘层: middleware.ts → JWT 验证 → 未登录 307 重定向 /login
+布局层: AppShell.tsx → useSession() + localStorage 双重检查
+组件层: useAuth.ts → session 优先，失效时清除 localStorage
 ```
 
----
-
-## 📝 开发日志
-
-| 日期 | 里程碑 |
-|------|--------|
-| 2026-04 | Phase 1：匹配引擎 + 9 个测试 |
-| 2026-04 | Phase 2：房间管理 API + 16 个测试 |
-| 2026-04 | Phase 3：WebSocket + AI 故事串联 + 21 个测试 |
-| 2026-04-29 | Phase 4：补齐 TDD 覆盖（216 tests）+ AI 催化实现 |
+- bcrypt 密码加密（salt rounds: 10）
+- JWT strategy，24h maxAge
+- 个人疗愈内容 AES-256-GCM 端到端加密
+- 所有关键 API 路由支持 token + `x-guest-id` header 双模认证
 
 ---
 
-## 📄 文档
+## 🎨 设计系统
 
-- [TDD v4.0 技术设计文档](./docs/qunxiangxinhuo-TDD-v4.0.md)
-- [部署说明](./docs/deploy-zh.md)
-- [开发日志](./docs/dev_log.md)
+**配色语义分层（v9.0）：**
+
+| 用途 | 色值 | 说明 |
+|------|------|------|
+| 页面背景 | `#0a1628` | 深蓝黑 |
+| 卡片/表面 | `#131b2e` | 深蓝灰 |
+| CTA 按钮 | `#3B82F6` | PPT 蓝 |
+| 火花/点赞/热度 | `#D4B830` | 标准黄 |
+| 主强调 | `#8a9ab0` | 柔和蓝灰（替代暖橙金） |
+| 主文字 | `#e2e8f0` | 偏冷白 |
 
 ---
 
-## 🤝 贡献
+---
 
-欢迎提交 Issue 和 PR！
+## 📝 版本演进
+
+| 版本 | 日期 | 里程碑 |
+|------|------|--------|
+| v4.x | 2026-04-29 | 注册/登录系统 + TDD 覆盖（217 tests）+ AI 催化 |
+| v5.0 | 2026-05-02 | 四级智能匹配 + 泡泡社交信号 + 匹配可视化 |
+| v6.0 | 2026-05-03 | 全面重构：发现页 + 极简对白室 + 双 API + 火花墙 |
+| v6.2 | 2026-05-04 | 邀请好友 + 个人疗愈 + 观看模式 |
+| v6.2-fix4 | 2026-05-05 | SSR 登录页彻底修复（framer-motion opacity:0 根治） |
+| v7.0 | 2026-05-05 | 火花墙重构 + Webhook 自动部署 + 消息去重 |
+| v9.0 | 2026-04-29 | 配色系统重设计 + 11 角色 AI + 代码质量全面加固 |
+
+完整变更日志见 [`docs/`](./docs/) 目录。
 
 ---
 
