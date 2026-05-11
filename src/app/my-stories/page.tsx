@@ -119,13 +119,13 @@ function MyStoriesContent() {
   };
 
   const tabs = [
-    { key: 'participated' as TabType, label: '我参与的', icon: UserCircle },
-    { key: 'created' as TabType, label: '我发起的', icon: ScrollText },
+    { key: 'participated' as TabType, label: '⚔️ 我的冒险', icon: UserCircle },
+    { key: 'created' as TabType, label: '🎬 我的故事坑', icon: ScrollText },
   ];
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
-      <PageHeader title="我的故事" subtitle="你走过的路" />
+      <PageHeader title="我的故事" subtitle="你的冒险记录和创作成就" />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20 pt-2">
         {/* Tab */}
@@ -161,8 +161,8 @@ function MyStoriesContent() {
               <PlusCircle className="w-4 h-4 text-[#D4B830]" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-[#D4B830]">发起新故事</p>
-              <p className="text-[11px] text-[#D4B830]/50">创建一个场景，设定角色，等待审核</p>
+              <p className="text-sm font-medium text-[#D4B830]">🎬 开一个自己的故事坑</p>
+              <p className="text-[11px] text-[#D4B830]/50">创造一个世界，设定角色，等有缘人来演</p>
             </div>
             <ChevronRight className="w-4 h-4 text-[#D4B830]/30" />
           </motion.button>
@@ -178,19 +178,19 @@ function MyStoriesContent() {
           <div className="flex flex-col items-center justify-center py-20">
             <BookOpen className="w-10 h-10 text-white/10 mb-3" />
             <p className="text-sm text-white/30">
-              {tab === 'participated' ? '还没有参与过故事' : '还没有发起过故事'}
+              {tab === 'participated' ? '你还没有进入过任何故事' : '你还没有开过故事坑'}
             </p>
             <p className="text-xs text-white/20 mt-1">
               {tab === 'participated'
-                ? '去故事大厅选一个场景开始吧'
-                : '点击上方按钮创建你的第一个故事'}
+                ? '去故事大厅找一个感兴趣的，开始你的第一次冒险吧'
+                : '点击上方按钮，创建你的第一个冒险世界'}
             </p>
             {tab === 'participated' && (
               <button
                 onClick={() => router.push('/story-hall')}
                 className="mt-4 px-4 py-2 rounded-lg bg-white/[0.05] border border-white/10 text-sm text-white/50 hover:bg-white/[0.08] transition-colors"
               >
-                去故事大厅
+                去故事大厅探险
               </button>
             )}
           </div>

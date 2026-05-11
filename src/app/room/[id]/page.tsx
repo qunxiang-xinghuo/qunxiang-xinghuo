@@ -643,9 +643,9 @@ export default function RoomPage() {
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-[#8a9ab0] break-words leading-tight">{displayTitle}</h1>
+            <h1 className="text-lg font-bold text-white/90 break-words leading-tight">{displayTitle}</h1>
             {displaySubtitle && (
-              <p className="text-[11px] text-[#8a9ab0]/50 break-words mt-0.5 leading-relaxed">{displaySubtitle}</p>
+              <p className="text-[11px] text-[#D4B830]/50 break-words mt-0.5 leading-relaxed italic">{displaySubtitle}</p>
             )}
             {/* v8.1-fix: 人机模式不显示重复的身份提示，故事模式才显示 */}
             {myRoleName && story && (
@@ -767,7 +767,7 @@ export default function RoomPage() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Sparkles className="w-8 h-8 text-white/10 mb-3" />
-            <p className="text-sm text-white/30">{isReadonly ? '暂无对白内容' : '对白室已就绪，写下你的第一句话'}</p>
+            <p className="text-sm text-white/30">{isReadonly ? '暂无对白内容' : '帷幕已拉开，写下你的第一句台词'}</p>
           </div>
         )}
         {messages.map((msg) => {
@@ -807,7 +807,7 @@ export default function RoomPage() {
                   <div className={`flex items-center gap-2 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
                     <span className={`text-[10px] ${isMe ? 'text-[#8a9ab0]/30' : 'text-white/20'}`}>{msg.timestamp}</span>
                     {msg.isSpark && (
-                      <span className="text-[10px] text-[#8a9ab0] flex items-center gap-0.5">
+                      <span className="text-[10px] text-[#D4B830] flex items-center gap-0.5">
                         <Flame className="w-3 h-3" />火花
                       </span>
                     )}
@@ -835,44 +835,44 @@ export default function RoomPage() {
               {isAiRoom || !story ? (
                 <>
                   <p className="text-xs text-white/60 mb-2 leading-relaxed">
-                    是否结束对白？<br />
-                    <span className="text-white/40">结束后将保存为火花。</span>
+                    是否要谢幕了？<br />
+                    <span className="text-white/40">这段对白将成为你的故事资产。</span>
                   </p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowEndConfirm(false)}
                       className="flex-1 py-1.5 rounded-lg text-xs text-white/40 bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
                     >
-                      否
+                      再演一会
                     </button>
                     <button
                       onClick={() => { setShowEndConfirm(false); handleFinish(); }}
                       disabled={finishing}
                       className="flex-1 py-1.5 rounded-lg text-xs text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-colors"
                     >
-                      {finishing ? '保存中...' : '是'}
+                      {finishing ? '保存中...' : '谢幕'}
                     </button>
                   </div>
                 </>
               ) : (
                 <>
                   <p className="text-xs text-white/60 mb-2 leading-relaxed">
-                    真的要揭晓谜底了吗？<br />
-                    <span className="text-white/40">一旦结束，这段对白就将成为你的故事资产。</span>
+                    准备好揭开真相了吗？<br />
+                    <span className="text-white/40">一旦结束，这段旅程将被永久保存。</span>
                   </p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowEndConfirm(false)}
                       className="flex-1 py-1.5 rounded-lg text-xs text-white/40 bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-colors"
                     >
-                      再聊一会
+                      再演一会
                     </button>
                     <button
                       onClick={() => { setShowEndConfirm(false); handleFinish(); }}
                       disabled={finishing}
                       className="flex-1 py-1.5 rounded-lg text-xs text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-colors"
                     >
-                      {finishing ? '保存中...' : '揭晓谜底'}
+                      {finishing ? '保存中...' : '揭开真相'}
                     </button>
                   </div>
                 </>
@@ -890,7 +890,7 @@ export default function RoomPage() {
                   : 'bg-red-500/10 text-red-400/60 border border-red-500/20 hover:bg-red-500/15'
               }`}
             >
-              {finishing ? '保存中...' : '🏁 结束对白'}
+              {finishing ? '保存中...' : '🏁 谢幕'}
             </button>
             <span className="text-[10px] text-white/15">{messages.length} 条消息</span>
           </div>
@@ -929,20 +929,20 @@ export default function RoomPage() {
             className="mx-4 p-6 rounded-2xl bg-[#1a1a2e] border border-[#8a9ab0]/20 max-w-[340px] w-full"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-[#8a9ab0]">谜底揭晓</h3>
+              <h3 className="text-base font-bold text-[#D4B830]">📜 真相浮现</h3>
               <button onClick={() => setShowTruth(false)} className="p-1 rounded hover:bg-white/5">
                 <X className="w-4 h-4 text-white/30" />
               </button>
             </div>
             <div className="space-y-3 mb-4">
               {[
-                { label: '起', text: story.act1Reveal },
-                { label: '承', text: story.act2Reveal },
-                { label: '转', text: story.act3Reveal },
-                { label: '合', text: story.act4Truth },
+                { label: '开场', text: story.act1Reveal },
+                { label: '发展', text: story.act2Reveal },
+                { label: '转折', text: story.act3Reveal },
+                { label: '真相', text: story.act4Truth },
               ].map((item) => (
                 <div key={item.label} className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
-                  <span className="text-xs font-bold text-[#8a9ab0]/60">{item.label}</span>
+                  <span className="text-xs font-bold text-[#D4B830]/60">{item.label}</span>
                   <p className="text-xs text-white/50 leading-relaxed mt-1">{item.text}</p>
                 </div>
               ))}
@@ -952,13 +952,19 @@ export default function RoomPage() {
                 onClick={() => setShowTruth(false)}
                 className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25"
               >
-                知道了
+                📜 我明白了
               </button>
               <button
                 onClick={() => router.push('/story-hall')}
                 className="w-full py-2 rounded-xl bg-white/[0.03] text-white/40 text-xs border border-white/5 hover:bg-white/[0.06] transition-colors"
               >
                 🎭 再来一局
+              </button>
+              <button
+                onClick={() => router.push('/story/create')}
+                className="w-full py-2 rounded-xl bg-[#D4B830]/8 text-[#D4B830]/70 text-xs border border-[#D4B830]/20 hover:bg-[#D4B830]/12 transition-colors"
+              >
+                ✏️ 基于这个故事，写一个你的版本
               </button>
             </div>
           </motion.div>
@@ -1034,20 +1040,20 @@ export default function RoomPage() {
         <div className="shrink-0 px-4 py-3 border-b border-white/5">
           <div className="flex items-center gap-2 mb-2">
             <Lock className="w-3.5 h-3.5 text-[#8a9ab0]/40" />
-            <span className="text-xs text-[#8a9ab0]/40">完整故事线</span>
+            <span className="text-xs text-[#D4B830]/40">故事全貌</span>
             <button
               onClick={() => setShowTruth(true)}
-              className="text-[10px] text-[#8a9ab0]/60 underline ml-auto"
+              className="text-[10px] text-[#D4B830]/60 underline ml-auto"
             >
-              查看谜底
+              📜 查看真相
             </button>
           </div>
           <div className="grid grid-cols-4 gap-1.5">
             {[
-              { label: '起', text: story.act1Reveal, color: 'text-[#8a9ab0]/50', delay: 0 },
-              { label: '承', text: story.act2Reveal, color: 'text-white/30', delay: 0.1 },
-              { label: '转', text: story.act3Reveal, color: 'text-white/30', delay: 0.2 },
-              { label: '合', text: story.act4Truth, color: 'text-white/30', delay: 0.3 },
+              { label: '开场', text: story.act1Reveal, color: 'text-[#D4B830]/50', delay: 0 },
+              { label: '发展', text: story.act2Reveal, color: 'text-white/30', delay: 0.1 },
+              { label: '转折', text: story.act3Reveal, color: 'text-white/30', delay: 0.2 },
+              { label: '真相', text: story.act4Truth, color: 'text-white/30', delay: 0.3 },
             ].map((item) => (
               <motion.div
                 key={item.label}

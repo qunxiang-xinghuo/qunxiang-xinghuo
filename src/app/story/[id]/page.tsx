@@ -202,7 +202,7 @@ export default function StoryDetailPage() {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient">
         <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin mb-4" />
-        <p className="text-sm text-white/30">正在加载故事...</p>
+        <p className="text-sm text-white/30">正在打开这个故事...</p>
       </div>
     );
   }
@@ -224,44 +224,31 @@ export default function StoryDetailPage() {
             <ArrowLeft className="w-4 h-4 text-white/50" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold text-[#a8b8c8] truncate">{story.title}</h1>
-            <p className="text-[11px] text-[#8a9ab0]/50 truncate">{story.eraBackground}</p>
+            <p className="text-[10px] text-[#D4B830]/60 mb-0.5 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {story.eraBackground}
+            </p>
+            <h1 className="text-base font-bold text-white/90 truncate">{story.title}</h1>
           </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-8 pt-4">
-        {/* 故事简介 */}
-        <div className="mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-          <p className="text-xs text-white/50 leading-relaxed">{story.storySummary}</p>
-        </div>
-
-        {/* 起（公开可见） */}
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-bold text-[#8a9ab0]/60">起</span>
-            <span className="text-[10px] text-white/20">已解锁</span>
+        {/* 故事氛围 */}
+        <div className="mb-5 p-4 rounded-xl bg-white/[0.02] border border-white/5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-px bg-[#D4B830]/10" />
+          <p className="text-xs text-white/40 leading-relaxed mb-3">{story.storySummary}</p>
+          <div className="border-t border-white/5 pt-3">
+            <p className="text-sm text-white/55 leading-relaxed italic">{story.act1Reveal}</p>
           </div>
-          <p className="text-sm text-white/60 leading-relaxed">{story.act1Reveal}</p>
         </div>
-
-        {/* 承转合（锁住） */}
-        {['承', '转', '合'].map((label, i) => (
-          <div key={label} className="mb-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 opacity-40">
-            <div className="flex items-center gap-2 mb-1">
-              <Lock className="w-3 h-3 text-white/20" />
-              <span className="text-xs font-bold text-white/20">{label}</span>
-            </div>
-            <p className="text-xs text-white/15">{i === 2 ? '最终谜底' : '对话中逐步解锁...'}</p>
-          </div>
-        ))}
 
         {/* 角色选择 */}
         <div className="mt-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#8a9ab0]" />
-              <h2 className="text-sm font-semibold text-white/90">选择角色</h2>
+              <Users className="w-4 h-4 text-[#D4B830]" />
+              <h2 className="text-sm font-semibold text-white/90">🎭 选择你的身份</h2>
             </div>
             <button
               onClick={handleRandomRole}
@@ -269,7 +256,7 @@ export default function StoryDetailPage() {
               className="flex items-center gap-1 text-[11px] text-[#8a9ab0]/50 hover:text-[#3B82F6]/70 transition-colors disabled:opacity-20"
             >
               <Dices className="w-3.5 h-3.5" />
-              <span>随机分配</span>
+              <span>🎲 交给命运</span>
             </button>
           </div>
           <div className="space-y-2">
@@ -282,7 +269,7 @@ export default function StoryDetailPage() {
                     !!role.claimedBy
                       ? 'bg-white/[0.02] border-white/5 opacity-40'
                       : selectedRoleId === role.id
-                        ? 'bg-[#8a9ab0]/10 border-[#8a9ab0]/30'
+                        ? 'bg-[#D4B830]/8 border-[#D4B830]/40 shadow-[0_0_12px_rgba(212,184,48,0.08)]'
                         : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06]'
                   }`}
                 >
@@ -292,7 +279,21 @@ export default function StoryDetailPage() {
                     className="w-full text-left p-3"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-white/80">{role.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">
+                          {role.name.includes('船') || role.name.includes('工') || role.name.includes('匠') ? '⚓' :
+                           role.name.includes('探') || role.name.includes('密') || role.name.includes('谍') ? '🕵️' :
+                           role.name.includes('女') || role.name.includes('孙') || role.name.includes('娘') ? '👧' :
+                           role.name.includes('算') || role.name.includes('道') || role.name.includes('仙') ? '🔮' :
+                           role.name.includes('将') || role.name.includes('兵') || role.name.includes('武') ? '⚔️' :
+                           role.name.includes('商') || role.name.includes('掌柜') || role.name.includes('贩') ? '💰' :
+                           role.name.includes('书') || role.name.includes('文') || role.name.includes('生') ? '📜' :
+                           role.name.includes('医') || role.name.includes('大夫') ? '🏥' :
+                           role.name.includes('厨') || role.name.includes('食') ? '🍳' :
+                           role.name.includes('僧') || role.name.includes('佛') || role.name.includes('尼') ? '🧘' : '👤'}
+                        </span>
+                        <span className="text-sm font-medium text-white/80">{role.name}</span>
+                      </div>
                       <div className="flex items-center gap-2">
                         {role.claimedBy && (
                           <span className="text-[10px] text-white/20 bg-white/[0.05] px-1.5 py-0.5 rounded-full">已被选</span>
@@ -300,14 +301,15 @@ export default function StoryDetailPage() {
                         {role.description && (
                           <button
                             onClick={(e) => { e.stopPropagation(); setExpandedRoleId(isExpanded ? null : role.id); }}
-                            className="p-0.5 rounded hover:bg-white/5 text-white/20"
+                            className="flex items-center gap-0.5 text-[10px] text-white/20 hover:text-[#D4B830]/60 transition-colors px-1.5 py-0.5 rounded hover:bg-white/5"
                           >
+                            <span>人物小传</span>
                             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                           </button>
                         )}
                       </div>
                     </div>
-                    <p className="text-[11px] text-white/30 leading-relaxed">{role.openingInfo}</p>
+                    <p className="text-[11px] text-white/35 leading-relaxed">{role.openingInfo}</p>
                   </button>
                   {isExpanded && role.description && (
                     <motion.div
@@ -324,6 +326,18 @@ export default function StoryDetailPage() {
               );
             })}
           </div>
+          {/* 选角反馈 */}
+          {selectedRoleId && (
+            <motion.div
+              initial={mounted ? { opacity: 0, y: 5 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 p-3 rounded-xl bg-[#D4B830]/5 border border-[#D4B830]/15 text-center"
+            >
+              <p className="text-xs text-[#D4B830]/70">
+                你选择了 <span className="font-semibold text-[#D4B830]">{story.roles.find(r => r.id === selectedRoleId)?.name}</span>。准备进入故事了吗？
+              </p>
+            </motion.div>
+          )}
         </div>
       </div>
 
@@ -331,8 +345,8 @@ export default function StoryDetailPage() {
       {joinLoading && (
         <div className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm flex items-center justify-center">
           <div className="flex flex-col items-center">
-            <div className="w-10 h-10 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin mb-3" />
-            <p className="text-sm text-white/50">正在进入故事...</p>
+            <div className="w-10 h-10 border-2 border-[#D4B830]/30 border-t-[#3B82F6] rounded-full animate-spin mb-3" />
+            <p className="text-sm text-white/50">正在进入对白...</p>
           </div>
         </div>
       )}
@@ -356,7 +370,7 @@ export default function StoryDetailPage() {
               {matchResult === 'waiting' && (
                 <>
                   <div className="w-12 h-12 rounded-full border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] animate-spin mx-auto mb-4" />
-                  <p className="text-base font-semibold text-white/90 mb-1">正在匹配搭档...</p>
+                  <p className="text-base font-semibold text-white/90 mb-1">🎭 正在寻找你的对戏搭档...</p>
                   <p className="text-sm text-white/40 mb-4">{waitingSeconds} 秒后揭晓</p>
                   <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden mb-4">
                     <div
@@ -375,43 +389,43 @@ export default function StoryDetailPage() {
 
               {matchResult === 'matched' && (
                 <>
-                  <Sparkles className="w-8 h-8 text-[#8a9ab0] mx-auto mb-3" />
-                  <p className="text-base font-semibold text-white/90 mb-1">匹配成功！</p>
-                  <p className="text-sm text-white/40 mb-4">找到你的对戏搭档了</p>
+                  <Sparkles className="w-8 h-8 text-[#D4B830] mx-auto mb-3" />
+                  <p className="text-base font-semibold text-white/90 mb-1">✨ 命运让你们相遇了</p>
+                  <p className="text-sm text-white/40 mb-4">TA已经准备好了</p>
                   <button
                     onClick={handleEnterRoom}
                     className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25 hover:bg-[#3B82F6]/25 transition-colors"
                   >
-                    进入对白室
+                    ⚔️ 进入对白
                   </button>
                 </>
               )}
 
               {matchResult === 'timeout' && (
                 <>
-                  <MessageCircle className="w-8 h-8 text-[#8a9ab0]/60 mx-auto mb-3" />
-                  <p className="text-base font-semibold text-white/90 mb-1">暂时没有找到真人搭档</p>
-                  <p className="text-sm text-white/40 mb-1">要让刘看山陪你玩吗？</p>
-                  <p className="text-xs text-white/25 mb-4">刘看山会扮演另一个角色，和你一起解开这个故事。</p>
+                  <MessageCircle className="w-8 h-8 text-[#D4B830]/60 mx-auto mb-3" />
+                  <p className="text-base font-semibold text-white/90 mb-1">🌙 夜色已深，真人演员还在路上</p>
+                  <p className="text-sm text-white/40 mb-1">让刘看山陪你演一场？</p>
+                  <p className="text-xs text-white/25 mb-4">他会化身故事中的角色，陪你走完这段旅程。</p>
                   <div className="space-y-2">
                     <button
                       onClick={handleJoinAi}
                       disabled={joinLoading}
                       className="w-full py-2.5 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium border border-[#3B82F6]/25 hover:bg-[#3B82F6]/25 transition-colors"
                     >
-                      {joinLoading ? '创建中...' : '🦊 和刘看山玩'}
+                      {joinLoading ? '准备场景中...' : '🦊 让刘看山陪你演'}
                     </button>
                     <button
                       onClick={handleContinueWaiting}
                       className="w-full py-2.5 rounded-xl bg-white/[0.03] text-white/40 text-sm border border-white/5 hover:bg-white/[0.06] transition-colors"
                     >
-                      继续等待
+                      ⏳ 再等等
                     </button>
                     <button
                       onClick={handleCloseWaiting}
                       className="w-full py-2.5 rounded-xl bg-white/[0.03] text-white/30 text-sm border border-white/5 hover:bg-white/[0.06] transition-colors"
                     >
-                      返回选角色
+                      🔙 换个角色试试
                     </button>
                   </div>
                 </>

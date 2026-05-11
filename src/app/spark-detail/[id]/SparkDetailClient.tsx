@@ -166,7 +166,9 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-base font-bold text-white/90 truncate">{data.brainholeTitle || data.title}</h1>
-          <p className="text-[11px] text-white/30">{data.identityPair}</p>
+          <p className="text-[11px] text-white/30">
+            {data.brainholeCategory ? `[${data.brainholeCategory}] ` : ''}{data.identityPair}
+          </p>
         </div>
       </div>
 
@@ -208,7 +210,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
                     {msg.identity}
                   </span>
                   {msg.isSpark && (
-                    <span className="flex items-center gap-0.5 text-[10px] text-[#8a9ab0]">
+                    <span className="flex items-center gap-0.5 text-[10px] text-[#D4B830]">
                       <Sparkles className="w-3 h-3" />
                       火花
                     </span>
@@ -217,11 +219,15 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
                 {/* 消息气泡 */}
                 <div
                   className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                    isMyMessage(msg)
-                      ? 'bg-[#8a9ab0]/15 text-white/85 rounded-tr-sm border border-[#8a9ab0]/20'
-                      : isAiMessage(msg)
-                        ? 'bg-emerald-500/10 text-white/85 rounded-tl-sm border border-emerald-500/20'
-                        : 'bg-white/[0.06] text-white/85 rounded-tl-sm border border-white/5'
+                    msg.isSpark
+                      ? isMyMessage(msg)
+                        ? 'bg-[#D4B830]/8 text-white/85 rounded-tr-sm border-l-2 border-l-[#D4B830] border-y border-r border-[#D4B830]/20'
+                        : 'bg-[#D4B830]/8 text-white/85 rounded-tl-sm border-l-2 border-l-[#D4B830] border-y border-r border-[#D4B830]/20'
+                      : isMyMessage(msg)
+                        ? 'bg-[#8a9ab0]/15 text-white/85 rounded-tr-sm border border-[#8a9ab0]/20'
+                        : isAiMessage(msg)
+                          ? 'bg-emerald-500/10 text-white/85 rounded-tl-sm border border-emerald-500/20'
+                          : 'bg-white/[0.06] text-white/85 rounded-tl-sm border border-white/5'
                   }`}
                 >
                   {msg.content}
@@ -241,7 +247,7 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
             <div className="w-8 h-px bg-white/10 mb-3" />
             <p className="text-[11px] text-white/20 flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {data.closedAt
+              这段冒险已结束于 {data.closedAt
                 ? `对白已结束 · ${new Date(data.closedAt).toLocaleDateString('zh-CN')}`
                 : '对白已结束'}
             </p>
@@ -276,6 +282,16 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
             )}
             <span className="text-sm">{liked ? '已点赞' : '点赞'}</span>
             <span className="text-sm font-medium">{hotScore}</span>
+          </button>
+        </div>
+
+        {/* 创作引导 */}
+        <div className="flex items-center justify-center mb-4">
+          <button
+            onClick={() => router.push('/story/create')}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#D4B830]/8 text-[#D4B830]/70 text-sm border border-[#D4B830]/20 hover:bg-[#D4B830]/12 transition-colors"
+          >
+            ✏️ 基于这段精彩对白，写一个你的版本
           </button>
         </div>
 
