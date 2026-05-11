@@ -603,7 +603,53 @@ curl -X POST http://localhost:3000/api/crawler \
 
 **催化频率**：用户对话每 6-10 条消息出现一次
 
-### D.4 状态切换规则（v9.2 新增）
+### D.4 RAG + 工作流引擎（v9.3 新增）
+
+刘看山 Agent 具备完整的 RAG 检索 + 工作流执行能力：
+
+**双模式向量存储**：
+- 优先尝试 DeepSeek `/v1/embeddings` API 获取语义向量
+- 嵌入 API 不可用时（404/400/异常）自动降级到关键词倒排索引
+- 纯 JS 余弦相似度计算，零 npm 依赖
+
+**意图分类流程**：
+```
+用户消息
+  ↓
+关键词快速分类（零成本）
+  ↓ 置信度 ≥ 0.7
+直接使用分类结果
+  ↓ 置信度 < 0.7
+DeepSeek AI 深度分类（5秒超时）
+  ↓
+确定工作流类型
+```
+
+**工作流类型**：
+| 类型 | 触发词示例 | 执行流程 |
+|------|-----------|---------|
+| story | "玩故事"、"明朝"、"剧情" | search_stories → 展示 → 选 → find_online_user → create_room |
+| brainhole | "脑洞"、"话题"、"聊聊" | search_brainholes → 展示 → 选 → create_room |
+| healing | "难过"、"焦虑"、"累" | 切换 healer persona |
+| search | "查一下"、"是什么" | 查资料 → 回答 |
+| chat | "今天天气"、"你好" | 正常 companion 聊天 |
+
+**故事模式完整闭环**：
+```
+用户："我想玩明朝故事"
+  → intent: story
+  → search_stories(keyword="明朝")
+  → 检查点：有结果？相关？摘要≤300字？
+  → AI："找到3个明朝故事..."
+  → 用户："第一个"
+  → find_online_user()
+  → 检查点：有匹配？
+  → 有 → create_room(type="story_duet")
+  → 无 → create_room(type="ai_duet") + story_fallback 角色
+  → AI："房间已创建！"
+```
+
+### D.5 状态切换规则（v9.2）
 
 刘看山 Agent 具备三种工作状态，**AI 自行判断**当前处于哪个状态：
 

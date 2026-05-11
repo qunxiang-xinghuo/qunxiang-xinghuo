@@ -115,7 +115,34 @@
 - 允许表达：有情绪（惊讶/怀疑/犹豫）、有立场、说人话（30-80字）
 - 不用第一人称"我"，用"刘看山"称呼自己
 
-### 2.2 状态切换规则（v9.2 新增）
+### 2.2 RAG + 工作流引擎（v9.3 新增）
+
+刘看山 Agent 现在具备完整的 RAG 检索 + 工作流执行能力：
+
+**双模式向量存储**（`vector-store.ts`）：
+- 优先尝试 DeepSeek Embedding API 获取语义向量
+- 嵌入 API 不可用时自动降级到关键词倒排索引
+- 纯 JS 余弦相似度，零 npm 依赖
+
+**意图路由**（`rag-engine.ts` + `intent-router.ts`）：
+- 关键词快速预分类（故事/脑洞/疗愈/检索/闲聊）
+- 置信度 < 0.7 时调用 DeepSeek 做 AI 深度分类
+
+**工作流引擎**（`workflow-engine.ts`）：
+| 模式 | 流程 | 兜底 |
+|------|------|------|
+| 故事模式 | search_stories → 展示 → 等选择 → find_online_user → create_room | 无匹配→create_room(ai_duet) + story_fallback |
+| 脑洞模式 | search_brainholes → 展示 → 等选择 → create_room | 直接创建 AI 房间 |
+| 疗愈模式 | 切换 healer persona | — |
+| 检索模式 | 查资料 → 回答 | — |
+| 对话状态 | 正常 companion 聊天 | — |
+
+**API 集成**（`chat/route.ts`）：
+- companion 角色前置工作流引擎
+- 工作流返回 content 时直接响应，不走 DeepSeek
+- 纯聊天时走原有 DeepSeek + 知乎直答双引擎
+
+### 2.3 状态切换规则（v9.2）
 
 每个角色具备三种工作状态，自己判断当前处于哪个状态：
 

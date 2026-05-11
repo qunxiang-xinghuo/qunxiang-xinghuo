@@ -1,5 +1,46 @@
 # 群像·星火 — 重要操作记录
 
+## v9.3 刘看山 Agent RAG + 工作流 + 状态切换 — 部署教程
+
+> 最后更新：2026-04-29
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 向量存储 | `src/lib/ai/vector-store.ts` | 双模式：DeepSeek Embedding API + 关键词索引自动降级 |
+| RAG 引擎 | `src/lib/ai/rag-engine.ts` | 意图分类 + 知识库检索（故事/脑洞/角色） |
+| 意图路由 | `src/lib/ai/intent-router.ts` | 关键词快速分类 + AI 深度分类 |
+| 工作流引擎 | `src/lib/ai/workflow-engine.ts` | 故事/脑洞/疗愈/检索/对话 5 种模式完整闭环 |
+| 检查点增强 | `src/lib/ai/agent-tools.ts` | 新增摘要长度检查 |
+| 角色更新 | `src/lib/ai/personas.ts` | companion 增加 RAG 感知 |
+| API 集成 | `src/app/api/ai/chat/route.ts` | 工作流引擎前置 + 向量索引构建 |
+
+### 核心机制
+
+1. **双模式向量存储**：
+   - 优先尝试 DeepSeek `/v1/embeddings` API 获取语义向量
+   - 嵌入 API 不可用时（404/400/异常）自动降级到关键词索引
+   - 纯 JS 余弦相似度计算，零 npm 依赖
+
+2. **意图路由**：
+   - 关键词快速预分类（零成本）：故事/脑洞/疗愈/检索/闲聊
+   - 置信度 < 0.7 时，调用 DeepSeek 做 AI 深度分类（5 秒超时）
+
+3. **工作流引擎**：
+   - **故事模式**：search_stories → 展示 → 等选择 → find_online_user → 有匹配 create_room(story_duet) / 无匹配 create_room(ai_duet) + story_fallback
+   - **脑洞模式**：search_brainholes → 展示 → 等选择 → create_room(ai_duet)
+   - **疗愈模式**：切换 healer persona
+   - **检索模式**：查资料 → 回答
+   - **对话状态**：正常 companion 聊天
+
+4. **任务闭环**：匹配不到真人时自动创建 AI 房间，不等待用户再发指令
+
+5. **构建验证**：`npm run build` 81/81 页 ✅
+6. **Git 推送**：已推送 `dev` 分支
+
+---
+
 ## v9.2 刘看山 Agent 状态切换 — 部署教程
 
 > 最后更新：2026-04-29
