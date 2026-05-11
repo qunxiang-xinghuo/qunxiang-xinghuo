@@ -208,4 +208,48 @@
 - 已推送 `fqunxiang dev`
 
 ### 下一步
-- **阶段4（执行层）**：在 `src/app/api/ai/chat/route.ts` 中实现工具调用解析与执行逻辑（解析 AI 回复中的 JSON → 调用对应 API → 将结果回传给 AI）
+- ~~阶段4（执行层）~~ ✅ 已完成，见下文
+
+---
+
+## 2026-04-29 — v9.1 Agent 阶段4：工具执行层闭环
+
+### 概述
+在 AI Chat API 中实现完整的工具调用闭环：解析 AI 回复中的 JSON 工具调用意图 → 执行对应的数据库操作 → 将结果回传给 AI 生成最终回复。
+
+### 变更内容
+
+**`src/lib/ai/agent-tools.ts` — 新增执行层**
+- `parseToolCall(content)` — 从 AI 回复末尾解析 `{"tool": "xxx", "params": {...}}` JSON
+- `stripToolCall(content)` — 移除工具调用 JSON，保留自然语言部分
+- `executeToolCall(toolCall, context)` — 根据工具名分发到具体执行函数
+- `execSearchStories(keyword?)` — Prisma 查询 `Story`（状态 open/recruiting），返回标题/时代/简介/难度/角色数
+- `execSearchBrainholes(category?, limit?)` — Prisma 查询 `Brainhole`（状态 approved），按热度排序
+- `execFindOnlineUser(brainholeId?)` — Prisma 查询 `MatchRequest`（状态 waiting），返回等待中用户信息
+- `execCreateRoom(type, brainholeId?, storyId?, identity?)` — Prisma `$transaction` 创建 `Room` + `RoomParticipant`（AI 房间）
+- 补充丢失的 `ToolCall` / `ToolResult` 类型定义
+
+**`src/app/api/ai/chat/route.ts` — 集成闭环**
+- 导入 `getToken` 获取当前用户 ID（工具调用需要 userId）
+- DeepSeek 成功后，仅对 `companion` 角色启用工具调用检测
+- 检测到工具调用时：
+  1. 执行工具（`executeToolCall`）
+  2. 将工具结果追加到对话历史
+  3. 二次调用 DeepSeek，让 AI 基于工具结果生成最终回复
+  4. 响应中增加 `toolCalls` 和 `toolResults` 字段（供前端消费）
+- 二次调用失败时优雅降级：保留第一次 AI 回复
+
+### 技术细节
+- 仅对 `companion` 角色启用工具调用，其他角色不受影响
+- 未登录用户（无 userId）跳过工具调用，正常返回 AI 回复
+- 每次请求最多一次工具调用 + 一次二次 AI 调用（防止循环）
+- 工具执行层直接操作 Prisma，不依赖外部 API 路由
+
+### 构建验证
+- `npm run build` — ✅ 81/81 页面成功
+- 已推送 `fqunxiang dev`
+
+### 下一步
+- **前端适配**：在调用 `/api/ai/chat` 的组件中消费 `toolCalls`/`toolResults`，实现"展示故事列表"、"跳转到新房间"等交互
+- **多轮工具调用**：支持一次对话中连续调用多个工具（如先 search_stories 再 find_online_user 再 create_room）
+- **真人匹配集成**：让 `create_room` 在找到真人时创建真人房间（需要与匹配引擎联动）
