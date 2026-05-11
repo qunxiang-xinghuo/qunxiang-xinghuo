@@ -5,7 +5,6 @@ import { apiResponse, apiError } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   try {
-    // v7.0-fix: App Router 中 getServerSession 不可靠，改用 getToken 读取 JWT
     const token = await getToken({
       req,
       secret: process.env.NEXTAUTH_SECRET,
@@ -15,21 +14,6 @@ export async function GET(req: NextRequest) {
 
     if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
-    }
-
-    // v8.0-login-fix: 检查 token 是否已被服务器端撤销
-    if (token?.id) {
-      const dbUser = await db.user.findUnique({
-        where: { id: token.id as string },
-        select: { tokenRevokedAt: true },
-      });
-      if (dbUser?.tokenRevokedAt) {
-        const tokenIatMs = token.iat ? (token.iat as number) * 1000 : 0;
-        if (tokenIatMs < dbUser.tokenRevokedAt.getTime()) {
-          console.log('[User Me] Token 已被撤销, userId:', token.id);
-          return NextResponse.json(apiError("UNAUTHORIZED", "登录已过期，请重新登录"), { status: 401 });
-        }
-      }
     }
 
     const user = await db.user.findUnique({
