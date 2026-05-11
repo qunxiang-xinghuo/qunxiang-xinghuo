@@ -31,7 +31,13 @@ interface ChatMessage {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, topic, persona: personaKey, context } = body;
+    const { messages, topic, persona: personaKey, context, state } = body;
+
+    // v9.2 Agent: 如果前端传入了当前状态，注入到 systemPrompt 中辅助角色判断
+    let stateHint = "";
+    if (state && typeof state === "string") {
+      stateHint = `\n\n【当前状态提示】${state}\n请结合上述状态切换规则，判断当前是否应处于此状态。如果用户的新消息表明状态需要切换，按新状态执行。`;
+    }
 
     // v9.1 Agent: 获取当前用户ID（用于工具调用上下文）
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -55,6 +61,11 @@ export async function POST(request: NextRequest) {
       systemPrompt += `\n\n当前话题：「${topic || '一个有趣的话题'}」\n${context}\n\n硬性约束：你的每一次回复必须和当前话题直接相关。如果用户偏离话题，用一个简短的提问把话题拉回来。禁止聊与当前话题无关的内容。`;
     } else if (systemPrompt.includes('{topic}')) {
       systemPrompt = systemPrompt.replace("{topic}", topic || "一个有趣的话题");
+    }
+
+    // v9.2 Agent: 注入状态提示（如前端传入了当前状态）
+    if (stateHint) {
+      systemPrompt += stateHint;
     }
 
     console.log("[AI Chat] 使用角色:", persona.name, "key:", personaKey || "catalyst");
