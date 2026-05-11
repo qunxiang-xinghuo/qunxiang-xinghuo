@@ -11,6 +11,7 @@ interface StoryRole {
   name: string;
   openingInfo: string;
   description: string;
+  innerMonologue: string;
   claimedBy: string | null;
   claimStatus: string;
 }
@@ -22,6 +23,7 @@ interface StoryDetail {
   storySummary: string;
   act1Reveal: string;
   maxCharacters: number;
+  difficulty: number;
   roles: StoryRole[];
 }
 
@@ -311,15 +313,22 @@ export default function StoryDetailPage() {
                     </div>
                     <p className="text-[11px] text-white/35 leading-relaxed">{role.openingInfo}</p>
                   </button>
-                  {isExpanded && role.description && (
+                  {isExpanded && (role.description || role.innerMonologue) && (
                     <motion.div
                       initial={mounted ? { height: 0, opacity: 0 } : false}
                       animate={{ height: 'auto', opacity: 1 }}
                       className="px-3 pb-3"
                     >
-                      <p className="text-[11px] text-white/25 leading-relaxed border-t border-white/5 pt-2">
-                        {role.description}
-                      </p>
+                      {role.innerMonologue && (
+                        <p className="text-[11px] text-[#D4B830]/30 leading-relaxed italic mb-1.5">
+                          💭 {role.innerMonologue}
+                        </p>
+                      )}
+                      {role.description && (
+                        <p className="text-[11px] text-white/25 leading-relaxed border-t border-white/5 pt-2">
+                          {role.description}
+                        </p>
+                      )}
                     </motion.div>
                   )}
                 </div>

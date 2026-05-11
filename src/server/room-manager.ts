@@ -171,12 +171,40 @@ export async function sendMessage(
 
   // 如果是双人模式且不是AI提示/导演备注，增加回合计数
   if (room.type === "duet" && !isAiPrompt && !isDirectorNote) {
-    await db.room.update({
+    const updatedRoom = await db.room.update({
       where: { id: roomId },
       data: {
         currentRound: { increment: 1 },
       },
     });
+
+    // v9.1: 剧情节点推进——根据 currentRound 自动推进 actProgress
+    if (room.storyId && updatedRoom.actProgress < 3) {
+      const thresholds = [3, 6, 9]; // 推进到 发展/转折/真相 的阈值
+      const newProgress = thresholds.findIndex((t) => updatedRoom.currentRound >= t) + 1;
+      if (newProgress > updatedRoom.actProgress && newProgress <= 3) {
+        await db.room.update({
+          where: { id: roomId },
+          data: { actProgress: newProgress },
+        });
+        // 插入剧情阶段推进的系统提示消息
+        const stageMessages = [
+          "",
+          "剧情暗流涌动，新的线索浮出水面... 🌊",
+          "局势急转直下，隐藏的真相开始显露... ⚡",
+          "一切即将揭晓，准备好面对最终的真相了吗？ 🔥",
+        ];
+        await db.roomMessage.create({
+          data: {
+            roomId,
+            senderId: "system",
+            content: stageMessages[newProgress],
+            identity: "剧情提示",
+            isAiPrompt: true,
+          },
+        });
+      }
+    }
   }
 
   return message;
@@ -190,7 +218,7 @@ export async function getRoomWithParticipants(roomId: string) {
       story: {
         include: {
           roles: {
-            select: { id: true, name: true, openingInfo: true, claimedBy: true },
+            select: { id: true, name: true, openingInfo: true, claimedBy: true, innerMonologue: true },
             orderBy: { sortOrder: "asc" },
           },
         },

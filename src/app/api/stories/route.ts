@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
       storySummary: s.storySummary || "",
       hotScore: s.hotScore || 0,
       maxCharacters: s.maxCharacters || 2,
+      difficulty: s.difficulty || 1,
       roleCount: s._count.roles,
       liked: likedStoryIds.has(s.id),
       roles: s.roles.map((r) => ({

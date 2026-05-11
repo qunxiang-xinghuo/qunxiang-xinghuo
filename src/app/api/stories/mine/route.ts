@@ -52,18 +52,61 @@ export async function GET(request: NextRequest) {
           },
         },
       });
-      list = roles.map((r) => ({
-        id: r.story.id,
-        title: r.story.title,
-        eraBackground: r.story.eraBackground || "",
-        status: r.story.status,
-        myRole: r.name,
-        roleId: r.id, // v8.2: 用于删除参与记录
-        createdAt: r.story.createdAt.toISOString(),
-        roleCount: r.story.roles.length,
-        hotScore: r.story.hotScore || 0,
-        isCreator: r.story.creatorId === userId,
-      }));
+      // v9.1: 为每个参与的故事查询最佳火花消息
+      const storyIds = roles.map((r) => r.story.id);
+      const rooms = await db.room.findMany({
+        where: { storyId: { in: storyIds } },
+        select: { id: true, storyId: true },
+      });
+      const roomIdsByStory = new Map<string, string[]>();
+      for (const room of rooms) {
+        if (room.storyId) {
+          const arr = roomIdsByStory.get(room.storyId) || [];
+          arr.push(room.id);
+          roomIdsByStory.set(room.storyId, arr);
+        }
+      }
+      const allRoomIds = rooms.map((r) => r.id);
+      const sparks = await db.roomMessage.findMany({
+        where: {
+          roomId: { in: allRoomIds },
+          senderId: userId,
+          isSpark: true,
+        },
+        orderBy: { createdAt: "desc" },
+        select: { roomId: true, content: true, createdAt: true },
+      });
+      const sparkByRoom = new Map<string, { content: string; createdAt: Date }>();
+      for (const s of sparks) {
+        if (!sparkByRoom.has(s.roomId)) {
+          sparkByRoom.set(s.roomId, { content: s.content, createdAt: s.createdAt });
+        }
+      }
+
+      list = roles.map((r) => {
+        const roomIds = roomIdsByStory.get(r.story.id) || [];
+        let bestSpark: { content: string; createdAt: string } | null = null;
+        for (const rid of roomIds) {
+          const spark = sparkByRoom.get(rid);
+          if (spark) {
+            bestSpark = { content: spark.content, createdAt: spark.createdAt.toISOString() };
+            break;
+          }
+        }
+        return {
+          id: r.story.id,
+          title: r.story.title,
+          eraBackground: r.story.eraBackground || "",
+          status: r.story.status,
+          myRole: r.name,
+          roleId: r.id,
+          createdAt: r.story.createdAt.toISOString(),
+          roleCount: r.story.roles.length,
+          hotScore: r.story.hotScore || 0,
+          isCreator: r.story.creatorId === userId,
+          bestSpark,
+        };
+      });
     }
 
     return NextResponse.json(apiResponse({ list }));

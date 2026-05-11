@@ -2,6 +2,37 @@
 
 ---
 
+## 2026-04-29 — v9.1 故事系统后端数据增强
+
+### 概述
+为 v9.1 "好玩化"前端改造补齐数据层支撑，新增难度、内心独白、剧情节点推进、高光火花四个核心字段。
+
+### 变更内容
+
+**Prisma Schema（3 个新字段）**
+- `Story.difficulty: Int @default(1)` — 难度星级 1-3
+- `StoryRole.innerMonologue: String?` — 角色内心独白
+- `Room.actProgress: Int @default(0)` — 剧情阶段 0-3
+
+**API 路由（4 个增强）**
+- `GET /api/stories` — 响应新增 `difficulty`
+- `GET /api/stories/[storyId]` — 响应新增 `difficulty`，roles 新增 `innerMonologue`
+- `GET /api/stories/mine?type=participated` — 响应新增 `bestSpark`（查询该用户在相关 room 中的最新 `isSpark=true` 消息）
+- `POST /api/rooms/[roomId]/messages` (`sendMessage` in `room-manager.ts`) — 发送普通消息后根据 `currentRound` 阈值自动推进 `actProgress`，并插入系统提示消息
+
+**前端页面（4 个消费）**
+- `story-hall/page.tsx` — 卡片显示难度星星 🌟
+- `story/[id]/page.tsx` — 角色展开显示内心独白 💭
+- `room/[id]/page.tsx` — 顶部剧情阶段标签 + 系统提示消息居中渲染
+- `my-stories/page.tsx` — participated tab 显示"高光时刻"和最佳火花预览
+
+**技术细节**
+- 使用 `prisma db push` 同步 SQLite schema（开发环境）
+- 剧情节点推进基于 `currentRound` 阈值（3/6/9），仅在 `room.type === "duet"` 且非 AI/导演消息时触发
+- 系统提示消息通过 `senderId: "system"` + `identity: "剧情提示"` 标记，前端特殊渲染为居中金色提示框
+
+---
+
 ## 2026-04-30 — 知乎直答与搜索页面集成 (Phase 5)
 
 ### 概述

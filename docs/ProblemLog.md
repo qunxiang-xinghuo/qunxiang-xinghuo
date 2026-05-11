@@ -60,6 +60,47 @@
 
 ---
 
+### 问题38b：v9.1 前端改造后，数据层未配合支撑完整"好玩化"体验
+
+**现象**：
+- 难度标签无法显示（无 API 数据支撑）
+- "有人在玩"呼吸光效未实现（无活跃房间数据）
+- 角色内心独白未显示（无 API 数据）
+- 阶段性系统消息未实现（无剧情节点检测逻辑）
+- "高光时刻"未显示（无最佳句子数据）
+
+**根因**：
+- v9.1 纯前端改造阶段明确约束"不改后端"，导致前端视觉效果缺乏数据支撑
+- Prisma schema 缺少 `difficulty`、`innerMonologue`、`actProgress` 等字段
+- API 未返回这些新字段，前端无法消费
+
+**解决**：
+1. **Prisma Schema 增强**（3 个新字段）：
+   - `Story.difficulty: Int @default(1)` — 难度 1=简单🌟 2=中等🌟🌟 3=困难🌟🌟🌟
+   - `StoryRole.innerMonologue: String?` — 角色内心独白，帮助用户代入
+   - `Room.actProgress: Int @default(0)` — 剧情阶段 0=开场 1=发展 2=转折 3=真相
+2. **API 层增强**（4 个路由）：
+   - `GET /api/stories` — 返回 `difficulty`
+   - `GET /api/stories/[storyId]` — 返回 `difficulty` 和 roles 的 `innerMonologue`
+   - `GET /api/stories/mine?type=participated` — 返回 `bestSpark`（该用户在相关房间中最新的火花消息）
+   - `POST /api/rooms/[roomId]/messages` (`sendMessage`) — 消息发送后根据 `currentRound` 自动推进 `actProgress`，并在推进时插入剧情阶段系统提示消息
+3. **前端消费新字段**（4 个页面）：
+   - **story-hall**：卡片底部显示难度星星 `{'🌟'.repeat(difficulty)}`
+   - **story/[id]**：角色展开区显示内心独白 `💭 {innerMonologue}`（金色斜体）
+   - **room/[id]**：顶部显示剧情阶段标签；系统提示消息居中渲染（金色圆角提示框）
+   - **my-stories participated**：卡片显示"高光时刻"标签和最佳火花句子预览
+
+**剧情节点推进规则**：
+- `currentRound` ≥ 3 且 `actProgress` = 0 → 推进到 1（发展），提示："剧情暗流涌动，新的线索浮出水面... 🌊"
+- `currentRound` ≥ 6 且 `actProgress` = 1 → 推进到 2（转折），提示："局势急转直下，隐藏的真相开始显露... ⚡"
+- `currentRound` ≥ 9 且 `actProgress` = 2 → 推进到 3（真相），提示："一切即将揭晓，准备好面对最终的真相了吗？ 🔥"
+
+**构建通过**：81/81 ✅
+
+**文件**：8 个文件修改（Prisma schema + 4 个 API + 4 个前端页面）
+
+---
+
 ## v9.0f PPT蓝白风全局配色优化
 
 ---

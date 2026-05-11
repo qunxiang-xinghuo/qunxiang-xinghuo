@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import {
   Clock, ChevronRight, BookOpen, Users, PlusCircle, ScrollText, UserCircle,
   Eye, MessageCircle, AlertCircle, CheckCircle2, Clock4, XCircle, Pencil,
-  Trash2,
+  Trash2, Sparkles,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
@@ -22,6 +22,7 @@ interface MyStory {
   hotScore: number;
   roleId?: string;
   isCreator?: boolean;
+  bestSpark?: { content: string; createdAt: string } | null;
 }
 
 type TabType = 'participated' | 'created';
@@ -233,6 +234,11 @@ function MyStoriesContent() {
                         {tab === 'participated' && story.myRole && (
                           <span className="text-[10px] text-[#D4B830]/40">扮演 {story.myRole}</span>
                         )}
+                        {tab === 'participated' && story.bestSpark && (
+                          <span className="text-[10px] text-[#D4B830]/60 flex items-center gap-0.5">
+                            <Sparkles className="w-3 h-3" /> 高光时刻
+                          </span>
+                        )}
                         {tab === 'created' && story.hotScore > 0 && (
                           <span className="flex items-center gap-0.5 text-[10px] text-[#D4B830]/40">
                             <Eye className="w-3 h-3" />
@@ -240,6 +246,17 @@ function MyStoriesContent() {
                           </span>
                         )}
                       </div>
+                      {/* v9.1: 高光火花预览 */}
+                      {tab === 'participated' && story.bestSpark && (
+                        <div className="mt-2 p-2 rounded-lg bg-[#D4B830]/5 border border-[#D4B830]/10">
+                          <p className="text-[10px] text-[#D4B830]/40 mb-0.5 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" /> 你的高光句子
+                          </p>
+                          <p className="text-[11px] text-white/50 leading-relaxed line-clamp-2 italic">
+                            "{story.bestSpark.content}"
+                          </p>
+                        </div>
+                      )}
                       {/* 草稿/审核中状态显示编辑按钮 */}
                       {(story.status === 'draft' || story.status === 'pending_review') && tab === 'created' && (
                         <button

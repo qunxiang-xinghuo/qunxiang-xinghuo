@@ -15,6 +15,7 @@ interface StoryItem {
   hotScore: number;
   liked: boolean;
   maxCharacters: number;
+  difficulty: number;
   roleCount: number;
   roles: { id: string; name: string; claimed: boolean }[];
 }
@@ -181,6 +182,9 @@ export default function StoryHallPage() {
                         </span>
                         <span className="text-[10px] text-white/15">
                           {story.roles.filter((r) => r.claimed).length}/{story.maxCharacters} 人已选
+                        </span>
+                        <span className="text-[10px] text-[#D4B830]/30">
+                          {'🌟'.repeat(story.difficulty || 1)}
                         </span>
                       </div>
                       <span className="text-[10px] text-[#D4B830]/50 flex items-center gap-0.5">

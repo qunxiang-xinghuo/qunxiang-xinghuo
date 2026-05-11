@@ -222,6 +222,7 @@ model Room {
   scene        String?
   inviteCode   String?   @unique // v6.2: 邀请码（6位数字）
   isAiRoom     Boolean   @default(false)  // v8.0: AI房间标记
+  actProgress  Int       @default(0)        // v9.1: 剧情阶段 0=开场 1=发展 2=转折 3=真相
   createdAt    DateTime  @default(now())
   closedAt     DateTime?
 
@@ -486,6 +487,7 @@ model Story {
   maxCharacters Int    @default(2)  // v8.0: 最大角色数（解密故事用）
   hotScore    Int      @default(0)  // v8.0: 热度值
   creatorId   String?               // v8.0: 创建者
+  difficulty  Int      @default(1)  // v9.1: 难度 1=简单 2=中等 3=困难
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -518,6 +520,7 @@ model StoryRole {
   claimStatus        String   @default("unclaimed") // unclaimed/pending/approved/rejected/active
   identityTag        String?  // 身份标签
   performanceDirection String? // 演绎方向
+  innerMonologue     String?  // v9.1: 角色内心独白，帮助代入感
 
   story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
   user  User? @relation("StoryRoleClaimer", fields: [claimedBy], references: [id])

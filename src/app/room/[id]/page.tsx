@@ -46,6 +46,7 @@ export default function RoomPage() {
   const [myRoleName, setMyRoleName] = useState('');
   const [myOpeningInfo, setMyOpeningInfo] = useState('');
   const [aiRoleName, setAiRoleName] = useState('');
+  const [actProgress, setActProgress] = useState(0); // v9.1: 剧情阶段 0=开场 1=发展 2=转折 3=真相
 
   // Brainhole 信息
   const [brainholeTitle, setBrainholeTitle] = useState('');
@@ -150,6 +151,7 @@ export default function RoomPage() {
           setIsAiRoom(room.isAiRoom);
           setInviteCode(room.inviteCode || '');
           setParticipantCount(room.participants?.filter((p: any) => p.role === 'actor').length || 0);
+          setActProgress(room.actProgress || 0);
 
           if (room.messages && Array.isArray(room.messages)) {
             setMessages(room.messages.map((m: any) => ({
@@ -162,6 +164,9 @@ export default function RoomPage() {
           // 故事信息
           if (room.story) {
             setStory(room.story);
+          }
+          if (room.actProgress !== undefined) {
+            setActProgress(room.actProgress);
           }
 
           // Brainhole 信息
@@ -266,7 +271,7 @@ export default function RoomPage() {
         return [...prev, {
           id: msgId, userId: senderId, content: raw.content,
           timestamp: new Date(raw.createdAt || Date.now()).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          identity: raw.identity,
+          identity: raw.identity, isSpark: raw.isSpark,
         }];
       });
     };
@@ -647,6 +652,12 @@ export default function RoomPage() {
             {displaySubtitle && (
               <p className="text-[11px] text-[#D4B830]/50 break-words mt-0.5 leading-relaxed italic">{displaySubtitle}</p>
             )}
+            {/* v9.1: 剧情阶段标签 */}
+            {story && actProgress > 0 && (
+              <p className="text-[11px] text-[#D4B830]/40 mt-0.5">
+                剧情阶段：{['开场', '发展', '转折', '真相'][actProgress] || '开场'}
+              </p>
+            )}
             {/* v8.1-fix: 人机模式不显示重复的身份提示，故事模式才显示 */}
             {myRoleName && story && (
               <p className="text-[11px] text-white/30 mt-0.5">你扮演：{myRoleName}</p>
@@ -773,6 +784,17 @@ export default function RoomPage() {
         {messages.map((msg) => {
           const isMe = msg.userId === userId || msg.userId === 'me';
           const isAi = msg.userId?.startsWith('agent_') || false;
+          const isSystem = msg.userId === 'system' || msg.identity === '剧情提示';
+          // v9.1: 系统提示消息居中显示
+          if (isSystem) {
+            return (
+              <div key={msg.id} className="flex justify-center my-3">
+                <div className="px-4 py-2 rounded-full bg-[#D4B830]/5 border border-[#D4B830]/10">
+                  <p className="text-[11px] text-[#D4B830]/60 italic text-center">{msg.content}</p>
+                </div>
+              </div>
+            );
+          }
           return (
             <div key={msg.id} className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               <div className={`flex-shrink-0 ${isMe ? 'ml-2' : 'mr-2'}`}>
