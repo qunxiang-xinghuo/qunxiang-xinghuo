@@ -1,5 +1,37 @@
 # 群像·星火 — 重要操作记录
 
+## v9.0e 按钮颜色统一为PPT蓝 — 部署教程
+
+> 最后更新：2026-04-29
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 新增按钮颜色变量 | `globals.css` | `--color-xh-btn: #3B82F6` / `--color-xh-btn-dark: #2563EB` |
+| CTA按钮改蓝色 | 28 文件 | 登录/注册/匹配/创建/确认/保存等所有主按钮改为蓝色渐变 |
+| 次按钮改蓝色描边 | 10+ 文件 | 发送/进入/下一步等改为蓝色描边样式 |
+| 保留黄色语义 | — | 火花/点赞/图标/激活态保持 `#D4B830`，形成「蓝按钮+黄图标」分层 |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all
+```
+
+### 部署验证记录
+
+| 时间 | 版本 | 构建 | 页面数 | PM2 |
+|------|------|------|--------|-----|
+| 2026-04-29 | v9.0e | ✅ | 81/81 | ✅ online |
+
+---
+
 ## v9.0b 颜色修复 + 图标区分 + 管理员登录 — 部署教程
 
 > 最后更新：2026-04-29
