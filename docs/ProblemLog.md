@@ -1,5 +1,53 @@
 # 群像·星火 — 问题排查记录
 
+## v9.3-fix 刘看山 Agent 16项问题修复
+
+> 时间：2026-04-29
+> 状态：✅ 已完成，构建 81/81
+
+### 检测方式
+代码审查（vector-store.ts / rag-engine.ts / workflow-engine.ts / chat/route.ts / agent-tools.ts）
+
+### 修复内容
+
+#### S级（严重 - 功能故障）
+
+**S1: `agent-tools.ts:667` roomType 硬编码**
+- 问题：`const roomType = type === "ai_duet" ? "ai_duet" : "ai_duet";`
+- 后果：真人房间 `story_duet` 永远无法创建
+- 修复：`const roomType = type === "story_duet" ? "story_duet" : "ai_duet";`
+
+**S2: 工作流返回硬编码字符串**
+- 问题：workflow-engine.ts 直接拼接 content（"找到几个故事..."）
+- 后果：刘看山人设崩塌，回复像机器人
+- 修复：工作流只返回 `toolSummary`，由 chat/route.ts 注入 systemPrompt，DeepSeek 生成自然语言
+
+**S3: 工作流状态依赖前端未实现字段**
+- 问题：需要 `workflowState.stepIndex` / `selectedStoryId`
+- 后果：工作流永远卡在 Step 0
+- 修复：新增 `inferWorkflowStage`（从消息历史推断阶段）和 `inferUserChoice`（解析用户选择）
+
+**S4: 中文关键词按字提取**
+- 问题：`extractKeywords` 把每个中文字当成关键词
+- 后果：500 字故事产生 500 个关键词，索引极度稀疏
+- 修复：提取二字/三字词组 + 单字兜底
+
+#### A级（中等 - 影响体验/可靠性）
+
+**A5-A11**: AI 分类 prompt 中文化、取消空格、后台异步索引、嵌入自动重试、疗愈模式切换、用户取消信号检测
+
+#### B级（轻微 - 优化）
+
+**B12-B16**: 嵌入 LRU 缓存、清理冗余导入、JSON.parse 保护、BM25 式评分
+
+### 关键决策
+
+- 工作流引擎只做"工具执行层"，自然语言生成交给 DeepSeek —— 这是保持人设的关键
+- 状态从消息历史推断 —— 避免前端改造，降低接入成本
+- 后台异步构建索引 —— 首次请求不被阻塞
+
+---
+
 ## v9.3 刘看山 Agent RAG + 工作流 + 状态切换
 
 > 时间：2026-04-29

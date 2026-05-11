@@ -115,18 +115,23 @@
 - 允许表达：有情绪（惊讶/怀疑/犹豫）、有立场、说人话（30-80字）
 - 不用第一人称"我"，用"刘看山"称呼自己
 
-### 2.2 RAG + 工作流引擎（v9.3 新增）
+### 2.2 RAG + 工作流引擎（v9.3 + v9.3-fix）
 
-刘看山 Agent 现在具备完整的 RAG 检索 + 工作流执行能力：
+刘看山 Agent 具备完整的 RAG 检索 + 工作流执行能力：
 
 **双模式向量存储**（`vector-store.ts`）：
 - 优先尝试 DeepSeek Embedding API 获取语义向量
 - 嵌入 API 不可用时自动降级到关键词倒排索引
 - 纯 JS 余弦相似度，零 npm 依赖
+- 中文关键词提取：二字/三字词组 + 单字兜底（v9.3-fix）
+- 嵌入结果 LRU 缓存（100条）（v9.3-fix）
+- 关键词搜索 BM25 式评分（v9.3-fix）
 
 **意图路由**（`rag-engine.ts` + `intent-router.ts`）：
 - 关键词快速预分类（故事/脑洞/疗愈/检索/闲聊）
 - 置信度 < 0.7 时调用 DeepSeek 做 AI 深度分类
+- AI 分类 prompt 全中文（v9.3-fix）
+- JSON.parse 异常保护（v9.3-fix）
 
 **工作流引擎**（`workflow-engine.ts`）：
 | 模式 | 流程 | 兜底 |
@@ -137,10 +142,23 @@
 | 检索模式 | 查资料 → 回答 | — |
 | 对话状态 | 正常 companion 聊天 | — |
 
+**工作流状态推断（v9.3-fix）**：
+- 不依赖前端传递 `workflowState`
+- `inferWorkflowStage`: 从消息历史判断"首次请求"或"已展示等待选择"
+- `inferUserChoice`: 解析用户回复中的数字/名称/"第一个"
+- `isUserCancel`: 检测"算了"/"不用了"/"取消"等信号
+
+**自然语言生成（v9.3-fix）**：
+- 工作流只执行工具调用，整理 `toolSummary`
+- `toolSummary` 注入 systemPrompt
+- DeepSeek 基于工具结果生成自然语言回复
+- 保持刘看山"说人话"人设
+
 **API 集成**（`chat/route.ts`）：
 - companion 角色前置工作流引擎
-- 工作流返回 content 时直接响应，不走 DeepSeek
+- 工作流返回 `toolSummary` 时注入 systemPrompt，再走 DeepSeek
 - 纯聊天时走原有 DeepSeek + 知乎直答双引擎
+- 索引后台异步构建，不阻塞请求（v9.3-fix）
 
 ### 2.3 状态切换规则（v9.2）
 
