@@ -110,7 +110,7 @@ export default function AssetDetailPage() {
       <TopBar title="素材详情" showBack onBack={() => router.back()} />
 
       {/* 素材信息卡 */}
-      <div className="shrink-0 px-4 py-3 bg-xh-gold/10 border-b border-xh-gold/20">
+      <div className="shrink-0 px-4 py-3 bg-xh-yellow/10 border-b border-xh-yellow/20">
         <div className="flex items-start gap-2">
           <Sparkles className="w-5 h-5 text-xh-yellow mt-0.5 shrink-0" />
           <div className="min-w-0">
@@ -161,7 +161,7 @@ export default function AssetDetailPage() {
                   <div
                     className={`rounded-2xl px-4 py-2.5 ${
                       isMe
-                        ? 'bg-xh-gold/15 text-white rounded-tr-none border border-xh-gold/20'
+                        ? 'bg-xh-yellow/15 text-white rounded-tr-none border border-xh-yellow/20'
                         : 'bg-white/5 text-white rounded-tl-none border border-white/[0.08]'
                     }`}
                   >

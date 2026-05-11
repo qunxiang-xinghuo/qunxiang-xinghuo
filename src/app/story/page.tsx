@@ -53,8 +53,8 @@ export default function StoryPage() {
             transition={{ delay: 0.3 }}
             className="flex items-center gap-2 justify-center mb-8"
           >
-            <Clock className="w-4 h-4 text-xh-gold/50" />
-            <span className="text-xs text-xh-gold/50">即将开放</span>
+            <Clock className="w-4 h-4 text-xh-yellow/50" />
+            <span className="text-xs text-xh-yellow/50">即将开放</span>
           </motion.div>
 
           <div className="space-y-3 text-left max-w-sm mx-auto">
@@ -69,8 +69,8 @@ export default function StoryPage() {
                   className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06] hover:border-slate-600/20 hover:bg-white/[0.05] transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-xh-gold/10 flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-xh-gold/60" />
+                    <div className="w-9 h-9 rounded-lg bg-xh-yellow/10 flex items-center justify-center shrink-0">
+                      <Icon className="w-4 h-4 text-xh-yellow/60" />
                     </div>
                     <div>
                       <h3 className="text-sm text-slate-400 font-medium">{feature.title}</h3>

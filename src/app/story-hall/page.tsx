@@ -79,10 +79,10 @@ export default function StoryHallPage() {
           initial={mounted ? { opacity: 0, y: 10 } : false}
           animate={{ opacity: 1, y: 0 }}
           onClick={() => router.push('/story-hall/long-term')}
-          className="w-full mb-4 p-4 rounded-xl bg-gradient-to-r from-[#8a9ab0]/10 to-transparent border border-[#8a9ab0]/20 text-left active:scale-[0.99] transition-all"
+          className="w-full mb-4 p-4 rounded-xl bg-gradient-to-r from-[#D4B830]/10 to-transparent border border-[#D4B830]/20 text-left active:scale-[0.99] transition-all"
         >
           <div className="flex items-center gap-3">
-            <BookOpen className="w-5 h-5 text-[#8a9ab0]" />
+            <BookOpen className="w-5 h-5 text-[#D4B830]" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-white/80">长期连载</p>
               <p className="text-[11px] text-white/30">发起一个只有开头的故事，开放给所有人认领角色</p>
@@ -100,7 +100,7 @@ export default function StoryHallPage() {
               onClick={() => setActiveCategory(cat)}
               className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors flex-shrink-0 ${
                 activeCategory === cat
-                  ? 'bg-[#8a9ab0]/10 text-[#8a9ab0]/70 border-[#8a9ab0]/20'
+                  ? 'bg-[#D4B830]/10 text-[#D4B830]/70 border-[#D4B830]/20'
                   : 'bg-white/[0.02] text-white/30 border-white/5 hover:bg-white/[0.05]'
               }`}
             >
@@ -111,7 +111,7 @@ export default function StoryHallPage() {
 
         {/* 解密故事列表 */}
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-[#8a9ab0]" />
+          <Sparkles className="w-4 h-4 text-[#D4B830]" />
           <h2 className="text-sm font-semibold text-white/90">解密故事</h2>
           <span className="text-[10px] text-white/20 ml-1">{filteredStories.length} 个</span>
         </div>
@@ -129,7 +129,7 @@ export default function StoryHallPage() {
             <p className="text-xs text-white/20 mb-4">网络异常，请稍后重试</p>
             <button
               onClick={() => { setLoading(true); setLoadError(false); window.location.reload(); }}
-              className="text-xs text-[#8a9ab0]/50 hover:text-[#8a9ab0]/70 transition-colors"
+              className="text-xs text-[#D4B830]/50 hover:text-[#D4B830]/70 transition-colors"
             >
               点击刷新
             </button>
@@ -141,7 +141,7 @@ export default function StoryHallPage() {
             <p className="text-xs text-white/20 mb-4">第一个故事即将上线，敬请期待</p>
             <button
               onClick={() => router.push('/story-hall/long-term')}
-              className="text-xs text-[#8a9ab0]/50 hover:text-[#8a9ab0]/70 transition-colors"
+              className="text-xs text-[#D4B830]/50 hover:text-[#D4B830]/70 transition-colors"
             >
               去看看长期连载 →
             </button>
@@ -160,7 +160,7 @@ export default function StoryHallPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base font-bold text-white/90 mb-1">{story.title}</h3>
-                    <p className="text-[11px] text-[#8a9ab0]/50 mb-2 flex items-center gap-1">
+                    <p className="text-[11px] text-[#D4B830]/50 mb-2 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {story.eraBackground}
                     </p>
@@ -210,7 +210,7 @@ export default function StoryHallPage() {
                       disabled={likeLoadingId === story.id}
                       className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border transition-all ${
                         story.liked
-                          ? 'bg-[#8a9ab0]/15 text-[#8a9ab0] border-[#8a9ab0]/25'
+                          ? 'bg-[#D4B830]/15 text-[#D4B830] border-[#D4B830]/25'
                           : 'bg-white/[0.03] text-white/25 border-white/5 hover:bg-white/[0.06] hover:text-white/40'
                       }`}
                     >

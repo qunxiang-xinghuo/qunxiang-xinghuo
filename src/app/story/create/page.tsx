@@ -122,7 +122,7 @@ export default function CreateStoryPage() {
           <div className="space-y-2">
             <button
               onClick={() => router.push('/my-stories?tab=created')}
-              className="w-full py-2.5 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/20"
+              className="w-full py-2.5 rounded-xl bg-[#D4B830]/15 text-[#D4B830] text-sm font-medium border border-[#D4B830]/20"
             >
               查看我发起的故事
             </button>
@@ -156,7 +156,7 @@ export default function CreateStoryPage() {
         {[1, 2].map((s) => (
           <div key={s} className="flex-1 h-1 rounded-full bg-white/[0.05]">
             <motion.div
-              className="h-full rounded-full bg-[#8a9ab0]"
+              className="h-full rounded-full bg-[#D4B830]"
               initial={mounted ? { width: '0%' } : false}
               animate={{ width: s <= step ? '100%' : '0%' }}
               transition={{ duration: 0.3 }}
@@ -176,7 +176,7 @@ export default function CreateStoryPage() {
               className="space-y-4"
             >
               <div className="flex items-center gap-2 mb-2">
-                <ScrollText className="w-4 h-4 text-[#8a9ab0]" />
+                <ScrollText className="w-4 h-4 text-[#D4B830]" />
                 <h2 className="text-sm font-semibold text-white/90">故事基本信息</h2>
               </div>
 
@@ -187,7 +187,7 @@ export default function CreateStoryPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="给故事起一个吸引人的标题"
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#8a9ab0]/30"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#D4B830]/30"
                 />
               </div>
 
@@ -198,7 +198,7 @@ export default function CreateStoryPage() {
                   value={eraBackground}
                   onChange={(e) => setEraBackground(e.target.value)}
                   placeholder="如：1937年，南京 / 2026年，上海"
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#8a9ab0]/30"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#D4B830]/30"
                 />
               </div>
 
@@ -212,7 +212,7 @@ export default function CreateStoryPage() {
                       onClick={() => setCategory(c)}
                       className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${
                         category === c
-                          ? 'bg-[#8a9ab0]/15 text-[#8a9ab0] border-[#8a9ab0]/30'
+                          ? 'bg-[#D4B830]/15 text-[#D4B830] border-[#D4B830]/30'
                           : 'bg-white/[0.03] text-white/40 border-white/10 hover:bg-white/[0.06]'
                       }`}
                     >
@@ -230,7 +230,7 @@ export default function CreateStoryPage() {
                   onChange={(e) => setStorySummary(e.target.value)}
                   placeholder="用一段话概括这个故事的核心冲突和悬念..."
                   rows={4}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#8a9ab0]/30 resize-none"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#D4B830]/30 resize-none"
                 />
                 <p className="text-[10px] text-white/20 mt-1 text-right">{storySummary.length} 字</p>
               </div>
@@ -238,7 +238,7 @@ export default function CreateStoryPage() {
               {/* 提示 */}
               <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                 <div className="flex items-start gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-[#8a9ab0]/50 shrink-0 mt-0.5" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4B830]/50 shrink-0 mt-0.5" />
                   <p className="text-xs text-white/30 leading-relaxed">
                     好的故事简介应该包含：时间、地点、核心冲突、悬念。不要透露结局。
                   </p>
@@ -248,7 +248,7 @@ export default function CreateStoryPage() {
               <button
                 onClick={() => validateStep(1) && setStep(2)}
                 disabled={!validateStep(1)}
-                className="w-full py-3 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/20 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-full py-3 rounded-xl bg-[#D4B830]/15 text-[#D4B830] text-sm font-medium border border-[#D4B830]/20 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 下一步：设定角色
               </button>
@@ -264,7 +264,7 @@ export default function CreateStoryPage() {
               className="space-y-4"
             >
               <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-[#8a9ab0]" />
+                <Users className="w-4 h-4 text-[#D4B830]" />
                 <h2 className="text-sm font-semibold text-white/90">角色设定</h2>
                 <span className="text-[10px] text-white/20 ml-auto">{roles.length}/6 角色</span>
               </div>
@@ -289,20 +289,20 @@ export default function CreateStoryPage() {
                     value={role.name}
                     onChange={(e) => updateRole(idx, 'name', e.target.value)}
                     placeholder="角色名称"
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#8a9ab0]/30"
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#D4B830]/30"
                   />
                   <input
                     value={role.description}
                     onChange={(e) => updateRole(idx, 'description', e.target.value)}
                     placeholder="角色设定（身份、性格、动机）"
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#8a9ab0]/30"
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#D4B830]/30"
                   />
                   <textarea
                     value={role.openingInfo}
                     onChange={(e) => updateRole(idx, 'openingInfo', e.target.value)}
                     placeholder="开场信息（该角色进入场景时知道什么、不知道什么）"
                     rows={2}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#8a9ab0]/30 resize-none"
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#D4B830]/30 resize-none"
                   />
                 </motion.div>
               ))}
@@ -320,7 +320,7 @@ export default function CreateStoryPage() {
               {/* 提示 */}
               <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-3.5 h-3.5 text-[#8a9ab0]/50 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-3.5 h-3.5 text-[#D4B830]/50 shrink-0 mt-0.5" />
                   <p className="text-xs text-white/30 leading-relaxed">
                     每个角色的开场信息应该包含「知道什么」和「不知道什么」的悬念设计。角色之间信息不对称是对白的驱动力。
                   </p>
@@ -337,10 +337,10 @@ export default function CreateStoryPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={!validateStep(2) || submitting}
-                  className="flex-1 py-3 rounded-xl bg-[#8a9ab0]/15 text-[#8a9ab0] text-sm font-medium border border-[#8a9ab0]/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                  className="flex-1 py-3 rounded-xl bg-[#D4B830]/15 text-[#D4B830] text-sm font-medium border border-[#D4B830]/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                 >
                   {submitting ? (
-                    <span className="w-4 h-4 border-2 border-[#8a9ab0]/30 border-t-[#8a9ab0] rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 border-[#D4B830]/30 border-t-[#D4B830] rounded-full animate-spin" />
                   ) : (
                     <>
                       <ScrollText className="w-3.5 h-3.5" />
