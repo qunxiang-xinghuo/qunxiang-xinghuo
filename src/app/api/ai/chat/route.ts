@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { apiResponse, apiError } from "@/lib/utils";
 import { zhidaChat } from "@/lib/zhihu-dev-api";
 import { getPersona } from "@/lib/ai/personas";
 import { getFallbackReply } from "@/lib/ai/fallback-replies";
+import {
+  parseToolCall,
+  executeToolCall,
+  stripToolCall,
+  type ToolCall,
+  type ToolResult,
+} from "@/lib/ai/agent-tools";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -24,6 +32,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { messages, topic, persona: personaKey, context } = body;
+
+    // v9.1 Agent: 获取当前用户ID（用于工具调用上下文）
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
+    console.log("[AI Chat] userId:", userId || "未登录");
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -128,12 +141,71 @@ export async function POST(request: NextRequest) {
     // ==================== 选择最佳回复 ====================
     let finalContent = "";
     let source = "";
+    let toolCalls: ToolCall[] | undefined;
+    let toolResults: ToolResult[] | undefined;
 
     if (deepseekOk) {
       // 优先使用 DeepSeek 结果
       finalContent = deepseekContent;
       source = "deepseek";
       console.log("[AI Chat] 使用 DeepSeek 回复");
+
+      // v9.1 Agent 阶段4: 仅对 companion 角色启用工具调用闭环
+      if (personaKey === 'companion' && userId) {
+        const toolCall = parseToolCall(finalContent);
+        if (toolCall) {
+          console.log("[AI Chat] Agent 检测到工具调用:", toolCall.tool);
+          const toolResult = await executeToolCall(toolCall, { userId });
+          toolCalls = [toolCall];
+          toolResults = [toolResult];
+
+          // 二次调用 DeepSeek：将工具结果回传，让 AI 基于结果生成最终回复
+          const naturalReply = stripToolCall(finalContent) || finalContent;
+          const followUpMessages = [
+            { role: "system" as const, content: systemPrompt },
+            ...messages.filter((m: ChatMessage) => m.role !== 'system'),
+            { role: "assistant" as const, content: naturalReply },
+            {
+              role: "user" as const,
+              content: `你刚才调用了工具 "${toolCall.tool}"，执行结果如下：\n${JSON.stringify(toolResult.data || toolResult.error, null, 2)}\n\n请基于这个结果，自然地回复用户。如果工具执行失败，如实告诉用户并建议其他方案。`,
+            },
+          ];
+
+          try {
+            const controller2 = new AbortController();
+            const timeout2 = setTimeout(() => controller2.abort(), 15000);
+            const res2 = await fetch("https://api.deepseek.com/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model: "deepseek-chat",
+                messages: followUpMessages,
+                temperature: 0.85,
+                max_tokens: 200,
+              }),
+              signal: controller2.signal,
+            });
+            clearTimeout(timeout2);
+
+            if (res2.ok) {
+              const result2 = await res2.json();
+              const secondContent = result2.choices?.[0]?.message?.content || "";
+              if (secondContent) {
+                finalContent = secondContent;
+                console.log("[AI Chat] Agent 二次调用成功, 内容长度:", secondContent.length);
+              }
+            } else {
+              console.error("[AI Chat] Agent 二次调用失败:", res2.status);
+            }
+          } catch (err: any) {
+            console.error("[AI Chat] Agent 二次调用异常:", err.message);
+            // 二次调用失败时，保留第一次回复（已包含工具调用 JSON）
+          }
+        }
+      }
     } else if (zhidaOk) {
       // DeepSeek 失败，使用知乎直答
       finalContent = zhidaContent;
@@ -146,12 +218,14 @@ export async function POST(request: NextRequest) {
       console.log("[AI Chat] 两个API都失败，使用角色兜底:", personaKey || 'catalyst');
     }
 
-    return NextResponse.json(
-      apiResponse({
-        content: finalContent,
-        source,
-      })
-    );
+    const responsePayload: any = {
+      content: finalContent,
+      source,
+    };
+    if (toolCalls) responsePayload.toolCalls = toolCalls;
+    if (toolResults) responsePayload.toolResults = toolResults;
+
+    return NextResponse.json(apiResponse(responsePayload));
   } catch (error: any) {
     console.error("[AI Chat] 致命错误:", error);
     return NextResponse.json(

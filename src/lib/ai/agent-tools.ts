@@ -6,6 +6,17 @@
  * 前端/后端解析该 JSON，执行对应的 API 调用，再将结果回传给 AI。
  */
 
+export interface ToolCall {
+  tool: string;
+  params: Record<string, any>;
+}
+
+export interface ToolResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
+
 export interface AgentTool {
   name: string;
   description: string;
@@ -213,3 +224,320 @@ Step 2b: 没真人 → create_room(type="ai_duet") → "我先陪你聊，真人
 - 不要连续调用多个工具而不给用户反馈，每调一个工具都要告诉用户你在做什么
 - 如果用户说"算了"、"不用了"、"我自己来" → 尊重用户意愿，停止工具调用，正常聊天
 `;
+
+
+// ============================================================================
+// 阶段4：工具执行层（Tool Execution Layer）
+// ============================================================================
+
+import { db } from "@/lib/db";
+
+/** 解析 AI 回复末尾的工具调用 JSON */
+export function parseToolCall(content: string): ToolCall | null {
+  // 匹配回复末尾的 JSON 对象（包含 "tool" 和 "params" 字段）
+  const lines = content.trim().split("\n");
+  const lastLine = lines[lines.length - 1].trim();
+
+  // 如果最后一行是 JSON，尝试解析
+  if (lastLine.startsWith("{") && lastLine.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(lastLine);
+      if (
+        parsed.tool &&
+        typeof parsed.tool === "string" &&
+        parsed.params &&
+        typeof parsed.params === "object"
+      ) {
+        return { tool: parsed.tool, params: parsed.params };
+      }
+    } catch {
+      // 解析失败，忽略
+    }
+  }
+
+  // 尝试在整个内容末尾匹配 JSON
+  const match = content.match(/\{[\s\S]*"tool"\s*:[\s\S]*"params"\s*:[\s\S]*\}\s*$/);
+  if (match) {
+    try {
+      const parsed = JSON.parse(match[0].trim());
+      if (
+        parsed.tool &&
+        typeof parsed.tool === "string" &&
+        parsed.params &&
+        typeof parsed.params === "object"
+      ) {
+        return { tool: parsed.tool, params: parsed.params };
+      }
+    } catch {
+      // 解析失败，忽略
+    }
+  }
+
+  return null;
+}
+
+/** 从 AI 回复中移除工具调用 JSON，保留自然语言部分 */
+export function stripToolCall(content: string): string {
+  return content.replace(/\n?\s*\{[\s\S]*"tool"\s*:[\s\S]*"params"\s*:[\s\S]*\}\s*$/, "").trim();
+}
+
+/** 工具执行上下文 */
+export interface ToolContext {
+  userId: string;
+  identity?: string;
+}
+
+/** 执行工具调用 */
+export async function executeToolCall(
+  toolCall: ToolCall,
+  context: ToolContext
+): Promise<ToolResult> {
+  const { tool, params } = toolCall;
+  console.log(`[Agent Tool] 执行工具: ${tool}, 参数:`, params);
+
+  try {
+    switch (tool) {
+      case "search_stories":
+        return await execSearchStories(params);
+      case "search_brainholes":
+        return await execSearchBrainholes(params);
+      case "find_online_user":
+        return await execFindOnlineUser(params);
+      case "create_room":
+        return await execCreateRoom(params, context);
+      default:
+        return { success: false, error: `未知工具: ${tool}` };
+    }
+  } catch (err: any) {
+    console.error(`[Agent Tool] ${tool} 执行失败:`, err.message);
+    return { success: false, error: err.message || "工具执行失败" };
+  }
+}
+
+// ── 内部执行函数 ──
+
+async function execSearchStories(params: any): Promise<ToolResult> {
+  const { keyword } = params || {};
+
+  const where: any = {
+    status: { in: ["open", "recruiting"] },
+  };
+
+  if (keyword && typeof keyword === "string" && keyword.trim()) {
+    const k = keyword.trim();
+    where.OR = [
+      { title: { contains: k } },
+      { eraBackground: { contains: k } },
+      { storySummary: { contains: k } },
+    ];
+  }
+
+  const stories = await db.story.findMany({
+    where,
+    orderBy: { hotScore: "desc" },
+    take: 10,
+    select: {
+      id: true,
+      title: true,
+      eraBackground: true,
+      storySummary: true,
+      difficulty: true,
+      maxCharacters: true,
+    },
+  });
+
+  return {
+    success: true,
+    data: stories.map((s) => ({
+      id: s.id,
+      title: s.title,
+      era: s.eraBackground || "未知时代",
+      summary: s.storySummary || "暂无简介",
+      difficulty: s.difficulty,
+      roles: s.maxCharacters,
+    })),
+  };
+}
+
+async function execSearchBrainholes(params: any): Promise<ToolResult> {
+  const { category, limit = 5 } = params || {};
+
+  const where: any = { status: "approved" };
+  if (category && typeof category === "string") {
+    where.category = category;
+  }
+
+  const brainholes = await db.brainhole.findMany({
+    where,
+    orderBy: { hotScore: "desc" },
+    take: Math.min(Number(limit) || 5, 10),
+    select: {
+      id: true,
+      title: true,
+      scenario: true,
+      category: true,
+      hotScore: true,
+    },
+  });
+
+  return {
+    success: true,
+    data: brainholes.map((b) => ({
+      id: b.id,
+      title: b.title,
+      scenario: b.scenario,
+      category: b.category,
+    })),
+  };
+}
+
+async function execFindOnlineUser(params: any): Promise<ToolResult> {
+  const { brainholeId } = params || {};
+
+  const where: any = { status: "waiting" };
+  if (brainholeId && typeof brainholeId === "string") {
+    where.brainholeId = brainholeId;
+  }
+
+  const matches = await db.matchRequest.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take: 10,
+    select: {
+      id: true,
+      userId: true,
+      identity: true,
+      brainholeId: true,
+      createdAt: true,
+    },
+  });
+
+  return {
+    success: true,
+    data: matches.map((m) => ({
+      matchId: m.id,
+      userId: m.userId,
+      identity: m.identity,
+      brainholeId: m.brainholeId,
+      waitingSince: m.createdAt,
+    })),
+  };
+}
+
+async function execCreateRoom(
+  params: any,
+  context: ToolContext
+): Promise<ToolResult> {
+  const { type, brainholeId, storyId, identity } = params || {};
+
+  if (!context.userId) {
+    return { success: false, error: "需要登录才能创建房间" };
+  }
+
+  // 确保用户记录存在
+  const user = await db.user.findUnique({
+    where: { id: context.userId },
+    select: { name: true },
+  });
+
+  let userIdentity = identity || context.identity || user?.name || "我";
+
+  // 兼容：story_duet/duet 在当前架构下都转为 ai_duet（Agent 兜底陪聊）
+  const roomType = type === "ai_duet" ? "ai_duet" : "ai_duet";
+
+  // 获取 brainhole
+  let finalBrainholeId = brainholeId;
+  let brainholeTitle = "";
+  let brainholeScenario = "";
+
+  if (finalBrainholeId) {
+    const bh = await db.brainhole.findUnique({
+      where: { id: finalBrainholeId },
+    });
+    if (bh) {
+      brainholeTitle = bh.title;
+      brainholeScenario = bh.scenario || "";
+    } else {
+      finalBrainholeId = undefined;
+    }
+  }
+
+  // 未指定 brainhole 时，热度加权随机选一个
+  if (!finalBrainholeId && !storyId) {
+    const pool = await db.brainhole.findMany({
+      where: { status: "approved" },
+      orderBy: { hotScore: "desc" },
+      take: 50,
+    });
+    if (pool.length > 0) {
+      const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
+      let randomPoint = Math.random() * totalScore;
+      let selected = pool[0];
+      for (const b of pool) {
+        randomPoint -= b.hotScore || 1;
+        if (randomPoint <= 0) {
+          selected = b;
+          break;
+        }
+      }
+      finalBrainholeId = selected.id;
+      brainholeTitle = selected.title;
+      brainholeScenario = selected.scenario || "";
+    }
+  }
+
+  // 如果指定了 storyId，获取故事信息
+  let storyTitle = "";
+  let storyScene = "";
+  if (storyId) {
+    const story = await db.story.findUnique({
+      where: { id: storyId },
+      select: { title: true, eraBackground: true, storySummary: true },
+    });
+    if (story) {
+      storyTitle = story.title;
+      storyScene = story.eraBackground || story.storySummary || "";
+    }
+  }
+
+  const room = await db.$transaction(async (tx) => {
+    const newRoom = await tx.room.create({
+      data: {
+        brainholeId: finalBrainholeId || null,
+        storyId: storyId || null,
+        type: roomType,
+        status: "active",
+        maxRound: 10,
+        currentRound: 0,
+        scene: storyScene || brainholeScenario,
+        isAiRoom: true,
+      },
+    });
+
+    await tx.roomParticipant.create({
+      data: {
+        roomId: newRoom.id,
+        userId: context.userId,
+        identity: userIdentity,
+        role: "actor",
+        isOnline: true,
+      },
+    });
+
+    return newRoom;
+  });
+
+  console.log(`[Agent Tool] 房间创建成功: ${room.id}`);
+
+  return {
+    success: true,
+    data: {
+      roomId: room.id,
+      type: roomType,
+      brainholeId: finalBrainholeId || null,
+      brainholeTitle: brainholeTitle || undefined,
+      storyId: storyId || null,
+      storyTitle: storyTitle || undefined,
+    },
+  };
+}
