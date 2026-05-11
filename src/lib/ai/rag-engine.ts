@@ -87,16 +87,21 @@ async function aiClassify(message: string): Promise<RAGIntent> {
     return { workflow: "chat", confidence: 0.5, reasoning: "API key unavailable" };
   }
 
-  const systemPrompt = `Intent classifier. Analyze user message and classify intent. Output JSON only.
+  const systemPrompt = `你是意图分类器。分析用户消息，判断用户意图。只输出 JSON，不要其他内容。
 
-Categories:
-- story: wants to play story/roleplay/script game
-- brainhole: wants topic to chat/discuss
-- healing: expressing negative emotion/needs comfort
-- search: wants to look up information
-- chat: casual conversation/greeting
+分类规则：
+- story: 用户想玩解密故事、角色扮演、剧本游戏
+- brainhole: 用户想找话题聊天、讨论热点
+- healing: 用户表达负面情绪、需要安慰、想倾诉
+- search: 用户想查资料、了解某个概念、获取信息
+- chat: 纯闲聊、打招呼、分享日常
 
-Output: {"intent": "story|brainhole|healing|search|chat", "confidence": 0-1, "reasoning": "brief reason", "params": {"keyword": "extracted keyword"}}`;
+输出格式：
+{"intent": "story|brainhole|healing|search|chat", "confidence": 0-1, "reasoning": "一句话说明判断理由", "params": {"keyword": "提取的关键词"}}
+
+注意：
+- confidence 必须诚实，不确定就低一些
+- params.keyword 提取用户提到的具体关键词（故事名、时代、话题等）`;
 
   try {
     const controller = new AbortController();
@@ -133,7 +138,12 @@ Output: {"intent": "story|brainhole|healing|search|chat", "confidence": 0-1, "re
       return { workflow: "chat", confidence: 0.5, reasoning: "Cannot parse result" };
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    let parsed: any;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch {
+      return { workflow: "chat", confidence: 0.5, reasoning: "JSON解析失败" };
+    }
     const workflow = (parsed.intent as WorkflowType) || "chat";
     const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0.5));
 

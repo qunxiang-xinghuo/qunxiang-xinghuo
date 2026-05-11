@@ -664,7 +664,7 @@ async function execCreateRoom(
   });
 
   let userIdentity = identity || context.identity || user?.name || "我";
-  const roomType = type === "ai_duet" ? "ai_duet" : "ai_duet";
+  const roomType = type === "story_duet" ? "story_duet" : "ai_duet";
 
   let finalBrainholeId = brainholeId;
   let brainholeTitle = "";

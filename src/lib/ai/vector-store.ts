@@ -37,8 +37,12 @@ export interface SearchOptions {
 
 let _vectorIndex: VectorDocument[] = [];
 let _keywordIndex: Map<string, Set<string>> = new Map();
-let _embeddingAvailable = true; // 乐观假设，失败时降级
+let _embeddingAvailable = true;
 let _indexBuilt = false;
+
+// v9.3-fix: 嵌入结果缓存（LRU，最多 100 条）
+const _embedCache = new Map<string, number[]>();
+const MAX_EMBED_CACHE = 100;
 
 // ── DeepSeek 嵌入 API ──
 
@@ -47,6 +51,12 @@ const DEEPSEEK_EMBED_API = "https://api.deepseek.com/v1/embeddings";
 async function getEmbedding(text: string): Promise<number[] | undefined> {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey || !_embeddingAvailable) return undefined;
+
+  // v9.3-fix: 缓存命中直接返回
+  const cacheKey = text.slice(0, 200);
+  if (_embedCache.has(cacheKey)) {
+    return _embedCache.get(cacheKey);
+  }
 
   try {
     const res = await fetch(DEEPSEEK_EMBED_API, {
@@ -57,7 +67,7 @@ async function getEmbedding(text: string): Promise<number[] | undefined> {
       },
       body: JSON.stringify({
         model: "text-embedding-3-small",
-        input: text.slice(0, 2000), // 限制长度
+        input: text.slice(0, 2000),
       }),
     });
 
@@ -65,6 +75,10 @@ async function getEmbedding(text: string): Promise<number[] | undefined> {
       if (res.status === 404 || res.status === 400) {
         console.warn("[VectorStore] DeepSeek 嵌入 API 不可用，降级到关键词索引");
         _embeddingAvailable = false;
+      }
+      // v9.3-fix: 非 404/400 错误时临时降级，下次请求会重试
+      if (res.status >= 500) {
+        console.warn("[VectorStore] 嵌入 API 服务端错误，下次请求将重试");
       }
       return undefined;
     }
@@ -75,10 +89,23 @@ async function getEmbedding(text: string): Promise<number[] | undefined> {
       _embeddingAvailable = false;
       return undefined;
     }
+
+    // v9.3-fix: 写入缓存
+    if (_embedCache.size >= MAX_EMBED_CACHE) {
+      const firstKey = _embedCache.keys().next().value;
+      if (firstKey) _embedCache.delete(firstKey);
+    }
+    _embedCache.set(cacheKey, embedding);
+
     return embedding;
   } catch (err: any) {
     console.warn("[VectorStore] 嵌入 API 调用失败:", err.message);
-    _embeddingAvailable = false;
+    // v9.3-fix: 网络错误临时降级，下次请求会重试
+    if (err.message?.includes("fetch") || err.message?.includes("network")) {
+      console.warn("[VectorStore] 网络错误，下次请求将重试嵌入 API");
+    } else {
+      _embeddingAvailable = false;
+    }
     return undefined;
   }
 }
@@ -104,8 +131,16 @@ function cosineSimilarity(a: number[], b: number[]): number {
 function extractKeywords(text: string): string[] {
   const keywords: string[] = [];
 
-  // 中文：按字提取（简单但有效）+ 常见词组
-  const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
+  // 中文：提取二字/三字词组（比单字更精准）
+  const chineseText = text.replace(/[^\u4e00-\u9fa5]/g, "");
+  for (let i = 0; i < chineseText.length - 1; i++) {
+    keywords.push(chineseText.slice(i, i + 2)); // 二字词
+    if (i < chineseText.length - 2) {
+      keywords.push(chineseText.slice(i, i + 3)); // 三字词
+    }
+  }
+  // 同时保留单字匹配（短查询需要）
+  const chineseChars = chineseText.split("");
   keywords.push(...chineseChars);
 
   // 英文单词
@@ -144,7 +179,7 @@ function addToKeywordIndex(doc: VectorDocument): void {
 
 function searchKeywordIndex(query: string, options: SearchOptions = {}): SearchResult[] {
   const queryKeywords = extractKeywords(query);
-  const docScores = new Map<string, number>();
+  const docScores = new Map<string, { matched: number; totalDocKw: number }>();
 
   for (const kw of queryKeywords) {
     const docIds = _keywordIndex.get(kw);
@@ -154,17 +189,25 @@ function searchKeywordIndex(query: string, options: SearchOptions = {}): SearchR
       if (!doc) continue;
       if (options.type && doc.type !== options.type) continue;
 
-      // 计算匹配分数：匹配关键词数 / 文档总关键词数
-      const matched = doc.keywords.filter((dk) => queryKeywords.includes(dk)).length;
-      const score = matched / Math.max(doc.keywords.length, 1);
-      docScores.set(docId, Math.max(docScores.get(docId) || 0, score));
+      const prev = docScores.get(docId);
+      if (prev) {
+        prev.matched += 1;
+      } else {
+        docScores.set(docId, { matched: 1, totalDocKw: doc.keywords.length });
+      }
     }
   }
 
   const results: SearchResult[] = [];
-  for (const [docId, score] of docScores) {
+  for (const [docId, { matched, totalDocKw }] of docScores) {
     const doc = _vectorIndex.find((d) => d.id === docId);
-    if (doc) results.push({ document: doc, score });
+    if (!doc) continue;
+    // v9.3-fix: 改用 BM25 式评分 = matched / queryLength * log(totalDocs / docFreq)
+    // 简化版：matched / queryKeywords.length（对长文档更公平）
+    const queryCoverage = matched / Math.max(queryKeywords.length, 1);
+    const docDensity = matched / Math.max(totalDocKw, 1);
+    const score = queryCoverage * 0.7 + docDensity * 0.3;
+    results.push({ document: doc, score });
   }
 
   return results
