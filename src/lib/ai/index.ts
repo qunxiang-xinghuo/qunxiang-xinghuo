@@ -6,6 +6,21 @@ import {
   generateCatalystQuestions,
 } from "./prompt-generator";
 
+// v9.3: RAG + 工作流 + 意图路由
+export { RAGEngine, type WorkflowType, type RAGIntent, type RAGResult } from "./rag-engine";
+export { WorkflowEngine, type WorkflowContext, type WorkflowResult } from "./workflow-engine";
+export { classifyIntent, retrieveWithIntent } from "./intent-router";
+export {
+  buildVectorIndex,
+  rebuildIndex,
+  searchKnowledgeBase,
+  isVectorMode,
+  getIndexStats,
+  forceKeywordMode,
+  type VectorDocument,
+  type SearchResult,
+} from "./vector-store";
+
 export { generatePromptFromContext, refinePrompt, generateCatalystQuestions };
 
 export interface AIPrompt {

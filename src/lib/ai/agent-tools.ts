@@ -393,6 +393,22 @@ async function runCheckpoint(
         });
         // 相关性不强时只警告，不阻断
       }
+
+      // v9.3: 摘要长度检查
+      if (hasResults) {
+        const allShort = result.data.every((s: any) => {
+          const summaryLen = (s.summary || "").length;
+          return summaryLen <= 300;
+        });
+        checks.push({
+          id: "summary_length",
+          name: "摘要长度",
+          pass: allShort,
+          message: allShort
+            ? "所有摘要长度符合要求"
+            : "部分摘要过长，已截断展示",
+        });
+      }
       break;
     }
 

@@ -11,6 +11,8 @@ import {
   type ToolCall,
   type ToolResult,
 } from "@/lib/ai/agent-tools";
+import { WorkflowEngine, type WorkflowResult } from "@/lib/ai/workflow-engine";
+import { buildVectorIndex } from "@/lib/ai/vector-store";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -28,10 +30,25 @@ interface ChatMessage {
  *   persona: "catalyst" | "creative" | "healer" | "mediator"  (可选，默认 catalyst)
  * }
  */
+// v9.3: 确保向量索引已构建（首次请求时）
+let indexInitialized = false;
+async function ensureIndex() {
+  if (!indexInitialized) {
+    try {
+      await buildVectorIndex();
+      indexInitialized = true;
+    } catch (err: any) {
+      console.warn("[AI Chat] 索引构建失败:", err.message);
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
+    await ensureIndex();
+
     const body = await request.json();
-    const { messages, topic, persona: personaKey, context, state } = body;
+    const { messages, topic, persona: personaKey, context, state, workflowState } = body;
 
     // v9.2 Agent: 如果前端传入了当前状态，注入到 systemPrompt 中辅助角色判断
     let stateHint = "";
@@ -70,6 +87,50 @@ export async function POST(request: NextRequest) {
 
     console.log("[AI Chat] 使用角色:", persona.name, "key:", personaKey || "catalyst");
     console.log("[AI Chat] 收到请求, topic:", topic, "history长度:", messages.length);
+
+    // ==================== v9.3: 工作流引擎 ====================
+    let workflowResult: WorkflowResult | undefined;
+
+    // 仅对 companion 角色启用工作流
+    if (personaKey === 'companion' && userId) {
+      const lastUserMessage = messages
+        .filter((m: ChatMessage) => m.role === 'user')
+        .pop()?.content || "";
+
+      if (lastUserMessage) {
+        workflowResult = await WorkflowEngine.process(lastUserMessage, {
+          userId,
+          messages: messages.filter((m: ChatMessage) => m.role !== 'system').map((m: ChatMessage) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          })),
+          stepIndex: workflowState?.stepIndex || 0,
+          selectedStoryId: workflowState?.selectedStoryId,
+          selectedBrainholeId: workflowState?.selectedBrainholeId,
+          history: [],
+        });
+
+        console.log(
+          "[AI Chat] 工作流结果:", workflowResult.workflow,
+          "step:", workflowResult.state.step,
+          "waitUser:", workflowResult.shouldWaitUser
+        );
+      }
+    }
+
+    // 如果工作流已经生成了内容（如展示故事列表），直接返回
+    if (workflowResult?.content) {
+      const responsePayload: any = {
+        content: workflowResult.content,
+        source: "workflow",
+        workflow: workflowResult.workflow,
+        workflowState: workflowResult.state,
+      };
+      if (workflowResult.toolCalls) responsePayload.toolCalls = workflowResult.toolCalls;
+      if (workflowResult.toolResults) responsePayload.toolResults = workflowResult.toolResults;
+
+      return NextResponse.json(apiResponse(responsePayload));
+    }
 
     // ==================== DeepSeek API ====================
     const apiKey = process.env.DEEPSEEK_API_KEY;
@@ -235,9 +296,11 @@ export async function POST(request: NextRequest) {
     const responsePayload: any = {
       content: finalContent,
       source,
+      workflow: workflowResult?.workflow || "chat",
     };
     if (toolCalls) responsePayload.toolCalls = toolCalls;
     if (toolResults) responsePayload.toolResults = toolResults;
+    if (workflowResult?.state) responsePayload.workflowState = workflowResult.state;
 
     return NextResponse.json(apiResponse(responsePayload));
   } catch (error: any) {
