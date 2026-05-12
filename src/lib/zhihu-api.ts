@@ -120,6 +120,21 @@ export interface ZhihuReactionResponse {
   data: { success: boolean } | null;
 }
 
+export interface ZhihuHackathonStory {
+  work_id: string;
+  title: string;
+  artwork: string;
+  tab_artwork: string;
+  description: string;
+  labels: string[];
+}
+
+export interface ZhihuHackathonStoryListResponse {
+  status: number;
+  msg: string;
+  data: ZhihuHackathonStory[] | null;
+}
+
 // ==================== API 方法 ====================
 
 /**
@@ -265,6 +280,21 @@ export async function toggleReaction(params: {
 
   if (!res.ok) {
     throw new Error(`知乎点赞失败: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}
+
+/**
+ * 获取黑客松故事内容库概要列表
+ * 特对2026年黑客松活动特殊开放，无需请求参数
+ */
+export async function getHackathonStoryList(): Promise<ZhihuHackathonStoryListResponse> {
+  const headers = buildAuthHeaders();
+  const url = `${ZHIHU_BASE_URL}/openapi/hackathon_story/list`;
+
+  const res = await fetch(url, { headers, next: { revalidate: 300 } });
+  if (!res.ok) {
+    throw new Error(`知乎 API 错误: ${res.status} ${res.statusText}`);
   }
   return res.json();
 }

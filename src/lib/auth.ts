@@ -86,6 +86,17 @@ export const authOptions: NextAuthOptions = {
         secure: false,
       },
     },
+    // v9.5-fix: OAuth state cookie 必须设为 secure: false（HTTP 环境）
+    state: {
+      name: 'next-auth.state',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: false,
+        maxAge: 60 * 15, // 15 分钟
+      },
+    },
   },
   pages: {
     signIn: "/login",

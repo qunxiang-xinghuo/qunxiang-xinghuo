@@ -90,12 +90,20 @@ export default function ZhihuProvider(
         const { provider, params } = context;
         const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/callback/zhihu`;
 
+        // 知乎回调参数名是 authorization_code，不是标准的 code
+        const code = params.code || (params as any).authorization_code || "";
+        console.log("[Zhihu OAuth] 回调参数:", { code: params.code, authorization_code: (params as any).authorization_code });
+
+        if (!code) {
+          throw new Error("知乎 OAuth 回调缺少 authorization_code 参数");
+        }
+
         const body = new URLSearchParams();
         body.append("app_id", appId || "");
         body.append("app_key", appKey || "");
         body.append("grant_type", "authorization_code");
         body.append("redirect_uri", redirectUri);
-        body.append("code", params.code || "");
+        body.append("code", code);
 
         console.log("[Zhihu OAuth] 换取 access_token...");
         const tokenUrl = typeof provider.token === "string" ? provider.token : (provider.token as any).url;
@@ -179,6 +187,9 @@ export default function ZhihuProvider(
       bg: "#0066FF",
       text: "#FFFFFF",
     },
+    // 知乎 OAuth 回调参数名为 authorization_code，与标准 code 不同
+    // 暂时禁用 state check 以排查问题（生产环境建议开启）
+    // checks: ["state"],
     checks: ["state"],
     ...options,
   };
