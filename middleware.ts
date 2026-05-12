@@ -18,8 +18,12 @@ const PUBLIC_PATHS = ['/', '/login', '/register', '/admin/login'];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // getToken 用 req.cookies[name] 读取，但 NextRequest.cookies 是 RequestCookies 对象
+  // 不支持中括号语法，必须绕过传原始 cookie header
   const token = await getToken({
-    req: request,
+    req: {
+      headers: new Headers({ cookie: request.headers.get('cookie') || '' }),
+    } as any,
     secret: process.env.NEXTAUTH_SECRET!,
     secureCookie: (process.env.NEXTAUTH_URL || '').startsWith('https://'),
   });
