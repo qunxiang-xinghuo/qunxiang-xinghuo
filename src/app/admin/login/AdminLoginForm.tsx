@@ -42,7 +42,7 @@ export default function AdminLoginForm() {
     if (result?.error) {
       setError('管理员账号或密码错误');
     } else if (result?.ok) {
-      router.push('/admin');
+      window.location.href = '/admin';
     }
   };
 
