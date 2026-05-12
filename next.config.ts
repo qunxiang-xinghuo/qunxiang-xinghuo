@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: '*.zhimg.com' },
+    ],
+  },
   // v8.0-login-fix: 为所有页面路由禁用缓存，确保中间件认证检查不被绕过
   async headers() {
     return [

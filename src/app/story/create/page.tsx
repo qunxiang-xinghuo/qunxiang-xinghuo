@@ -39,6 +39,9 @@ export default function CreateStoryPage() {
   ]);
   const roleIdCounter = useRef(3);
 
+  const isMounted = useRef(true);
+  useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
   if (!isAuthenticated) return <div className="h-screen bg-xh-primary" />;
 
   const addRole = () => {
@@ -69,9 +72,6 @@ export default function CreateStoryPage() {
     }
     return true;
   };
-
-  const isMounted = useRef(true);
-  useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
 
   const handleSubmit = async () => {
     if (!validateStep(1) || !validateStep(2)) return;

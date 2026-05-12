@@ -44,21 +44,15 @@ export default function HomePage() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  // v8.0-login-fix: 页面级认证门禁
-  if (!isAuthenticated) {
-    return <div className="h-screen bg-xh-primary" />;
-  }
-
-  // 加载 Top3 火花 + 知乎热榜
   const isMountedRef = useRef(true);
   useEffect(() => {
+    if (!isAuthenticated) return;
     isMountedRef.current = true;
     const ctrl = new AbortController();
 
     async function init() {
       try {
         setLoadError(false);
-        // 并行加载
         const [sparksRes, hotRes] = await Promise.all([
           fetch('/api/sparks/top?limit=3', { signal: ctrl.signal }),
           fetch('/api/zhihu/hot-list?limit=3', { signal: ctrl.signal }),
@@ -92,7 +86,11 @@ export default function HomePage() {
       isMountedRef.current = false;
       ctrl.abort();
     };
-  }, []);
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
 
   // 一键发布到知乎圈子
   const handlePublish = async () => {

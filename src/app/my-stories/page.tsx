@@ -50,11 +50,8 @@ function MyStoriesContent() {
   const [mounted, setMounted] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  if (!isAuthenticated) return <div className="h-screen bg-xh-primary" />;
-
   useEffect(() => { setMounted(true); }, []);
 
-  // URL tab 变化时同步
   useEffect(() => {
     if (urlTab && (urlTab === 'participated' || urlTab === 'created')) {
       setTab(urlTab);
@@ -64,7 +61,6 @@ function MyStoriesContent() {
   const abortRef = useRef<AbortController | null>(null);
 
   const loadStories = useCallback(async () => {
-    // 取消之前的请求
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
     setLoading(true);
@@ -81,9 +77,12 @@ function MyStoriesContent() {
   }, [tab]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     loadStories();
     return () => { if (abortRef.current) abortRef.current.abort(); };
-  }, [loadStories]);
+  }, [loadStories, isAuthenticated]);
+
+  if (!isAuthenticated) return <div className="h-screen bg-xh-primary" />;
 
   const handleTabChange = (newTab: TabType) => {
     setTab(newTab);

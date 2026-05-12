@@ -65,16 +65,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
-  if (!isAuthenticated) {
-    return <div className="h-screen bg-xh-primary" />;
-  }
-
-  // 弹窗控制
   const [showUsernameModal, setShowUsernameModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-
-  // 用户名编辑
   const [usernameValue, setUsernameValue] = useState('');
 
   // 密码
@@ -90,7 +82,7 @@ export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
-  useEffect(() => { loadUser(); }, []);
+  useEffect(() => { if (isAuthenticated) loadUser(); }, [isAuthenticated]);
 
   useEffect(() => {
     if (toast) {
@@ -240,6 +232,10 @@ export default function SettingsPage() {
       setSaving(false);
     }
   }, [oldPassword, newPassword, confirmPassword]);
+
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
 
   if (loading) {
     return (

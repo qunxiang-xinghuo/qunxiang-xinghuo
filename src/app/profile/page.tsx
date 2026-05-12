@@ -73,12 +73,7 @@ export default function ProfilePage() {
   const [loadError, setLoadError] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // v8.0-login-fix: 页面级认证门禁 — 未登录返回空白页
-  if (!isAuthenticated) {
-    return <div className="h-screen bg-xh-primary" />;
-  }
-
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { if (isAuthenticated) setMounted(true); }, [isAuthenticated]);
 
   // 从 API 加载最新用户信息
   async function loadUserFromApi() {
@@ -103,7 +98,7 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    // 先从 localStorage 读取显示
+    if (!isAuthenticated) return;
     const raw = localStorage.getItem('xh_user');
     if (raw) {
       try {
@@ -115,10 +110,12 @@ export default function ProfilePage() {
       }
     }
     setPageLoading(false);
-
-    // 然后从 API 刷新最新数据
     loadUserFromApi();
-  }, [router]);
+  }, [router, isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
 
   if (pageLoading) {
     return (

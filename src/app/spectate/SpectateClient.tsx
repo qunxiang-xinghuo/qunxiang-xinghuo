@@ -40,12 +40,8 @@ export default function SpectatePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // v8.0-login-fix: 统一认证门禁
-  if (!isAuthenticated) {
-    return <div className="h-screen bg-xh-primary" />;
-  }
-
   useEffect(() => {
+    if (!isAuthenticated) return;
     async function load() {
       try {
         const res = await fetch('/api/rooms/public');
@@ -64,7 +60,11 @@ export default function SpectatePage() {
       }
     }
     load();
-  }, []);
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
 
   const handleEnterRoom = async (roomId: string) => {
     // 先以观众身份加入房间

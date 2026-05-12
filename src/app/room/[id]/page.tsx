@@ -63,6 +63,8 @@ export default function RoomPage() {
   const [commentDeletingId, setCommentDeletingId] = useState<string | null>(null);
   const [commentsLoading, setCommentsLoading] = useState(true);
 
+  const [participantImages, setParticipantImages] = useState<Record<string, string>>({});
+
   // AI 催化
   const [aiPrompt, setAiPrompt] = useState('');
   const [showAiPrompt, setShowAiPrompt] = useState(false);
@@ -73,6 +75,8 @@ export default function RoomPage() {
   // 交互优化状态
   const [openingInfoCollapsed, setOpeningInfoCollapsed] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
+
+  const [publishingSpark, setPublishingSpark] = useState(false);
 
   // v8.5: 邀请房间超时弹窗
   const [inviteCountdown, setInviteCountdown] = useState(120); // 2分钟 = 120秒
@@ -178,6 +182,12 @@ export default function RoomPage() {
 
           // 找到自己的角色
           if (room.participants && Array.isArray(room.participants)) {
+            const imgMap: Record<string, string> = {};
+            for (const p of room.participants) {
+              if (p.user?.image) imgMap[p.user.id] = p.user.image;
+            }
+            setParticipantImages(imgMap);
+
             const me = room.participants.find((p: any) => p.userId === userId);
             if (me) {
               setMyRoleName(me.identity || '我');
@@ -601,6 +611,36 @@ export default function RoomPage() {
   const displayTitle = story?.title || brainholeTitle || (hasBrainhole ? '自由对话' : '对白室');
   const displaySubtitle = story?.eraBackground || brainholeScenario || (roomType === 'invite_duet' && !hasBrainhole ? '你们的话题由对话自然生发' : '');
 
+  const handlePublishSpark = useCallback(async () => {
+    if (publishingSpark || messages.length === 0) return;
+    setPublishingSpark(true);
+    try {
+      const recentMessages = messages.slice(-10);
+      const lines = recentMessages.map((m) =>
+        `${m.identity || '?'}: ${m.content}`
+      ).join('\n');
+
+      const title = displayTitle.slice(0, 30);
+      const content = `【群像星火--火花】【测试】\n${title}\n\n${lines}`;
+
+      const res = await fetch('/api/zhihu/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `群像星火·火花：${title}`,
+          content,
+          ringId: '2029619126742656657',
+        }),
+      });
+      const data = await res.json();
+      alert(data.status === 0 ? '火花已发布到知乎圈子！' : (data.msg || '发布失败'));
+    } catch {
+      alert('网络异常，发布失败');
+    } finally {
+      setPublishingSpark(false);
+    }
+  }, [publishingSpark, messages, displayTitle]);
+
   if (roomError) {
     return (
       <div className="flex flex-col h-full items-center justify-center page-gradient px-6">
@@ -800,8 +840,8 @@ export default function RoomPage() {
               <div className={`flex-shrink-0 ${isMe ? 'ml-2' : 'mr-2'}`}>
                 {isMe ? (
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#8a9ab0]/20 to-[#6c7c90]/20 border border-[#8a9ab0]/20 flex items-center justify-center overflow-hidden">
-                    {authUser?.avatar ? (
-                      <Image src={authUser.avatar} alt="" width={32} height={32} className="object-cover" />
+                    {(authUser?.avatar || participantImages[msg.userId]) ? (
+                      <img src={authUser?.avatar || participantImages[msg.userId]} alt="" width={32} height={32} className="object-cover" />
                     ) : (
                       <span className="text-xs text-[#8a9ab0] font-bold">{myRoleName.charAt(0) || '我'}</span>
                     )}
@@ -810,6 +850,8 @@ export default function RoomPage() {
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center border overflow-hidden ${isAi ? 'bg-gradient-to-br from-emerald-500/10 to-green-500/10 border-emerald-500/20' : 'bg-gradient-to-br from-[#74b9ff]/10 to-blue-500/10 border-[#74b9ff]/20'}`}>
                     {isAi ? (
                       <Image src="/liukanshan.jpg" alt="刘看山" width={32} height={32} className="object-cover" />
+                    ) : participantImages[msg.userId] ? (
+                      <img src={participantImages[msg.userId]} alt="" width={32} height={32} className="object-cover" />
                     ) : (
                       <span className={`text-xs font-bold ${isAi ? 'text-emerald-400' : 'text-[#74b9ff]'}`}>{(msg.identity || '对').charAt(0)}</span>
                     )}
@@ -915,6 +957,20 @@ export default function RoomPage() {
               {finishing ? '保存中...' : '🏁 谢幕'}
             </button>
             <span className="text-[10px] text-white/15">{messages.length} 条消息</span>
+          </div>
+          <div className="mb-2 px-1">
+            <button
+              onClick={handlePublishSpark}
+              disabled={publishingSpark || messages.length === 0}
+              className={`flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                publishingSpark
+                  ? 'bg-[#D4B830]/5 text-[#D4B830]/30 border-[#D4B830]/10 cursor-wait'
+                  : 'bg-[#D4B830]/5 text-[#D4B830]/60 border-[#D4B830]/15 hover:bg-[#D4B830]/10'
+              }`}
+            >
+              <Flame className="w-3 h-3" />
+              {publishingSpark ? '发布中...' : '发布火花'}
+            </button>
           </div>
           <div className="flex items-end gap-2">
             <div className="flex-1 bg-white/[0.05] rounded-2xl border border-white/10 px-4 py-2.5 focus-within:border-[#3B82F6]/30 transition-colors">

@@ -48,10 +48,6 @@ export default function SparksPage() {
   const [guestId, setGuestId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  if (!isAuthenticated) {
-    return <div className="h-screen bg-xh-primary" />;
-  }
-
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
@@ -78,6 +74,10 @@ export default function SparksPage() {
   useEffect(() => {
     loadSparks();
   }, [loadSparks]);
+
+  if (!isAuthenticated) {
+    return <div className="h-screen bg-xh-primary" />;
+  }
 
   const toggleLike = async (spark: Spark) => {
     if (likeLoadingId === spark.id) return;

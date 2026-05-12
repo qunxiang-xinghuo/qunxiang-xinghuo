@@ -201,6 +201,7 @@ export const authOptions: NextAuthOptions = {
         session.user.sparkCount = (token.sparkCount as number) ?? 0;
         session.user.username = token.username as string | null;
         session.user.isAdmin = (token.isAdmin as boolean) ?? false;
+        session.user.image = (token.picture as string | null) ?? (token.image as string | null) ?? null;
       }
       return session;
     },

@@ -39,11 +39,10 @@ export default function StoryHallPage() {
     return '现代';
   };
 
-  if (!isAuthenticated) return <div className="h-screen bg-xh-primary" />;
-
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     setLoadError(false);
     fetch('/api/stories')
       .then((r) => {
@@ -60,7 +59,7 @@ export default function StoryHallPage() {
         setLoadError(true);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (activeCategory === '全部') {
@@ -69,6 +68,8 @@ export default function StoryHallPage() {
       setFilteredStories(stories.filter((s) => getCategory(s.eraBackground) === activeCategory));
     }
   }, [activeCategory, stories]);
+
+  if (!isAuthenticated) return <div className="h-screen bg-xh-primary" />;
 
   return (
     <div className="flex flex-col min-h-full page-gradient">
