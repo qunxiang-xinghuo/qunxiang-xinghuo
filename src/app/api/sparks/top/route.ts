@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
     const limit = Number.isNaN(rawLimit) ? 3 : Math.min(Math.max(rawLimit, 1), 10);
 
     let assets = await prisma.asset.findMany({
-      where: { 
-        isPublic: true, 
+      where: {
+        isPublic: true,
         deletedByUser: false,
         brainholeId: { not: null },
       },
@@ -68,6 +68,8 @@ export async function GET(request: NextRequest) {
       return {
         id: a.id,
         brainholeTitle: a.brainhole?.title || a.title || "未命名火花",
+        content: (a.content || a.summary || "").slice(0, 120),
+        summary: a.summary || "",
         identityPair,
         sparkCount: a.sparkCount || 0,
         roomId: a.room?.id || null,
