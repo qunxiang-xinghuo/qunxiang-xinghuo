@@ -18,20 +18,20 @@ const PUBLIC_PATHS = ['/', '/login', '/register', '/admin/login'];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 获取 next-auth JWT token
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET!,
+    secureCookie: (process.env.NEXTAUTH_URL || '').startsWith('https://'),
   });
-
   const isLoggedIn = !!token;
 
-  // v8.0-login-fix: spectate 路由调试（仅开发环境）
-  if (process.env.NODE_ENV === 'development') {
-    if (pathname === '/spectate' || pathname.startsWith('/spectate/')) {
-      console.log('[Middleware-Spectate]', pathname, 'isLoggedIn=', isLoggedIn);
-    }
-    console.log('[Middleware]', pathname, 'isLoggedIn=', isLoggedIn, 'token=', token ? 'yes' : 'no');
+  // 调试日志（生产环境保留，排查跳转回环用）
+  if (pathname.startsWith('/admin')) {
+    const cookieHeader = request.headers.get('cookie');
+    console.log('[Middleware-Admin]', pathname,
+      'isLoggedIn:', isLoggedIn,
+      'hasCookie:', !!cookieHeader,
+      'tokenSub:', token?.sub || token?.id || 'none');
   }
 
   // 已登录用户访问登录页/注册页 → 重定向到首页

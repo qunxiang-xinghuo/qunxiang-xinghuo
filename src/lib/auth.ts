@@ -161,7 +161,7 @@ export const authOptions: NextAuthOptions = {
                 id: user.id,
                 name: user.name || "知乎用户",
                 email: user.email || `${user.id}@zhihu.oauth`,
-                username: user.username || user.name || "知乎用户",
+                username: user.username || user.id,
                 level: 1,
                 sparkCount: 0,
                 isAdmin: false,
