@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
  * 返回 { isAdmin: true, userId: string } 或 { isAdmin: false, userId: null }
  */
 export async function checkAdmin(request: NextRequest): Promise<{ isAdmin: boolean; userId: string | null }> {
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET, secureCookie: false });
   const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
 
   if (!userId) {

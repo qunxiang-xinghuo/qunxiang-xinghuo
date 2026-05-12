@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Trash2, Flame, BookOpen, Shield, Search,
-  AlertTriangle, Clock, Users, Zap, Bot, UserPlus, X, Edit2,
+  AlertTriangle, Clock, Users, Zap, Bot, UserPlus, X, Edit2, LogOut,
 } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 interface RoomItem {
   id: string;
@@ -77,6 +78,20 @@ export default function AdminPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (e) {
+      console.error('[Logout] 后端登出通知失败:', e);
+    }
+    try {
+      await signOut({ redirect: false });
+    } catch (e) {
+      console.error('[Logout] signOut 失败:', e);
+    }
+    router.push('/login');
+  };
 
   // 用户管理弹窗
   const [showUserForm, setShowUserForm] = useState(false);
@@ -226,6 +241,13 @@ export default function AdminPage() {
             <h1 className="text-base font-bold text-[#a8b8c8]">管理员后台</h1>
             <p className="text-[11px] text-white/30">清理与管理</p>
           </div>
+          <button
+            onClick={handleLogout}
+            className="p-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-400 text-white/30 transition-colors"
+            title="退出登录"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
