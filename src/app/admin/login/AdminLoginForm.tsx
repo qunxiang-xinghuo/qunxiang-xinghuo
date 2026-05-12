@@ -41,8 +41,24 @@ export default function AdminLoginForm() {
 
     if (result?.error) {
       setError('管理员账号或密码错误');
-    } else if (result?.ok) {
-      window.location.href = '/admin';
+      return;
+    }
+
+    if (result?.ok) {
+      // 验证 session cookie 已生效再跳转，避免 middleware 看到空 session 导致回环
+      try {
+        const sessionRes = await fetch('/api/auth/session');
+        if (sessionRes.ok) {
+          const session = await sessionRes.json();
+          if (session?.user?.isAdmin) {
+            window.location.href = '/admin';
+            return;
+          }
+        }
+        setError('会话建立失败，请重试');
+      } catch {
+        setError('网络异常，请重试');
+      }
     }
   };
 
