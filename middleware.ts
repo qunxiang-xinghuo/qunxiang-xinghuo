@@ -36,8 +36,8 @@ export async function middleware(request: NextRequest) {
 
   // 已登录用户访问登录页/注册页 → 重定向到首页
   if (isLoggedIn && PUBLIC_PATHS.includes(pathname)) {
-    // console.log('[Middleware] 已登录用户访问', pathname, '→ 重定向到 /home');
-    const response = NextResponse.redirect(new URL('/home', request.url));
+    const redirectTo = pathname === '/admin/login' ? '/admin' : '/home';
+    const response = NextResponse.redirect(new URL(redirectTo, request.url));
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
@@ -46,8 +46,9 @@ export async function middleware(request: NextRequest) {
 
   // 未登录用户访问非公开页面 → 重定向到登录页
   if (!isLoggedIn && !PUBLIC_PATHS.includes(pathname)) {
-    console.log('[Middleware] 未登录用户访问', pathname, '→ 重定向到 /login');
-    const response = NextResponse.redirect(new URL('/login', request.url));
+    const redirectTo = pathname.startsWith('/admin') ? '/admin/login' : '/login';
+    console.log('[Middleware] 未登录用户访问', pathname, '→ 重定向到', redirectTo);
+    const response = NextResponse.redirect(new URL(redirectTo, request.url));
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');

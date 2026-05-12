@@ -56,7 +56,7 @@ export default function AppShell({ children }: AppShellProps) {
     return <BlankScreen />;
   }
 
-  const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/register';
+  const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/register' || pathname === '/admin/login';
 
   if (sessionStatus === 'loading' && !isPublicPage) {
     return <BlankScreen />;
@@ -66,7 +66,7 @@ export default function AppShell({ children }: AppShellProps) {
     return <BlankScreen />;
   }
 
-  const isLoginPage = pathname === '/' || pathname === '/login';
+  const isLoginPage = pathname === '/' || pathname === '/login' || pathname === '/admin/login';
 
   return (
     <div className="h-full w-full max-w-md sm:max-w-lg mx-auto bg-xh-primary relative overflow-hidden flex flex-col">
