@@ -21,6 +21,7 @@
  */
 
 import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers/oauth";
+import { getCallbackParams } from "./callback-store";
 
 export interface ZhihuProfile {
   uid: number;
@@ -94,12 +95,15 @@ export default function ZhihuProvider(
         const { provider, params, checks } = context;
         const redirectUri = `${getBaseUrl()}/api/auth/callback/zhihu`;
 
-        console.log("[Zhihu OAuth] 收到回调 params keys:", Object.keys(params));
-        console.log("[Zhihu OAuth] 完整 params:", JSON.stringify(params));
-        console.log("[Zhihu OAuth] checks:", JSON.stringify(checks));
+        // NextAuth v4 App Router 缺陷: params 可能为空，从拦截层回退
+        const rawParams = getCallbackParams();
+        console.log("[Zhihu OAuth] 收到回调, NextAuth params:", JSON.stringify(params), "raw params:", JSON.stringify(rawParams));
 
-        const code = params.code || (params as any).authorization_code || "";
-        console.log("[Zhihu OAuth] 提取 code:", { code: params.code, authorization_code: (params as any).authorization_code });
+        const code = params.code
+          || (params as any).authorization_code
+          || rawParams.code
+          || rawParams.authorization_code
+          || "";
 
         if (!code) {
           throw new Error("知乎 OAuth 回调缺少 authorization_code 参数");
