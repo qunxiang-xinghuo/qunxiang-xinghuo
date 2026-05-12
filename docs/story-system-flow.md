@@ -1184,5 +1184,72 @@ prisma/seed.ts
 
 ---
 
+---
+
+## 附录I：v9.3-emergency 紧急修复（2026-04-29）
+
+### I.1 火花页为空修复
+
+**根因**：`Asset.isPublic` 默认 `false`，Top3 查询条件 `isPublic: true` 返回空数组
+
+**修复流程**：
+```
+GET /api/sparks/top
+    │
+    ├── 原逻辑：Asset.findMany({ where: { isPublic: true } }) → 空数组
+    │
+    └── 新逻辑：
+            ├── 先查 { isPublic: true } → 有结果？返回
+            └── 无结果？兜底查全部 Asset → 取最近3条
+                → 返回（可能缺少 brainholeTitle/identityPair，但不再为空）
+
+GET /spark-detail/:id
+    │
+    ├── 原逻辑：Asset.findFirst({ where: { id, isPublic: true } }) → 空 → notFound() → 空白页
+    │
+    └── 新逻辑：
+            ├── 查到 Asset → 正常渲染
+            └── 查不到 → 显示 "对白记录正在整理中，请稍后查看"
+```
+
+**生产 SQL**：
+```sql
+UPDATE Asset SET isPublic = 1 WHERE 1=1;
+```
+
+### I.2 人机创建失败修复
+
+**根因**：卡死 AI 房间阻塞新创建；创建流程复杂易失败；错误 500 无具体信息
+
+**修复流程**：
+```
+POST /api/rooms/ai
+    │
+    ├── 步骤0：暴力清理
+    │       └── db.room.updateMany({
+    │               where: { type: 'ai_duet', status: 'active' },
+    │               data: { status: 'closed', closedAt: new Date() }
+    │           })
+    │
+    ├── 步骤1：无脑新建（不再检查旧房间）
+    │       └── db.$transaction → room.create({ status: 'active', isAiRoom: true })
+    │           → participant.create(用户)
+    │           → participant.create(AI Agent)
+    │           → roomMessage.create(欢迎语)
+    │
+    └── 步骤2：兜底报错
+            ├── 成功 → 返回 roomId
+            └── 失败 → console.error(完整错误: 类型/消息/代码/堆栈/Prisma meta)
+                    → 返回 "创建失败：xxx。请找开发人员查看服务器日志。"
+```
+
+**生产 SQL**：
+```sql
+UPDATE Room SET status = 'closed', closedAt = datetime('now')
+WHERE type = 'ai_duet' AND status = 'active';
+```
+
+---
+
 > 文档位置：`docs/story-system-flow.md`  
-> 最后更新：2026-04-29 v8.5 邀请机制修复完成 ✅
+> 最后更新：2026-04-29 v9.3-emergency 紧急修复完成 ✅
