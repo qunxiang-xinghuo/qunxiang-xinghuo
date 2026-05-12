@@ -168,7 +168,7 @@ export default function ZhihuProvider(
           ? profile.email
           : `${uidStr}@zhihu.oauth`, // 未授权 email 时用占位符
         image: profile.avatar_path || null,
-        username: profile.fullname || `zhihu_${uidStr}`,
+        username: `zhihu_${uidStr}`, // v9.5-fix: 使用唯一 uid 避免 username 冲突
         level: 1,
         sparkCount: 0,
         isAdmin: false,
@@ -179,7 +179,8 @@ export default function ZhihuProvider(
       bg: "#0066FF",
       text: "#FFFFFF",
     },
-    checks: ["state"],
     ...options,
+    // v9.5-fix: 知乎授权回调不回传 state 参数，关闭 CSRF state 校验
+    checks: [],
   };
 }

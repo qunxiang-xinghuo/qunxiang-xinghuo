@@ -13,7 +13,7 @@ import { getToken } from 'next-auth/jwt';
  */
 
 // 公开路由：不需要登录即可访问
-const PUBLIC_PATHS = ['/', '/login', '/register'];
+const PUBLIC_PATHS = ['/', '/login', '/register', '/admin/login'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -7,7 +7,6 @@ import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
-// v6.0 装饰性透明泡泡配置
 const DECORATIVE_BUBBLES = [
   { size: 44, left: '72%', delay: 0, duration: 9, sway: 14 },
   { size: 28, left: '85%', delay: 1.5, duration: 11, sway: 10 },
@@ -30,21 +29,18 @@ export default function LoginForm() {
   useEffect(() => {
     setWindowHeight(window.innerHeight);
     setMounted(true);
-    // 清除旧残留数据
     localStorage.removeItem('xh_user');
     localStorage.removeItem('xh_identity');
     localStorage.removeItem('xh_user_id');
     sessionStorage.clear();
   }, []);
 
-  // 已登录自动跳转
   useEffect(() => {
     if (status === 'authenticated') {
       router.push('/home');
     }
   }, [status, router]);
 
-  // 检测 OAuth 回调错误
   useEffect(() => {
     const err = searchParams.get('error');
     if (err) {
@@ -64,14 +60,12 @@ export default function LoginForm() {
 
   return (
     <div className="flex flex-col h-full page-gradient relative overflow-hidden">
-      {/* ====== 装饰背景光斑 ====== */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-12 left-8 w-16 h-16 rounded-full bg-[#3B82F6]/8 blur-xl" />
         <div className="absolute top-32 right-6 w-20 h-20 rounded-full bg-[#74b9ff]/8 blur-xl" />
         <div className="absolute bottom-40 left-12 w-14 h-14 rounded-full bg-[#3B82F6]/4 blur-lg" />
       </div>
 
-      {/* ====== 右下角装饰性透明泡泡 ====== */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {DECORATIVE_BUBBLES.map((b, i) => (
           <motion.div
@@ -110,7 +104,6 @@ export default function LoginForm() {
               },
             }}
           >
-            {/* 高光点 */}
             <div
               className="absolute rounded-full"
               style={{
@@ -122,7 +115,6 @@ export default function LoginForm() {
                 transform: 'rotate(-30deg)',
               }}
             />
-            {/* 底部微折射 */}
             <div
               className="absolute rounded-full"
               style={{
@@ -138,7 +130,6 @@ export default function LoginForm() {
         ))}
       </div>
 
-      {/* ====== 项目简介 ====== */}
       <div className="pt-20 pb-6 px-6 text-center relative z-10">
         <motion.div
           initial={mounted ? { y: -20, opacity: 0 } : false}
@@ -169,7 +160,6 @@ export default function LoginForm() {
         </motion.p>
       </div>
 
-      {/* ====== 知乎登录 ====== */}
       <motion.div
         initial={mounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
@@ -207,7 +197,7 @@ export default function LoginForm() {
       </motion.div>
 
       <div className="px-6 pb-6 text-center relative z-10">
-        <p className="text-[10px] text-[#64748b]">群像·星火 · v9.4</p>
+        <p className="text-[10px] text-[#64748b]">群像·星火 · v9.5</p>
       </div>
     </div>
   );

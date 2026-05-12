@@ -1,4 +1,6 @@
 import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { compare } from "bcryptjs";
 import { db } from "./db";
 import ZhihuProvider from "./auth/zhihu-provider";
 
@@ -92,10 +94,48 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
   providers: [
-    // v9.4: 仅支持知乎 OAuth 登录
     ZhihuProvider({
       clientId: process.env.ZHIHU_APP_ID || "",
       clientSecret: process.env.ZHIHU_APP_KEY || "",
+    }),
+    CredentialsProvider({
+      id: "admin",
+      name: "管理员",
+      credentials: {
+        username: { label: "用户名", type: "text" },
+        password: { label: "密码", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.username || !credentials?.password) {
+          return null;
+        }
+
+        const user = await db.user.findFirst({
+          where: { username: credentials.username },
+        });
+
+        if (!user || !user.password) {
+          console.log("[Admin Login] 用户不存在或无密码:", credentials.username);
+          return null;
+        }
+
+        const isValid = await compare(credentials.password, user.password);
+        if (!isValid) {
+          console.log("[Admin Login] 密码错误:", credentials.username);
+          return null;
+        }
+
+        console.log("[Admin Login] 登录成功:", user.username, "isAdmin:", user.isAdmin);
+        return {
+          id: user.id,
+          name: user.name || user.username,
+          email: user.email,
+          username: user.username,
+          level: user.level,
+          sparkCount: user.sparkCount,
+          isAdmin: user.isAdmin,
+        };
+      },
     }),
   ],
   callbacks: {
@@ -110,7 +150,7 @@ export const authOptions: NextAuthOptions = {
                 id: user.id,
                 name: user.name || "知乎用户",
                 email: user.email || `${user.id}@zhihu.oauth`,
-                username: (user as any).username || user.name || "知乎用户",
+                username: user.username || user.name || "知乎用户",
                 level: 1,
                 sparkCount: 0,
                 isAdmin: false,

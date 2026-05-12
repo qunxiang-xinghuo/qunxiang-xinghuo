@@ -1,12 +1,6 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { db } from "../src/lib/db";
 import bcrypt from "bcryptjs";
-
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL || "file:./dev.db",
-});
-const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("开始初始化数据库种子数据...");
@@ -42,7 +36,7 @@ async function main() {
 
   console.log("创建标签...");
   for (const tag of tags) {
-    await prisma.tag.upsert({
+    await db.tag.upsert({
       where: { name: tag.name },
       update: {},
       create: tag,
@@ -69,7 +63,7 @@ async function main() {
 
   const createdUsers = [];
   for (const userData of users) {
-    const user = await prisma.user.upsert({
+    const user = await db.user.upsert({
       where: { email: userData.email },
       update: {},
       create: userData,
@@ -80,12 +74,12 @@ async function main() {
 
   // 2.5 创建后台管理员用户（从环境变量读取）
   const adminUsername = process.env.BACKEND_ADMIN;
-  const adminPassword = process.env.BACKEND_ADMIN_PAASSWORD;
+  const adminPassword = process.env.BACKEND_ADMIN_PASSWORD;
   if (adminUsername && adminPassword) {
     console.log("创建后台管理员用户...");
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
     const adminEmail = `${adminUsername}@admin.local`;
-    const adminUser = await prisma.user.upsert({
+    const adminUser = await db.user.upsert({
       where: { email: adminEmail },
       update: {
         name: adminUsername,
@@ -105,7 +99,7 @@ async function main() {
     });
     console.log(`管理员用户已创建/更新: ${adminUser.username} (isAdmin=${adminUser.isAdmin})`);
   } else {
-    console.log("未设置 BACKEND_ADMIN / BACKEND_ADMIN_PAASSWORD 环境变量，跳过管理员创建");
+    console.log("未设置 BACKEND_ADMIN / BACKEND_ADMIN_PASSWORD 环境变量，跳过管理员创建");
   }
 
   // 3. 创建用户身份
@@ -118,7 +112,7 @@ async function main() {
   ];
 
   for (const identity of identities) {
-    await prisma.userIdentity.upsert({
+    await db.userIdentity.upsert({
       where: {
         userId_label: {
           userId: identity.userId,
@@ -628,27 +622,35 @@ async function main() {
     // 根据分类自动设置泡泡颜色
     const bubbleColor = categoryColors[brainhole.category as string] || categoryColors.general;
     
-    const createdBrainhole = await prisma.brainhole.create({
-      data: {
-        ...brainhole,
-        bubbleColor,
-      },
+    const existingBrainhole = await db.brainhole.findFirst({
+      where: { title: brainhole.title },
     });
 
-    // 关联标签
-    if (tagNames && tagNames.length > 0) {
-      for (const tagName of tagNames) {
-        const tag = await prisma.tag.findUnique({
-          where: { name: tagName },
-        });
+    let createdBrainhole;
+    if (existingBrainhole) {
+      createdBrainhole = existingBrainhole;
+    } else {
+      createdBrainhole = await db.brainhole.create({
+        data: {
+          ...brainhole,
+          bubbleColor,
+        },
+      });
 
-        if (tag) {
-          await prisma.brainholeTag.create({
-            data: {
-              brainholeId: createdBrainhole.id,
-              tagId: tag.id,
-            },
+      if (tagNames && tagNames.length > 0) {
+        for (const tagName of tagNames) {
+          const tag = await db.tag.findUnique({
+            where: { name: tagName },
           });
+
+          if (tag) {
+            await db.brainholeTag.create({
+              data: {
+                brainholeId: createdBrainhole.id,
+                tagId: tag.id,
+              },
+            });
+          }
         }
       }
     }
@@ -667,7 +669,7 @@ async function main() {
   ];
 
   for (const collection of collections) {
-    await prisma.brainholeCollection.upsert({
+    await db.brainholeCollection.upsert({
       where: {
         userId_brainholeId: {
           userId: collection.userId,
@@ -719,12 +721,21 @@ async function main() {
     },
   ];
 
+  let createdReactions = 0;
   for (const reaction of reactions) {
-    await prisma.reaction.create({
-      data: reaction,
+    const existing = await db.reaction.findFirst({
+      where: {
+        userId: reaction.userId,
+        brainholeId: reaction.brainholeId,
+        content: reaction.content,
+      },
     });
+    if (!existing) {
+      await db.reaction.create({ data: reaction });
+      createdReactions++;
+    }
   }
-  console.log(`创建了 ${reactions.length} 个反应记录`);
+  console.log(`创建了 ${createdReactions} 个反应记录（跳过已存在的）`);
 
   console.log("数据库种子数据初始化完成！");
   console.log("总结：");
@@ -743,5 +754,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await db.$disconnect();
   });

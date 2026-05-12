@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db } from "../src/lib/db";
 
 const stories = [
   {
@@ -138,6 +138,16 @@ async function main() {
 
   for (const story of stories) {
     const { roles, ...storyData } = story;
+
+    const existing = await db.story.findFirst({
+      where: { title: storyData.title },
+    });
+
+    if (existing) {
+      console.log(`[Seed] 故事已存在，跳过: ${storyData.title}`);
+      continue;
+    }
+
     const created = await db.story.create({
       data: {
         ...storyData,
