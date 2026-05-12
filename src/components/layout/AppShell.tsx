@@ -2,7 +2,6 @@
 
 import { ReactNode, Component, ErrorInfo } from 'react';
 import { usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import MobileContainer from './MobileContainer';
 import BottomNav from './BottomNav';
 
@@ -42,28 +41,15 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-function BlankScreen() {
-  return (
-    <div className="h-full w-full max-w-md sm:max-w-lg mx-auto bg-xh-primary relative overflow-hidden" />
-  );
-}
-
+/**
+ * AppShell: 纯布局组件，不包含认证逻辑
+ * 认证统一由 middleware.ts 在路由层处理
+ */
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const { status: sessionStatus } = useSession();
 
   if (!pathname) {
-    return <BlankScreen />;
-  }
-
-  const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/register' || pathname === '/admin/login';
-
-  if (sessionStatus === 'loading' && !isPublicPage) {
-    return <BlankScreen />;
-  }
-
-  if (sessionStatus === 'unauthenticated' && !isPublicPage) {
-    return <BlankScreen />;
+    return <div className="h-full w-full max-w-md sm:max-w-lg mx-auto bg-xh-primary relative overflow-hidden" />;
   }
 
   const isLoginPage = pathname === '/' || pathname === '/login' || pathname === '/admin/login';
