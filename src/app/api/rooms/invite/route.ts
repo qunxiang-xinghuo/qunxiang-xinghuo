@@ -55,9 +55,10 @@ export async function POST(request: NextRequest) {
     try {
       // v8.5-fix: email 去除特殊字符，避免格式错误
       const safeEmail = `${effectiveUserId.replace(/[^a-zA-Z0-9_-]/g, '')}@guest.local`;
+      // v9.5a-fix: 不覆盖用户 name（identity 用于房间内角色扮演，不应改变用户真实姓名）
       await db.user.upsert({
         where: { id: effectiveUserId },
-        update: { name: identity },
+        update: {},
         create: { id: effectiveUserId, name: identity, email: safeEmail },
       });
     } catch (userErr: any) {

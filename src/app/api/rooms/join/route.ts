@@ -66,9 +66,10 @@ export async function POST(request: NextRequest) {
 
     // 3. 确保用户存在（upsert）
     const safeEmail = `${effectiveUserId.replace(/[^a-zA-Z0-9_-]/g, '')}@guest.local`;
+    // v9.5a-fix: 不覆盖用户 name（identity 用于房间内角色扮演，不应改变用户真实姓名）
     await db.user.upsert({
       where: { id: effectiveUserId },
-      update: { name: identity.trim() },
+      update: {},
       create: { id: effectiveUserId, name: identity.trim(), email: safeEmail },
     });
 

@@ -66,9 +66,10 @@ export async function POST(request: NextRequest) {
 
     // 确保用户记录存在
     try {
+      // v9.5a-fix: 不覆盖用户 name（identity 用于房间内角色扮演，不应改变用户真实姓名）
       await db.user.upsert({
         where: { id: userId },
-        update: { name: identity },
+        update: {},
         create: {
           id: userId,
           name: identity,

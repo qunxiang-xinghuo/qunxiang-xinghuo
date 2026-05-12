@@ -31,7 +31,7 @@ export default function RoomPage() {
   const router = useRouter();
   const roomId = params.id as string;
   const { user: authUser } = useAuth();
-  const { isConnected, joinRoom, leaveRoom, sendMessage, on, off, removeAllListeners } = useSocket();
+  const { isConnected, joinRoom, leaveRoom, on, off, removeAllListeners } = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -498,9 +498,8 @@ export default function RoomPage() {
     // 计算包含新消息的总数，避免闭包陈旧状态
     const newMsgCount = messages.length + 1;
     setMessages((prev) => [...prev, msg]);
-    sendMessage(roomId, { id: msgId, senderId: userId || 'me', content, createdAt: new Date().toISOString() });
 
-    // HTTP 保存
+    // HTTP 保存（保存到 DB 后由 broadcastToRoom 实时广播，无需 WebSocket 重复转发）
     try {
       await fetch(`/api/rooms/${roomId}/messages`, {
         method: 'POST',
@@ -513,7 +512,7 @@ export default function RoomPage() {
     if (isAiRoom) {
       generateAIReply(content, newMsgCount);
     }
-  }, [inputValue, roomId, userId, myRoleName, roomStatus, isAiRoom, story, generateAIReply, sendMessage, messages.length]);
+  }, [inputValue, roomId, userId, myRoleName, roomStatus, isAiRoom, story, generateAIReply, messages.length]);
 
   // 评论
   const submitComment = async () => {
