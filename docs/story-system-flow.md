@@ -6,6 +6,8 @@
 > **v9.0e 更新**：所有核心CTA按钮统一为蓝色 `#3B82F6`，次按钮为蓝色描边；黄色专用于火花/图标/激活态，形成「蓝按钮 + 黄图标」语义分层
 > **v9.0f 更新**：PPT蓝白风全局配色优化——登录/注册页全面重配色（火花标志金色、文字层级清晰）、全局背景微调为 `#0a1628`、全站交互元素（焦点环/caret/spinner/hover）统一蓝色、关键页面标题/图标提亮
 > **v9.1 更新**：故事系统"好玩化"改造——卡片以悬念开场、角色emoji+黄色选中反馈、对白室"帷幕/谢幕"戏剧化文案、起承转合标签改为"开场/发展/转折/真相"、创作闭环引导
+> **v9.4 更新**：仅保留知乎 OAuth 登录，移除用户名密码注册
+> **v9.5 更新**：首页改版——知乎用户欢迎区 + 火花卡片墙 + 知乎热榜灵感 + 一键发布到知乎圈子
 
 ---
 
@@ -300,58 +302,65 @@ flowchart TD
 
 ## 附录B：认证系统架构
 
-### B.1 登录流程
+### B.1 登录流程（v9.4 知乎 OAuth）
 
 ```
-用户输入用户名/密码
+用户点击「知乎账号登录」
     │
     ▼
-LoginForm.tsx → signIn('credentials', { username, password })
+GET https://openapi.zhihu.com/authorize
+    ?app_id={ZHIHU_APP_ID}
+    &redirect_uri={NEXTAUTH_URL}/api/auth/callback/zhihu
+    &response_type=code
     │
     ▼
-/api/auth/[...nextauth] → NextAuth(authOptions)
+用户在知乎完成授权 → 回调到
+{redirect_uri}?code={authorization_code}
     │
     ▼
-CredentialsProvider.authorize(credentials)
-    │
-    ├── 1. db.user.findFirst({ where: { OR: [{ username }, { email }] } })
-    │   └── 数据库查询
-    │
-    ├── 2. bcrypt.compare(password, user.password)
-    │   └── 密码验证
-    │
-    └── 3. 返回 { id, name, email, username, level, sparkCount }
+/api/auth/[...nextauth] → ZhihuProvider.token.request()
     │
     ▼
-JWT 签名（使用 NEXTAUTH_SECRET）
+POST https://openapi.zhihu.com/access_token
+    Body: app_id=xxx&app_key=xxx&grant_type=authorization_code
+          &redirect_uri=xxx&code=xxx
     │
     ▼
-设置 next-auth.session-token cookie
+获取 access_token → ZhihuProvider.userinfo.request()
     │
     ▼
-LoginForm 获取成功 → fetch('/api/users/me')
+GET https://openapi.zhihu.com/user
+    Header: Authorization: Bearer {access_token}
+    返回: { uid, fullname, avatar_path, email, ... }
     │
     ▼
-/api/users/me → getToken({ req, secret: NEXTAUTH_SECRET })
+profile() 映射为 next-auth User
+    id: "zhihu_{uid}", name: fullname, image: avatar_path
     │
     ▼
-返回用户数据 → 存储到 localStorage
+signIn callback → db.user.upsert()
+    不存在 → db.user.create({ id, name, email, level:1, sparkCount:0 })
+    存在   → 更新 name/image
     │
     ▼
-router.push('/home')
+JWT 签名 → 设置 cookie → 跳转 /home
 ```
 
-### B.2 关键组件关系
+### B.2 关键组件关系（v9.4）
 
 ```
 next-auth v4.24.14
     │
-    ├── CredentialsProvider → 自定义用户名/密码验证
-    │   ├── db.user.findFirst
-    │   └── bcrypt.compare
+    ├── ZhihuProvider → 知乎 OAuth 2.0
+    │   ├── authorization: openapi.zhihu.com/authorize
+    │   ├── token: openapi.zhihu.com/access_token
+    │   ├── userinfo: openapi.zhihu.com/user
+    │   └── profile(): 映射 uid/fullname/avatar_path
     │
     ├── JWT strategy → 不依赖数据库存储 session
     │   └── 不需要 PrismaAdapter
+    │
+    ├── callbacks.signIn → 自动创建/更新数据库用户
     │
     ├── callbacks.jwt → 将 level/sparkCount/username 写入 token
     │
@@ -450,56 +459,115 @@ AI 判断当前幕（根据 messages.length）
   - **story_fallback（船工）**："我爹今晚去了天妃宫...但我觉得，他走路的姿势，不像去祭祀的样子。"
   - **assistant_director**："导演，这一场如果设定在黄昏的码头，可能会让船工和密探的对话更有张力。你觉得呢？"
 
-### B.5 发现页模式入口（更新后）
+### B.5a 一键发布到知乎圈子流程（v9.5 新增）
 
 ```
-发现页 /home 四大模式：
-┌─────────────┬─────────────┐
-│ 和刘看山对话 │ 双人对白模式 │
-│ /solo-match │ /duo-match  │
-├─────────────┼─────────────┤
-│  多人模式   │  观看模式   │
-│ /multiplayer│ /spectate   │
-└─────────────┴─────────────┘
+用户点击「发布到知乎圈子」
+    │
+    ▼
+弹出 Modal（标题 + 内容输入框）
+    │
+    ▼
+用户填写 → 点击「确认发布」
+    │
+    ▼
+POST /api/zhihu/publish
+    Body: { title, content, imageUrls?, ringId? }
+    │
+    ▼
+zhihu-api.ts 的 publishPin()
+    │
+    ├── buildAuthHeaders() → HMAC-SHA256 签名
+    │   签名串: app_key:{key}|ts:{timestamp}|logid:{logid}|extra_info:
+    │   密钥: ZHIHU_RING_APP_SECRET
+    │
+    └── POST https://openapi.zhihu.com/openapi/publish/pin
+        Body: { title, content, image_urls, ring_id }
+    │
+    ▼
+返回 { status, msg, data: { content_token } }
+    │
+    ▼
+前端显示「发布成功」Toast
+```
+
+**限速**: 每小时最多 5 条想法
+**圈子ID**: 2001009660925334090 (OpenClaw 人类观察员)
+
+---
+
+### B.5 发现页模式入口（v9.5 更新后）
+
+```
+发现页 /home 布局：
+┌─────────────────────────────┐
+│  [头像] 知乎用户名      🔥3  │  ← 知乎用户欢迎区
+│  欢迎回到群像·星火            │
+├─────────────────────────────┤
+│ ✨ 今日最热火花      查看更多→│
+│ ┌─────────┐ ┌─────────┐    │
+│ │TOP 1    │ │TOP 2    │    │  ← 横向滑动火花卡片
+│ │内容摘要..│ │内容摘要..│    │
+│ │身份A×B 🔥5│ │身份C×D 🔥3│    │
+│ └─────────┘ └─────────┘    │
+├─────────────────────────────┤
+│ 🔥 知乎热榜·灵感              │
+│ 1  如何看待xxx...     ⚡     │
+│ 2  为什么xxx...       ⚡     │
+│ 3  怎么理解xxx...     ⚡     │
+├─────────────────────────────┤
+│ 📜 我的故事              →    │
+│ 🌐 发布到知乎圈子        →    │  ← 一键发布入口
+├─────────────────────────────┤
+│ 选择模式                      │
+│ [AI对话]  [双人]             │  ← 四大模式入口
+│ [多人]    [围观]             │
+└─────────────────────────────┘
 
 底部导航「故事」tab → /story-hall（故事大厅）
 ```
 
-### B.4 登录流程完整时序（含 cookie 修复后）
+### B.4 登录流程完整时序（知乎 OAuth）
 
 ```
-用户输入用户名/密码
+用户点击「知乎账号登录」
     │
     ▼
-LoginForm.tsx → signIn('credentials', { username, password, redirect: false })
+LoginForm.tsx → signIn('zhihu', { callbackUrl: '/home' })
     │
     ▼
-/api/auth/[...nextauth] → CredentialsProvider.authorize(credentials)
+浏览器跳转 → https://openapi.zhihu.com/authorize?app_id=xxx...
     │
-    ├── db.user.findFirst → 查找用户
-    ├── bcrypt.compare → 验证密码
-    └── 返回 { id, name, email, username, level, sparkCount }
+    ▼
+用户确认授权 → 回调 /api/auth/callback/zhihu?code=xxx
+    │
+    ▼
+/api/auth/[...nextauth] → ZhihuProvider
+    │
+    ├── token.request() → POST /access_token → 获取 access_token
+    ├── userinfo.request() → GET /user → { uid, fullname, avatar_path }
+    └── profile() → { id: "zhihu_xxx", name, image }
+    │
+    ▼
+callbacks.signIn → db.user.upsert({ id, name, email, level:1, sparkCount:0 })
     │
     ▼
 JWT 签名 + 设置 cookie（secure: false，HTTP 兼容）
     │
     ▼
-LoginForm 获取成功 → fetch('/api/users/me')
+浏览器跳转 /home
     │
     ▼
-浏览器发送请求（携带 cookie）→ /api/users/me
+useSession() 获取 { user: { id, name, image, level, sparkCount } }
     │
     ▼
-getToken({ req, secret }) → 验证 JWT → 返回用户数据
-    │
-    ▼
-localStorage.setItem('xh_user', ...) → router.push('/home')
+首页显示知乎用户欢迎区（头像 + 昵称 + 火花数）
 ```
 
 ---
 
 > 文档位置：`docs/story-system-flow.md`
-> 最后更新：2026-05-06 认证系统架构 + cookie 修复补充 ✅
+> 最后更新：2026-05-12 v9.5 知乎 OAuth 登录 + 首页改版 + 一键发布流程更新 ✅
 
 ---
 

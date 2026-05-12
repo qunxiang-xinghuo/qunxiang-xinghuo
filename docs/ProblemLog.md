@@ -1,5 +1,75 @@
 # 群像·星火 — 问题排查记录
 
+## v9.5 首页改版 + 知乎热榜 + 发布到知乎圈子
+
+> 时间：2026-05-12
+> 状态：✅ 已完成，构建 79/79
+
+### 问题一：ZHIHU_APP_KEY 命名冲突
+
+**现象**：OAuth 登录的 `ZHIHU_APP_KEY` 和圈子开放平台的 `ZHIHU_APP_KEY` 同名但值不同
+
+**根因**：两个不同的知乎平台使用了相同的环境变量名
+
+**修复**：圈子平台环境变量重命名为 `ZHIHU_RING_APP_KEY` + `ZHIHU_RING_APP_SECRET`
+
+### 问题二：.env 文件 UTF-16 污染
+
+**现象**：PowerShell `echo` 写入 `.env` 后，dotenv 无法解析新变量
+
+**根因**：PowerShell `echo` 在某些情况下产生 UTF-16 LE 编码输出
+
+**修复**：用 Python 脚本以 UTF-8 编码重新写入
+
+### 问题三：NEXTAUTH_SECRET 长度不足
+
+**现象**：构建报错 `NEXTAUTH_SECRET 未设置或长度不足32字符`
+
+**根因**：用户提供的 `"your-nextauth-secret-key-here-i"` 实际只有 31 个字符
+
+**修复**：补长到 32 位 `"your-nextauth-secret-key-here-ix"`，后续建议用 `openssl rand -base64 32` 生成强密钥
+
+### 问题四：PM2 未加载新 .env
+
+**现象**：服务器修改 `.env` 后，新配置未生效
+
+**根因**：`pm2 restart all` 不会重新加载环境变量文件
+
+**修复**：必须使用 `pm2 restart all --update-env`
+
+---
+
+## v9.4 知乎 OAuth 登录接入
+
+> 时间：2026-05-12
+> 状态：✅ 已完成，构建 79/79
+
+### 问题一：知乎用户信息接口字段不匹配
+
+**现象**：OAuth 登录后获取用户信息失败
+
+**根因**：早期代码使用 `https://api.zhihu.com/me`，字段名为 `id`/`name`/`avatar_url`
+
+**修复**：改为官方文档接口 `https://openapi.zhihu.com/user`，字段映射为 `uid`/`fullname`/`avatar_path`
+
+### 问题二：知乎授权地址错误
+
+**现象**：授权页面 404
+
+**根因**：使用了 `https://www.zhihu.com/oauth2/authorize` 而非官方 `https://openapi.zhihu.com/authorize`
+
+**修复**：更新 authorization.url
+
+### 问题三：知乎 HTTP 200 业务错误
+
+**现象**：接口返回 HTTP 200 但 body 中有 `{code: 401, data: "..."}` 错误
+
+**根因**：知乎开放平台特色：所有接口返回 HTTP 200，错误通过 body 中的 `code` 字段表示
+
+**修复**：新增 `isZhihuError()` 检测，在 token 和 userinfo 请求中增加业务错误检查
+
+---
+
 ## v9.3-emergency 火花页为空 + 人机创建失败 — 紧急修复
 
 > 时间：2026-04-29

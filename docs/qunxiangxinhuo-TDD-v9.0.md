@@ -31,7 +31,9 @@
 | Prisma | `7.8.0` | Client + CLI，`prisma-client` generator |
 | SQLite | `better-sqlite3@12.9.0` | 生产数据库，通过 `@prisma/adapter-better-sqlite3` 适配 |
 | Tailwind CSS | `4.x` | `@tailwindcss/postcss`，无 `tailwind.config.ts`，颜色通过 `@theme inline` 定义 |
-| next-auth | `4.24.14` | JWT + CredentialsProvider 模式 |
+| next-auth | `4.24.14` | JWT + 知乎 OAuth Provider 模式 |
+| zhihu-dev-api | — | 知乎开发者平台（搜索/热榜/直答） |
+| zhihu-api | — | 知乎圈子开放平台（发帖/评论/点赞） |
 | Socket.io | `4.8.3` | Server + Client 双端 |
 | Framer Motion | `12.38.0` | 页面动画 |
 | Zod | `4.3.6` | 请求体验证 |
@@ -75,17 +77,29 @@
 
 ### 1.4 认证体系
 
-- **模式**: JWT + Credentials（用户名/密码）
+- **模式**: JWT + 知乎 OAuth 2.0（仅保留知乎登录，v9.4 移除 CredentialsProvider）
 - **Session**: JWT strategy，maxAge 24h，updateAge 6h
 - **Cookie**: `secure: false`（生产环境使用 HTTP 非 HTTPS）
 - **Guest 用户**: 通过 `localStorage` 的 `xh_user_id` + `x-guest-id` header 传递
+- **知乎 OAuth 流程**: 授权 → 换 token → 获取用户信息 → 自动创建数据库用户
 - **关键修复**: `v8.3-fix` 起所有房间/匹配 API 同时支持 token 和 `x-guest-id` header
+
+### 1.4a 知乎配置（v9.4 新增）
+
+| 环境变量 | 用途 | 获取方式 |
+|----------|------|----------|
+| `ZHIHU_APP_ID` | OAuth 登录 APP ID | 知乎开放平台申请 |
+| `ZHIHU_APP_KEY` | OAuth 登录 APP KEY | 知乎开放平台申请 |
+| `ZHIHU_API_KEY` | 开发者平台 Access Secret | 知乎数据开放平台个人中心 |
+| `ZHIHU_RING_APP_KEY` | 圈子平台用户 token | 知乎个人主页 people/ 后内容 |
+| `ZHIHU_RING_APP_SECRET` | 圈子平台应用密钥 | https://www.zhihu.com/ring/moltbook 申请 |
 
 ### 1.5 AI 服务
 
 - **DeepSeek API**: `deepseek-chat` 模型，15s 超时
-- **知乎直答 API**: `zhida-thinking-1p5` 模型，15s 超时，fallback 用
+- **知乎直答 API**: `zhida-thinking-1p5` / `zhida-fast-1p5` / `zhida-agent` 模型，15s 超时，fallback 用
 - **调用策略**: DeepSeek 优先，失败 fallback 知乎直答，全部失败返回本地 fallback
+- **知乎直答鉴权**: `Authorization: Bearer {ZHIHU_API_KEY}` + `X-Request-Timestamp: 秒级Unix时间戳`
 
 ---
 
@@ -899,9 +913,10 @@ model StoryLike {
 
 | 路由 | 方法 | 功能 |
 |------|------|------|
-| `/api/auth/[...nextauth]` | GET/POST | NextAuth 处理（JWT + Credentials） |
-| `/api/auth/register` | POST | 用户注册（username/email/password） |
+| `/api/auth/[...nextauth]` | GET/POST | NextAuth 处理（JWT + 知乎 OAuth） |
 | `/api/auth/logout` | POST | 设置 `tokenRevokedAt` 使 JWT 失效 |
+
+**v9.4 变更**: 移除 CredentialsProvider 和 `/api/auth/register`，仅保留知乎 OAuth 登录。
 
 ### 4.2 用户 (`/api/users`)
 
@@ -1048,16 +1063,16 @@ model StoryLike {
 
 ### 4.10 知乎联动 (`/api/zhihu`)
 
-| 路由 | 方法 | 功能 |
-|------|------|------|
-| `/api/zhihu/hot-list` | GET | 知乎热榜 |
-| `/api/zhihu/search` | GET | 知乎搜索 |
-| `/api/zhihu/global-search` | GET | 全局搜索 |
-| `/api/zhihu/ring` | GET | 知乎圈儿 |
-| `/api/zhihu/zhida` | POST | 知乎直答对话 |
-| `/api/zhihu/comment` | GET/POST | 评论 |
-| `/api/zhihu/reaction` | GET/POST | 反应 |
-| `/api/zhihu/publish` | POST | 发布 |
+| 路由 | 方法 | 功能 | 鉴权方式 |
+|------|------|------|----------|
+| `/api/zhihu/hot-list` | GET | 知乎热榜 | `ZHIHU_API_KEY` Bearer |
+| `/api/zhihu/search` | GET | 知乎站内搜索 | `ZHIHU_API_KEY` Bearer |
+| `/api/zhihu/global-search` | GET | 全网搜索 | `ZHIHU_API_KEY` Bearer |
+| `/api/zhihu/zhida` | POST | 知乎直答对话 | `ZHIHU_API_KEY` Bearer + Timestamp |
+| `/api/zhihu/publish` | POST | 发布想法到圈子 | `ZHIHU_RING_APP_KEY` HMAC-SHA256 |
+| `/api/zhihu/comment` | POST | 创建评论 | `ZHIHU_RING_APP_KEY` HMAC-SHA256 |
+| `/api/zhihu/reaction` | POST | 点赞/取消点赞 | `ZHIHU_RING_APP_KEY` HMAC-SHA256 |
+| `/api/zhihu/ring` | GET | 圈子详情 | `ZHIHU_RING_APP_KEY` HMAC-SHA256 |
 
 ### 4.11 其他
 
@@ -1081,7 +1096,7 @@ model StoryLike {
 
 | 路由 | 状态 | 功能描述 |
 |------|------|---------|
-| `/home` | ✅ 完整 | 发现页：TOP3火花 + 四大模式入口（AI/双人/多人/围观） |
+| `/home` | ✅ 完整 | 发现页：知乎用户欢迎区 + 火花卡片 + 知乎热榜 + 发布到知乎圈子 + 四大模式入口 |
 | `/login` | ✅ 完整 | 用户名/密码登录 |
 | `/register` | ✅ 完整 | 注册 |
 | `/profile` | ✅ 完整 | 个人中心 |
@@ -1122,11 +1137,12 @@ model StoryLike {
 
 ### 5.2 核心页面详细描述
 
-#### `/home` — 发现页
-- TOP3 最热火花文字列表（极简样式）
-- 四大模式入口卡片：和刘看山对话（AI）、双人对白、多人模式、观看模式
-- "我的故事"快捷入口
-- AI模式一步直达（直接调用 `/api/rooms/ai` POST 创建房间并跳转）
+#### `/home` — 发现页（v9.5 改版）
+- **知乎用户欢迎区**：头像 + 昵称 + 欢迎语 + 火花数徽章
+- **火花卡片墙**：横向滑动卡片，显示 content 摘要、身份对、热度
+- **知乎热榜灵感**：3条实时热榜，点击作为脑洞灵感
+- **我的故事快捷入口** + **发布到知乎圈子入口**（一键发布Modal）
+- **四大模式入口卡片**：和刘看山对话（AI一步直达）、双人对白、多人模式、观看模式
 
 #### `/room/:id` — 对白房间（核心）
 - **v8.5-fix**: fetch 携带 `x-guest-id` header 解决 guest 用户 403 问题

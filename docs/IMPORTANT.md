@@ -1,5 +1,85 @@
 # 群像·星火 — 重要操作记录
 
+## v9.5 首页知乎登录优化 + 火花卡片 + 一键发布知乎圈子 — 部署教程
+
+> 最后更新：2026-05-12
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 知乎用户欢迎区 | `src/app/home/page.tsx` | 头像+昵称+火花数，从 `useSession` 获取 |
+| 火花卡片墙 | `src/app/home/page.tsx` | 横向滑动卡片，展示 content 摘要 |
+| 知乎热榜灵感 | `src/app/home/page.tsx` | 3条热榜，点击跳转 duo-match |
+| 发布到知乎圈子 | `src/app/home/page.tsx` + `api/zhihu/publish` | Modal 表单，一键发布想法 |
+| Top3 API 增强 | `src/app/api/sparks/top/route.ts` | 新增返回 content/summary 字段 |
+
+### 部署步骤
+
+```bash
+cd /www/wwwroot/qunxiang-xinghuo
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_fqunxiang -o StrictHostKeyChecking=no -p 2222'
+git pull fqunxiang dev
+rm -rf .next
+npm run build
+pm2 restart all --update-env
+```
+
+### 环境变量检查（.env）
+
+```bash
+# 必须配置
+ZHIHU_APP_ID=243
+ZHIHU_APP_KEY=57f9b295fa654e9ebe44a489eaa19b58
+ZHIHU_API_KEY=xrUmjOP1pferLLYrQufOIrvlbT3tFvct
+ZHIHU_RING_APP_KEY="xing-zhu-bai-he-ld"
+ZHIHU_RING_APP_SECRET="你的圈子AppSecret"
+NEXTAUTH_URL="http://81.70.59.228"
+NEXTAUTH_SECRET="qunxiang-xinghuo-production-secret-key-2026"
+```
+
+### 部署验证记录
+
+| 时间 | 版本 | 构建 | 页面数 | PM2 |
+|------|------|------|--------|-----|
+| 2026-05-12 | v9.5 | ✅ | 79/79 | ✅ online |
+
+---
+
+## v9.4 仅保留知乎OAuth登录 — 部署教程
+
+> 最后更新：2026-05-12
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| 移除 CredentialsProvider | `src/lib/auth.ts` | 仅保留 ZhihuProvider |
+| 重写登录页 | `src/app/LoginForm.tsx` | 仅显示知乎登录按钮 |
+| 删除注册 | `src/app/register/` + `src/app/api/auth/register/` | 完全移除 |
+| OAuth 接口修正 | `src/lib/auth/zhihu-provider.ts` | 授权地址/用户信息接口对齐官方文档 |
+| 圈子平台Key去冲突 | `src/lib/zhihu-api.ts` | ZHIHU_APP_KEY → ZHIHU_RING_APP_KEY |
+| 新增关注动态API | `src/lib/zhihu-dev-api.ts` | getUserMoments(accessToken) |
+
+### 知乎 OAuth 完整流程
+
+```
+① GET https://openapi.zhihu.com/authorize?app_id=xxx&redirect_uri=xxx&response_type=code
+② 回调 → /api/auth/callback/zhihu?code=xxx
+③ POST https://openapi.zhihu.com/access_token (app_id/app_key/grant_type/redirect_uri/code)
+④ GET https://openapi.zhihu.com/user (Bearer access_token)
+   返回: { uid, fullname, avatar_path, email, ... }
+⑤ signIn callback 自动创建/更新 User 表记录
+```
+
+### 部署验证记录
+
+| 时间 | 版本 | 构建 | 页面数 | PM2 |
+|------|------|------|--------|-----|
+| 2026-05-12 | v9.4 | ✅ | 79/79 | ✅ online |
+
+---
+
 ## v9.3-emergency 火花页为空 + 人机创建失败 — 紧急修复
 
 > 最后更新：2026-04-29
