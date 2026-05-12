@@ -1,7 +1,5 @@
 import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "./db";
-import bcrypt from "bcryptjs";
 import ZhihuProvider from "./auth/zhihu-provider";
 
 declare module "next-auth" {
@@ -94,59 +92,7 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
   providers: [
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        username: { label: "用户名", type: "text" },
-        password: { label: "密码", type: "password" },
-      },
-      async authorize(credentials) {
-        try {
-          if (!credentials?.username || !credentials?.password) {
-            return null;
-          }
-
-          // 优先通过 username 查找
-          const user = await db.user.findFirst({
-            where: {
-              OR: [
-                { username: credentials.username },
-                { email: credentials.username },
-              ],
-            },
-          });
-
-          if (!user) {
-            return null;
-          }
-
-          // 验证密码
-          if (user.password) {
-            const valid = await bcrypt.compare(credentials.password, user.password);
-            if (!valid) {
-              return null;
-            }
-          } else {
-            // 兼容旧用户：没有密码的不能通过 credentials 登录
-            return null;
-          }
-
-          return {
-            id: user.id,
-            name: user.name || user.username || user.email?.split("@")[0],
-            email: user.email,
-            username: user.username,
-            level: user.level,
-            sparkCount: user.sparkCount,
-            isAdmin: user.isAdmin,
-          };
-        } catch (error) {
-          console.error('[Auth] authorize 异常');
-          return null;
-        }
-      },
-    }),
-    // v9.3: 知乎 OAuth 登录
+    // v9.4: 仅支持知乎 OAuth 登录
     ZhihuProvider({
       clientId: process.env.ZHIHU_APP_ID || "",
       clientSecret: process.env.ZHIHU_APP_KEY || "",

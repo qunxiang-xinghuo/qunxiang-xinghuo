@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, LogIn, Flame } from 'lucide-react';
+import { Flame } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
 // v6.0 装饰性透明泡泡配置
@@ -21,110 +21,45 @@ const DECORATIVE_BUBBLES = [
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const { status } = useSession();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [windowHeight, setWindowHeight] = useState(800);
   const [mounted, setMounted] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setWindowHeight(window.innerHeight);
     setMounted(true);
-    // v7.0-fix5: 组件挂载时无条件清除所有本地残留数据
-    // 防止关闭浏览器后再打开时 localStorage 残留导致状态混乱
+    // 清除旧残留数据
     localStorage.removeItem('xh_user');
     localStorage.removeItem('xh_identity');
     localStorage.removeItem('xh_user_id');
     sessionStorage.clear();
   }, []);
 
-  // 已登录用户访问登录页，由 middleware + AppShell 统一处理重定向
-  // LoginForm 不做额外重定向，避免与 handleLogin 中的 router.push 冲突（v7.0-fix5）
-
+  // 已登录自动跳转
   useEffect(() => {
-    const autoUser = searchParams.get('username');
-    const autoPass = searchParams.get('password');
-    if (autoUser) setUsername(autoUser);
-    if (autoPass) setPassword(autoPass);
+    if (status === 'authenticated') {
+      router.push('/home');
+    }
+  }, [status, router]);
+
+  // 检测 OAuth 回调错误
+  useEffect(() => {
+    const err = searchParams.get('error');
+    if (err) {
+      const msg = err === 'OAuthCallback'
+        ? '知乎登录失败，请重试'
+        : `登录错误: ${err}`;
+      setError(msg);
+    }
   }, [searchParams]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!username.trim() || !password.trim()) {
-      setError('请输入用户名和密码');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // v6.3-auth-fix3: 登录前清除可能残留的旧数据
-      localStorage.removeItem('xh_user');
-      localStorage.removeItem('xh_identity');
-      localStorage.removeItem('xh_user_id');
-
-      const result = await signIn('credentials', {
-        username: username.trim(),
-        password,
-        redirect: false,
-      });
-      console.log('[Login] signIn result:', JSON.stringify(result));
-
-      if (result?.error) {
-        console.log('[Login] signIn error:', result.error);
-        setError('用户名或密码错误');
-        return;
-      }
-      if (!result?.ok) {
-        console.log('[Login] signIn not ok, status:', result?.status);
-        setError('登录验证失败，请稍后重试');
-        return;
-      }
-
-      // v6.3-auth-fix3: 登录成功后，从服务器获取真实用户数据
-      console.log('[Login] 认证成功，正在获取用户数据...');
-      const meRes = await fetch('/api/users/me');
-      const meData = await meRes.json();
-
-      if (meData.success && meData.data) {
-        // v7.0: 优先使用 username（登录用户名）显示
-        const displayName = meData.data.username || meData.data.name || username.trim();
-        const realUser = {
-          id: meData.data.id,
-          name: displayName,
-          username: meData.data.username,
-          email: meData.data.email,
-          image: meData.data.image,
-          identity: { type: 'real' as const, label: displayName },
-          level: meData.data.level || 1,
-          sparkCount: meData.data.sparkCount || 0,
-        };
-        localStorage.setItem('xh_user', JSON.stringify(realUser));
-        localStorage.setItem('xh_user_id', meData.data.id);
-        console.log('[Login] 用户数据已同步到 localStorage:', realUser.id);
-      } else {
-        // v7.0-fix6: /api/users/me 获取失败时不跳转，显示错误
-        console.error('[Login] /api/users/me 获取失败:', meData);
-        setError('登录验证失败，请稍后重试');
-        return;
-      }
-
-      router.push('/home');
-      // v7.0-fix5: 移除 router.refresh()，避免与 status 变化触发的导航冲突
-    } catch (err) {
-      console.error('[Login] 登录异常:', err);
-      setError('登录失败，请稍后重试');
-    } finally {
-      setLoading(false);
-    }
+  const handleZhihuLogin = () => {
+    localStorage.removeItem('xh_user');
+    localStorage.removeItem('xh_identity');
+    localStorage.removeItem('xh_user_id');
+    signIn('zhihu', { callbackUrl: '/home' });
   };
 
   return (
@@ -204,7 +139,7 @@ export default function LoginForm() {
       </div>
 
       {/* ====== 项目简介 ====== */}
-      <div className="pt-16 pb-6 px-6 text-center relative z-10">
+      <div className="pt-20 pb-6 px-6 text-center relative z-10">
         <motion.div
           initial={mounted ? { y: -20, opacity: 0 } : false}
           animate={{ y: 0, opacity: 1 }}
@@ -234,48 +169,14 @@ export default function LoginForm() {
         </motion.p>
       </div>
 
-      {/* ====== 登录表单 ====== */}
-      <motion.form
+      {/* ====== 知乎登录 ====== */}
+      <motion.div
         initial={mounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        onSubmit={handleLogin}
-        className="flex-1 px-6 relative z-10"
+        className="flex-1 px-6 flex flex-col items-center justify-center relative z-10"
       >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs text-[#94a3b8] mb-1.5 ml-1">用户名</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="请输入用户名"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#3B82F6]/50 transition-colors"
-              maxLength={30}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-[#94a3b8] mb-1.5 ml-1">密码</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="请输入密码"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#3B82F6]/50 transition-colors"
-                maxLength={100}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#a8b8c8] transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
+        <div className="w-full max-w-[320px] space-y-4">
           {error && (
             <motion.p
               initial={mounted ? { opacity: 0 } : false}
@@ -287,34 +188,26 @@ export default function LoginForm() {
           )}
 
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+            onClick={handleZhihuLogin}
+            className="w-full py-3.5 rounded-xl bg-[#0066FF] text-white text-sm font-medium hover:bg-[#0052CC] transition-colors flex items-center justify-center gap-2"
           >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                <LogIn className="w-4 h-4" />
-                登录
-              </>
-            )}
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M5.721 0C2.251 0 0 2.25 0 5.719V18.28C0 21.751 2.252 24 5.721 24h12.56C21.751 24 24 21.75 24 18.281V5.72C24 2.249 21.75 0 18.281 0zm1.964 4.078c-.271.73-.5 1.434-.68 2.11h4.587c.545-.006.445 1.168.445 1.171H9.384a58.104 58.104 0 01-.112 3.797h2.635c.388.017.393 1.251.393 1.251H9.183c.062 1.191.193 2.387.33 3.355h1.066c.137.948.188 1.715.06 2.463H8.962c.55 2.324 1.11 3.284 2.13 3.944l-.885 1.03c-.82-.545-1.504-1.375-2.048-2.487-.545 1.112-1.23 1.942-2.049 2.487l-.885-1.03c1.02-.66 1.58-1.62 2.13-3.944H5.563c-.128-.748-.076-1.515.06-2.463h1.066c.137-.968.269-2.164.33-3.355H4.638s.005-1.234.393-1.251h2.635a58.104 58.104 0 01-.112-3.797H4.055s-.1-1.177.445-1.171h4.587c-.18-.676-.41-1.38-.68-2.11h1.278z" />
+            </svg>
+            知乎账号登录
           </button>
-        </div>
 
-        <div className="mt-8 text-center">
-          <button
-            type="button"
-            onClick={() => router.push('/register')}
-            className="text-sm text-[#94a3b8] hover:text-[#3B82F6] transition-colors"
-          >
-            没有账号？<span className="text-[#3B82F6]/80 hover:text-[#3B82F6]">去注册</span>
-          </button>
+          <p className="text-xs text-[#64748b] text-center">
+            点击登录即表示同意
+            <span className="text-[#3B82F6]/80 hover:text-[#3B82F6] cursor-pointer"> 用户协议 </span>
+            和
+            <span className="text-[#3B82F6]/80 hover:text-[#3B82F6] cursor-pointer"> 隐私政策 </span>
+          </p>
         </div>
-      </motion.form>
+      </motion.div>
 
       <div className="px-6 pb-6 text-center relative z-10">
-        <p className="text-[10px] text-[#64748b]">登录即表示同意用户协议和隐私政策 · v7.0</p>
+        <p className="text-[10px] text-[#64748b]">群像·星火 · v9.4</p>
       </div>
     </div>
   );
