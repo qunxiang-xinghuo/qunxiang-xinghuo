@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "./db";
 import bcrypt from "bcryptjs";
+import ZhihuProvider from "./auth/zhihu-provider";
 
 declare module "next-auth" {
   interface Session {
@@ -145,15 +146,54 @@ export const authOptions: NextAuthOptions = {
         }
       },
     }),
+    // v9.3: 知乎 OAuth 登录
+    ZhihuProvider({
+      clientId: process.env.ZHIHU_APP_ID || "",
+      clientSecret: process.env.ZHIHU_APP_KEY || "",
+    }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      // v9.3: 知乎 OAuth 用户自动创建/关联
+      if (account?.provider === "zhihu" && user.id) {
+        try {
+          const existing = await db.user.findUnique({ where: { id: user.id } });
+          if (!existing) {
+            await db.user.create({
+              data: {
+                id: user.id,
+                name: user.name || "知乎用户",
+                email: user.email || `${user.id}@zhihu.oauth`,
+                username: (user as any).username || user.name || "知乎用户",
+                level: 1,
+                sparkCount: 0,
+                isAdmin: false,
+                // 知乎用户没有密码，标记为 OAuth 用户
+                password: null,
+              },
+            });
+            console.log("[Auth] 知乎用户自动创建:", user.id);
+          } else {
+            console.log("[Auth] 知乎用户已存在:", user.id);
+          }
+        } catch (err: any) {
+          console.error("[Auth] 知乎用户创建失败:", err.message);
+          // 不阻断登录，继续用 JWT
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.level = user.level;
         token.sparkCount = user.sparkCount;
         token.username = user.username;
         token.isAdmin = user.isAdmin;
+      }
+      // v9.3: 知乎 OAuth 登录时，从 account 补充信息
+      if (account?.provider === "zhihu" && account.access_token) {
+        token.accessToken = account.access_token;
       }
       return token;
     },
