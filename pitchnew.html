@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>群像·星火 — 每一个认真生活的人，都值得被看见</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #2563eb;
+            --blue-light: #3b82f6;
+            --blue-bright: #4f8fff;
+            --blue-dim: rgba(37, 99, 235, 0.10);
+            --blue-dim2: rgba(37, 99, 235, 0.06);
+            --cyan: #06b6d4;
+            --amber: #f59e0b;
+            --amber-dim: rgba(245, 158, 11, 0.10);
+            --emerald: #10b981;
+            --purple: #8b5cf6;
+            --bg: #f8fafc;
+            --bg2: #ffffff;
+            --bg3: #f1f5f9;
+            --border: rgba(37, 99, 235, 0.18);
+            --text: #1e293b;
+            --text-secondary: #475569;
+            --muted: #64748b;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            --shadow-glow: 0 0 40px rgba(37, 99, 235, 0.10);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: "Noto Sans SC", "Inter", sans-serif;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        .slide {
+            display: none;
+            width: 100vw;
+            min-height: 100vh;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem 2rem 5rem;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg);
+        }
+        .slide.active {
+            display: flex;
+        }
+
+        .slide::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 15% 20%, rgba(37, 99, 235, 0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 50% at 85% 80%, rgba(6, 182, 212, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .slide::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(37, 99, 235, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(37, 99, 235, 0.025) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+        }
+
+        .slide-content {
+            max-width: 1160px;
+            width: 95%;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-family: "Syne", "Noto Sans SC", sans-serif;
+            font-size: clamp(2.6rem, 5vw, 4.2rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #1e293b 0%, #2563eb 50%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.2rem;
+        }
+
+        h2 {
+            font-family: "Syne", "Noto Sans SC", sans-serif;
+            font-size: clamp(1.7rem, 3vw, 2.4rem);
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 5px;
+            height: 100%;
+            min-height: 2rem;
+            background: var(--blue);
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        h3 {
+            font-family: "Syne", "Noto Sans SC", sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--blue);
+            margin-bottom: 0.5rem;
+        }
+
+        p,
+        li {
+            font-size: 1.02rem;
+            color: var(--text);
+            line-height: 1.7;
+            margin-bottom: 0.7rem;
+        }
+
+        .sub {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.4rem;
+            font-weight: 400;
+        }
+
+        .cards {
+            display: grid;
+            gap: 1.1rem;
+            margin-top: 1.4rem;
+        }
+        .cards-3 {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+        .cards-2 {
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        }
+        .cards-4 {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+        .card:hover {
+            border-color: var(--blue);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .card-accent {
+            border-left: 3px solid var(--blue);
+        }
+        .card-cyan {
+            border-left: 3px solid var(--cyan);
+        }
+        .card-amber {
+            border-left: 3px solid var(--amber);
+        }
+        .card-purple {
+            border-left: 3px solid var(--purple);
+        }
+        .card-emerald {
+            border-left: 3px solid var(--emerald);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            margin: 0.2rem;
+        }
+        .tag-blue {
+            background: var(--blue-dim);
+            color: var(--blue);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+        }
+        .tag-cyan {
+            background: rgba(6, 182, 212, 0.08);
+            color: var(--cyan);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+        .tag-amber {
+            background: var(--amber-dim);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        .tag-purple {
+            background: rgba(139, 92, 246, 0.07);
+            color: var(--purple);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        .tag-emerald {
+            background: rgba(16, 185, 129, 0.07);
+            color: var(--emerald);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg2);
+            border-radius: 16px;
+            overflow: hidden;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+            box-shadow: var(--shadow-sm);
+        }
+        th {
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--blue);
+            font-weight: 700;
+            padding: 0.8rem 1rem;
+            text-align: left;
+            font-family: "Syne", "Noto Sans SC", sans-serif;
+        }
+        td {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 0.7rem 1rem;
+            vertical-align: top;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .yes {
+            color: var(--emerald);
+            font-weight: 700;
+        }
+        .no {
+            color: #ef4444;
+            font-weight: 700;
+        }
+        .warn {
+            color: var(--amber);
+        }
+
+        .flow {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            flex-wrap: wrap;
+            margin: 1.4rem 0;
+        }
+        .flow-item {
+            flex: 1;
+            min-width: 140px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.1rem 1rem;
+            position: relative;
+            margin-right: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+        .flow-item:last-child {
+            margin-right: 0;
+        }
+        .flow-item::after {
+            content: '→';
+            position: absolute;
+            right: -1.6rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--blue);
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        .flow-item:last-child::after {
+            display: none;
+        }
+        .flow-num {
+            font-family: "Syne", sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--blue);
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+        .flow-label {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .stat-box {
+            text-align: center;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.4rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .stat-num {
+            font-family: "Syne", "Inter", sans-serif;
+            font-size: 2.6rem;
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 0.35rem;
+        }
+
+        .quote {
+            background: var(--blue-dim2);
+            border-left: 4px solid var(--blue);
+            border-radius: 0 14px 14px 0;
+            padding: 1.3rem 1.7rem;
+            font-size: 1.1rem;
+            color: var(--text);
+            font-style: italic;
+            margin: 1.4rem 0;
+        }
+
+        .code-block {
+            background: #f8fafc;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 12px;
+            padding: 1rem 1.3rem;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: #334155;
+            white-space: pre;
+            overflow-x: auto;
+            line-height: 1.6;
+            margin: 0.8rem 0;
+        }
+        .code-block .cm {
+            color: var(--blue);
+        }
+        .code-block .ck {
+            color: var(--emerald);
+        }
+
+        .weight-bar-wrap {
+            margin: 0.4rem 0 0.8rem;
+        }
+        .weight-bar-bg {
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+        }
+        .weight-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--blue), var(--cyan));
+            transition: width 0.6s ease;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+            margin: 1rem 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0.5rem;
+            bottom: 0.5rem;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--blue), var(--cyan), rgba(100, 150, 220, 0.2));
+            border-radius: 2px;
+        }
+        .tl-item {
+            position: relative;
+            margin-bottom: 1.1rem;
+            padding-left: 1rem;
+        }
+        .tl-item::before {
+            content: '';
+            position: absolute;
+            left: -1.65rem;
+            top: 0.3rem;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--blue);
+            border: 2px solid var(--bg);
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+        }
+        .tl-item.future::before {
+            background: var(--muted);
+            box-shadow: none;
+        }
+        .tl-phase {
+            font-family: "Syne", "Noto Sans SC", sans-serif;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.15rem;
+        }
+        .tl-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.2rem;
+        }
+        .tl-desc {
+            font-size: 0.84rem;
+            color: var(--muted);
+            line-height: 1.5;
+            margin-bottom: 0;
+        }
+
+        .arch-diagram {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin: 1.2rem 0;
+            box-shadow: var(--shadow-sm);
+        }
+        .arch-layer {
+            border-radius: 12px;
+            padding: 0.7rem 1rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .arch-label {
+            font-family: "Syne", "Noto Sans SC", sans-serif;
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+        .arch-pill {
+            font-size: 0.73rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .arch-contracts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 0.55rem;
+            margin: 0.4rem 0;
+        }
+        .contract-box {
+            background: var(--bg3);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: 10px;
+            padding: 0.6rem 0.75rem;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        .contract-box:hover {
+            border-color: var(--blue);
+        }
+        .contract-box .cname {
+            font-family: "Syne", "Noto Sans SC", sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--blue);
+            margin-bottom: 0.15rem;
+        }
+        .contract-box .cdesc {
+            font-size: 0.63rem;
+            color: var(--muted);
+            line-height: 1.3;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 1.8rem;
+            right: 2rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 200;
+        }
+        .nav-btn {
+            background: var(--blue);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 1.2rem;
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+            user-select: none;
+            transition: 0.2s;
+            border: none;
+        }
+        .nav-btn:hover {
+            background: #1d4ed8;
+            transform: scale(1.1);
+        }
+
+        .slide-counter {
+            position: fixed;
+            bottom: 1.8rem;
+            left: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-family: "Syne", sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--blue);
+            border: 1px solid var(--border);
+            z-index: 200;
+            box-shadow: var(--shadow-sm);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(28px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in {
+            animation: slideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes pulse1 {
+            0%,
+            100% {
+                transform: scale(1) translate(0, 0);
+            }
+            50% {
+                transform: scale(1.12) translate(22px, 16px);
+            }
+        }
+        @keyframes pulse2 {
+            0%,
+            100% {
+                transform: scale(1) translate(0, 0);
+            }
+            50% {
+                transform: scale(1.09) translate(-16px, -22px);
+            }
+        }
+        @keyframes glow-flicker {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.82;
+            }
+        }
+        @keyframes chain-scroll {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+        .cover-logo-ring {
+            animation: glow-flicker 3s ease-in-out infinite;
+        }
+        .chain-ticker {
+            display: flex;
+            gap: 0;
+            white-space: nowrap;
+            animation: chain-scroll 18s linear infinite;
+        }
+
+        .demo-mockup {
+            width: 100%;
+            max-width: 520px;
+            background: #fff;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 24px;
+            padding: 28px;
+            margin-top: 24px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+        }
+        .demo-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .demo-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .demo-dot:nth-child(1) {
+            background: #ff5f57;
+        }
+        .demo-dot:nth-child(2) {
+            background: #febc2e;
+        }
+        .demo-dot:nth-child(3) {
+            background: #28c840;
+        }
+        .demo-bubble {
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            max-width: 85%;
+        }
+        .demo-left {
+            background: #f1f5f9;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            color: #1e293b;
+            border-bottom-left-radius: 4px;
+        }
+        .demo-right {
+            background: rgba(37, 99, 235, 0.06);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+            color: #1e293b;
+            border-bottom-right-radius: 4px;
+            margin-left: auto;
+            text-align: right;
+        }
+        .demo-center {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(6, 182, 212, 0.05));
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            color: #1e293b;
+            border-radius: 14px;
+            margin: 12px auto;
+            text-align: center;
+            max-width: 75%;
+        }
+        .demo-label {
+            font-size: 10px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .demo-left .demo-label {
+            color: var(--blue);
+        }
+        .demo-right .demo-label {
+            color: var(--blue);
+        }
+        .demo-center .demo-label {
+            color: var(--cyan);
+        }
+
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            max-width: 900px;
+            margin-top: 28px;
+        }
+        .role-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+            box-shadow: var(--shadow-sm);
+            transition: border-color 0.2s;
+        }
+        .role-item:hover {
+            border-color: var(--blue);
+        }
+        .role-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .role-name {
+            font-weight: 600;
+        }
+
+        .team-row {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        .team-card {
+            text-align: center;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2rem;
+            width: 280px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .team-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+        }
+        .team-card img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--blue);
+            margin-bottom: 1rem;
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        @media (max-width: 820px) {
+            .split {
+                grid-template-columns: 1fr;
+            }
+        }
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 1.2rem 0;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--blue);
+            color: white;
+            text-decoration: none;
+            font-family: "Syne", "Noto Sans SC", sans-serif;
+            font-weight: 700;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            margin: 1.4rem 0.6rem 0 0;
+            transition: 0.2s;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--blue);
+            color: var(--blue);
+            box-shadow: none;
+        }
+        .btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        .pink {
+            color: var(--blue);
+        }
+        .green {
+            color: var(--emerald);
+        }
+        .amber {
+            color: #d97706;
+        }
+        .purple {
+            color: var(--purple);
+        }
+        .muted {
+            color: var(--muted);
+        }
+        strong {
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-item .num {
+            font-family: "Syne", "Inter", sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+        .stat-item .lbl {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 0.3rem;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 768px) {
+            .arch-contracts {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .flow-item {
+                min-width: 100px;
+            }
+            table {
+                font-size: 0.76rem;
+            }
+            td,
+            th {
+                padding: 0.55rem 0.65rem;
+            }
+            .slide {
+                padding: 2rem 1.2rem 4rem;
+            }
+            .navigation {
+                bottom: 1rem;
+                right: 1rem;
+                gap: 0.5rem;
+            }
+            .nav-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
+            }
+            .slide-counter {
+                bottom: 1rem;
+                left: 1rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ════════════════ SLIDE 1: 封面 ════════════════ -->
+    <section class="slide active" id="s1" style="background: radial-gradient(ellipse at 20% 30%, #e8f0fe 0%, #f8fafc 50%, #ffffff 100%); overflow:hidden;">
+        <div style="position:absolute; top:-10%; left:-5%; width:520px; height:520px; border-radius:50%; background:radial-gradient(circle, rgba(37,99,235,0.10) 0%, transparent 70%); animation:pulse1 6s ease-in-out infinite; pointer-events:none;"></div>
+        <div style="position:absolute; bottom:-15%; right:-5%; width:620px; height:620px; border-radius:50%; background:radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%); animation:pulse2 8s ease-in-out infinite; pointer-events:none;"></div>
+        <div class="slide-content fade-in" style="position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; text-align:center;">
+            <div class="cover-logo-ring" style="margin-bottom:1.5rem;">
+                <svg width="88" height="88" viewBox="0 0 100 100">
+                    <defs><filter id="glow1"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="6 4" filter="url(#glow1)"/>
+                    <circle cx="50" cy="50" r="23" fill="none" stroke="rgba(37,99,235,0.3)" stroke-width="1.5"/>
+                    <circle cx="50" cy="50" r="14" fill="#2563eb" filter="url(#glow1)"/>
+                    <circle cx="50" cy="50" r="6" fill="white" opacity="0.9"/>
+                </svg>
+            </div>
+            <div style="font-family:'Syne','Noto Sans SC',sans-serif; font-size:clamp(2.8rem,6vw,4rem); font-weight:900; letter-spacing:-0.03em; line-height:1; margin-bottom:0.5rem; background:linear-gradient(135deg,#1e293b 0%,#2563eb 45%,#06b6d4 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 0 20px rgba(37,99,235,0.2));">群像·星火</div>
+            <div style="font-size:0.85rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:2.2rem; font-weight:500;">QUNXIANG XINGHUO · 知乎黑客松 2026</div>
+            <div style="margin-bottom:2.4rem;">
+                <div style="font-size:0.85rem; letter-spacing:5px; text-transform:uppercase; color:#2563eb; margin-bottom:0.7rem; font-weight:600; opacity:0.85;">✦ 每一个人都值得被看见 ✦</div>
+                <div style="position:relative; display:inline-block;">
+                    <span style="font-family:'Syne','Noto Sans SC',sans-serif; font-size:clamp(1.8rem,3.5vw,3rem); font-weight:800; line-height:1.15; letter-spacing:-0.02em; color:#1e293b; display:block;">让真实发光，</span>
+                    <span style="font-family:'Syne','Noto Sans SC',sans-serif; font-size:clamp(2.2rem,4.5vw,3.6rem); font-weight:900; letter-spacing:0.04em; display:block; background:linear-gradient(90deg, #2563eb 0%, #3b82f6 40%, #06b6d4 80%, #0ea5e9 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 0 16px rgba(37,99,235,0.3)); text-transform:uppercase; line-height:1.1;">让思想变现</span>
+                </div>
+            </div>
+            <div style="width:min(620px,90vw); overflow:hidden; margin-bottom:2.4rem; border-top:1px solid rgba(37,99,235,0.15); border-bottom:1px solid rgba(37,99,235,0.15); padding:0.5rem 0;">
+                <div style="display:flex;">
+                    <div class="chain-ticker" style="color:rgba(37,99,235,0.45); font-size:0.7rem; letter-spacing:3px; font-weight:600;">◎ 真实职业经验 &nbsp;·&nbsp; 多人协同创作 &nbsp;·&nbsp; AI催化 &nbsp;·&nbsp; 火花标记 &nbsp;·&nbsp; 群像共创 &nbsp;·&nbsp; 思想碰撞 &nbsp;·&nbsp; 身份驱动 &nbsp;·&nbsp; 即兴对白 &nbsp;·&nbsp; 真实职业经验 &nbsp;·&nbsp; 多人协同创作 &nbsp;·&nbsp;</div>
+                    <div class="chain-ticker" style="color:rgba(37,99,235,0.45); font-size:0.7rem; letter-spacing:3px; font-weight:600;" aria-hidden="true">◎ 真实职业经验 &nbsp;·&nbsp; 多人协同创作 &nbsp;·&nbsp; AI催化 &nbsp;·&nbsp; 火花标记 &nbsp;·&nbsp; 群像共创 &nbsp;·&nbsp; 思想碰撞 &nbsp;·&nbsp; 身份驱动 &nbsp;·&nbsp; 即兴对白 &nbsp;·&nbsp; 真实职业经验 &nbsp;·&nbsp;</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:0.8rem; flex-wrap:wrap; justify-content:center; margin-bottom:2.6rem;">
+                <div style="background:rgba(37,99,235,0.06); border:1px solid rgba(37,99,235,0.25); border-radius:30px; padding:0.5rem 1.2rem; font-size:0.82rem; color:#2563eb; font-weight:600;">🤖 AI 双引擎催化</div>
+                <div style="background:rgba(37,99,235,0.06); border:1px solid rgba(37,99,235,0.25); border-radius:30px; padding:0.5rem 1.2rem; font-size:0.82rem; color:#2563eb; font-weight:600;">💬 60秒实时匹配</div>
+                <div style="background:rgba(6,182,212,0.06); border:1px solid rgba(6,182,212,0.25); border-radius:30px; padding:0.5rem 1.2rem; font-size:0.82rem; color:#06b6d4; font-weight:600;">🔥 火花标记系统</div>
+                <div style="background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.2); border-radius:30px; padding:0.5rem 1.2rem; font-size:0.82rem; color:#10b981; font-weight:600;">🦊 刘看山 11 种角色</div>
+            </div>
+            <div><span class="btn" onclick="window._nextSlide && window._nextSlide()">探索 →</span></div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 2: 高概念开场 ════════════════ -->
+    <section class="slide" id="s2">
+        <div class="slide-content fade-in">
+            <p style="color:var(--blue); letter-spacing:4px; margin-bottom:1.4rem; font-weight:600;">✦ 高概念 ✦</p>
+            <h1 style="font-size:clamp(2.2rem,4.5vw,4rem); line-height:1.12; margin-bottom:1.8rem;">"当一个急诊科医生和一个辩护律师，<br>被同时扔进同一个深夜急诊室——<br>他们说出的每一句话，<br>都是一个人永远写不出的故事。"</h1>
+            <div class="split" style="gap:2.5rem; margin-top:0.5rem;">
+                <div>
+                    <p><span style="color:var(--blue); font-weight:700;">群像·星火</span> 是一个基于真实职业经验的多人协同创作平台。不是 AI 替代人类创作，而是让<span style="font-weight:700;">真实的人、真实的经验、真实的碰撞</span>成为创作的原材料。</p>
+                    <p>不同职业背景的普通人，被同时扔进同一个冲突情境，用各自的<strong>职业本能碰撞出火花</strong>。</p>
+                </div>
+                <div>
+                    <div class="quote" style="font-size:1rem; margin:0;">
+                        单人创作的视角永远单一。编剧采访了医生，却没采访护士、家属、保洁——<br>同一场抢救，完全是不同的故事。<br><br><strong style="color:var(--blue);">群像·星火让这些视角同时发声。</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 3: 项目简介 ════════════════ -->
+    <section class="slide" id="s3">
+        <div class="slide-content fade-in">
+            <div style="margin-bottom:1.5rem;">
+                <p style="color:var(--blue); letter-spacing:4px; font-size:0.78rem; font-weight:600; margin-bottom:0.8rem;">✦ 一句话 ✦</p>
+                <div style="font-family:'Syne','Noto Sans SC',sans-serif; font-size:clamp(1.4rem,2.6vw,2.1rem); font-weight:800; line-height:1.2; letter-spacing:-0.01em; background:linear-gradient(135deg,#1e293b 0%,#2563eb 55%,#06b6d4 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
+                    让不同职业背景的普通人，被同时扔进同一个冲突情境，<br>用各自的职业本能碰撞出火花，共同完成一部一个人永远写不出的故事。
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1.15fr; gap:1.8rem; align-items:start;">
+                <div>
+                    <p style="font-size:0.7rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:0.7rem;">◎ 项目简介</p>
+                    <p style="font-size:0.98rem; line-height:1.85; color:var(--text);">
+                        群像·星火以<strong style="color:var(--blue);">身份标签</strong>为入口，通过<strong>左滑右滑</strong>浏览冲突情境（脑洞），用<strong>语音输入</strong>记录真实反应。双人模式下，两个真人 + 一个 AI 催化剂围绕同一情境即时对话，<strong style="color:var(--blue);">火花标记</strong>捕捉高光时刻，AI 辅助串联成完整故事。
+                    </p>
+                    <p style="font-size:0.98rem; line-height:1.85; color:var(--text); margin-top:0.4rem;">
+                        多人模式下，导演控场推进剧情，<span style="color:var(--blue); font-weight:600;">每一个普通人的想法都被看见、被记录、被确权为可追溯的数字资产。</span>
+                    </p>
+                    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:1rem;">
+                        <span class="tag tag-blue">🧠 31个跨职业冲突情境</span>
+                        <span class="tag tag-cyan">🤖 AI 双引擎催化</span>
+                        <span class="tag tag-amber">⚡ 60秒实时匹配</span>
+                        <span class="tag tag-purple">🔥 火花标记系统</span>
+                        <span class="tag tag-emerald">🌐 完全开源</span>
+                    </div>
+                </div>
+                <div style="background:#fff; border:1px solid var(--border); border-radius:18px; padding:1.3rem 1.4rem; box-shadow:var(--shadow-sm);">
+                    <p style="font-size:0.65rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:1rem;">◎ 技术徽章 · Open Source</p>
+                    <div style="margin-bottom:0.8rem;">
+                        <p style="font-size:0.62rem; color:var(--muted); letter-spacing:2px; font-weight:700; margin-bottom:0.4rem; text-transform:uppercase;">Repository</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+                            <a href="https://github.com/qunxiang-xinghuo/qunxiang-xinghuo/blob/dev/LICENSE" target="_blank"><img src="https://img.shields.io/badge/license-MIT-blue.svg" style="height:20px;"></a>
+                            <a href="https://github.com/qunxiang-xinghuo/qunxiang-xinghuo/pulls" target="_blank"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" style="height:20px;"></a>
+                            <a href="https://github.com/qunxiang-xinghuo/qunxiang-xinghuo/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/qunxiang-xinghuo/qunxiang-xinghuo?style=social" style="height:20px;"></a>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.8rem;">
+                        <p style="font-size:0.62rem; color:var(--muted); letter-spacing:2px; font-weight:700; margin-bottom:0.4rem; text-transform:uppercase;">Tech Stack</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+                            <img src="https://img.shields.io/badge/Next.js-16.2.4-000000?logo=nextdotjs" style="height:20px;">
+                            <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" style="height:20px;">
+                            <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript" style="height:20px;">
+                            <img src="https://img.shields.io/badge/Prisma-7.8-2D3748?logo=prisma" style="height:20px;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.8rem;">
+                        <p style="font-size:0.62rem; color:var(--muted); letter-spacing:2px; font-weight:700; margin-bottom:0.4rem; text-transform:uppercase;">AI & Realtime</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+                            <img src="https://img.shields.io/badge/DeepSeek-API-4F8FFF" style="height:20px;">
+                            <img src="https://img.shields.io/badge/Socket.io-4.8-010101?logo=socketdotio" style="height:20px;">
+                            <img src="https://img.shields.io/badge/SQLite-better--sqlite3-003B57?logo=sqlite" style="height:20px;">
+                        </div>
+                    </div>
+                    <div>
+                        <p style="font-size:0.62rem; color:var(--muted); letter-spacing:2px; font-weight:700; margin-bottom:0.4rem; text-transform:uppercase;">CI / Testing</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+                            <img src="https://img.shields.io/badge/tests-216%20passing-brightgreen" style="height:20px;">
+                            <img src="https://img.shields.io/badge/pages-72%2F72%20built-blue" style="height:20px;">
+                            <img src="https://img.shields.io/badge/PM2-online-green" style="height:20px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 4: 痛点 ════════════════ -->
+    <section class="slide" id="s4">
+        <div class="slide-content fade-in">
+            <h2>三个痛点，扼杀创作的可能性</h2>
+            <p class="sub">每一个痛点背后，都是无数未被写出的好故事</p>
+            <div class="cards cards-3">
+                <div class="card card-accent" style="text-align:center;">
+                    <div style="font-size:2.5rem; margin-bottom:0.8rem;">🎭</div>
+                    <h3>专业细节失真</h3>
+                    <p>医生角色开口就是"先推肾上腺素"，护士只会点头——缺乏真实职业经验的支撑，角色永远立不起来。</p>
+                    <div class="stat-num" style="font-size:2.8rem; margin-top:1rem;">73%</div>
+                    <div class="stat-label">创作者卡在专业细节</div>
+                </div>
+                <div class="card card-cyan" style="text-align:center;">
+                    <div style="font-size:2.5rem; margin-bottom:0.8rem;">👁️</div>
+                    <h3>视角永远单一</h3>
+                    <p>编剧采访了医生，却没采访护士、家属、保洁——同一场抢救，从不同眼睛看出去，是完全不同的故事。</p>
+                    <div class="stat-num" style="font-size:2.8rem; margin-top:1rem;">1</div>
+                    <div class="stat-label">个视角 vs 真实世界的 N 个</div>
+                </div>
+                <div class="card card-amber" style="text-align:center;">
+                    <div style="font-size:2.5rem; margin-bottom:0.8rem;">🔒</div>
+                    <h3>创作门槛太高</h3>
+                    <p>普通人有好故事却不知道怎么写。退休阿姨、快递员、急诊护士——他们的经验从未被转化为创作素材。</p>
+                    <div class="stat-num" style="font-size:2.8rem; margin-top:1rem;">90%</div>
+                    <div class="stat-label">好故事从未被写出来</div>
+                </div>
+            </div>
+            <div class="quote" style="text-align:center; margin-top:1.4rem;">
+                这些不是"不够努力"的问题——<strong style="color:var(--blue);">是创作工具没有为普通人设计过。</strong>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 5: 解决方案 — 三种模式 ════════════════ -->
+    <section class="slide" id="s5">
+        <div class="slide-content fade-in">
+            <h2>三种模式，一个信念</h2>
+            <p class="sub">覆盖从日常灵感积累到完整剧本创作的全流程</p>
+            <div class="cards cards-3">
+                <div class="card card-accent">
+                    <div style="font-size:0.7rem; font-weight:700; color:var(--blue); letter-spacing:2px; margin-bottom:1rem;">MODE 01</div>
+                    <div style="font-size:2rem; margin-bottom:0.6rem;">🤖</div>
+                    <h3>人机模式</h3>
+                    <p>和刘看山聊聊你的脑洞。AI 催化引擎生成引导问题，一个永远在线的倾听者。选择身份，开始对话。</p>
+                    <div style="margin-top:1rem;"><span class="tag tag-blue">DeepSeek 驱动</span><span class="tag tag-cyan" style="margin-left:4px;">知乎直答兜底</span></div>
+                </div>
+                <div class="card card-cyan">
+                    <div style="font-size:0.7rem; font-weight:700; color:var(--cyan); letter-spacing:2px; margin-bottom:1rem;">MODE 02</div>
+                    <div style="font-size:2rem; margin-bottom:0.6rem;">💬</div>
+                    <h3>双人模式</h3>
+                    <p>两个真人 + 一个 AI 催化剂。围绕同一个情境即时对话，60秒匹配，碰撞真实火花。长按标记火花，火花墙回顾。</p>
+                    <div style="margin-top:1rem;"><span class="tag tag-cyan">Socket.io 实时</span><span class="tag tag-amber" style="margin-left:4px;">四级智能匹配</span></div>
+                </div>
+                <div class="card card-purple">
+                    <div style="font-size:0.7rem; font-weight:700; color:var(--purple); letter-spacing:2px; margin-bottom:1rem;">MODE 03</div>
+                    <div style="font-size:2rem; margin-bottom:0.6rem;">🎭</div>
+                    <h3>故事模式</h3>
+                    <p>选角色，揭开历史谜题。导演控场，四幕推进——起承转合。AI 按幕催化，真相由你揭晓。太仓解密故事已上线。</p>
+                    <div style="margin-top:1rem;"><span class="tag tag-purple">四格解密</span><span class="tag tag-emerald" style="margin-left:4px;">5个太仓故事</span></div>
+                </div>
+            </div>
+            <div class="flow" style="margin-top:2rem;">
+                <div class="flow-item"><div class="flow-num">①</div><div class="flow-label">选择身份标签</div></div>
+                <div class="flow-item"><div class="flow-num">②</div><div class="flow-label">浏览脑洞卡片</div></div>
+                <div class="flow-item"><div class="flow-num">③</div><div class="flow-label">匹配或AI对话</div></div>
+                <div class="flow-item"><div class="flow-num">④</div><div class="flow-label">标记火花时刻</div></div>
+                <div class="flow-item"><div class="flow-num">⑤</div><div class="flow-label">AI 串联故事</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 6: 实时演示 ════════════════ -->
+    <section class="slide" id="s6">
+        <div class="slide-content fade-in" style="text-align:center;">
+            <h2 style="justify-content:center; display:block; border-left:none; font-size:clamp(1.8rem,3.5vw,2.8rem);">碰撞真实火花</h2>
+            <p class="sub">两个真人 + 一个 AI 催化剂</p>
+            <div class="demo-mockup" style="margin:0 auto;">
+                <div class="demo-header">
+                    <div class="demo-dot"></div><div class="demo-dot"></div><div class="demo-dot"></div>
+                    <span style="font-size:11px;color:var(--muted);margin-left:8px;">深夜急诊室 · 双人对话</span>
+                </div>
+                <div class="demo-bubble demo-left">
+                    <div class="demo-label">急诊科医生</div>
+                    血压 70/40，准备除颤仪！患者室颤了！
+                </div>
+                <div class="demo-bubble demo-right">
+                    <div class="demo-label">辩护律师</div>
+                    等等，这个病人是不是上周那个案子的证人？
+                </div>
+                <div class="demo-bubble demo-center">
+                    <div class="demo-label">🦊 刘看山 · 催化剂</div>
+                    医生此刻最担心的是什么？律师看到的是什么？
+                </div>
+                <div class="demo-bubble demo-left">
+                    <div class="demo-label">急诊科医生</div>
+                    我不管他是谁的证人，现在他是我的病人！
+                </div>
+                <div class="demo-bubble demo-center" style="border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.05);">
+                    <div class="demo-label" style="color:#d97706;">🔥 火花标记</div>
+                    "现在他是我的病人" — 这句话，值得被记住
+                </div>
+            </div>
+            <div style="margin-top:1rem; display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap;">
+                <span class="tag tag-amber">🔥 火花自动同步火花墙</span>
+                <span class="tag tag-blue">🤖 AI 30秒无发言自动催化</span>
+                <span class="tag tag-cyan">💬 WebSocket 实时推送</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 7: AI Agent 系统 ════════════════ -->
+    <section class="slide" id="s7">
+        <div class="slide-content fade-in">
+            <h2>一个 Agent，11 种角色</h2>
+            <p class="sub">刘看山 —— 最懂你的 AI 副导演，生活在知乎的北极狐</p>
+            <div class="roles-grid">
+                <div class="role-item"><div class="role-dot" style="background:#2563eb"></div><span class="role-name">陪伴者</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">人机陪伴</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#06b6d4"></div><span class="role-name">剧情 DM</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">故事主持</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#f59e0b"></div><span class="role-name">角色替身</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">匹配兜底</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#8b5cf6"></div><span class="role-name">AI 副导演</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">辅助导演</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#ef4444"></div><span class="role-name">催化剂</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">双人催化</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#ec4899"></div><span class="role-name">疗愈师</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">安全倾听</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#14b8a6"></div><span class="role-name">审稿人</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">内容审核</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#6366f1"></div><span class="role-name">提炼师</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">火花总结</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#f97316"></div><span class="role-name">知识投喂</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">后台投喂</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#0ea5e9"></div><span class="role-name">调解员</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">多人调解</span></div>
+                <div class="role-item"><div class="role-dot" style="background:#84cc16"></div><span class="role-name">创作助手</span><span style="font-size:11px;color:var(--muted);margin-left:auto;">瓶颈辅助</span></div>
+            </div>
+            <div style="margin-top:2rem; display:flex; gap:0.8rem; flex-wrap:wrap; justify-content:center;">
+                <span class="tag tag-blue">三级降级策略</span>
+                <span class="tag tag-cyan">DeepSeek + 知乎直答双引擎</span>
+                <span class="tag tag-amber">禁止AI套话：有情绪、有立场、说人话</span>
+                <span class="tag tag-emerald">30-80字真实聊天风格</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 8: 技术架构 ════════════════ -->
+    <section class="slide" id="s8">
+        <div class="slide-content fade-in">
+            <h2>技术架构 — 四层全栈自研</h2>
+            <p class="sub">从数据库到 AI 双引擎，每一层都经过 216 个测试验证</p>
+            <div class="arch-diagram">
+                <div class="arch-layer" style="background:rgba(37,99,235,0.04); border-color:rgba(37,99,235,0.2);">
+                    <span class="arch-label" style="color:var(--blue);">FRONTEND</span>
+                    <span class="arch-pill tag-blue">Next.js 16 + React 19</span>
+                    <span class="arch-pill tag-blue">Tailwind CSS v4</span>
+                    <span class="arch-pill tag-blue">Framer Motion</span>
+                    <span class="arch-pill tag-blue">Socket.io-client</span>
+                    <span class="arch-pill tag-blue">shadcn/ui</span>
+                </div>
+                <div style="text-align:center; color:var(--muted); font-size:0.75rem; margin:-0.2rem 0; letter-spacing:0.05em;">↕ API Routes + Zod 校验 ↕</div>
+                <div class="arch-layer" style="background:rgba(6,182,212,0.03); border-color:rgba(6,182,212,0.18); margin-top:0.4rem;">
+                    <span class="arch-label" style="color:var(--cyan);">BUSINESS</span>
+                    <span class="arch-pill tag-cyan">匹配引擎（队列串行化）</span>
+                    <span class="arch-pill tag-cyan">房间管理（状态机）</span>
+                    <span class="arch-pill tag-cyan">Socket.io 事件处理</span>
+                    <span class="arch-pill tag-cyan">AI 催化调度器</span>
+                </div>
+                <div style="text-align:center; color:var(--muted); font-size:0.75rem; margin:-0.2rem 0; letter-spacing:0.05em;">↕ Prisma ORM ↕</div>
+                <div class="arch-layer" style="background:rgba(16,185,129,0.03); border-color:rgba(16,185,129,0.18); margin-top:0.4rem;">
+                    <span class="arch-label" style="color:var(--emerald);">DATA</span>
+                    <span class="arch-pill tag-emerald">Prisma 7.8 + SQLite</span>
+                    <span class="arch-pill tag-emerald">better-sqlite3</span>
+                    <span class="arch-pill tag-emerald">WAL 模式</span>
+                    <span class="arch-pill tag-emerald">单文件零依赖</span>
+                </div>
+                <div style="margin:0.5rem 0 0.3rem; font-size:0.68rem; color:var(--muted); font-weight:600; letter-spacing:0.1em; text-transform:uppercase;">核心技术模块</div>
+                <div class="arch-contracts">
+                    <div class="contract-box"><div class="cname">匹配引擎</div><div class="cdesc">四级降级策略<br>进程级队列</div></div>
+                    <div class="contract-box"><div class="cname">房间管理</div><div class="cdesc">状态机流转<br>邀请码系统</div></div>
+                    <div class="contract-box"><div class="cname">火花系统</div><div class="cdesc">标记+点赞<br>火花墙展示</div></div>
+                    <div class="contract-box"><div class="cname">故事系统</div><div class="cdesc">四格解密<br>起承转合</div></div>
+                    <div class="contract-box"><div class="cname">AI 催化</div><div class="cdesc">DeepSeek+知乎<br>三级降级</div></div>
+                    <div class="contract-box"><div class="cname">认证系统</div><div class="cdesc">JWT+Cookies<br>三层守卫</div></div>
+                    <div class="contract-box"><div class="cname">知乎抓取</div><div class="cdesc">热榜→脑洞<br>AI转化入库</div></div>
+                    <div class="contract-box"><div class="cname">疗愈空间</div><div class="cdesc">AES加密<br>私密对话</div></div>
+                </div>
+                <div style="margin-top:0.7rem; display:flex; align-items:center; gap:0.7rem; flex-wrap:wrap;">
+                    <span style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:8px; padding:0.35rem 0.7rem; font-size:0.74rem; color:var(--emerald);">✅ 216 tests passed</span>
+                    <span style="background:rgba(37,99,235,0.06); border:1px solid rgba(37,99,235,0.2); border-radius:8px; padding:0.35rem 0.7rem; font-size:0.74rem; color:var(--blue);">✅ 72 pages built</span>
+                    <span style="background:rgba(6,182,212,0.05); border:1px solid rgba(6,182,212,0.2); border-radius:8px; padding:0.35rem 0.7rem; font-size:0.74rem; color:var(--cyan);">✅ 58 API routes</span>
+                    <span style="background:rgba(139,92,246,0.05); border:1px solid rgba(139,92,246,0.2); border-radius:8px; padding:0.35rem 0.7rem; font-size:0.74rem; color:var(--purple);">✅ TDD 全流程</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 9: 数据与测试 ════════════════ -->
+    <section class="slide" id="s9">
+        <div class="slide-content fade-in">
+            <h2>数据模型 · 测试覆盖</h2>
+            <div class="split">
+                <div>
+                    <h3>核心数据模型</h3>
+                    <table>
+                        <tr><th>模型</th><th>关键字段</th><th>说明</th></tr>
+                        <tr><td><strong style="color:var(--blue);">Brainhole</strong></td><td>title, scenario, category, hotScore</td><td>冲突情境（脑洞）</td></tr>
+                        <tr><td><strong style="color:var(--blue);">Room</strong></td><td>type, status, brainholeId, storyId</td><td>对白房间（duet/ai_duet/story）</td></tr>
+                        <tr><td><strong style="color:var(--blue);">Asset</strong></td><td>title, content, hotScore, isPublic</td><td>火花/对白资产</td></tr>
+                        <tr><td><strong style="color:var(--blue);">Story</strong></td><td>act1-4Reveal, eraBackground</td><td>四格解密故事</td></tr>
+                        <tr><td><strong style="color:var(--blue);">HealingSession</strong></td><td>AES-256-GCM 加密存储</td><td>个人疗愈</td></tr>
+                        <tr><td><strong style="color:var(--blue);">MatchRequest</strong></td><td>status, brainholeId, identity</td><td>匹配请求</td></tr>
+                    </table>
+                </div>
+                <div>
+                    <h3>TDD 测试覆盖</h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; margin-top:0.5rem;">
+                        <div class="stat-box"><div class="stat-num" style="font-size:2rem;">216</div><div class="stat-label">Tests Passed</div></div>
+                        <div class="stat-box"><div class="stat-num" style="font-size:2rem; background:linear-gradient(135deg,var(--emerald),#34d399); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">23</div><div class="stat-label">测试文件</div></div>
+                        <div class="stat-box"><div class="stat-num" style="font-size:2rem; background:linear-gradient(135deg,var(--cyan),#22d3ee); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">58</div><div class="stat-label">API Routes</div></div>
+                        <div class="stat-box"><div class="stat-num" style="font-size:2rem; background:linear-gradient(135deg,var(--purple),#a78bfa); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">0</div><div class="stat-label">Failed</div></div>
+                    </div>
+                    <div class="card card-emerald" style="margin-top:0.8rem;">
+                        <p style="font-size:0.85rem; margin:0;"><strong>测试工具链：</strong>Vitest 4.1.5 + React Testing Library + jsdom + Playwright (E2E) + v8 coverage</p>
+                    </div>
+                    <div class="card card-accent" style="margin-top:0.5rem;">
+                        <p style="font-size:0.85rem; margin:0;"><strong>TDD 铁律：</strong>先写测试 → 测试失败(Red) → 最少代码通过(Green) → 重构(Refactor)。核心逻辑 ≥80% 覆盖，API 接口 100% 覆盖。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 10: 商业模式 ════════════════ -->
+    <section class="slide" id="s10">
+        <div class="slide-content fade-in">
+            <h2>三层变现模型</h2>
+            <p class="sub">从免费增值到 IP 共创，每一步都有清晰的商业化路径</p>
+            <div class="cards cards-3">
+                <div class="card card-accent" style="position:relative;">
+                    <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:0.7rem;font-weight:700;color:#fff;padding:5px 14px;border-radius:20px;background:linear-gradient(135deg,var(--blue),#1d4ed8);">C 端</div>
+                    <div style="font-size:2rem;margin-bottom:0.5rem;margin-top:0.5rem;">🎯</div>
+                    <h3>免费增值</h3>
+                    <p>基础玩法免费，高级功能付费。AI 长格式输出 · 导演高级控场包 · 更多角色槽位。</p>
+                </div>
+                <div class="card card-cyan" style="position:relative;">
+                    <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:0.7rem;font-weight:700;color:#fff;padding:5px 14px;border-radius:20px;background:linear-gradient(135deg,var(--cyan),#0891b2);">B 端</div>
+                    <div style="font-size:2rem;margin-bottom:0.5rem;margin-top:0.5rem;">🏢</div>
+                    <h3>内容采购</h3>
+                    <p>微短剧/互动小说平台按字数或片段采购优质对白。真实职业经验的内容溢价更高。</p>
+                </div>
+                <div class="card card-amber" style="position:relative;">
+                    <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:0.7rem;font-weight:700;color:#fff;padding:5px 14px;border-radius:20px;background:linear-gradient(135deg,#f59e0b,#d97706);">IP</div>
+                    <div style="font-size:2rem;margin-bottom:0.5rem;margin-top:0.5rem;">💎</div>
+                    <h3>共创分润</h3>
+                    <p>优质群像故事共同孵化 IP。剧本/短剧/有声书 · 按贡献分润 · 链上确权。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 11: 路线图 ════════════════ -->
+    <section class="slide" id="s11">
+        <div class="slide-content fade-in">
+            <h2>路线图 — 从零到完整 MVP</h2>
+            <div class="split">
+                <div>
+                    <div class="timeline">
+                        <div class="tl-item">
+                            <div class="tl-phase">Phase 1 · Week 1 ✅</div>
+                            <div class="tl-title">匹配引擎 + TDD 基础</div>
+                            <div class="tl-desc">内存匹配池 + 优先级算法 + 60秒超时检测；9 tests passed</div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-phase">Phase 2 · Week 2 ✅</div>
+                            <div class="tl-title">房间管理 API + 单人模式</div>
+                            <div class="tl-desc">消息/火花/暂停/恢复/结束；16 tests；脑洞卡片左滑右滑</div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-phase">Phase 3 · Week 3-4 ✅</div>
+                            <div class="tl-title">WebSocket + AI 故事串联</div>
+                            <div class="tl-desc">Socket.io 实时通信 + DeepSeek API + 三级降级；21 tests</div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-phase">Phase 4 · Week 5-6 ✅</div>
+                            <div class="tl-title">TDD 全覆盖 + AI 催化</div>
+                            <div class="tl-desc">216 tests passed；故事系统 + 四格解密 + 投票系统</div>
+                        </div>
+                        <div class="tl-item future">
+                            <div class="tl-phase">Phase 5 · 进行中</div>
+                            <div class="tl-title">多人模式完善 + 知乎API</div>
+                            <div class="tl-desc">多人即兴碰撞；知乎圈子Agent自动化；长期连载</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div style="background:#fff; border:1px solid var(--border); border-radius:20px; padding:1.5rem; box-shadow:var(--shadow-sm);">
+                        <h3>当前状态</h3>
+                        <div style="display:flex; flex-direction:column; gap:0.6rem; margin-top:0.8rem;">
+                            <div style="display:flex; align-items:center; gap:0.6rem;"><span style="color:var(--emerald); font-size:1.2rem;">✅</span><span>72页构建通过，PM2 在线</span></div>
+                            <div style="display:flex; align-items:center; gap:0.6rem;"><span style="color:var(--emerald); font-size:1.2rem;">✅</span><span>216 tests / 23 文件 / 0 failed</span></div>
+                            <div style="display:flex; align-items:center; gap:0.6rem;"><span style="color:var(--emerald); font-size:1.2rem;">✅</span><span>58 API 路由 + WebSocket 就绪</span></div>
+                            <div style="display:flex; align-items:center; gap:0.6rem;"><span style="color:var(--emerald); font-size:1.2rem;">✅</span><span>5个太仓解密故事种子数据</span></div>
+                            <div style="display:flex; align-items:center; gap:0.6rem;"><span style="color:var(--amber); font-size:1.2rem;">⏳</span><span>多人模式开发中</span></div>
+                            <div style="display:flex; align-items:center; gap:0.6rem;"><span style="color:var(--amber); font-size:1.2rem;">⏳</span><span>收益结算系统预留</span></div>
+                        </div>
+                    </div>
+                    <div class="card card-accent" style="margin-top:0.8rem;">
+                        <h3>部署地址</h3>
+                        <p style="font-size:0.9rem; margin:0;"><strong>http://81.70.59.228</strong> — 腾讯云 OpenCloudOS 9.4 · PM2 管理 · Webhook 自动部署</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 12: 团队 ════════════════ -->
+    <section class="slide" id="s12">
+        <div class="slide-content fade-in" style="text-align:center;">
+            <h2 style="justify-content:center;">三个普通人，一个共同信念</h2>
+            <p class="sub" style="text-align:center;">"让每个普通人的想法被看见"</p>
+            <div class="team-row">
+                <div class="team-card">
+                    <img src="https://duk.tw/6q4Kvg.jpg" alt="星星" onerror="this.style.background='#e8f0fe';this.style.minHeight='100px';this.style.display='flex';this.style.alignItems='center';this.style.justifyContent='center';this.style.fontSize='2rem';this.textContent='⭐';">
+                    <div class="team-name" style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">星星</div>
+                    <div class="team-role" style="font-size:0.78rem;color:var(--blue);letter-spacing:1px;margin-bottom:10px;">产品经理 · 项目发起人</div>
+                    <div class="team-desc" style="font-size:0.85rem;color:var(--muted);line-height:1.6;">相信"人人都能成为创作者"。不会写代码，但靠 AI 搭出了群像·星火。过去是内容创作者，现在做项目驱动的原型实验。</div>
+                    <div style="margin-top:0.8rem;"><a href="https://www.zhihu.com/profile/xing-zhu-bai-he-ld" target="_blank" style="font-size:0.75rem;color:var(--blue);text-decoration:none;">知乎主页 →</a></div>
+                </div>
+                <div class="team-card">
+                    <img src="https://duk.tw/xWlaOJ.jpg" alt="九幽三三" onerror="this.style.background='#e8f0fe';this.style.minHeight='100px';this.style.display='flex';this.style.alignItems='center';this.style.justifyContent='center';this.style.fontSize='2rem';this.textContent='💻';">
+                    <div class="team-name" style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">九幽三三</div>
+                    <div class="team-role" style="font-size:0.78rem;color:var(--blue);letter-spacing:1px;margin-bottom:10px;">全栈开发者 · 技术负责人</div>
+                    <div class="team-desc" style="font-size:0.85rem;color:var(--muted);line-height:1.6;">独立全栈开发者，兼职某家 DevRel。技术栈：React / Rust / Solidity / Zig / Delphi。让想法变成现实。</div>
+                    <div style="margin-top:0.8rem;"><a href="https://www.zhihu.com/profile/16-23-48-83" target="_blank" style="font-size:0.75rem;color:var(--blue);text-decoration:none;">知乎主页 →</a></div>
+                </div>
+                <div class="team-card">
+                    <img src="https://duk.tw/cfIFUP.png" alt="躬行者" onerror="this.style.background='#e8f0fe';this.style.minHeight='100px';this.style.display='flex';this.style.alignItems='center';this.style.justifyContent='center';this.style.fontSize='2rem';this.textContent='📚';">
+                    <div class="team-name" style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">躬行者</div>
+                    <div class="team-role" style="font-size:0.78rem;color:var(--blue);letter-spacing:1px;margin-bottom:10px;">AI 教育探索者</div>
+                    <div class="team-desc" style="font-size:0.85rem;color:var(--muted);line-height:1.6;">退伍老兵，8年科学课程开发经验，实践用 AI 重构教育。研发课程服务郑州 40+所小学，全国 10+所科技馆。</div>
+                    <div style="margin-top:0.8rem;"><a href="https://www.zhihu.com/profile/Mr.duan" target="_blank" style="font-size:0.75rem;color:var(--blue);text-decoration:none;">知乎主页 →</a></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════ SLIDE 13: 结尾 ════════════════ -->
+    <section class="slide" id="s13">
+        <div class="slide-content fade-in" style="text-align:center;">
+            <h2 style="justify-content:center; display:block; border-left:none; font-size:2.4rem;">群像·星火</h2>
+            <p style="font-size:1.2rem; color:var(--text-secondary); margin-bottom:2rem; letter-spacing:2px;">让真实发光，让思想变现</p>
+            <div style="margin:2rem 0;">
+                <div style="font-size:1rem; color:var(--muted); padding:0.8rem 2rem; border:1px solid var(--border); border-radius:12px; display:inline-block; letter-spacing:1px; background:#fff;">http://81.70.59.228</div>
+            </div>
+            <div style="margin-bottom:2rem; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                <a href="https://github.com/qunxiang-xinghuo/qunxiang-xinghuo" class="btn" target="_blank" rel="noopener">⭐ Star on GitHub</a>
+                <a href="https://github.com/qunxiang-xinghuo/qunxiang-xinghuo/tree/dev" class="btn btn-outline" target="_blank" rel="noopener">🔍 查看 dev 分支</a>
+            </div>
+            <p style="color:var(--muted); letter-spacing:2px; font-size:1rem;">希望在故事里，遇见你。</p>
+            <div style="margin-top:2.5rem; background:#fff; border:1px solid var(--border); border-radius:14px; padding:1rem 1.5rem; display:inline-block; text-align:left; box-shadow:var(--shadow-sm);">
+                <p style="margin:0.3rem 0; font-size:0.82rem; color:var(--muted);">📦 项目 GitHub：<strong style="color:#1e293b;">https://github.com/qunxiang-xinghuo/qunxiang-xinghuo</strong></p>
+                <p style="margin:0.3rem 0; font-size:0.82rem; color:var(--muted);">🌐 在线 Demo：<strong style="color:#1e293b;">http://81.70.59.228</strong></p>
+                <p style="margin:0.3rem 0; font-size:0.82rem; color:var(--muted);">📋 技术文档：<strong style="color:#1e293b;">docs/qunxiangxinhuo-TDD-v9.0.md</strong></p>
+            </div>
+            <p style="margin-top:2rem; color:var(--blue); font-family:'Syne','Noto Sans SC',sans-serif; font-weight:700;">◎ 群像·星火 · 每一个认真生活的人，都值得被看见</p>
+        </div>
+    </section>
+
+    <!-- ════════════════ NAV ════════════════ -->
+    <div class="navigation">
+        <button class="nav-btn" id="prev-btn" aria-label="上一页">←</button>
+        <button class="nav-btn" id="next-btn" aria-label="下一页">→</button>
+    </div>
+    <div class="slide-counter" id="slide-counter">1 / 13</div>
+
+    <script>
+        (function() {
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const counter = document.getElementById('slide-counter');
+            let current = 0;
+            const total = slides.length;
+
+            function showSlide(idx) {
+                slides.forEach((s, i) => {
+                    s.classList.toggle('active', i === idx);
+                });
+                const content = slides[idx].querySelector('.slide-content');
+                if (content) {
+                    content.classList.remove('fade-in');
+                    void content.offsetWidth;
+                    content.classList.add('fade-in');
+                }
+                counter.textContent = `${idx + 1} / ${total}`;
+                window.scrollTo(0, 0);
+            }
+
+            function next() {
+                if (current < total - 1) showSlide(++current);
+            }
+
+            function prev() {
+                if (current > 0) showSlide(--current);
+            }
+
+            window._nextSlide = next;
+
+            nextBtn.addEventListener('click', next);
+            prevBtn.addEventListener('click', prev);
+
+            window.addEventListener('keydown', e => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault();
+                    next(); }
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault();
+                    prev(); }
+                if (e.key === 'Home') { e.preventDefault();
+                    showSlide(0); }
+                if (e.key === 'End') { e.preventDefault();
+                    showSlide(total - 1); }
+            });
+
+            let touchX = 0;
+            document.addEventListener('touchstart', e => { touchX = e.changedTouches[0].screenX; }, { passive: true });
+            document.addEventListener('touchend', e => {
+                const d = e.changedTouches[0].screenX - touchX;
+                if (Math.abs(d) > 50) { d > 0 ? prev() : next(); }
+            }, { passive: true });
+
+            let wheelLock = false;
+            document.addEventListener('wheel', e => {
+                if (wheelLock) return;
+                wheelLock = true;
+                setTimeout(() => wheelLock = false, 700);
+                if (e.deltaY > 30) next();
+                else if (e.deltaY < -30) prev();
+            }, { passive: true });
+
+            showSlide(0);
+        })();
+    </script>
+</body>
+</html>
