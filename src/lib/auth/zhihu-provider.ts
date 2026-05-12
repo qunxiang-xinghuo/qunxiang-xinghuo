@@ -194,7 +194,7 @@ export default function ZhihuProvider(
       text: "#FFFFFF",
     },
     ...options,
-    // v9.5-fix: 知乎授权回调不回传 state 参数，关闭 CSRF state 校验
-    checks: [],
+    // 参考 oauthtest/参考.js 第 198-202 行：知乎回调回传 state 参数，启用 CSRF 校验
+    checks: ["state"],
   };
 }
