@@ -42,7 +42,7 @@ if (!NEXTAUTH_SECRET || NEXTAUTH_SECRET.length < 32) {
 }
 
 export const authOptions: NextAuthOptions = {
-  // v8.0-fix: 移除 PrismaAdapter。我们使用 JWT + CredentialsProvider，
+  // v8.0-fix: 移除 PrismaAdapter。使用 JWT + OAuth，
   // 不需要数据库存储 session/account。PrismaAdapter v2 与 next-auth v4 不兼容。
   secret: NEXTAUTH_SECRET,
   session: {
