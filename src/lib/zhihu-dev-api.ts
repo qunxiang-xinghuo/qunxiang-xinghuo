@@ -225,3 +225,51 @@ export function hotListToBrainholeMaterial(item: ZhihuHotListItem) {
     thumbnail: item.ThumbnailUrl,
   };
 }
+
+// ==================== 知乎 OAuth 用户接口 ====================
+
+export interface ZhihuMoment {
+  actor: { name: string };
+  action_text: string;
+  action_time: number;
+  target: {
+    title: string;
+    excerpt: string;
+    author: { name: string };
+  };
+}
+
+export interface ZhihuMomentsResponse {
+  data: ZhihuMoment[];
+}
+
+/**
+ * 获取当前授权用户的关注动态（Feed）列表
+ * ⚠️ 需要用户的 OAuth access_token，不是开发者平台的 ZHIHU_API_KEY
+ *
+ * @param accessToken 知乎 OAuth access_token
+ * @see https://openapi.zhihu.com/user/moments
+ */
+export async function getUserMoments(
+  accessToken: string
+): Promise<ZhihuMomentsResponse> {
+  const res = await fetch("https://openapi.zhihu.com/user/moments", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    next: { revalidate: 60 },
+  });
+
+  if (!res.ok) {
+    throw new Error(`知乎关注动态 API 错误: ${res.status} ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  // 知乎特色错误：HTTP 200 但 body 含业务错误
+  if (typeof data.code === "number" && data.code !== 0) {
+    throw new Error(`知乎关注动态业务错误: [${data.code}] ${data.data}`);
+  }
+
+  return data;
+}

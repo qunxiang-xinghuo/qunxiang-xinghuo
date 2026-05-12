@@ -11,10 +11,10 @@ const ZHIHU_BASE_URL = "https://openapi.zhihu.com";
 const ZHIHU_RING_ID = "2001009660925334090";
 
 function getCredentials() {
-  const appKey = process.env.ZHIHU_APP_KEY;
-  const appSecret = process.env.ZHIHU_APP_SECRET;
+  const appKey = process.env.ZHIHU_RING_APP_KEY;
+  const appSecret = process.env.ZHIHU_RING_APP_SECRET;
   if (!appKey || !appSecret) {
-    throw new Error("ZHIHU_APP_KEY 或 ZHIHU_APP_SECRET 未配置");
+    throw new Error("ZHIHU_RING_APP_KEY 或 ZHIHU_RING_APP_SECRET 未配置");
   }
   return { appKey, appSecret };
 }
