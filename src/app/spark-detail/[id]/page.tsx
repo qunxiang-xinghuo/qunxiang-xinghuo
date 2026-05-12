@@ -33,8 +33,16 @@ export default async function SparkDetailPage({ params }: SparkDetailPageProps) 
       },
     });
 
+    // v9.3-emergency-fix: 详情页容错 — 如果 Asset 不存在或 room 为空，显示默认文案
     if (!asset) {
-      return notFound();
+      return (
+        <div className="min-h-screen bg-xh-primary flex items-center justify-center text-white/60 px-4">
+          <div className="text-center">
+            <p className="text-lg mb-2">对白记录正在整理中，请稍后查看</p>
+            <p className="text-sm text-white/40">记录编号: {id}</p>
+          </div>
+        </div>
+      );
     }
 
     const participants = asset.room?.participants || [];

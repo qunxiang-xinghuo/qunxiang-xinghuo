@@ -1,5 +1,43 @@
 # 群像·星火 — 重要操作记录
 
+## v9.3-emergency 火花页为空 + 人机创建失败 — 紧急修复
+
+> 最后更新：2026-04-29
+
+### 改动摘要
+
+| 任务 | 文件 | 说明 |
+|------|------|------|
+| Top3 兜底 | `src/app/api/sparks/top/route.ts` | 无公开 Asset 时，从全部 Asset 捞最近的3条 |
+| 详情页容错 | `src/app/spark-detail/[id]/page.tsx` | 空数据时显示 `"对白记录正在整理中，请稍后查看"` |
+| 暴力清理 | `src/app/api/rooms/ai/route.ts` | 创建前关闭所有卡死的 `ai_duet` 房间 |
+| 无脑新建 | `src/app/api/rooms/ai/route.ts` | 不再检查旧房间，直接事务创建，强制 `active` + `isAiRoom=true` |
+| 兜底报错 | `src/app/api/rooms/ai/route.ts` | 打印完整错误到日志，返回 `"请找开发人员查看服务器日志"` |
+
+### 生产环境 SQL
+
+```sql
+-- 强制公开所有 Asset
+UPDATE Asset SET isPublic = 1 WHERE 1=1;
+
+-- 清理卡死AI房间
+UPDATE Room SET status = 'closed', closedAt = datetime('now') WHERE type = 'ai_duet' AND status = 'active';
+```
+
+### 核心修复说明
+
+1. **火花页为空**：`isPublic` 默认 `false` 导致查询为空 → 兜底查询全部 + 详情页容错文案
+2. **人机创建失败**：卡死房间阻塞新创建 → 暴力清理 + 无脑新建 + 强制状态
+3. **错误不可见**：500 无具体信息 → 打印完整错误（类型/消息/代码/堆栈/Prisma meta）
+
+### 绝对红线
+
+- ✅ 不改数据库结构
+- ✅ 不删 Session 和 User 表
+- ✅ 构建通过 81/81
+
+---
+
 ## v9.3-fix 刘看山 Agent 问题修复 — 部署教程
 
 > 最后更新：2026-04-29

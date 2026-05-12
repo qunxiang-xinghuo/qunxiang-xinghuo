@@ -4,58 +4,67 @@ import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
 
-// v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
+// v9.3-emergency-fix: AI房间创建API — 暴力清理+无脑新建+兜底报错
 export async function POST(request: NextRequest) {
   try {
     console.log("[AI Room API] ========== 开始创建AI房间 ==========");
 
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-    const guestId = request.headers.get("x-guest-id");
     if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
-    console.log("[AI Room API] userId:", userId, "token存在:", !!token, "guestId:", guestId);
+    console.log("[AI Room API] userId:", userId);
 
-    // v8.1-fix5: 兼容空 body（前端可能不传或传 {}）
+    // v9.3-emergency-fix: 暴力清理 — 先把所有卡死的AI房间踢下线
+    try {
+      const closedCount = await db.room.updateMany({
+        where: { type: "ai_duet", status: "active" },
+        data: { status: "closed", closedAt: new Date() },
+      });
+      console.log("[AI Room API] 清理卡死AI房间:", closedCount.count, "个");
+    } catch (cleanupErr: any) {
+      console.warn("[AI Room API] 清理旧房间失败（非致命）:", cleanupErr.message);
+    }
+
+    // 兼容空 body
     let body: any = {};
     try {
       body = await request.json();
       console.log("[AI Room API] 请求体:", JSON.stringify(body));
-    } catch (parseErr: any) {
-      // 请求体为空或解析失败时，默认使用空对象
-      console.log("[AI Room API] 请求体为空或解析失败，使用默认值");
+    } catch {
+      console.log("[AI Room API] 请求体为空，使用默认值");
       body = {};
     }
 
     const createAiRoomSchema = z.object({
       brainholeId: z.string().optional(),
-      identity: z.string().min(1, "身份不能为空").max(100, "身份不能超过100字").optional(),
+      identity: z.string().min(1).max(100).optional(),
       agents: z.array(z.object({
         name: z.string().min(1).max(50),
         persona: z.string().min(1).max(50),
-      })).max(5, "最多5个Agent").optional(),
+      })).max(5).optional(),
     });
 
     const validation = createAiRoomSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json(apiError("VALIDATION_ERROR", validation.error.issues[0]?.message || "参数格式错误"), { status: 400 });
+      return NextResponse.json(
+        apiError("VALIDATION_ERROR", validation.error.issues[0]?.message || "参数格式错误"),
+        { status: 400 }
+      );
     }
 
-    // v8.1: identity 可选，未传时从用户记录获取
     let { brainholeId, identity, agents: agentConfigs } = validation.data;
     if (!identity) {
       const userRecord = await db.user.findUnique({ where: { id: userId }, select: { name: true } });
       identity = userRecord?.name || '我';
     }
 
-    // v6.1: 多Agent协作支持
     const agents = Array.isArray(agentConfigs) && agentConfigs.length > 0
       ? agentConfigs
       : [{ name: '刘看山', persona: 'catalyst' }];
 
-    // v4.7-fix: 确保用户记录在User表中存在（Prisma外键约束要求）
-    console.log("[AI Room API] 检查/创建用户记录...");
+    // 确保用户记录存在
     try {
       await db.user.upsert({
         where: { id: userId },
@@ -66,18 +75,14 @@ export async function POST(request: NextRequest) {
           email: `${userId}@guest.local`,
         },
       });
-      console.log("[AI Room API] 用户记录已确认:", userId);
     } catch (userErr: any) {
-      // v7.0-test2: 仅吞掉唯一约束冲突（用户已存在），其他错误向上抛出
-      if (userErr.code === 'P2002') {
-        console.log("[AI Room API] 用户已存在，继续:", userId);
-      } else {
+      if (userErr.code !== 'P2002') {
         console.error("[AI Room API] 用户记录创建失败:", userErr.message);
         throw userErr;
       }
     }
 
-    // v6.1: 确保所有AI Agent用户记录在User表中存在
+    // 确保AI Agent用户记录存在
     for (const agent of agents) {
       const agentUserId = `agent_${agent.persona}`;
       try {
@@ -90,48 +95,37 @@ export async function POST(request: NextRequest) {
             email: `${agentUserId}@system.local`,
           },
         });
-        console.log("[AI Room API] AI Agent用户记录已确认:", agentUserId);
       } catch (aiUserErr: any) {
-        console.error("[AI Room API] AI Agent用户记录创建失败:", aiUserErr.message);
-        // v8.0-fix: 不再静默吞掉，抛出错误避免后续外键约束崩溃
-        throw aiUserErr;
+        if (aiUserErr.code !== 'P2002') {
+          console.error("[AI Room API] AI Agent用户记录失败:", aiUserErr.message);
+          throw aiUserErr;
+        }
       }
     }
 
-    // 如果没有指定脑洞，随机抽取一个
+    // 查找或随机选择脑洞
     let finalBrainholeId = brainholeId;
     let brainholeTitle = "未知脑洞";
     let brainholeScenario = "";
 
     if (finalBrainholeId) {
-      const brainhole = await db.brainhole.findUnique({
-        where: { id: finalBrainholeId },
-      });
+      const brainhole = await db.brainhole.findUnique({ where: { id: finalBrainholeId } });
       if (brainhole) {
         brainholeTitle = brainhole.title;
         brainholeScenario = brainhole.scenario || "";
-        console.log("[AI Room API] 使用指定脑洞:", brainholeTitle);
       } else {
-        console.warn("[AI Room API] 指定脑洞不存在:", finalBrainholeId);
         finalBrainholeId = undefined;
       }
     }
 
     if (!finalBrainholeId) {
-      console.log("[AI Room API] 未指定脑洞，热度加权随机抽取...");
-      // v5.0-fix: 避免总是返回最热脑洞，改为热度加权随机
       let pool = await db.brainhole.findMany({
         where: { status: "approved" },
         orderBy: { hotScore: "desc" },
         take: 50,
       });
-      // v8.0-fix: 如果没有 approved 脑洞，从所有脑洞中抽取
       if (pool.length === 0) {
-        console.warn("[AI Room API] 无approved脑洞，尝试从所有脑洞抽取...");
-        pool = await db.brainhole.findMany({
-          orderBy: { hotScore: "desc" },
-          take: 50,
-        });
+        pool = await db.brainhole.findMany({ orderBy: { hotScore: "desc" }, take: 50 });
       }
       if (pool.length > 0) {
         const totalScore = pool.reduce((sum, b) => sum + (b.hotScore || 1), 0);
@@ -139,36 +133,29 @@ export async function POST(request: NextRequest) {
         let selected = pool[0];
         for (const b of pool) {
           randomPoint -= (b.hotScore || 1);
-          if (randomPoint <= 0) {
-            selected = b;
-            break;
-          }
+          if (randomPoint <= 0) { selected = b; break; }
         }
         finalBrainholeId = selected.id;
         brainholeTitle = selected.title;
         brainholeScenario = selected.scenario || "";
-        console.log("[AI Room API] 热度加权随机抽取脑洞:", brainholeTitle, "(从", pool.length, "个脑洞中)");
-      } else {
-        console.warn("[AI Room API] 数据库中无脑洞，使用默认");
       }
     }
 
-    // v8.0-fix: 使用 $transaction 原子创建房间+参与者+消息，防止孤儿数据
+    // v9.3-emergency-fix: 无脑新建 — 不管旧房间，直接事务创建
     console.log("[AI Room API] 创建房间...");
     const room = await db.$transaction(async (tx) => {
       const newRoom = await tx.room.create({
         data: {
           brainholeId: finalBrainholeId || null,
           type: "ai_duet",
-          status: "active",
+          status: "active",        // 强制 active
           maxRound: 10,
           currentRound: 0,
           scene: brainholeScenario,
-          isAiRoom: true,
+          isAiRoom: true,          // 强制 true
         },
       });
 
-      // 添加用户参与者
       await tx.roomParticipant.create({
         data: {
           roomId: newRoom.id,
@@ -179,7 +166,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // 添加AI Agent参与者
       for (const agent of agents) {
         await tx.roomParticipant.create({
           data: {
@@ -192,7 +178,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // 第一个Agent的欢迎消息
       const welcomeAgent = agents[0];
       await tx.roomMessage.create({
         data: {
@@ -206,8 +191,8 @@ export async function POST(request: NextRequest) {
 
       return newRoom;
     });
-    console.log("[AI Room API] 房间创建成功, roomId:", room.id);
 
+    console.log("[AI Room API] 房间创建成功, roomId:", room.id);
     console.log("[AI Room API] ========== AI房间创建完成 ==========");
 
     return NextResponse.json(apiResponse({
@@ -218,10 +203,32 @@ export async function POST(request: NextRequest) {
       userId,
       agents,
     }), { status: 201 });
+
   } catch (error: any) {
+    // v9.3-emergency-fix: 兜底报错 — 打印具体错误到日志，返回友好提示
     console.error("[AI Room API] ========== 创建AI房间失败 ==========");
-    console.error("[AI Room API] 错误消息:", error.message);
-    console.error("[AI Room API] 错误堆栈:", error.stack);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建AI房间失败: " + (error.message || "未知错误")), { status: 500 });
+    console.error("[AI Room API] 错误类型:", error?.constructor?.name || "Unknown");
+    console.error("[AI Room API] 错误消息:", error?.message || "无错误消息");
+    console.error("[AI Room API] 错误代码:", error?.code || "无错误代码");
+    console.error("[AI Room API] 错误堆栈:", error?.stack || "无堆栈");
+
+    // 尝试提取 Prisma 具体错误信息
+    if (error?.meta) {
+      console.error("[AI Room API] Prisma meta:", JSON.stringify(error.meta));
+    }
+    if (error?.message?.includes("Foreign key constraint")) {
+      console.error("[AI Room API] 外键约束失败 — 检查关联表数据是否存在");
+    }
+    if (error?.message?.includes("Unique constraint")) {
+      console.error("[AI Room API] 唯一约束冲突 — 检查重复数据");
+    }
+
+    return NextResponse.json(
+      apiError(
+        "INTERNAL_SERVER_ERROR",
+        `创建失败：${error?.message || "未知错误"}。请找开发人员查看服务器日志。`
+      ),
+      { status: 500 }
+    );
   }
 }

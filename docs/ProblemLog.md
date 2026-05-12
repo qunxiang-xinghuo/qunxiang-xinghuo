@@ -1,5 +1,47 @@
 # 群像·星火 — 问题排查记录
 
+## v9.3-emergency 火花页为空 + 人机创建失败 — 紧急修复
+
+> 时间：2026-04-29
+> 状态：✅ 已完成，构建 81/81
+
+### 问题一：火花详情页为空
+
+**现象**：首页 Top3 点击后页面空白
+
+**根因**：
+1. `Asset.isPublic` 默认 `false`，Top3 接口 `where: { isPublic: true }` 返回空数组
+2. 详情页 `notFound()` 直接返回空白页，无容错文案
+
+**修复**：
+1. `Top3 接口`（`api/sparks/top/route.ts`）：兜底逻辑 — 无公开 Asset 时，从全部 Asset 中捞最近的3条
+2. `详情页`（`spark-detail/[id]/page.tsx`）：空数据时不 `notFound()`，显示 `"对白记录正在整理中，请稍后查看"`
+
+### 问题二：人机交互模式创建房间失败
+
+**现象**：点击入口，无法进入对白室
+
+**根因**：
+1. 已有的 active AI 房间可能卡住，导致新房间创建冲突
+2. 创建流程复杂（用户记录 + Agent记录 + 脑洞查询 + 事务），任一环节失败即整体失败
+3. 错误返回 500，前端无法感知具体问题
+
+**修复**：
+1. `暴力清理`：创建前先 `updateMany` 关闭所有 `type='ai_duet' AND status='active'` 的房间
+2. `无脑新建`：不再检查旧房间，直接事务创建，强制 `status='active'` + `isAiRoom=true`
+3. `兜底报错`：catch 块打印完整错误信息（类型/消息/代码/堆栈/Prisma meta），返回 `"创建失败：xxx。请找开发人员查看服务器日志。"`
+
+### SQL 修复（生产环境执行）
+```sql
+-- 强制公开所有 Asset
+UPDATE Asset SET isPublic = 1 WHERE 1=1;
+
+-- 清理卡死AI房间
+UPDATE Room SET status = 'closed', closedAt = datetime('now') WHERE type = 'ai_duet' AND status = 'active';
+```
+
+---
+
 ## v9.3-fix 刘看山 Agent 16项问题修复
 
 > 时间：2026-04-29
