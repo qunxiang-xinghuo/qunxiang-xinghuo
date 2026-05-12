@@ -5,7 +5,8 @@
  * 1. 授权: https://www.zhihu.com/oauth2/authorize?app_id=xxx&redirect_uri=xxx&response_type=code
  * 2. 换 token: POST https://openapi.zhihu.com/access_token
  *    参数: app_id, app_key, grant_type=authorization_code, redirect_uri, code
- * 3. 用户信息: GET https://api.zhihu.com/me (Bearer access_token)
+ * 3. 用户信息: GET https://openapi.zhihu.com/user (Bearer access_token)
+ *    响应: { uid, fullname, gender, headline, description, avatar_path, phone_no, email }
  *
  * 文档: https://open.zhihu.com/
  */
@@ -13,13 +14,14 @@
 import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers/oauth";
 
 export interface ZhihuProfile {
-  id: string;
-  name: string;
-  avatar_url: string;
+  uid: number;
+  fullname: string;
+  gender?: string;
   headline?: string;
   description?: string;
-  url?: string;
-  url_token?: string;
+  avatar_path?: string;
+  phone_no?: string;
+  email?: string;
 }
 
 /**
@@ -95,12 +97,12 @@ export default function ZhihuProvider(
         };
       },
     },
-    // 获取用户信息
+    // 获取用户信息 —— 知乎开放平台 /user 接口
     userinfo: {
-      url: "https://api.zhihu.com/me",
+      url: "https://openapi.zhihu.com/user",
       async request(context) {
         const { tokens } = context;
-        const res = await fetch("https://api.zhihu.com/me", {
+        const res = await fetch("https://openapi.zhihu.com/user", {
           headers: {
             Authorization: `Bearer ${tokens.access_token}`,
             "Content-Type": "application/json",
@@ -118,13 +120,16 @@ export default function ZhihuProvider(
     },
     // 映射到 next-auth User 对象
     profile(profile) {
-      console.log("[Zhihu OAuth] 用户信息:", profile.name, "id:", profile.id);
+      const uidStr = String(profile.uid);
+      console.log("[Zhihu OAuth] 用户信息:", profile.fullname, "uid:", uidStr);
       return {
-        id: `zhihu_${profile.id}`, // 前缀区分知乎用户
-        name: profile.name || "知乎用户",
-        email: `${profile.id}@zhihu.oauth`, // 知乎不提供 email，用占位符
-        image: profile.avatar_url || null,
-        username: profile.url_token || profile.name,
+        id: `zhihu_${uidStr}`, // 前缀区分知乎用户
+        name: profile.fullname || "知乎用户",
+        email: profile.email && profile.email.trim()
+          ? profile.email
+          : `${uidStr}@zhihu.oauth`, // 未授权 email 时用占位符
+        image: profile.avatar_path || null,
+        username: profile.fullname || `zhihu_${uidStr}`,
         level: 1,
         sparkCount: 0,
         isAdmin: false,
