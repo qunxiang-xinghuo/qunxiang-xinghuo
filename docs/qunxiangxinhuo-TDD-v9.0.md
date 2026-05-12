@@ -1073,6 +1073,10 @@ model StoryLike {
 | `/api/zhihu/comment` | POST | 创建评论 | `ZHIHU_RING_APP_KEY` HMAC-SHA256 |
 | `/api/zhihu/reaction` | POST | 点赞/取消点赞 | `ZHIHU_RING_APP_KEY` HMAC-SHA256 |
 | `/api/zhihu/ring` | GET | 圈子详情 | `ZHIHU_RING_APP_KEY` HMAC-SHA256 |
+| `/api/zhihu/hackathon-stories` | GET | 黑客松故事内容库 | `ZHIHU_RING_APP_KEY` HMAC-SHA256 |
+
+> **注**：获取评论列表 (`GET /openapi/comment/list`) 直接在 `zhihu-api.ts` 客户端调用，未暴露为独立 API 路由。
+
 
 ### 4.11 其他
 
@@ -1352,6 +1356,8 @@ model StoryLike {
 | `src/lib/ai/review.ts` | 内容审核服务 |
 | `src/lib/ai/story-weaver.ts` | 故事串联引擎 |
 | `src/lib/ai/prompt-generator.ts` | 催化提示生成器 |
+| `src/lib/zhihu-api.ts` | 知乎圈子开放平台客户端（HMAC-SHA256 签名） |
+| `src/lib/zhihu-dev-api.ts` | 知乎开发者平台客户端（Bearer Token） |
 | `src/server/match-engine.ts` | 匹配引擎（含队列串行化） |
 | `src/server/socket-handler.ts` | Socket.io 事件处理 |
 | `src/server/room-manager.ts` | 房间管理（消息/火花/状态） |

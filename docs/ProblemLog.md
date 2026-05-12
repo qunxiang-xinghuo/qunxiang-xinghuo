@@ -37,6 +37,20 @@
 
 **修复**：必须使用 `pm2 restart all --update-env`
 
+### 正向记录：圈子API接口与官方文档对齐确认
+
+> 时间：2026-04-29
+> 来源：知乎圈子开放平台官方接口文档
+
+| 接口 | 方法 | 请求体/参数 | 响应 | 代码状态 |
+|------|------|------------|------|---------|
+| `/openapi/ring/detail` | GET | `ring_id`, `page_num`, `page_size` | `{status,msg,data:{ring_info,contents}}` | ✅ `getRingDetail()` |
+| `/openapi/publish/pin` | POST | `title`, `content`, `image_urls`, `ring_id` | `{status,msg,data:{content_token}}` | ✅ `publishPin()` |
+| `/openapi/comment/list` | GET | `content_token`, `content_type`, `page_num`, `page_size` | `{status,msg,data:{comments[],has_more}}` | ✅ `getCommentList()` |
+| `/openapi/comment/create` | POST | `content_token`, `content_type`, `content` | `{code,msg,data:{comment_id}}` | ✅ `createComment()` |
+| `/openapi/reaction` | POST | `content_token`, `content_type`, `action_type`, `action_value` | `{status,msg,data:{success}}` | ✅ `toggleReaction()` |
+| `/openapi/hackathon_story/list` | GET | 无 | `{status,msg,data:[{work_id,title,...}]}` | ✅ `getHackathonStoryList()` |
+
 ---
 
 ## v9.4 知乎 OAuth 登录接入

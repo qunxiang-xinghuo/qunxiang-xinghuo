@@ -8,6 +8,7 @@
 > **v9.1 更新**：故事系统"好玩化"改造——卡片以悬念开场、角色emoji+黄色选中反馈、对白室"帷幕/谢幕"戏剧化文案、起承转合标签改为"开场/发展/转折/真相"、创作闭环引导
 > **v9.4 更新**：仅保留知乎 OAuth 登录，移除用户名密码注册
 > **v9.5 更新**：首页改版——知乎用户欢迎区 + 火花卡片墙 + 知乎热榜灵感 + 一键发布到知乎圈子
+> **v9.5a 更新**：新增知乎黑客松故事内容库 API (`/api/zhihu/hackathon-stories`)
 
 ---
 
@@ -493,6 +494,54 @@ zhihu-api.ts 的 publishPin()
 
 **限速**: 每小时最多 5 条想法
 **圈子ID**: 2001009660925334090 (OpenClaw 人类观察员)
+
+---
+
+### B.5b 评论与互动流程（v9.5 补充）
+
+```
+用户在火花详情页 / 知乎圈子页
+    │
+    ├── 查看评论列表 ─────────────────────────┐
+    │   │                                      │
+    │   ▼                                      │
+    │  getCommentList(contentToken, "pin")     │
+    │   │                                      │
+    │   ▼                                      │
+    │  显示评论列表（作者/内容/点赞数/时间）    │
+    │                                          │
+    ├── 发表评论 ──────────────────────────────┤
+    │   │                                      │
+    │   ▼                                      │
+    │  输入评论内容                            │
+    │   │                                      │
+    │   ▼                                      │
+    │  POST /api/zhihu/comment                 │
+    │   Body: { contentToken, contentType, content }
+    │   │                                      │
+    │   ▼                                      │
+    │  createComment() → HMAC-SHA256 签名      │
+    │   │                                      │
+    │   ▼                                      │
+    │  返回 { code, msg, data: { comment_id } }│
+    │   │                                      │
+    │   ▼                                      │
+    │  评论实时追加到列表                       │
+    │                                          │
+    └── 点赞/取消点赞 ─────────────────────────┘
+        │
+        ▼
+       POST /api/zhihu/reaction
+        Body: { contentToken, contentType, actionValue: 0|1 }
+        │
+        ▼
+       toggleReaction() → HMAC-SHA256 签名
+        │
+        ▼
+       前端更新点赞状态（ optimistic UI ）
+```
+
+**限速**：评论每小时每想法最多 20 条
 
 ---
 

@@ -44,6 +44,21 @@ NEXTAUTH_SECRET="qunxiang-xinghuo-production-secret-key-2026"
 |------|------|------|--------|-----|
 | 2026-05-12 | v9.5 | ✅ | 79/79 | ✅ online |
 
+### 圈子API接口官方文档确认（v9.5补充）
+
+| 接口 | 官方文档路径 | 代码实现 | 状态 |
+|------|-------------|---------|------|
+| 获取圈子详情 | `GET /openapi/ring/detail` | `getRingDetail()` | ✅ 已对齐 |
+| 发布想法 | `POST /openapi/publish/pin` | `publishPin()` | ✅ 已对齐 |
+| 获取评论列表 | `GET /openapi/comment/list` | `getCommentList()` | ✅ 已对齐 |
+| 创建评论 | `POST /openapi/comment/create` | `createComment()` | ✅ 已对齐 |
+| 点赞/取消点赞 | `POST /openapi/reaction` | `toggleReaction()` | ✅ 已对齐 |
+| 黑客松故事列表 | `GET /openapi/hackathon_story/list` | `getHackathonStoryList()` | ✅ 已新增 |
+
+**签名算法**：`app_key:{key}|ts:{timestamp}|logid:{logid}|extra_info:` → HMAC-SHA256 → Base64
+**限速**：发布想法每小时5条 / 评论每小时每想法20条
+**申请地址**：`https://www.zhihu.com/ring/moltbook`
+
 ---
 
 ## v9.4 仅保留知乎OAuth登录 — 部署教程
