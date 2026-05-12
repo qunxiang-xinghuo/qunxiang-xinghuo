@@ -1,12 +1,21 @@
 /**
  * 知乎 OAuth 2.0 Provider
  *
- * 适配知乎开放平台 OAuth 流程：
- * 1. 授权: https://www.zhihu.com/oauth2/authorize?app_id=xxx&redirect_uri=xxx&response_type=code
+ * 适配知乎开放平台 OAuth 流程（官方文档）：
+ * Base URL: https://openapi.zhihu.com/
+ *
+ * 1. 授权: GET https://openapi.zhihu.com/authorize
+ *    参数: app_id, redirect_uri, response_type=code
+ *
  * 2. 换 token: POST https://openapi.zhihu.com/access_token
  *    参数: app_id, app_key, grant_type=authorization_code, redirect_uri, code
- * 3. 用户信息: GET https://openapi.zhihu.com/user (Bearer access_token)
- *    响应: { uid, fullname, gender, headline, description, avatar_path, phone_no, email }
+ *
+ * 3. 用户信息: GET https://openapi.zhihu.com/user
+ *    Header: Authorization: Bearer {access_token}
+ *    响应: { uid, hash_id, fullname, gender, headline, description, avatar_path, url, email, phone_no }
+ *
+ * 4. 公共错误: 所有接口返回 HTTP 200，body 含 { code, data } 表示错误
+ *    code 401 = 鉴权失败, 403 = 权限不足, 404 = 用户不存在
  *
  * 文档: https://open.zhihu.com/
  */
@@ -15,13 +24,31 @@ import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers/oauth";
 
 export interface ZhihuProfile {
   uid: number;
+  hash_id?: string;
   fullname: string;
   gender?: string;
   headline?: string;
   description?: string;
   avatar_path?: string;
-  phone_no?: string;
+  url?: string;
   email?: string;
+  phone_no?: string;
+}
+
+/** 知乎接口通用错误响应 */
+interface ZhihuErrorResponse {
+  code: number;
+  data: string;
+}
+
+function isZhihuError(data: unknown): data is ZhihuErrorResponse {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "code" in data &&
+    typeof (data as ZhihuErrorResponse).code === "number" &&
+    (data as ZhihuErrorResponse).code !== 0
+  );
 }
 
 /**
@@ -47,9 +74,9 @@ export default function ZhihuProvider(
     name: "知乎",
     type: "oauth",
     version: "2.0",
-    // 授权地址
+    // 授权地址（官方文档: https://openapi.zhihu.com/authorize）
     authorization: {
-      url: "https://www.zhihu.com/oauth2/authorize",
+      url: "https://openapi.zhihu.com/authorize",
       params: {
         app_id: appId || "",
         redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/zhihu`,
@@ -78,15 +105,20 @@ export default function ZhihuProvider(
           body,
         });
 
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error("[Zhihu OAuth] 换 token 失败:", res.status, errText);
+        const tokens = await res.json();
+
+        // 知乎接口返回 HTTP 200，但 body 可能含业务错误 { code, data }
+        if (isZhihuError(tokens)) {
+          console.error("[Zhihu OAuth] 换 token 业务错误:", tokens.code, tokens.data);
+          throw new Error(`知乎 OAuth 换 token 失败: [${tokens.code}] ${tokens.data}`);
+        }
+
+        if (!res.ok || !tokens.access_token) {
+          console.error("[Zhihu OAuth] 换 token 失败:", res.status, JSON.stringify(tokens));
           throw new Error(`知乎 OAuth 换 token 失败: ${res.status}`);
         }
 
-        const tokens = await res.json();
         console.log("[Zhihu OAuth] access_token 获取成功");
-
         return {
           tokens: {
             access_token: tokens.access_token,
@@ -109,13 +141,20 @@ export default function ZhihuProvider(
           },
         });
 
+        const data = await res.json();
+
+        // 知乎接口返回 HTTP 200，但 body 可能含业务错误 { code, data }
+        if (isZhihuError(data)) {
+          console.error("[Zhihu OAuth] 获取用户信息业务错误:", data.code, data.data);
+          throw new Error(`知乎 OAuth 获取用户信息失败: [${data.code}] ${data.data}`);
+        }
+
         if (!res.ok) {
-          const errText = await res.text();
-          console.error("[Zhihu OAuth] 获取用户信息失败:", res.status, errText);
+          console.error("[Zhihu OAuth] 获取用户信息 HTTP 错误:", res.status, JSON.stringify(data));
           throw new Error(`知乎 OAuth 获取用户信息失败: ${res.status}`);
         }
 
-        return await res.json();
+        return data;
       },
     },
     // 映射到 next-auth User 对象
