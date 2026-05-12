@@ -18,7 +18,7 @@ const passwordSchema = z.object({
  */
 export async function PUT(req: NextRequest) {
   try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
 
     if (!userId) {

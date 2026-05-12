@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     console.log("[MatchAPI] 请求方法:", request.method);
     console.log("[MatchAPI] 请求URL:", request.url);
 
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const guestId = request.headers.get("x-guest-id");
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
     if (!userId) {

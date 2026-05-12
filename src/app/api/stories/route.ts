@@ -10,7 +10,7 @@ import { apiResponse, apiError } from "@/lib/utils";
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
 
     const stories = await db.story.findMany({
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     if (!userId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });

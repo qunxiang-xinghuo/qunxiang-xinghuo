@@ -9,7 +9,7 @@ import { toggleReaction } from "@/lib/zhihu-api";
  */
 export async function POST(req: NextRequest) {
   try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     if (!userId) {
       return NextResponse.json({ status: 1, msg: "未登录", data: null }, { status: 401 });

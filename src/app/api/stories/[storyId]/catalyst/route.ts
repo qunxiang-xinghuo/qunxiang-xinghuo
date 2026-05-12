@@ -13,7 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ storyId: string }> }
 ) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     if (!token) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }

@@ -166,6 +166,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(apiError("FORBIDDEN", "不能删除自己"), { status: 403 });
     }
 
+    await db.user.upsert({
+      where: { id: "system" },
+      update: {},
+      create: {
+        id: "system",
+        name: "系统用户",
+        username: "system",
+        email: "system@admin.local",
+        level: 0,
+        sparkCount: 0,
+        isAdmin: false,
+      },
+    });
+
     await db.$transaction(async (tx) => {
       // 1. 清理用户的关联数据
       await tx.reaction.deleteMany({ where: { userId: id } });
@@ -176,10 +190,10 @@ export async function DELETE(request: NextRequest) {
       await tx.healingSession.deleteMany({ where: { userId: id } });
       await tx.roomMessage.deleteMany({ where: { senderId: id } });
 
-      // 2. 将用户创建的 stories/brainholes/assets 的 ownership 置空
+      // 2. 将用户创建的 stories/brainholes/assets 的 ownership 置空/转交
       await tx.story.updateMany({ where: { creatorId: id }, data: { creatorId: null } });
       await tx.story.updateMany({ where: { directorId: id }, data: { directorId: null } });
-      await tx.brainhole.updateMany({ where: { authorId: id }, data: { authorId: "system" } });
+      await tx.brainhole.updateMany({ where: { authorId: id }, data: { authorId: null } });
       await tx.asset.updateMany({ where: { userId: id }, data: { userId: "system" } });
 
       // 3. 删除其他关联数据

@@ -15,7 +15,7 @@ const updateProfileSchema = z.object({
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req, secret: process.env.NEXTAUTH_SECRET });
     const guestId = req.headers.get("x-guest-id");
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
 

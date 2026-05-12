@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
     const token = await getToken({
       req,
       secret: process.env.NEXTAUTH_SECRET,
+      secureCookie: false,
     });
     const guestId = req.headers.get("x-guest-id");
     const userId = token?.id as string | undefined || guestId;

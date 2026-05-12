@@ -110,7 +110,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
     const effectiveUserId = userId || guestId;

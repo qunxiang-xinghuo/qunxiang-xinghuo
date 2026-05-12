@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ matchId: string }> }
 ) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     // v4.4-fix: 支持guest用户
     const guestId = request.headers.get("x-guest-id");
@@ -60,7 +60,7 @@ export async function DELETE(
   { params }: { params: Promise<{ matchId: string }> }
 ) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     // v4.4-fix: 支持guest用户
     const guestId = request.headers.get("x-guest-id");

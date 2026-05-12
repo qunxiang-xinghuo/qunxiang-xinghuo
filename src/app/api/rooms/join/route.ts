@@ -6,7 +6,7 @@ import { apiResponse, apiError } from "@/lib/utils";
 // v8.5-fix: 邀请码加入房间 — 加固血型匹配 + 移除 SQLite 交互式事务
 export async function POST(request: NextRequest) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     const guestId = request.headers.get("x-guest-id");
     const effectiveUserId = userId || guestId;

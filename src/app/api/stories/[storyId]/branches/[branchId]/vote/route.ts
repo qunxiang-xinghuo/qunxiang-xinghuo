@@ -12,7 +12,7 @@ export async function POST(
 ) {
   try {
     const { storyId, branchId } = await params;
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
 
     let body;

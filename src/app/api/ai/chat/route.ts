@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // v9.1 Agent: 获取当前用户ID（用于工具调用上下文）
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
     console.log("[AI Chat] userId:", userId || "未登录");
 

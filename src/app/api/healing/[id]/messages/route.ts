@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id: sessionId } = await params;
-        const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+        const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const guestId = request.headers.get("x-guest-id");
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
 
@@ -57,7 +57,7 @@ export async function POST(
 ) {
   try {
     const { id: sessionId } = await params;
-        const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+        const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const guestId = request.headers.get("x-guest-id");
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined) || guestId;
 
