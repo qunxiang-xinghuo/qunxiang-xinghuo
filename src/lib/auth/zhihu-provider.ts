@@ -56,6 +56,19 @@ function getBaseUrl(): string {
   return process.env.NEXTAUTH_URL || 'http://localhost:3000';
 }
 
+/** 从请求头中提取实际 host，用于修正 redirect_uri */
+function getHostFromHeaders(headers: Headers | Record<string, string> | undefined): string | null {
+  if (!headers) return null;
+  const host = (headers as any)['x-forwarded-host']
+    || (headers as any)['host']
+    || (headers as any)['Host'];
+  const proto = (headers as any)['x-forwarded-proto'] || 'https';
+  if (host) {
+    return `${proto}://${host}`;
+  }
+  return null;
+}
+
 /**
  * 知乎 OAuth Provider
  *
@@ -93,11 +106,15 @@ export default function ZhihuProvider(
       url: "https://openapi.zhihu.com/access_token",
       async request(context) {
         const { provider, params, checks } = context;
-        const redirectUri = `${getBaseUrl()}/api/auth/callback/zhihu`;
+
+        // 优先使用实际请求的 host，避免 NEXTAUTH_URL 配置错误导致 redirect_uri 不匹配
+        const actualHost = getHostFromHeaders((context as any).req?.headers) || getBaseUrl();
+        const redirectUri = `${actualHost}/api/auth/callback/zhihu`;
 
         // NextAuth v4 App Router 缺陷: params 可能为空，从拦截层回退
         const rawParams = getCallbackParams();
         console.log("[Zhihu OAuth] 收到回调, NextAuth params:", JSON.stringify(params), "raw params:", JSON.stringify(rawParams));
+        console.log("[Zhihu OAuth] 使用 redirect_uri:", redirectUri, "baseUrl:", getBaseUrl(), "actualHost:", actualHost);
 
         const code = params.code
           || (params as any).authorization_code
@@ -116,7 +133,7 @@ export default function ZhihuProvider(
         body.append("redirect_uri", redirectUri);
         body.append("code", code);
 
-        console.log("[Zhihu OAuth] 换取 access_token...");
+        console.log("[Zhihu OAuth] 换取 access_token, app_id:", appId ? "已配置" : "未配置", "请求体:", body.toString().replace(new RegExp(appKey || '', 'g'), '***'));
         const tokenUrl = typeof provider.token === "string" ? provider.token : (provider.token as any).url;
         const res = await fetch(tokenUrl, {
           method: "POST",
@@ -128,16 +145,17 @@ export default function ZhihuProvider(
         });
 
         const tokens = await res.json();
+        console.log("[Zhihu OAuth] 换 token 响应:", JSON.stringify(tokens));
 
         // 知乎接口返回 HTTP 200，但 body 可能含业务错误 { code, data }
         if (isZhihuError(tokens)) {
           console.error("[Zhihu OAuth] 换 token 业务错误:", tokens.code, tokens.data);
-          throw new Error(`知乎 OAuth 换 token 失败: [${tokens.code}] ${tokens.data}`);
+          throw new Error(`知乎 OAuth 换 token 失败: [${tokens.code}] ${tokens.data || '无详细错误信息'} (redirect_uri=${redirectUri})`);
         }
 
         if (!res.ok || !tokens.access_token) {
           console.error("[Zhihu OAuth] 换 token 失败:", res.status, JSON.stringify(tokens));
-          throw new Error(`知乎 OAuth 换 token 失败: ${res.status}`);
+          throw new Error(`知乎 OAuth 换 token 失败: HTTP ${res.status} (redirect_uri=${redirectUri})`);
         }
 
         console.log("[Zhihu OAuth] access_token 获取成功");

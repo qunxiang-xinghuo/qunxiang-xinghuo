@@ -20,12 +20,13 @@ export async function middleware(request: NextRequest) {
 
   // getToken 用 req.cookies[name] 读取，但 NextRequest.cookies 是 RequestCookies 对象
   // 不支持中括号语法，必须绕过传原始 cookie header
+  // v9.5-fix: 显式指定 cookieName，避免 secureCookie 前缀导致找不到 cookie
   const token = await getToken({
     req: {
       headers: { cookie: request.headers.get('cookie') || '' },
     } as any,
     secret: process.env.NEXTAUTH_SECRET!,
-    secureCookie: (process.env.NEXTAUTH_URL || '').startsWith('https://'),
+    cookieName: 'next-auth.session-token',
   });
   const isLoggedIn = !!token;
 
