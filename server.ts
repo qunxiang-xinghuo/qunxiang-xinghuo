@@ -10,7 +10,8 @@ import { startCrawlerSchedule } from './src/lib/crawler'
 import { startAIEvolutionSchedule } from './src/lib/ai-training'
 
 const dev = process.env.NODE_ENV !== 'production'
-const hostname = process.env.HOSTNAME || '0.0.0.0'
+// v9.5a-fix: 硬编码为 0.0.0.0，避免被系统 HOSTNAME 环境变量覆盖导致只监听 IPv6 localhost
+const hostname = '0.0.0.0'
 const port = parseInt(process.env.PORT || '3000')
 
 const app = next({ dev, hostname, port })
