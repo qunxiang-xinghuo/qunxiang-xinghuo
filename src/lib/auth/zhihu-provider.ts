@@ -147,8 +147,9 @@ export default function ZhihuProvider(
         const tokens = await res.json();
         console.log("[Zhihu OAuth] 换 token 响应:", JSON.stringify(tokens));
 
-        // 知乎接口返回 HTTP 200，但 body 可能含业务错误 { code, data }
-        if (isZhihuError(tokens)) {
+        // 知乎接口返回 HTTP 200，body 可能含 { code, data }
+        // 如果成功获取到 access_token，即使 code !== 0 也视为成功（如 code=20000 为成功状态码）
+        if (!tokens.access_token && isZhihuError(tokens)) {
           console.error("[Zhihu OAuth] 换 token 业务错误:", tokens.code, tokens.data);
           throw new Error(`知乎 OAuth 换 token 失败: [${tokens.code}] ${tokens.data || '无详细错误信息'} (redirect_uri=${redirectUri})`);
         }

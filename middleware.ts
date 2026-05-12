@@ -18,15 +18,12 @@ const PUBLIC_PATHS = ['/', '/login', '/register', '/admin/login'];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // getToken 用 req.cookies[name] 读取，但 NextRequest.cookies 是 RequestCookies 对象
-  // 不支持中括号语法，必须绕过传原始 cookie header
-  // v9.5-fix: 显式指定 cookieName，避免 secureCookie 前缀导致找不到 cookie
+  // v9.5-fix: App Router middleware 中直接传 NextRequest
+  // secureCookie 必须与 auth.ts 中 cookie 的 secure 选项一致（当前为 false）
   const token = await getToken({
-    req: {
-      headers: { cookie: request.headers.get('cookie') || '' },
-    } as any,
+    req: request as any,
     secret: process.env.NEXTAUTH_SECRET!,
-    cookieName: 'next-auth.session-token',
+    secureCookie: false,
   });
   const isLoggedIn = !!token;
 
