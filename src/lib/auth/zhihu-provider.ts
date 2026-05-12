@@ -91,11 +91,15 @@ export default function ZhihuProvider(
     token: {
       url: "https://openapi.zhihu.com/access_token",
       async request(context) {
-        const { provider, params } = context;
+        const { provider, params, checks } = context;
         const redirectUri = `${getBaseUrl()}/api/auth/callback/zhihu`;
 
+        console.log("[Zhihu OAuth] 收到回调 params keys:", Object.keys(params));
+        console.log("[Zhihu OAuth] 完整 params:", JSON.stringify(params));
+        console.log("[Zhihu OAuth] checks:", JSON.stringify(checks));
+
         const code = params.code || (params as any).authorization_code || "";
-        console.log("[Zhihu OAuth] 回调参数:", { code: params.code, authorization_code: (params as any).authorization_code });
+        console.log("[Zhihu OAuth] 提取 code:", { code: params.code, authorization_code: (params as any).authorization_code });
 
         if (!code) {
           throw new Error("知乎 OAuth 回调缺少 authorization_code 参数");
