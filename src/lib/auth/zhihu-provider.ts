@@ -51,6 +51,10 @@ function isZhihuError(data: unknown): data is ZhihuErrorResponse {
   );
 }
 
+function getBaseUrl(): string {
+  return process.env.NEXTAUTH_URL || 'http://localhost:3000';
+}
+
 /**
  * 知乎 OAuth Provider
  *
@@ -79,7 +83,7 @@ export default function ZhihuProvider(
       url: "https://openapi.zhihu.com/authorize",
       params: {
         app_id: appId || "",
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/zhihu`,
+        redirect_uri: `${getBaseUrl()}/api/auth/callback/zhihu`,
         response_type: "code",
       },
     },
@@ -88,9 +92,8 @@ export default function ZhihuProvider(
       url: "https://openapi.zhihu.com/access_token",
       async request(context) {
         const { provider, params } = context;
-        const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/callback/zhihu`;
+        const redirectUri = `${getBaseUrl()}/api/auth/callback/zhihu`;
 
-        // 知乎回调参数名是 authorization_code，不是标准的 code
         const code = params.code || (params as any).authorization_code || "";
         console.log("[Zhihu OAuth] 回调参数:", { code: params.code, authorization_code: (params as any).authorization_code });
 
@@ -109,7 +112,10 @@ export default function ZhihuProvider(
         const tokenUrl = typeof provider.token === "string" ? provider.token : (provider.token as any).url;
         const res = await fetch(tokenUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Length": String(Buffer.byteLength(body.toString())),
+          },
           body,
         });
 
