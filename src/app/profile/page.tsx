@@ -160,8 +160,7 @@ export default function ProfilePage() {
     ...(user?.isAdmin ? [{ icon: Shield, label: '管理员后台', desc: '清理僵尸房间与内容', path: '/admin' }] : []),
   ];
 
-  // 显示数据库中的登录用户名（username）
-  const displayName = user.username || user.name || '用户';
+  const displayName = user.name || user.username || '用户';
 
   return (
     <div className="flex flex-col min-h-full page-gradient">

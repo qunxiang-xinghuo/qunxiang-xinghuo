@@ -162,10 +162,10 @@ export const authOptions: NextAuthOptions = {
                 name: user.name || "知乎用户",
                 email: user.email || `${user.id}@zhihu.oauth`,
                 username: user.username || user.id,
+                image: user.image || null,
                 level: 1,
                 sparkCount: 0,
                 isAdmin: false,
-                // 知乎用户没有密码，标记为 OAuth 用户
                 password: null,
               },
             });
