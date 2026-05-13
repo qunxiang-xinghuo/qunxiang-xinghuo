@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { signOut } from 'next-auth/react';
 import {
-  Settings, Flame, BookOpen, ChevronRight, LogOut, Sparkles, Coins, ScrollText, UserCircle,
+  Settings, Flame, BookOpen, ChevronRight, LogOut, Coins, ScrollText, UserCircle,
   Shield, Heart,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
@@ -70,7 +70,6 @@ export default function ProfilePage() {
   const { isAuthenticated } = useRequireAuth();
   const [user, setUser] = useState<UserData | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { if (isAuthenticated) setMounted(true); }, [isAuthenticated]);
@@ -78,7 +77,6 @@ export default function ProfilePage() {
   // 从 API 加载最新用户信息
   async function loadUserFromApi() {
     try {
-      setLoadError(false);
       const guestId = localStorage.getItem('xh_user_id');
       const res = await fetch('/api/users/me', {
         headers: guestId ? { 'x-guest-id': guestId } : {},
@@ -93,7 +91,6 @@ export default function ProfilePage() {
       }
     } catch (e) {
       console.error('加载用户信息失败:', e);
-      setLoadError(true);
     }
   }
 
@@ -117,32 +114,11 @@ export default function ProfilePage() {
     return <div className="h-screen bg-xh-primary" />;
   }
 
-  if (pageLoading) {
+  if (pageLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen page-gradient">
-        <div className="w-6 h-6 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen page-gradient px-6">
-        <div className="w-16 h-16 rounded-2xl bg-[#3B82F6]/10 flex items-center justify-center mb-4">
-          <Sparkles className="w-8 h-8 text-[#3B82F6]" />
-        </div>
-        <h2 className="text-lg font-bold text-white/90 mb-2">
-          {loadError ? '加载失败' : '请先登录'}
-        </h2>
-        <p className="text-sm text-white/40 mb-6 text-center">
-          {loadError ? '网络异常，请检查连接后重试' : '登录后即可查看个人信息和使用全部功能'}
-        </p>
-        <button
-          onClick={() => loadError ? loadUserFromApi() : router.push('/login')}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          {loadError ? '重试' : '去登录'}
-        </button>
+      <div className="flex flex-col items-center justify-center h-screen page-gradient gap-3">
+        <div className="w-8 h-8 border-2 border-[#8a9ab0]/30 border-t-[#3B82F6] rounded-full animate-spin" />
+        <p className="text-sm text-white/30">加载中...</p>
       </div>
     );
   }
