@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import { signIn } from 'next-auth/react';
+import Image from 'next/image';
 
 const DECORATIVE_BUBBLES = [
   { size: 44, left: '72%', delay: 0, duration: 9, sway: 14 },
@@ -161,10 +162,26 @@ export default function LoginForm() {
       </div>
 
       <motion.div
+        initial={mounted ? { opacity: 0, scale: 0.9 } : false}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.35 }}
+        className="flex justify-center relative z-10 mb-2"
+      >
+        <Image
+          src="/logo.png"
+          alt="群像·星火"
+          width={80}
+          height={80}
+          className="drop-shadow-[0_0_20px_rgba(212,184,48,0.2)]"
+          priority
+        />
+      </motion.div>
+
+      <motion.div
         initial={mounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="flex-1 px-6 flex flex-col items-center justify-center relative z-10"
+        className="px-6 flex flex-col items-center justify-center relative z-10"
       >
         <div className="w-full max-w-[320px] space-y-4">
           {error && (

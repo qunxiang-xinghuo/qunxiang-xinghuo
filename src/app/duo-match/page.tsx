@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Sparkles, DoorOpen, Share2, BrainCircuit } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
+import Image from 'next/image';
 
 const aiIdentities = [
   '急诊科医生', '辩护律师', '初中班主任', '产品经理', '外卖骑手',
@@ -150,8 +151,19 @@ function DuoMatchContent() {
         </p>
       </div>
 
+      <div className="flex-1 flex items-center justify-center">
+        <Image
+          src="/liukanshan.jpg"
+          alt="刘看山"
+          width={160}
+          height={160}
+          className="object-contain opacity-80 drop-shadow-[0_0_24px_rgba(116,185,255,0.15)]"
+          priority
+        />
+      </div>
+
       {/* 入口按钮区域 */}
-      <div className="flex-1 flex flex-col justify-end px-6 py-5 space-y-3">
+      <div className="px-6 py-5 space-y-3">
         {!showJoinInput ? (
           <>
             {/* 1. 进入邀请房间 */}

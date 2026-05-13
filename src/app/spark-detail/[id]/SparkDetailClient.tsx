@@ -340,8 +340,14 @@ export default function SparkDetailClient({ data }: { data: SparkDetailData }) {
               <div className="space-y-3">
                 {comments.map((c) => (
                   <div key={c.id} className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[10px] text-white/40 flex-shrink-0">
-                      {(c.user.name || '匿').charAt(0)}
+                    <div className="w-7 h-7 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
+                      {c.user.image ? (
+                        <img src={c.user.image} alt={c.user.name || ''} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] text-white/40">
+                          {(c.user.name || '匿').charAt(0)}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

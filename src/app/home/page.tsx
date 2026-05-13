@@ -236,7 +236,7 @@ export default function HomePage() {
               <p className="text-xs text-white/20 mt-1">去发起一段对白，创造第一个火花</p>
             </div>
           ) : (
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-[#D4B830]/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent [scrollbar-color:#D4B83020_transparent] [scrollbar-width:thin]">
               {top3.map((item, idx) => (
                 <motion.div
                   key={item.id}
@@ -274,8 +274,8 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* ====== 知乎热榜灵感 ====== */}
-        <section className="mb-5">
+        {/* ====== 知乎热榜灵感（已隐藏）====== */}
+        {false && (<section className="mb-5">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-[#ff6b6b]" />
             <h2 className="text-sm font-semibold text-white/90">知乎热榜 · 灵感</h2>
@@ -313,10 +313,10 @@ export default function HomePage() {
               ))}
             </div>
           )}
-        </section>
+        </section>)}
 
-        {/* ====== 我的故事 + 发布到知乎 ====== */}
-        <section className="mb-4 space-y-2">
+        {/* ====== 我的故事 + 发布到知乎（已隐藏）====== */}
+        {false && (<section className="mb-4 space-y-2">
           <button
             onClick={() => router.push('/my-stories')}
             className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] active:scale-[0.99] transition-all"
@@ -344,7 +344,7 @@ export default function HomePage() {
             </div>
             <ChevronRight className="w-4 h-4 text-white/15" />
           </button>
-        </section>
+        </section>)}
 
         {/* ====== 四大模式入口 ====== */}
         <section className="mb-4">
