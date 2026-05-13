@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db as prisma } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { getToken } from "next-auth/jwt";
+import { recalculateAssetHotScore } from "@/lib/hot-score";
 
 /**
  * POST /api/sparks/:id/like
@@ -55,50 +56,28 @@ export async function POST(
     });
 
     if (existingLike) {
-      // 已点赞 → 取消点赞
-      await prisma.$transaction([
-        prisma.assetLike.delete({
-          where: { id: existingLike.id },
-        }),
-        prisma.asset.update({
-          where: { id },
-          data: { hotScore: { decrement: 1 } },
-        }),
-      ]);
-
-      const updated = await prisma.asset.findUnique({
-        where: { id },
-        select: { hotScore: true },
+      await prisma.assetLike.delete({
+        where: { id: existingLike.id },
       });
+      const hotScore = await recalculateAssetHotScore(id);
 
       return NextResponse.json(apiResponse({
         liked: false,
-        hotScore: updated?.hotScore || 0,
+        hotScore,
         message: "已取消点赞",
       }));
     } else {
-      // 未点赞 → 点赞
-      await prisma.$transaction([
-        prisma.assetLike.create({
-          data: {
-            assetId: id,
-            userId: effectiveUserId,
-          },
-        }),
-        prisma.asset.update({
-          where: { id },
-          data: { hotScore: { increment: 1 } },
-        }),
-      ]);
-
-      const updated = await prisma.asset.findUnique({
-        where: { id },
-        select: { hotScore: true },
+      await prisma.assetLike.create({
+        data: {
+          assetId: id,
+          userId: effectiveUserId,
+        },
       });
+      const hotScore = await recalculateAssetHotScore(id);
 
       return NextResponse.json(apiResponse({
         liked: true,
-        hotScore: updated?.hotScore || 0,
+        hotScore,
         message: "点赞成功",
       }));
     }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
+import { calculateHotScore, countConversationRounds } from "@/lib/hot-score";
 
 // GET /api/assets — 获取当前用户的对白资产（火花）
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
@@ -86,6 +87,19 @@ export async function POST(request: NextRequest) {
     // 计算火花数
     const sparkCount = room.messages.filter((m: any) => m.isSpark).length;
 
+    const conversationRounds = countConversationRounds(
+      room.messages.map((m: any) => ({ senderId: m.senderId, identity: m.identity }))
+    );
+
+    const hotScore = calculateHotScore({
+      sparkCount,
+      messageCount: room.messages.length,
+      likeCount: 0,
+      commentCount: 0,
+      conversationRounds,
+      createdAt: new Date(),
+    });
+
     // 创建资产（默认私密）
     const asset = await db.asset.create({
       data: {
@@ -94,12 +108,12 @@ export async function POST(request: NextRequest) {
         brainholeId: room.brainholeId,
         title: room.brainhole?.title || "无主题对白",
         summary: room.brainhole?.scenario || "",
-        content: firstSparkMsg.slice(0, 200), // 截取前200字作为内容预览
+        content: firstSparkMsg.slice(0, 200),
         identity: participant?.identity || "匿名",
         messageCount: room.messages.length,
         sparkCount,
         isPublic: false,
-        hotScore: sparkCount * 10 + room.messages.length, // 热度计算
+        hotScore,
       },
     });
 

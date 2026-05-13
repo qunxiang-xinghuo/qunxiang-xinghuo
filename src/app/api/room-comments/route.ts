@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse } from "@/lib/utils";
+import { recalculateAssetHotScore } from "@/lib/hot-score";
 
 /**
  * GET /api/room-comments?roomId=xxx
@@ -76,6 +77,11 @@ export async function POST(request: NextRequest) {
         user: { select: { id: true, name: true, image: true } },
       },
     });
+
+    const asset = await db.asset.findFirst({ where: { roomId } });
+    if (asset) {
+      await recalculateAssetHotScore(asset.id);
+    }
 
     return NextResponse.json(apiResponse({
       comment: {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
+import { recalculateAssetHotScore } from "@/lib/hot-score";
 
 /**
  * DELETE /api/room-comments/:id
@@ -21,7 +22,7 @@ export async function DELETE(
 
     const comment = await db.roomComment.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, roomId: true },
     });
 
     if (!comment) {
@@ -33,6 +34,11 @@ export async function DELETE(
     }
 
     await db.roomComment.delete({ where: { id } });
+
+    const asset = await db.asset.findFirst({ where: { roomId: comment.roomId } });
+    if (asset) {
+      await recalculateAssetHotScore(asset.id);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
