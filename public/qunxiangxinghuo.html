@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>群像·星火 — 知乎黑客松 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --primary-bright: #4f8fff;
+      --primary-dim: rgba(37, 99, 235, 0.08);
+      --cyan: #06b6d4;
+      --cyan-dim: rgba(6, 182, 212, 0.08);
+      --accent: #06b6d4;
+      --accent-dim: rgba(6, 182, 212, 0.08);
+      --purple: #8b5cf6;
+      --emerald: #10b981;
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --text: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --border: rgba(37, 99, 235, 0.15);
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+      --shadow-glow: 0 0 40px rgba(37, 99, 235, 0.10);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "Noto Sans SC", -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      font-weight: 400;
+    }
+
+    .slide {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem 5vw;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .slide::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 15% 20%, rgba(37, 99, 235, 0.04) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 50% at 85% 80%, rgba(6, 182, 212, 0.03) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .slide::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(37, 99, 235, 0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(37, 99, 235, 0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    .slide.active { display: flex; }
+
+    .slide-content {
+      max-width: 1100px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .font-serif {
+      font-family: "Syne", "Noto Sans SC", sans-serif;
+    }
+
+    h1 {
+      font-family: "Syne", "Noto Sans SC", sans-serif;
+      font-size: clamp(2.8rem, 5.5vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #1e293b 0%, #2563eb 50%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 {
+      font-family: "Syne", "Noto Sans SC", sans-serif;
+      font-size: clamp(1.9rem, 3.8vw, 3rem);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 0.7rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    h2::before {
+      content: '';
+      display: inline-block;
+      width: 5px;
+      min-height: 1.6rem;
+      height: 100%;
+      background: var(--primary);
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 600px;
+    }
+
+    .label {
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .editorial-quote {
+      border-left: 3px solid var(--primary);
+      padding: 1.5rem 2rem;
+      background: var(--bg-card);
+      font-family: "Noto Sans SC", sans-serif;
+      font-size: 1.2rem;
+      font-weight: 500;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      position: relative;
+    }
+
+    .editorial-quote::before {
+      content: '"';
+      position: absolute;
+      top: -0.2rem;
+      left: 0.8rem;
+      font-family: "Syne", sans-serif;
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--primary);
+      opacity: 0.12;
+      line-height: 1;
+    }
+
+    .quote-author {
+      margin-top: 1rem;
+      font-family: "Noto Sans SC", sans-serif;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .card-minimal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .card-minimal:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow);
+    }
+
+    .card-number {
+      font-family: "Syne", sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .tag-minimal {
+      display: inline-block;
+      padding: 0.3rem 0.9rem;
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin: 0.25rem;
+      transition: all 0.2s;
+    }
+
+    .tag-minimal:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .tag-primary {
+      background: var(--primary-dim);
+      border-color: rgba(37, 99, 235, 0.2);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tag-accent {
+      background: var(--cyan-dim);
+      border-color: rgba(6, 182, 212, 0.2);
+      color: #0891b2;
+      font-weight: 600;
+    }
+
+    .flow-minimal {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-top: 2rem;
+    }
+
+    .flow-step {
+      flex: 1;
+      text-align: center;
+      padding: 1rem 0.5rem;
+      position: relative;
+    }
+
+    .flow-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 35%;
+      width: 1px;
+      height: 30%;
+      background: var(--border);
+    }
+
+    .flow-step-num {
+      font-family: "Syne", sans-serif;
+      font-size: 1.5rem;
+      color: var(--primary);
+      font-weight: 800;
+    }
+
+    .flow-step-label {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      margin-top: 0.3rem;
+      font-weight: 500;
+    }
+
+    .video-placeholder {
+      width: 100%;
+      max-width: 300px;
+      max-height: 65vh;
+      aspect-ratio: 9/16;
+      background: var(--bg-card);
+      border: 2px dashed var(--border);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      position: relative;
+      transition: border-color 0.3s;
+    }
+
+    .video-placeholder:hover {
+      border-color: var(--primary);
+    }
+
+    .video-placeholder .play-btn {
+      width: 64px;
+      height: 64px;
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .video-placeholder .play-btn::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-left: 16px solid var(--primary);
+      margin-left: 4px;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .team-card {
+      text-align: center;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      transition: all 0.3s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .team-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow);
+    }
+
+    .nav-bar {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+      font-weight: 700;
+    }
+
+    .nav-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .slide-indicator {
+      position: fixed;
+      bottom: 2rem;
+      left: 2rem;
+      font-family: "Syne", sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      z-index: 100;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+      animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      opacity: 0;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .team-grid { grid-template-columns: 1fr; }
+      .flow-minimal { flex-direction: column; }
+      .flow-step:not(:last-child)::after { display: none; }
+      .slide { padding: 2rem 1.5rem; }
+    }
+
+    .cover-slide { text-align: center; }
+
+    .cover-slide h1 {
+      font-size: clamp(3.2rem, 8vw, 6.5rem);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #1e293b 0%, #2563eb 45%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .cover-slide .slogan {
+      font-family: "Noto Sans SC", sans-serif;
+      font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      letter-spacing: 0.06em;
+    }
+
+    .cover-badge {
+      display: inline-block;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    .section-line {
+      width: 40px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--cyan));
+      margin: 1.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 1: 封面
+       ════════════════════════════════════════ -->
+  <section class="slide active cover-slide" id="s1">
+    <div class="slide-content">
+      <div class="animate-in">
+        <div class="cover-badge">知乎黑客松 2026</div>
+      </div>
+      <div class="animate-in delay-1" style="margin-bottom: 0.5rem;">
+        <img src="logo.png" alt="群像·星火" style="height: 100px;" onerror="this.style.display='none'">
+      </div>
+      <div class="animate-in delay-2">
+        <h1>群像·星火</h1>
+      </div>
+      <div class="animate-in delay-3">
+        <p class="slogan">不同职业，不同性格，碰撞出一个人写不出的故事</p>
+      </div>
+      <div class="animate-in delay-4" style="margin-top: 2.5rem;">
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <span class="tag-minimal tag-primary">双 AI 引擎催化</span>
+          <span class="tag-minimal tag-primary">15 秒实时匹配</span>
+          <span class="tag-minimal tag-accent">火花标记系统</span>
+        </div>
+      </div>
+      <div class="animate-in delay-5" style="margin-top: 3rem;">
+        <p style="font-size: 0.85rem; color: var(--text-muted); letter-spacing: 1px;">按 → 开始汇报</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 2: 痛点
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s2">
+    <div class="slide-content">
+      <div class="grid-2">
+        <div>
+          <div class="animate-in">
+            <div class="label">痛点</div>
+            <h2>心里有故事<br>笔下没火花</h2>
+            <div class="section-line"></div>
+          </div>
+          <div class="animate-in delay-1" style="margin-top: 2rem;">
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <span style="font-family: 'Syne', sans-serif; font-size: 1.5rem; color: var(--primary); line-height: 1">01</span>
+                <div>
+                  <div style="font-weight: 600; margin-bottom: 0.4rem;">创作门槛高，潜在创作者被挡在门外</div>
+                  <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7;">
+                    普通人有真实经历，但不知道怎么写成吸引人的故事。心中有想法，笔下没火花——知乎因此流失了大量本可以成为创作者的用户。
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <span style="font-family: 'Syne', sans-serif; font-size: 1.5rem; color: var(--primary); line-height: 1">02</span>
+                <div>
+                  <div style="font-weight: 600; margin-bottom: 0.4rem;">一个人的故事，只有一个人的眼睛</div>
+                  <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7;">
+                    产品经理写了需求文档，却不懂技术实现的困境；技术大牛写了代码，却看不见教育现场的细节。不同职业的真实经验被隔离在各自的茧房里，故事永远缺了另一半。
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="animate-in delay-2">
+          <div class="editorial-quote">
+            我们三个人：一个做产品，一个做技术，一个做教育……让我写技术大牛的思维方式？写教育的核心理念？我写不出来——因为我的眼睛，永远只有我自己的角度。
+            <div class="quote-author">—— 星星，项目发起人</div>
+          </div>
+          <div style="margin-top: 1.5rem; padding: 1.5rem; border: 1px solid var(--border);">
+            <div style="font-size: 0.75rem; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">核心洞察</div>
+            <div style="font-family: 'Noto Sans SC', sans-serif; font-size: 1.05rem; line-height: 1.7; color: var(--text-secondary);">
+              如果能让不同职业的人同时进入同一个冲突情境，<strong style="color: var(--text);">用各自的真实经验碰撞出火花</strong>——一个人永远写不出的故事，就可能诞生。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 3: 解决方案总览
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s3">
+    <div class="slide-content">
+      <div class="animate-in" style="text-align: center; max-width: 720px; margin: 0 auto;">
+        <div class="label">解决方案</div>
+        <h2 style="margin-bottom: 0.3rem;">基于真实职业经验的多人协同创作平台</h2>
+        <p class="subtitle">让急诊科医生和辩护律师，在同一个情境里碰撞出真实的火花。刘看山DM不是替代创作，而是催化碰撞。</p>
+      </div>
+
+      <div class="animate-in delay-1" style="margin-top: 1.5rem;">
+        <div class="grid-3">
+          <div class="card-minimal" style="text-align: center; padding: 1rem 0.8rem;">
+            <div style="font-size: 1.3rem; margin-bottom: 0.3rem;">🤖</div>
+            <div style="font-weight: 600; margin-bottom: 0.3rem; font-size: 0.92rem;">与刘看山对话</div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">与刘看山一对一，刘看山DM引导你挖掘职业经验中的故事素材</div>
+          </div>
+          <div class="card-minimal" style="text-align: center; border-color: rgba(37, 99, 235, 0.3); background: var(--primary-dim); position: relative; padding: 1rem 0.8rem;">
+            <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; font-size: 0.65rem; padding: 3px 10px; letter-spacing: 1px;">核心</div>
+            <div style="font-size: 1.3rem; margin-bottom: 0.3rem; margin-top: 0.3rem;">💬</div>
+            <div style="font-weight: 600; margin-bottom: 0.3rem; color: var(--primary); font-size: 0.92rem;">双人模式</div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">两个真人 + 刘看山DM催化，15 秒匹配即时对话，碰撞真实火花</div>
+          </div>
+          <div class="card-minimal" style="text-align: center; padding: 1rem 0.8rem;">
+            <div style="font-size: 1.3rem; margin-bottom: 0.3rem;">🎭</div>
+            <div style="font-weight: 600; margin-bottom: 0.3rem; font-size: 0.92rem;">故事模式</div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">四格解密，刘看山控场，刘看山DM按幕推进剧情，真相由集体创作揭晓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="animate-in delay-2" style="margin-top: 1.2rem;">
+        <div class="flow-minimal">
+          <div class="flow-step"><div class="flow-step-num">①</div><div class="flow-step-label">系统分配身份</div></div>
+          <div class="flow-step"><div class="flow-step-num">②</div><div class="flow-step-label">浏览冲突情境</div></div>
+          <div class="flow-step"><div class="flow-step-num">③</div><div class="flow-step-label">15 秒匹配对话</div></div>
+          <div class="flow-step"><div class="flow-step-num">④</div><div class="flow-step-label">标记火花时刻</div></div>
+          <div class="flow-step"><div class="flow-step-num">⑤</div><div class="flow-step-label">刘看山DM串联成故事</div></div>
+        </div>
+      </div>
+
+      <div class="animate-in delay-3" style="margin-top: 1.2rem; display: flex; gap: 1.5rem; align-items: center; justify-content: center; flex-wrap: wrap;">
+        <div style="min-width: 0;">
+          <div style="font-size: 0.7rem; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; font-weight: 600; text-align: center;">技术架构</div>
+          <div style="display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap;">
+            <span class="tag-minimal">Next.js App Router</span>
+            <span class="tag-minimal">Tailwind CSS</span>
+            <span class="tag-minimal">shadcn/ui</span>
+            <span class="tag-minimal">Prisma + SQLite</span>
+            <span class="tag-minimal">Socket.io</span>
+            <span class="tag-minimal">DeepSeek + 知乎直答</span>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; text-align: center; letter-spacing: 0.5px;">前后端一体 · 零依赖部署 · 专为小团队设计</div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center; padding-left: 1.5rem; border-left: 1px solid var(--border);">
+          <div style="text-align: center; padding: 0 0.6rem;">
+            <div style="font-family: 'Syne', sans-serif; font-size: 1.6rem; color: var(--primary); line-height: 1;">300+</div>
+            <div style="font-size: 0.65rem; color: var(--text-secondary); white-space: nowrap;">TDD commits</div>
+          </div>
+          <div style="text-align: center; padding: 0 0.6rem;">
+            <div style="font-family: 'Syne', sans-serif; font-size: 1.6rem; color: var(--primary); line-height: 1;">80+</div>
+            <div style="font-size: 0.65rem; color: var(--text-secondary); white-space: nowrap;">页面</div>
+          </div>
+          <div style="text-align: center; padding: 0 0.6rem;">
+            <div style="font-family: 'Syne', sans-serif; font-size: 1.6rem; color: var(--primary); line-height: 1;">60+</div>
+            <div style="font-size: 0.65rem; color: var(--text-secondary); white-space: nowrap;">API routes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 4: 功能1 — 与刘看山对话 + 视频
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s4">
+    <div class="slide-content">
+      <div class="grid-2" style="align-items: center;">
+        <div class="animate-in">
+          <div class="label">功能演示</div>
+          <h2>与刘看山对话</h2>
+          <p class="subtitle" style="margin-bottom: 1.5rem;">系统自动分配身份，进入冲突情境。刘看山DM用引导式提问，帮你把职业经验中的故事素材挖掘出来。</p>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <span class="tag-minimal tag-primary">DeepSeek 驱动</span>
+            <span class="tag-minimal tag-primary">意图路由</span>
+            <span class="tag-minimal tag-primary">知乎直答兜底</span>
+          </div>
+        </div>
+
+        <div class="animate-in delay-1">
+          <video controls style="width: 100%; max-width: 300px; max-height: 65vh; aspect-ratio: 9/16; border-radius: 4px; display: block; margin: 0 auto;">
+            <source src="file:///D:/Dell/Videos/与刘看山对话.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 5: 功能2 — 双人模式 + 视频（核心）
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s5">
+    <div class="slide-content">
+      <div class="grid-2" style="align-items: center;">
+        <div class="animate-in">
+          <div class="label">核心功能</div>
+          <h2>双人模式</h2>
+          <p class="subtitle" style="margin-bottom: 1.5rem;">15 秒匹配一个真人搭档，两个真人 + 刘看山DM催化。把两个人的沉默，变成三个人碰撞的契机。</p>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <span class="tag-minimal tag-accent">WebSocket 实时通信</span>
+            <span class="tag-minimal tag-accent">刘看山DM 30 秒自动催化</span>
+            <span class="tag-minimal tag-accent">火花同步火花墙</span>
+          </div>
+        </div>
+
+        <div class="animate-in delay-1">
+          <video controls style="width: 100%; max-width: 300px; max-height: 65vh; aspect-ratio: 9/16; border-radius: 4px; display: block; margin: 0 auto;">
+            <source src="file:///D:/Dell/Videos/双人对白.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 6: 功能3 — 故事模式 + 视频
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s6">
+    <div class="slide-content">
+      <div class="grid-2" style="align-items: center;">
+        <div class="animate-in">
+          <div class="label">功能演示</div>
+          <h2>故事模式</h2>
+          <p class="subtitle" style="margin-bottom: 1.5rem;">选择角色，在刘看山控场下推进四幕剧情。刘看山DM按幕催化，真相由集体创作揭晓。太仓解密故事已上线。</p>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <span class="tag-minimal tag-primary">刘看山控场</span>
+            <span class="tag-minimal tag-primary">四格解密</span>
+            <span class="tag-minimal tag-primary">5 个太仓故事</span>
+          </div>
+        </div>
+
+        <div class="animate-in delay-1">
+          <div class="video-placeholder">
+            <div class="play-btn"></div>
+            <div style="font-family: 'Noto Sans SC', sans-serif; font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 0.3rem;">故事模式演示视频</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">起承转合 · 四幕推进 · 多人协作解密</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 7: 愿景 + 刘看山 12 角色 + 未来规划
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s7">
+    <div class="slide-content">
+      <div class="animate-in" style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="label">愿景 & 未来</div>
+        <h2>让知乎的故事，从一个人变成一群人</h2>
+      </div>
+
+      <div class="animate-in delay-1" style="max-width: 800px; margin: 0 auto 1.5rem; text-align: center;">
+        <div style="font-family: 'Noto Sans SC', sans-serif; font-size: 1.1rem; line-height: 1.8; color: var(--text-secondary); padding: 1.2rem 1.5rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+          当创作门槛被击穿，当不同职业的视角开始碰撞——知乎将迎来创作者与内容的井喷。<strong style="color: var(--text);">每一个认真生活的人，都能在这里写出一个人永远写不出的故事。</strong>
+        </div>
+      </div>
+
+      <div class="animate-in delay-2" style="margin-bottom: 1.2rem;">
+        <div style="font-size: 0.7rem; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 0.6rem; text-align: center; text-transform: uppercase; font-weight: 600;">刘看山 · 12 种角色自动切换</div>
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.35rem; text-align: center;">
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">🤖</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">陪伴者</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">🎲</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">剧情 DM</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">🎭</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">角色替身</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">🎬</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">AI 副导演</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--accent); background: var(--accent-dim); font-size: 0.72rem;">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">⚡</div>
+            <div style="font-weight: 600; font-size: 0.65rem; color: var(--accent);">催化剂</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">💚</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">疗愈师</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">✏️</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">审稿人</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">💎</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">提炼师</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">📚</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">知识投喂</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">⚖️</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">调解员</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--border); font-size: 0.72rem; color: var(--text-secondary);">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">🖊️</div>
+            <div style="font-weight: 600; font-size: 0.65rem;">创作助手</div>
+          </div>
+          <div style="padding: 0.35rem 0.2rem; border: 1px solid var(--primary); background: var(--primary-dim); font-size: 0.72rem;">
+            <div style="font-size: 0.9rem; margin-bottom: 0.05rem;">🔥</div>
+            <div style="font-weight: 600; font-size: 0.65rem; color: var(--primary);">火花记录</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="animate-in delay-3">
+        <div style="font-size: 0.7rem; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 0.6rem; text-align: center; text-transform: uppercase; font-weight: 600;">接下来，三件事</div>
+        <div class="grid-3">
+          <div class="card-minimal" style="padding: 1.2rem;">
+            <div style="font-family: 'Syne', sans-serif; font-size: 1.8rem; color: var(--primary); line-height: 1; margin-bottom: 0.4rem;">01</div>
+            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.4rem;">多人模式</div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">从双人碰撞升级到群像剧场，真正的"群像"创作。</p>
+          </div>
+          <div class="card-minimal" style="padding: 1.2rem;">
+            <div style="font-family: 'Syne', sans-serif; font-size: 1.8rem; color: var(--primary); line-height: 1; margin-bottom: 0.4rem;">02</div>
+            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.4rem;">故事长期连载</div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">单次故事扩展为长篇连载，读者追更互动，构建系列作品宇宙。</p>
+          </div>
+          <div class="card-minimal" style="padding: 1.2rem;">
+            <div style="font-family: 'Syne', sans-serif; font-size: 1.8rem; color: var(--primary); line-height: 1; margin-bottom: 0.4rem;">03</div>
+            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.4rem;">收益结算</div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">创作贡献链上确权，按贡献分润。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 8: 团队
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s8">
+    <div class="slide-content">
+      <div class="animate-in" style="display: flex; align-items: center; justify-content: space-between; gap: 2rem; margin-bottom: 1rem;">
+        <div>
+          <div class="label">团队</div>
+          <h2>三个普通人，一个共同信念</h2>
+          <p style="font-family: 'Noto Sans SC', sans-serif; font-size: 1.1rem; color: var(--text-secondary); letter-spacing: 0.05em; margin-top: 0.5rem;">"让每个普通人的想法被看见"</p>
+        </div>
+        <img src="logo.png" alt="群像·星火" style="height: 120px; flex-shrink: 0;" onerror="this.style.display='none'">
+      </div>
+
+      <div class="animate-in delay-1" style="margin-top: 1.5rem;">
+        <div class="team-grid">
+          <div class="team-card">
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 1rem;">
+              <img src="https://duk.tw/6q4Kvg.jpg" alt="星星" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); position: relative; z-index: 1;" onerror="this.style.opacity='0'">
+              <div style="position: absolute; inset: 0; border-radius: 50%; background: var(--primary-dim); display: flex; align-items: center; justify-content: center; font-size: 2rem; z-index: 0;">⭐</div>
+            </div>
+            <div style="font-family: 'Noto Sans SC', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 4px;">星星</div>
+            <div style="font-size: 0.78rem; color: var(--primary); letter-spacing: 1px; margin-bottom: 10px;">产品经理 · 项目发起人 · 主讲人</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">相信"人人都能成为创作者"。不会写代码，但靠 AI 搭出了群像·星火。过去是内容创作者，现在做项目驱动的原型实验。</div>
+            <div style="margin-top: 0.8rem;"><a href="https://www.zhihu.com/profile/xing-zhu-bai-he-ld" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: none;">知乎主页 →</a></div>
+          </div>
+          <div class="team-card">
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 1rem;">
+              <img src="https://duk.tw/xWlaOJ.jpg" alt="九幽三三" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); position: relative; z-index: 1;" onerror="this.style.opacity='0'">
+              <div style="position: absolute; inset: 0; border-radius: 50%; background: var(--primary-dim); display: flex; align-items: center; justify-content: center; font-size: 2rem; z-index: 0;">💻</div>
+            </div>
+            <div style="font-family: 'Noto Sans SC', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 4px;">九幽三三</div>
+            <div style="font-size: 0.78rem; color: var(--primary); letter-spacing: 1px; margin-bottom: 10px;">全栈开发者 · 技术负责人</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">独立全栈开发者，兼职某家 DevRel。技术栈：React / Rust / Solidity / Zig / Delphi。让想法变成现实。</div>
+            <div style="margin-top: 0.8rem;"><a href="https://www.zhihu.com/profile/16-23-48-83" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: none;">知乎主页 →</a></div>
+          </div>
+          <div class="team-card">
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 1rem;">
+              <img src="https://duk.tw/cfIFUP.png" alt="躬行者" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); position: relative; z-index: 1;" onerror="this.style.opacity='0'">
+              <div style="position: absolute; inset: 0; border-radius: 50%; background: var(--primary-dim); display: flex; align-items: center; justify-content: center; font-size: 2rem; z-index: 0;">📚</div>
+            </div>
+            <div style="font-family: 'Noto Sans SC', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 4px;">躬行者</div>
+            <div style="font-size: 0.78rem; color: var(--primary); letter-spacing: 1px; margin-bottom: 10px;">AI 教育探索者 · 审核</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">退伍老兵，8 年科学课程开发经验，实践用 AI 重构教育。研发课程服务郑州 40+ 所小学，全国 10+ 所科技馆。</div>
+            <div style="margin-top: 0.8rem;"><a href="https://www.zhihu.com/profile/Mr.duan" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: none;">知乎主页 →</a></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="animate-in delay-2" style="text-align: center; margin-top: 1.5rem;">
+        <div style="display: inline-flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; justify-content: center;">
+          <span style="font-size: 0.85rem; color: var(--text-muted);">项目开源</span>
+          <span style="color: var(--border);">|</span>
+          <a href="https://github.com/qunxiang-xinghuo/qunxiang-xinghuo" target="_blank" style="font-size: 0.85rem; color: var(--primary); text-decoration: none;">⭐ Star on GitHub</a>
+          <span style="color: var(--border);">|</span>
+          <a href="https://qunxiang.x404.online" target="_blank" style="font-size: 0.85rem; color: var(--primary); text-decoration: none;">🔗 Demo: qunxiang.x404.online</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       Navigation
+       ════════════════════════════════════════ -->
+  <div class="nav-bar">
+    <button class="nav-btn" id="prev-btn">←</button>
+    <button class="nav-btn" id="next-btn">→</button>
+  </div>
+  <div class="slide-indicator" id="slide-indicator">1 / 8</div>
+
+  <script>
+    (function() {
+      const slides = document.querySelectorAll('.slide');
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+      const indicator = document.getElementById('slide-indicator');
+      let current = 0;
+      const total = slides.length;
+
+      function showSlide(idx) {
+        slides.forEach((s, i) => {
+          s.classList.toggle('active', i === idx);
+        });
+        indicator.textContent = (idx + 1) + ' / ' + total;
+      }
+
+      function next() { if (current < total - 1) showSlide(++current); }
+      function prev() { if (current > 0) showSlide(--current); }
+
+      nextBtn.addEventListener('click', next);
+      prevBtn.addEventListener('click', prev);
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+          e.preventDefault();
+          next();
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          prev();
+        }
+        if (e.key === 'Home') { e.preventDefault(); current = 0; showSlide(0); }
+        if (e.key === 'End') { e.preventDefault(); current = total - 1; showSlide(total - 1); }
+      });
+
+      showSlide(0);
+    })();
+  </script>
+</body>
+</html>

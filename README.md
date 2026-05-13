@@ -179,22 +179,7 @@ src/
 
 ---
 
-## 🔐 认证与安全
 
-**三层路由守卫：**
-
-```
-边缘层: middleware.ts → JWT 验证 → 未登录 307 重定向 /login
-布局层: AppShell.tsx → useSession() + localStorage 双重检查
-组件层: useAuth.ts → session 优先，失效时清除 localStorage
-```
-
-- bcrypt 密码加密（salt rounds: 10）
-- JWT strategy，24h maxAge
-- 个人疗愈内容 AES-256-GCM 端到端加密
-- 所有关键 API 路由支持 token + `x-guest-id` header 双模认证
-
----
 
 ## 🎨 设计系统
 

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>群像·星火 — 知乎黑客松 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --cyan: #06b6d4;
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --text: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --border: rgba(37, 99, 235, 0.15);
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "Noto Sans SC", -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      font-weight: 400;
+    }
+
+    .slide {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem 5vw;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .slide::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 15% 20%, rgba(37, 99, 235, 0.04) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 50% at 85% 80%, rgba(6, 182, 212, 0.03) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .slide::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(37, 99, 235, 0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(37, 99, 235, 0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    .slide.active { display: flex; }
+
+    .slide-content {
+      max-width: 1100px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      font-family: "Syne", "Noto Sans SC", sans-serif;
+      font-size: clamp(3.5rem, 9vw, 6.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #1e293b 0%, #2563eb 45%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 {
+      font-family: "Syne", "Noto Sans SC", sans-serif;
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    h2::before {
+      content: '';
+      display: inline-block;
+      width: 5px;
+      min-height: 1.6rem;
+      height: 100%;
+      background: var(--primary);
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .label {
+      font-family: "Syne", sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .tag-minimal {
+      display: inline-block;
+      padding: 0.35rem 1rem;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin: 0.25rem;
+      transition: all 0.2s;
+    }
+
+    .tag-primary {
+      background: rgba(37, 99, 235, 0.08);
+      border-color: rgba(37, 99, 235, 0.2);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tag-accent {
+      background: rgba(6, 182, 212, 0.08);
+      border-color: rgba(6, 182, 212, 0.2);
+      color: #0891b2;
+      font-weight: 600;
+    }
+
+    .nav-bar {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+      font-weight: 700;
+    }
+
+    .nav-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .slide-indicator {
+      position: fixed;
+      bottom: 2rem;
+      left: 2rem;
+      font-family: "Syne", sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      z-index: 100;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+      animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      opacity: 0;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .slide { padding: 2rem 1.5rem; }
+    }
+
+    video {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 1: 封面
+       ════════════════════════════════════════ -->
+  <section class="slide active cover-slide" id="s1">
+    <div class="slide-content" style="text-align: center;">
+      <div class="animate-in">
+        <div class="label">知乎黑客松 2026</div>
+      </div>
+      <div class="animate-in delay-1">
+        <h1>群像·星火</h1>
+      </div>
+      <div class="animate-in delay-2">
+        <p style="font-size: clamp(1.1rem, 2.2vw, 1.6rem); color: var(--text-secondary); margin-top: 1rem; letter-spacing: 0.06em;">
+          一个人写不出的故事，一群人写得出来
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 2: 痛点
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s2">
+    <div class="slide-content" style="max-width: 800px;">
+      <div class="animate-in">
+        <div class="label">痛点</div>
+        <h2 style="font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.2; margin-bottom: 1.5rem;">
+          一个人的故事<br>只有一个人的眼睛
+        </h2>
+      </div>
+      <div class="animate-in delay-1">
+        <p style="font-size: clamp(1rem, 1.8vw, 1.3rem); color: var(--text-secondary); line-height: 1.9;">
+          产品经理写了需求文档，却不懂技术实现的困境；<br>
+          技术大牛写了代码，却看不见教育现场的细节。<br><br>
+          不同职业的真实经验被隔离在各自的茧房里，<br>
+          <strong style="color: var(--text);">故事永远缺了另一半。</strong>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 3: 核心方案 + 视频
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s3">
+    <div class="slide-content">
+      <div class="grid-2" style="align-items: center; gap: 4rem;">
+        <div class="animate-in">
+          <div class="label">核心方案</div>
+          <h2>双人模式</h2>
+          <p style="font-size: 1.15rem; color: var(--text-secondary); line-height: 1.8; margin: 1.2rem 0;">
+            15 秒匹配一个真人搭档，两个真人 + AI DM 催化。<br>
+            把两个人的沉默，变成三个人碰撞的契机。
+          </p>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <span class="tag-minimal tag-accent">15 秒实时匹配</span>
+            <span class="tag-minimal tag-accent">AI DM 自动催化</span>
+            <span class="tag-minimal tag-primary">火花标记系统</span>
+          </div>
+        </div>
+        <div class="animate-in delay-1" style="text-align: center;">
+          <video autoplay muted loop playsinline style="width: 100%; max-width: 300px; max-height: 65vh; aspect-ratio: 9/16; border-radius: 8px; display: block; margin: 0 auto;">
+            <source src="file:///D:/Dell/Videos/双人对白.mp4" type="video/mp4">
+          </video>
+          <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted);">双人对白演示</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 4: 愿景
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s4">
+    <div class="slide-content" style="max-width: 750px; text-align: center;">
+      <div class="animate-in">
+        <div class="label">愿景</div>
+        <h2 style="justify-content: center;">从双人，到群像</h2>
+      </div>
+      <div class="animate-in delay-1" style="margin-top: 1.5rem;">
+        <p style="font-size: 1.2rem; color: var(--text-secondary); line-height: 1.9;">
+          当不同职业的视角开始碰撞——<br>
+          知乎将迎来创作者与内容的井喷。<br><br>
+          <strong style="color: var(--text); font-size: 1.35rem;">
+            每一个认真生活的人，都能写出<br>一个人永远写不出的故事。
+          </strong>
+        </p>
+      </div>
+      <div class="animate-in delay-2" style="margin-top: 2rem;">
+        <div style="display: inline-block; padding: 1rem 2rem; border: 1px solid var(--border); background: var(--bg-card); font-size: 1rem; color: var(--text); font-weight: 600;">
+          接下来：多人模式 · 群像剧场
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       SLIDE 5: 团队
+       ════════════════════════════════════════ -->
+  <section class="slide" id="s5">
+    <div class="slide-content" style="max-width: 900px;">
+      <div class="animate-in" style="text-align: center; margin-bottom: 2.5rem;">
+        <div class="label">团队</div>
+        <h2 style="justify-content: center; margin-bottom: 0.5rem;">三个普通人，一个共同信念</h2>
+      </div>
+      <div class="animate-in delay-1" style="display: flex; justify-content: center; gap: 2.5rem; flex-wrap: wrap;">
+        <div style="text-align: center; width: 200px;">
+          <img src="https://duk.tw/6q4Kvg.jpg" alt="星星" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 0.8rem;" onerror="this.style.display='none'">
+          <div style="font-weight: 700; font-size: 1.1rem;">星星</div>
+          <div style="font-size: 0.8rem; color: var(--primary); margin: 0.3rem 0;">产品经理 · 项目发起人</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">靠 AI 搭出群像·星火</div>
+        </div>
+        <div style="text-align: center; width: 200px;">
+          <img src="https://duk.tw/xWlaOJ.jpg" alt="九幽三三" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 0.8rem;" onerror="this.style.display='none'">
+          <div style="font-weight: 700; font-size: 1.1rem;">九幽三三</div>
+          <div style="font-size: 0.8rem; color: var(--primary); margin: 0.3rem 0;">全栈开发者 · 技术负责人</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">React / Rust / Solidity</div>
+        </div>
+        <div style="text-align: center; width: 200px;">
+          <img src="https://duk.tw/cfIFUP.png" alt="躬行者" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 0.8rem;" onerror="this.style.display='none'">
+          <div style="font-weight: 700; font-size: 1.1rem;">躬行者</div>
+          <div style="font-size: 0.8rem; color: var(--primary); margin: 0.3rem 0;">AI 教育探索者</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">8 年科学课程开发</div>
+        </div>
+      </div>
+      <div class="animate-in delay-2" style="text-align: center; margin-top: 2.5rem;">
+        <a href="https://github.com/qunxiang-xinghuo/qunxiang-xinghuo" target="_blank" style="font-size: 0.85rem; color: var(--primary); text-decoration: none; margin: 0 1rem;">⭐ Star on GitHub</a>
+        <a href="https://qunxiang.x404.online" target="_blank" style="font-size: 0.85rem; color: var(--primary); text-decoration: none; margin: 0 1rem;">🔗 Demo</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       Navigation
+       ════════════════════════════════════════ -->
+  <div class="nav-bar">
+    <button class="nav-btn" id="prev-btn">←</button>
+    <button class="nav-btn" id="next-btn">→</button>
+  </div>
+  <div class="slide-indicator" id="slide-indicator">1 / 5</div>
+
+  <script>
+    (function() {
+      const slides = document.querySelectorAll('.slide');
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+      const indicator = document.getElementById('slide-indicator');
+      let current = 0;
+      const total = slides.length;
+
+      function showSlide(idx) {
+        slides.forEach((s, i) => {
+          s.classList.toggle('active', i === idx);
+        });
+        // Pause videos on hidden slides to save resources
+        slides.forEach((s, i) => {
+          const v = s.querySelector('video');
+          if (v) {
+            if (i === idx) v.play();
+            else v.pause();
+          }
+        });
+        indicator.textContent = (idx + 1) + ' / ' + total;
+      }
+
+      function next() { if (current < total - 1) showSlide(++current); }
+      function prev() { if (current > 0) showSlide(--current); }
+
+      nextBtn.addEventListener('click', next);
+      prevBtn.addEventListener('click', prev);
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+          e.preventDefault();
+          next();
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          prev();
+        }
+        if (e.key === 'Home') { e.preventDefault(); current = 0; showSlide(0); }
+        if (e.key === 'End') { e.preventDefault(); current = total - 1; showSlide(total - 1); }
+      });
+
+      showSlide(0);
+    })();
+  </script>
+</body>
+</html>
