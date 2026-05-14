@@ -175,8 +175,9 @@ export const authOptions: NextAuthOptions = {
             console.log("[Auth] 知乎用户已存在:", user.id);
           }
         } catch (err: unknown) {
-          console.error("[Auth] 知乎用户创建失败:", getErrorMessage(err));
-          // 不阻断登录，继续用 JWT
+          const errMsg = getErrorMessage(err);
+          console.error("[Auth] 知乎用户创建失败:", errMsg);
+          return false;
         }
       }
       return true;
