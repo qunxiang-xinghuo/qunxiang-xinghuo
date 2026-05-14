@@ -75,8 +75,15 @@ export async function POST(
         data: { roomId: room.id, userId, identity: userRole.name, role: "actor", isOnline: true },
       });
 
+      const agentUserId = `agent_${story.id}`;
+      await tx.user.upsert({
+        where: { id: agentUserId },
+        update: {},
+        create: { id: agentUserId, name: aiName, email: `${agentUserId}@system.local` },
+      });
+
       await tx.roomParticipant.create({
-        data: { roomId: room.id, userId: `agent_${story.id}`, identity: aiName, role: "ai_agent", isOnline: true },
+        data: { roomId: room.id, userId: agentUserId, identity: aiName, role: "ai_agent", isOnline: true },
       });
 
       await tx.roomMessage.create({

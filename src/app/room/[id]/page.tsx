@@ -65,6 +65,7 @@ export default function RoomPage() {
   const [commentsLoading, setCommentsLoading] = useState(true);
 
   const [participantImages, setParticipantImages] = useState<Record<string, string>>({});
+  const [participantNames, setParticipantNames] = useState<Record<string, string>>({});
 
   // AI 催化
   const [aiPrompt, setAiPrompt] = useState('');
@@ -184,10 +185,13 @@ export default function RoomPage() {
           // 找到自己的角色
           if (room.participants && Array.isArray(room.participants)) {
             const imgMap: Record<string, string> = {};
+            const nameMap: Record<string, string> = {};
             for (const p of room.participants) {
               if (p.user?.image) imgMap[p.user.id] = p.user.image;
+              if (p.user?.name) nameMap[p.user.id] = p.user.name;
             }
             setParticipantImages(imgMap);
+            setParticipantNames(nameMap);
 
             const me = room.participants.find((p: { userId: string; identity?: string; user?: { image?: string; id: string } }) => p.userId === userId);
             if (me) {
@@ -858,7 +862,7 @@ export default function RoomPage() {
                 )}
               </div>
               <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[72%]`}>
-                <span className="text-[10px] text-white/25 mb-1 px-1">{isMe ? (myRoleName || '我') : (msg.identity || '对方')}</span>
+                <span className="text-[10px] text-white/25 mb-1 px-1">{isMe ? (authUser?.name || myRoleName || '我') : (participantNames[msg.userId] || msg.identity || '对方')}</span>
                 <div className={`relative px-3.5 py-2.5 rounded-2xl ${
                   msg.isSpark
                     ? 'bg-xh-yellow/8 border-2 border-xh-yellow/40 text-white/90 shadow-[0_0_12px_rgba(212,184,48,0.12)]'

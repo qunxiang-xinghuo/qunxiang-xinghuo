@@ -243,10 +243,8 @@ export default function HomePage() {
                   initial={mounted ? { opacity: 0, x: 20 } : false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  onClick={() => item.roomId && router.push(`/room/${item.roomId}`)}
-                  className={`flex-shrink-0 w-[260px] snap-start p-4 rounded-xl bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/5 ${
-                    item.roomId ? 'hover:border-white/10 active:scale-[0.98] cursor-pointer transition-all' : 'opacity-60'
-                  }`}
+                  onClick={() => router.push(`/spark-detail/${item.id}`)}
+                  className="flex-shrink-0 w-[260px] snap-start p-4 rounded-xl bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/5 hover:border-white/10 active:scale-[0.98] cursor-pointer transition-all"
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
