@@ -3,6 +3,7 @@ import { db as prisma } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { getToken } from "next-auth/jwt";
 import { recalculateAssetHotScore } from "@/lib/hot-score";
+import { getErrorCode } from "@/lib/error-utils";
 
 /**
  * POST /api/sparks/:id/like
@@ -81,10 +82,10 @@ export async function POST(
         message: "点赞成功",
       }));
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Spark Like] Error:", error);
     // v7.0-test11: 并发竞态条件防护，两个请求同时查到无like会触发P2002
-    if (error?.code === 'P2002' && id && effectiveUserId) {
+    if (getErrorCode(error)  === 'P2002' && id && effectiveUserId) {
       const like = await prisma.assetLike.findUnique({
         where: { assetId_userId: { assetId: id, userId: effectiveUserId } },
       });

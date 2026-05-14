@@ -46,7 +46,7 @@ export async function GET(
     });
 
     return NextResponse.json(apiResponse(inspirations));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("获取灵感项失败:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取灵感项失败"), { status: 500 });
   }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Brainhole } from '@/components/brainhole/BrainholeCard';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 export function useCollection() {
   const [collectedBrainholes, setCollectedBrainholes] = useState<Brainhole[]>([]);
@@ -25,14 +26,14 @@ export function useCollection() {
       const result = await res.json();
       if (!mountedRef.current) return;
       if (result.success && result.data?.brainholes) {
-        const mapped: Brainhole[] = result.data.brainholes.map((b: any) => ({
+        const mapped: Brainhole[] = result.data.brainholes.map((b: { id: unknown; title: unknown; scenario?: unknown; category?: unknown; hotScore?: unknown; content?: unknown; source?: unknown; tags?: unknown[] }) => ({
           id: String(b.id),
           title: String(b.title),
           content: String(b.scenario || b.content || ''),
           source: String(b.source || '群像星火'),
           tags: Array.isArray(b.tags)
-            ? b.tags.map((t: any) =>
-                typeof t === 'string' ? t : String(t.name || t.tag?.name || '')
+            ? b.tags.map((t: unknown) =>
+                typeof t === 'string' ? t : String((t as { name?: string }).name || (t as { tag?: { name?: string } }).tag?.name || '')
               ).filter(Boolean)
             : undefined,
         }));
@@ -40,9 +41,9 @@ export function useCollection() {
       } else {
         setError(result.error || '加载收藏失败');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[useCollection] Fetch error:', err);
-      if (mountedRef.current) setError(err instanceof Error ? err.message : String(err));
+      if (mountedRef.current) setError(err instanceof Error ? getErrorMessage(err) : String(err));
     } finally {
       if (mountedRef.current) setLoading(false);
     }
@@ -64,9 +65,9 @@ export function useCollection() {
       } else {
         setError(result.error || '收藏失败');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[useCollection] Collect error:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
     }
   };
 
@@ -81,9 +82,9 @@ export function useCollection() {
       } else {
         setError(result.error || '取消收藏失败');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[useCollection] Uncollect error:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
     }
   };
 

@@ -69,8 +69,8 @@ function MyStoriesContent() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setStories(data.data?.list || []);
-    } catch (e: any) {
-      if (e.name !== 'AbortError') console.error('[MyStories] 加载失败:', e);
+    } catch (e: unknown) {
+      if ((e as { name?: string }).name !== 'AbortError') console.error('[MyStories] 加载失败:', e);
     } finally {
       setLoading(false);
     }
@@ -252,7 +252,7 @@ function MyStoriesContent() {
                             <Sparkles className="w-3 h-3" /> 你的高光句子
                           </p>
                           <p className="text-[11px] text-white/50 leading-relaxed line-clamp-2 italic">
-                            "{story.bestSpark.content}"
+                            &ldquo;{story.bestSpark.content}&rdquo;
                           </p>
                         </div>
                       )}

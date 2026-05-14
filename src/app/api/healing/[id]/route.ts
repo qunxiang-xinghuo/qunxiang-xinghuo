@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // GET: 获取疗愈会话详情
 export async function GET(
@@ -33,8 +34,8 @@ export async function GET(
       createdAt: healingSession.createdAt,
       closedAt: healingSession.closedAt,
     }));
-  } catch (error: any) {
-    console.error("[Healing Session GET] 错误:", error.message);
+  } catch (error: unknown) {
+    console.error("[Healing Session GET] 错误:", getErrorMessage(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取会话失败"), { status: 500 });
   }
 }
@@ -71,8 +72,8 @@ export async function PATCH(
       status: updated.status,
       closedAt: updated.closedAt,
     }));
-  } catch (error: any) {
-    console.error("[Healing Session PATCH] 错误:", error.message);
+  } catch (error: unknown) {
+    console.error("[Healing Session PATCH] 错误:", getErrorMessage(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "关闭会话失败"), { status: 500 });
   }
 }
@@ -104,8 +105,8 @@ export async function DELETE(
     await db.healingSession.delete({ where: { id: sessionId } });
 
     return NextResponse.json(apiResponse({ message: "疗愈记录已删除" }));
-  } catch (error: any) {
-    console.error("[Healing Session DELETE] 错误:", error.message);
+  } catch (error: unknown) {
+    console.error("[Healing Session DELETE] 错误:", getErrorMessage(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "删除失败"), { status: 500 });
   }
 }

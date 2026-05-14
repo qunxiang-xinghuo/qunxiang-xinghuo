@@ -17,7 +17,7 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(apiResponse({ branches }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryBranches GET] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取分支失败"), { status: 500 });
   }
@@ -30,9 +30,6 @@ export async function POST(
 ) {
   try {
     const { storyId } = await params;
-    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-
     let body;
     try {
       body = await request.json();
@@ -58,7 +55,7 @@ export async function POST(
     broadcastToRoom(`story-${storyId}`, "branch-proposed", branch);
 
     return NextResponse.json(apiResponse({ branch }), { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryBranches POST] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建分支失败"), { status: 500 });
   }

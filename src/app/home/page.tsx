@@ -28,7 +28,7 @@ interface HotItem {
 export default function HomePage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
+  const { isAuthenticated } = useRequireAuth();
 
   const [top3, setTop3] = useState<Top3Item[]>([]);
   const [hotList, setHotList] = useState<HotItem[]>([]);
@@ -70,8 +70,8 @@ export default function HomePage() {
             setHotList(hotData.data.list);
           }
         }
-      } catch (e: any) {
-        if (e.name === 'AbortError') return;
+      } catch (e: unknown) {
+        if ((e as { name?: string }).name === 'AbortError') return;
         console.error('首页加载失败:', e);
         if (isMountedRef.current) setLoadError(true);
       } finally {
@@ -114,7 +114,7 @@ export default function HomePage() {
       } else {
         alert(result.error?.message || '发布失败');
       }
-    } catch (e) {
+    } catch (_e) {
       alert('网络异常，发布失败');
     } finally {
       setPublishLoading(false);
@@ -375,7 +375,7 @@ export default function HomePage() {
                           alert('创建房间失败，请重试');
                           setCreatingAiRoom(false);
                         }
-                      } catch (e) {
+                      } catch (_e) {
                         alert('网络异常，请重试');
                         setCreatingAiRoom(false);
                       }

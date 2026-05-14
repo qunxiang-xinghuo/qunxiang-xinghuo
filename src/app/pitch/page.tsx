@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Flame, Users, MessageCircle, BookOpen, Zap, ChevronLeft, ChevronRight, ArrowRight,
+  Flame, Users, BookOpen, Zap, ChevronLeft, ChevronRight, ArrowRight,
 } from 'lucide-react';
 
 const TOTAL = 6;

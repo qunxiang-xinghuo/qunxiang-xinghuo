@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 const updateProfileSchema = z.object({
   username: z.string().min(1).max(30),
@@ -83,11 +84,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     return NextResponse.json(apiResponse(updated));
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof SyntaxError) {
       return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误"), { status: 400 });
     }
-    if (error.code === 'P2002') {
+    if (getErrorCode(error) === 'P2002') {
       return NextResponse.json(apiError("USERNAME_EXISTS", "用户名已存在，请重新输入"), { status: 409 });
     }
     console.error("[Update Profile API] Error:", error);

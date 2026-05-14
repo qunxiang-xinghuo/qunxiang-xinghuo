@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 /**
  * GET /api/stories/mine?type=created|participated
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "participated"; // created | participated
 
-    let list: any[] = [];
+    let list: Record<string, unknown>[] = [];
 
     if (type === "created") {
       const stories = await db.story.findMany({
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(apiResponse({ list }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Stories Mine] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取失败，请稍后重试"), { status: 500 });
   }
@@ -195,9 +196,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json(apiResponse({ message: "参与记录已删除" }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Stories Mine DELETE] Error:", error);
-    if (error.code === 'P2025') {
+    if (getErrorCode(error) === 'P2025') {
       return NextResponse.json(apiResponse({ message: '资源不存在或已删除' }));
     }
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "删除失败"), { status: 500 });

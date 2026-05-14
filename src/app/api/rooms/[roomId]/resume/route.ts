@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { apiResponse, apiError } from "@/lib/utils";
 import { updateRoomStatus } from "@/server/room-manager";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function POST(
@@ -21,12 +22,12 @@ export async function POST(
     const updatedRoom = await updateRoomStatus(roomId, "active", userId);
 
     return NextResponse.json(apiResponse(updatedRoom));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("恢复房间失败:", error);
     
-    if (error.message === "ROOM_NOT_FOUND") {
+    if (getErrorMessage(error) === "ROOM_NOT_FOUND") {
       return NextResponse.json(apiError("ROOM_NOT_FOUND", "房间不存在"), { status: 404 });
-    } else if (error.message === "NOT_DIRECTOR") {
+    } else if (getErrorMessage(error) === "NOT_DIRECTOR") {
       return NextResponse.json(apiError("NOT_DIRECTOR", "不是房间导演"), { status: 403 });
     }
     

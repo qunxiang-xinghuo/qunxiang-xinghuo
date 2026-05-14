@@ -48,9 +48,9 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const brainholes = collections.map((collection: any) => ({
+    const brainholes = collections.map((collection) => ({
       ...collection.brainhole,
-      tags: collection.brainhole.tags.map((bt: any) => bt.tag),
+      tags: collection.brainhole.tags.map((bt) => bt.tag),
       collectedAt: collection.createdAt,
     }));
 

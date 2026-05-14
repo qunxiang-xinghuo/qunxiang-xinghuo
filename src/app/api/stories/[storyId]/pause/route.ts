@@ -34,7 +34,7 @@ export async function POST(
     broadcastToRoom(`story-${storyId}`, "director-pause", { storyId, pausedBy: userId, timestamp: Date.now() });
 
     return NextResponse.json(apiResponse({ paused: true }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryPause POST] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "暂停失败"), { status: 500 });
   }

@@ -73,9 +73,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 找到第一条用户消息作为content
-    const userMessages = room.messages.filter((m: any) => m.senderId === effectiveUserId && !m.isAiPrompt);
+    const userMessages = room.messages.filter((m) => m.senderId === effectiveUserId && !m.isAiPrompt);
     const firstUserMsg = userMessages[0]?.content || "";
-    const sparkMessages = room.messages.filter((m: any) => m.isSpark);
+    const sparkMessages = room.messages.filter((m) => m.isSpark);
     const firstSparkMsg = sparkMessages[0]?.content || firstUserMsg;
 
     // 找到用户身份
@@ -85,10 +85,10 @@ export async function POST(request: NextRequest) {
     });
 
     // 计算火花数
-    const sparkCount = room.messages.filter((m: any) => m.isSpark).length;
+    const sparkCount = room.messages.filter((m) => m.isSpark).length;
 
     const conversationRounds = countConversationRounds(
-      room.messages.map((m: any) => ({ senderId: m.senderId, identity: m.identity }))
+      room.messages.map((m) => ({ senderId: m.senderId, identity: m.identity }))
     );
 
     const hotScore = calculateHotScore({

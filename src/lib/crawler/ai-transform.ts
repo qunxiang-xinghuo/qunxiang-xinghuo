@@ -6,6 +6,7 @@
  */
 
 import { ZhihuHotItem } from './zhihu-hot';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 export interface TransformedBrainhole {
   title: string;
@@ -74,9 +75,9 @@ async function transformWithDeepSeek(item: ZhihuHotItem): Promise<TransformedBra
     const data = await res.json();
     const content = data?.choices?.[0]?.message?.content?.trim() || '';
     return parseTransformResult(content);
-  } catch (e: any) {
-    if (e.name !== 'AbortError') {
-      console.error('[Crawler] DeepSeek 转化失败:', e.message);
+  } catch (e: unknown) {
+    if ((e as { name?: string }).name !== 'AbortError') {
+      console.error('[Crawler] DeepSeek 转化失败:', getErrorMessage(e));
     }
     return null;
   } finally {
@@ -106,8 +107,8 @@ async function transformWithZhida(item: ZhihuHotItem): Promise<TransformedBrainh
     } finally {
       clearTimeout(t);
     }
-  } catch (e: any) {
-    console.error('[Crawler] 知乎直答转化失败:', e.message);
+  } catch (e: unknown) {
+    console.error('[Crawler] 知乎直答转化失败:', getErrorMessage(e));
     return null;
   }
 }

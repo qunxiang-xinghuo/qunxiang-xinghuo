@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db as prisma } from "@/lib/db";
 import { apiResponse } from "@/lib/utils";
+import { Prisma } from "@/generated/prisma/client";
 
 /**
  * GET /api/sparks/public
@@ -31,12 +32,11 @@ export async function GET(request: NextRequest) {
 
     // v8.1: 构建 where 条件，支持职业分类筛选
     // v8.3-fix: 补充 deletedByPartner: false，防止对方已删除的火花仍出现在公开墙
-    const where: any = { isPublic: true, deletedByUser: false, deletedByPartner: false };
+    const where: Prisma.AssetWhereInput = { isPublic: true, deletedByUser: false, deletedByPartner: false };
     if (category && category !== "all") {
       where.brainhole = {
         category: {
           contains: category,
-          mode: "insensitive",
         },
       };
     }

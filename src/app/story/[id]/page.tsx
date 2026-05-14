@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Lock, Users, Clock, Sparkles, MessageCircle, X, Dices, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Users, Clock, Sparkles, MessageCircle, Dices, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface StoryRole {
@@ -101,7 +101,7 @@ export default function StoryDetailPage() {
           if (timerRef.current) clearInterval(timerRef.current);
           if (pollRef.current) clearInterval(pollRef.current);
         }
-      } catch (e) {} finally {
+      } catch (_e) {} finally {
         pollInProgress.current = false;
       }
     }, 3000);

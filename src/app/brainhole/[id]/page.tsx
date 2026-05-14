@@ -16,10 +16,10 @@ export default function BrainholeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const brainholeId = params.id as string;
-  const { getBrainholeById, getRandomPrompt } = useBrainhole();
+  const { getBrainholeById } = useBrainhole();
   const { user } = useAuth();
   const { submitReaction } = useReaction();
-  const { isRecording, transcript, startRecording, stopRecording, resetTranscript } = useVoiceRecorder();
+  const { isRecording, transcript, startRecording, stopRecording } = useVoiceRecorder();
   
   const [pageState, setPageState] = useState<PageState>('record');
   const [reactionContent, setReactionContent] = useState('');
@@ -64,7 +64,7 @@ export default function BrainholeDetailPage() {
       });
       setReactionCount(prev => prev + 1);
       setPageState('feedback');
-    } catch (err) {
+    } catch (_err) {
       setSubmitError('提交失败，请重试');
     } finally {
       setSubmitting(false);

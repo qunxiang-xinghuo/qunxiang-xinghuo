@@ -12,7 +12,7 @@ export default function MatchPage() {
   const router = useRouter();
   const { brainholes, loading } = useBrainhole();
   const { collectBrainhole } = useCollection();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [, setCurrentIndex] = useState(0);
 
   const handleSwipeRight = (brainhole: Brainhole) => {
     collectBrainhole(brainhole);

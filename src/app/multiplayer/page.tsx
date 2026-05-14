@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Theater, ArrowLeft, Vote, Lightbulb, Users } from 'lucide-react';
+import { Theater, ArrowLeft, Lightbulb, Users } from 'lucide-react';
 
 export default function MultiplayerPage() {
   const router = useRouter();

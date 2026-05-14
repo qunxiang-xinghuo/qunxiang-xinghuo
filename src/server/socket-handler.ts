@@ -6,6 +6,7 @@
 
 import { Server as SocketIOServer, Socket } from 'socket.io'
 import { db } from '@/lib/db'
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // v8.0-sec-fix: 简单的 UUID 格式校验
 function isValidId(id: string): boolean {
@@ -97,8 +98,8 @@ async function broadcastViewerCount(io: SocketIOServer, roomId: string) {
       },
     });
     io.to(roomId).emit('room-viewer-count', { count, roomId });
-  } catch (err: any) {
-    console.error('[Socket] broadcastViewerCount failed:', err.message);
+  } catch (err: unknown) {
+    console.error('[Socket] broadcastViewerCount failed:', getErrorMessage(err));
   }
 }
 
@@ -141,8 +142,8 @@ export function registerSocketHandlers(io: SocketIOServer): void {
             isOnline: true,
           },
         })
-      } catch (err: any) {
-        console.error('[Socket] join-room DB update failed:', err.message)
+      } catch (err: unknown) {
+        console.error('[Socket] join-room DB update failed:', getErrorMessage(err))
       }
 
       // v6.2-fix6: 静默广播房间在线人数（不再发送 "Xxx 加入了房间" 文字提示）
@@ -231,8 +232,8 @@ export function registerSocketHandlers(io: SocketIOServer): void {
             aiRoomCloseTimers.set(roomId, timer);
           }
         }
-      } catch (err: any) {
-        console.error('[Socket] AI房间自动关闭失败:', err.message);
+      } catch (err: unknown) {
+        console.error('[Socket] AI房间自动关闭失败:', getErrorMessage(err));
       }
     }
 
@@ -257,8 +258,8 @@ export function registerSocketHandlers(io: SocketIOServer): void {
           });
           console.log(`[Socket] 空房间已自动关闭: ${roomId}`);
         }
-      } catch (err: any) {
-        console.error('[Socket] 空房间关闭失败:', err.message);
+      } catch (err: unknown) {
+        console.error('[Socket] 空房间关闭失败:', getErrorMessage(err));
       }
     }
 
@@ -278,8 +279,8 @@ export function registerSocketHandlers(io: SocketIOServer): void {
             leftAt: new Date(),
           },
         })
-      } catch (err: any) {
-        console.error('[Socket] leave-room DB update failed:', err.message)
+      } catch (err: unknown) {
+        console.error('[Socket] leave-room DB update failed:', getErrorMessage(err))
       }
 
       // v7.0-fix7: 向房间内其他人广播对方已离开
@@ -427,8 +428,8 @@ export function registerSocketHandlers(io: SocketIOServer): void {
               leftAt: new Date(),
             },
           })
-        } catch (err: any) {
-          console.error('[Socket] disconnect DB update failed:', err.message)
+        } catch (err: unknown) {
+          console.error('[Socket] disconnect DB update failed:', getErrorMessage(err))
         }
         // v7.0-fix7: 用户意外断开（关闭浏览器/断网）时，向对方广播 opponent-left
         socket.to(roomId).emit('opponent-left', { userId, roomId, timestamp: Date.now() })

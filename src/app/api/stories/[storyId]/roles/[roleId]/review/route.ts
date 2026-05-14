@@ -13,7 +13,6 @@ export async function POST(
     const { storyId, roleId } = await params;
     const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-    const guestId = request.headers.get("x-guest-id");
 
     let body;
     try {
@@ -78,7 +77,7 @@ export async function POST(
         role: updatedRole,
       }));
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[ReviewRole POST] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "审核角色失败"), { status: 500 });
   }

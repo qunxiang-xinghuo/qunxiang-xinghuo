@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { liukanshanReview } from "@/lib/ai/review";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 /**
  * POST /api/rooms/:roomId/finish
@@ -60,7 +61,7 @@ export async function POST(
 
     const summary = reviewResult?.summary || reviewResult?.reason || room.story?.storySummary || "";
 
-    const [updatedRoom, asset] = await db.$transaction([
+    const [, assetRaw] = await db.$transaction([
       db.room.update({
         where: { id: roomId, status: { not: "closed" } },
         data: { status: "closed", closedAt: new Date() },
@@ -79,16 +80,19 @@ export async function POST(
           isPublic,
         },
       }),
-    ]).catch(async (err: any) => {
+    ]).catch(async (err: unknown) => {
       // v8.0-fix: 捕获 P2025（记录未找到）和 P2002（唯一约束冲突）
-      // v8.1-fix5: 增加 err.code 不存在时的保护
-      const code = err?.code || err?.meta?.target || '';
-      if (code === 'P2025' || code === 'P2002' || String(err?.message || '').includes('Unique constraint')) {
+      // v8.1-fix5: 增加 getErrorCode(err) 不存在时的保护
+      const errorObj = err as { code?: string; meta?: { target?: string }; message?: string };
+      const code = errorObj?.code || errorObj?.meta?.target || '';
+      if (code === 'P2025' || code === 'P2002' || String(errorObj?.message || '').includes('Unique constraint')) {
         const existingAsset = await db.asset.findFirst({ where: { roomId } });
         return [{ status: 'closed' }, existingAsset];
       }
       throw err;
-    }) as any;
+    }) as [unknown, unknown];
+
+    const asset = assetRaw as { id: string } | null;
 
     // 已关闭的幂等返回
     if (!asset) {
@@ -108,8 +112,8 @@ export async function POST(
       truth: room.story?.act4Truth || null,
       review: reviewResult,
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Room Finish] Error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", error.message || "结束失败"), { status: 500 });
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", getErrorMessage(error) || "结束失败"), { status: 500 });
   }
 }

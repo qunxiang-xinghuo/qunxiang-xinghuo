@@ -21,11 +21,11 @@ function MultiWaitingContent() {
   const searchParams = useSearchParams();
   const initialMatchId = searchParams.get('matchId');
 
-  const [brainhole, setBrainhole] = useState<any>(null);
+  const [brainhole, setBrainhole] = useState<unknown>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [phase, setPhase] = useState<Phase>('multi');
   const [matchId, setMatchId] = useState<string | null>(initialMatchId);
-  const [matchData, setMatchData] = useState<any>(null);
+  const [matchData, setMatchData] = useState<unknown>(null);
   const [signalWaves, setSignalWaves] = useState(0);
   const navTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -67,7 +67,7 @@ function MultiWaitingContent() {
       const res = await fetch('/api/match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brainholeId: brainhole?.id, identity, preferDifferent: true, timeoutMinutes: 1, mode: 'duo' }),
+        body: JSON.stringify({ brainholeId: (brainhole as { id?: string } | null)?.id, identity, preferDifferent: true, timeoutMinutes: 1, mode: 'duo' }),
       });
       const result = await res.json();
       if (result.success && result.data?.matchId) setMatchId(result.data.matchId);
@@ -84,7 +84,7 @@ function MultiWaitingContent() {
       const res = await fetch('/api/rooms/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brainholeId: brainhole?.id, identity }),
+        body: JSON.stringify({ brainholeId: (brainhole as { id?: string } | null)?.id, identity }),
       });
       const result = await res.json();
       if (result.success && result.data?.roomId) {
@@ -136,8 +136,8 @@ function MultiWaitingContent() {
     timeout: { title: '匹配超时', subtitle: '正在为你召唤AI搭档...', icon: Sparkles, iconColor: '#c084fc', progressColor: 'bg-violet-400', detail: '', glowColor: 'shadow-violet-400/20' },
   };
 
-  const current = phaseConfig[phase];
-  const PhaseIcon = current.icon;
+  const current = phaseConfig[phase] as { title: string; subtitle: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; iconColor: string; progressColor: string; detail: string; glowColor: string };
+  const PhaseIcon = current.icon as React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 
   return (
     <div className="flex flex-col h-full page-gradient relative overflow-hidden">
@@ -159,13 +159,13 @@ function MultiWaitingContent() {
       </div>
 
       {/* 脑洞信息 */}
-      {brainhole && (
+      {(brainhole as { title?: string } | null) && (
         <div className="shrink-0 px-5 pt-4 z-10">
           <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/15">
             <p className="text-[10px] text-slate-500 mb-1 flex items-center gap-1">
               <Radar className="w-3 h-3" />当前脑洞
             </p>
-            <p className="text-sm font-semibold text-slate-100">{brainhole.title}</p>
+            <p className="text-sm font-semibold text-slate-100">{(brainhole as { title?: string } | null)?.title}</p>
           </div>
         </div>
       )}

@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { encrypt, decrypt } from "@/lib/crypto";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // GET: 获取会话消息（解密后返回）
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
@@ -44,8 +45,8 @@ export async function GET(
     }));
 
     return NextResponse.json(apiResponse(decryptedMessages));
-  } catch (error: any) {
-    console.error("[Healing Messages GET] 错误:", error.message);
+  } catch (error: unknown) {
+    console.error("[Healing Messages GET] 错误:", getErrorMessage(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取消息失败"), { status: 500 });
   }
 }
@@ -132,8 +133,8 @@ export async function POST(
           isAi: true,
         },
       });
-    } catch (aiErr: any) {
-      console.error("[Healing AI] 回复生成失败:", aiErr.message);
+    } catch (aiErr: unknown) {
+      console.error("[Healing AI] 回复生成失败:", getErrorMessage(aiErr));
       // AI失败不影响用户消息保存
     }
 
@@ -141,8 +142,8 @@ export async function POST(
       messageId: userMsg.id,
       content: content.trim(),
     }), { status: 201 });
-  } catch (error: any) {
-    console.error("[Healing Messages POST] 错误:", error.message);
+  } catch (error: unknown) {
+    console.error("[Healing Messages POST] 错误:", getErrorMessage(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "发送消息失败"), { status: 500 });
   }
 }

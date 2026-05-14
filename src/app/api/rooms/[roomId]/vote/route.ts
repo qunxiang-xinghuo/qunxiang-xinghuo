@@ -31,7 +31,7 @@ export async function POST(
       return NextResponse.json(apiError("VALIDATION_ERROR", validation.error.issues[0]?.message || "参数验证失败"), { status: 400 });
     }
 
-    const { question, options, targetMessageId } = validation.data;
+    const { question, options, targetMessageId: _targetMessageId } = validation.data;
     const { roomId } = await params;
 
     // 检查房间是否存在
@@ -81,7 +81,7 @@ export async function POST(
     });
 
     return NextResponse.json(apiResponse(vote));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("创建投票失败:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建投票失败"), { status: 500 });
   }

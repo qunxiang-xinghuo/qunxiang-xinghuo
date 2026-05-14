@@ -34,7 +34,7 @@ export async function POST(
     broadcastToRoom(`story-${storyId}`, "director-resume", { storyId, resumedBy: userId, timestamp: Date.now() });
 
     return NextResponse.json(apiResponse({ resumed: true }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryResume POST] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "继续失败"), { status: 500 });
   }

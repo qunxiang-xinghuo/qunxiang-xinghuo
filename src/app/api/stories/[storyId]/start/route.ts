@@ -13,7 +13,6 @@ export async function POST(
     const { storyId } = await params;
     const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
     const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-    const guestId = request.headers.get("x-guest-id");
 
     // 检查故事是否存在
     const story = await db.story.findUnique({
@@ -53,7 +52,7 @@ export async function POST(
       success: true,
       story: updatedStory,
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StartStory POST] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "启动故事失败"), { status: 500 });
   }

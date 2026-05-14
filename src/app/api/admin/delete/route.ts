@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { checkAdmin } from "@/lib/admin-utils";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 /**
  * POST /api/admin/delete
@@ -62,9 +63,9 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json(apiError("BAD_REQUEST", "不支持的类型"), { status: 400 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Admin Delete] Error:", error);
-    if (error.code === "P2025") {
+    if (getErrorCode(error) === "P2025") {
       return NextResponse.json(apiResponse({ message: "资源不存在或已删除" }));
     }
     return NextResponse.json(apiError("SERVER_ERROR", "删除失败"), { status: 500 });

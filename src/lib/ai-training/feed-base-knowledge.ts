@@ -6,6 +6,7 @@
  */
 
 import { db } from '@/lib/db';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 interface DomainConfig {
   domain: string;
@@ -82,9 +83,9 @@ async function fetchDomainKnowledge(config: DomainConfig): Promise<string[]> {
       .filter((line: string) => line.length >= 20 && line.length <= 200);
 
     return items;
-  } catch (e: any) {
-    if (e.name !== 'AbortError') {
-      console.error(`[AI Training] ${config.domain} 获取失败:`, e.message);
+  } catch (e: unknown) {
+    if ((e as { name?: string }).name !== 'AbortError') {
+      console.error(`[AI Training] ${config.domain} 获取失败:`, getErrorMessage(e));
     }
     return [];
   } finally {
@@ -132,8 +133,8 @@ export async function feedBaseKnowledge(): Promise<{
       });
       console.log(`[AI Training] ${config.domain} 已存入 ${items.length} 条`);
       results.push({ domain: config.domain, count: items.length });
-    } catch (e: any) {
-      console.error(`[AI Training] ${config.domain} 存储失败:`, e.message);
+    } catch (e: unknown) {
+      console.error(`[AI Training] ${config.domain} 存储失败:`, getErrorMessage(e));
       results.push({ domain: config.domain, count: 0 });
     }
 

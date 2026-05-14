@@ -13,7 +13,7 @@ export default function ZhihuSearchPage() {
   useEffect(() => { setMounted(true); }, []);
 
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
@@ -138,7 +138,7 @@ export default function ZhihuSearchPage() {
         {!loading && results.length > 0 && (
           <div className="space-y-3">
             <AnimatePresence>
-              {results.map((item, i) => (
+              {(results as Array<{ ContentID?: string; ThumbnailUrl?: string; Title?: string; Summary?: string; ContentText?: string; AuthorName?: string; VoteUpCount?: number; CommentCount?: number }>).map((item, i) => (
                 <motion.div
                   key={item.ContentID || i}
                   initial={mounted ? { opacity: 0, y: 10 } : false}

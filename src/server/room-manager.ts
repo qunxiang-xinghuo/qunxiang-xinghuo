@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 
 export async function markSpark(
   roomId: string,
@@ -100,7 +101,7 @@ export async function updateRoomStatus(
     throw new Error("NOT_DIRECTOR");
   }
 
-  const updateData: any = { status };
+  const updateData: Prisma.RoomUpdateInput = { status };
   if (status === "finished" || status === "closed") {
     updateData.closedAt = new Date();
   }

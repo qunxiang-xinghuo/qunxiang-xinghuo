@@ -32,7 +32,7 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
       .then((r) => r.json())
       .then((res) => {
         if (res.success && res.data) {
-          const labels = res.data.map((i: any) => i.label);
+          const labels = res.data.map((i: { label: string }) => i.label);
           setZhihuIdentities(labels);
           if (labels.length > 0) setSelectedZhihuId(labels[0]);
         }

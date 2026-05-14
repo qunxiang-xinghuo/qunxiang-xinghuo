@@ -26,7 +26,7 @@ export async function GET(
     });
 
     return NextResponse.json(apiResponse({ messages }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryMessages GET] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取消息失败"), { status: 500 });
   }
@@ -74,7 +74,7 @@ export async function POST(
     broadcastToRoom(`story-${storyId}`, "new-story-message", message);
 
     return NextResponse.json(apiResponse({ message }), { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryMessages POST] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "发送消息失败"), { status: 500 });
   }

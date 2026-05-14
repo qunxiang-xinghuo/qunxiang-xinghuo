@@ -6,7 +6,7 @@ import { apiResponse, apiError } from "@/lib/utils";
  * GET /api/rooms/public
  * 获取所有公开（未关闭）的房间列表，用于观看模式
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const rooms = await db.room.findMany({
       where: {
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       }));
 
     return NextResponse.json(apiResponse({ list }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Rooms Public API] Error:", error);
     return NextResponse.json(apiError("SERVER_ERROR", "获取公开房间失败"), { status: 500 });
   }

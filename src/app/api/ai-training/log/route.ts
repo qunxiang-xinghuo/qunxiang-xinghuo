@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recordLearningLog, recordCatalystLog } from '@/lib/ai-training';
 import { apiResponse, apiError } from '@/lib/utils';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,8 +35,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(apiError('BAD_REQUEST', '未知日志类型'), { status: 400 });
-  } catch (e: any) {
-    console.error('[AI Training Log API] 失败:', e.message);
+  } catch (e: unknown) {
+    console.error('[AI Training Log API] 失败:', getErrorMessage(e));
     return NextResponse.json(apiError('INTERNAL_SERVER_ERROR', '记录失败'), { status: 500 });
   }
 }

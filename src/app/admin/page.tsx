@@ -128,7 +128,7 @@ export default function AdminPage() {
         if (!data.success) { setError(data.error?.message || '加载失败'); return; }
         setUsers(data.data.list || []);
       }
-    } catch (e) {
+    } catch (_e) {
       setError('网络异常');
     } finally {
       setLoading(false);
@@ -171,7 +171,7 @@ export default function AdminPage() {
           alert(data.error?.message || '删除失败');
         }
       }
-    } catch (e) {
+    } catch (_e) {
       alert('删除失败');
     } finally {
       setDeletingId(null);
@@ -198,7 +198,7 @@ export default function AdminPage() {
       } else {
         alert(data.error?.message || '保存失败');
       }
-    } catch (e) {
+    } catch (_e) {
       alert('保存失败');
     } finally {
       setUserFormLoading(false);

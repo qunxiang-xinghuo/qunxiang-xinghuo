@@ -48,7 +48,7 @@ export default function Bubble({ item, index, onClick, bgColor, borderColor }: B
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'spring', stiffness: 180, damping: 14, delay: index * 0.04 }}
       className="bubble-float-wrapper cursor-pointer select-none relative inline-block"
-      style={{ ['--float-dur' as any]: `${floatDuration}s`, ['--float-del' as any]: `${floatDelay}s` }}
+      style={{ ['--float-dur' as string]: `${floatDuration}s`, ['--float-del' as string]: `${floatDelay}s` }}
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

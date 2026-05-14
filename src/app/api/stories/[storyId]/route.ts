@@ -69,7 +69,7 @@ export async function GET(
 
     // 旧格式：返回完整故事对象
     return NextResponse.json(apiResponse({ story }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryDetail GET] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取故事详情失败"), { status: 500 });
   }

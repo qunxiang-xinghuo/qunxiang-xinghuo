@@ -231,7 +231,7 @@ export class WorkflowEngine {
       if (toolResult.success && Array.isArray(toolResult.data) && toolResult.data.length > 0) {
         const stories = toolResult.data.slice(0, 3);
         const list = stories
-          .map((s: any, i: number) => `${i + 1}. ${s.title}（${s.era}，难度${s.difficulty}）`)
+          .map((s: { title: string; era: string; difficulty: number }, i: number) => `${i + 1}. ${s.title}（${s.era}，难度${s.difficulty}）`)
           .join("\n");
 
         return {
@@ -273,7 +273,7 @@ export class WorkflowEngine {
       const searchResult = await executeToolCall(searchCall, { userId: ctx.userId });
       const stories = searchResult.success && Array.isArray(searchResult.data) ? searchResult.data : [];
 
-      const choice = inferUserChoice(ctx.messages, stories.map((s: any) => ({ id: s.id, title: s.title })));
+      const choice = inferUserChoice(ctx.messages, stories.map((s: { id: string; title: string }) => ({ id: s.id, title: s.title })));
 
       if (!choice && stories.length > 0) {
         // 无法推断选择，但用户可能说了什么，默认选第一个
@@ -301,14 +301,15 @@ export class WorkflowEngine {
           toolCalls.push(roomCall);
           toolResults.push(roomResult);
 
-          if (roomResult.success && roomResult.data?.roomId) {
+          const roomData = roomResult.data as { roomId?: string } | undefined;
+          if (roomResult.success && roomData?.roomId) {
             return {
               content: "",
               workflow: "story",
               state: { type: "story", step: "room_created", status: "completed" },
               toolCalls,
               toolResults,
-              toolSummary: `【匹配结果】匹配到了真人用户！房间 ${roomResult.data.roomId} 已创建。请自然地告诉用户这个好消息，引导用户进入房间。`,
+              toolSummary: `【匹配结果】匹配到了真人用户！房间 ${roomData.roomId} 已创建。请自然地告诉用户这个好消息，引导用户进入房间。`,
               shouldWaitUser: false,
             };
           }
@@ -369,7 +370,7 @@ export class WorkflowEngine {
       if (toolResult.success && Array.isArray(toolResult.data) && toolResult.data.length > 0) {
         const brainholes = toolResult.data.slice(0, 3);
         const list = brainholes
-          .map((b: any, i: number) => `${i + 1}. ${b.title}`)
+          .map((b: { title: string }, i: number) => `${i + 1}. ${b.title}`)
           .join("\n");
 
         return {
@@ -401,7 +402,7 @@ export class WorkflowEngine {
       const searchResult = await executeToolCall(searchCall, { userId: ctx.userId });
       const brainholes = searchResult.success && Array.isArray(searchResult.data) ? searchResult.data : [];
 
-      const choice = inferUserChoice(ctx.messages, brainholes.map((b: any) => ({ id: b.id, title: b.title })));
+      const choice = inferUserChoice(ctx.messages, brainholes.map((b: { id: string; title: string }) => ({ id: b.id, title: b.title })));
       const selected = choice || brainholes[0];
 
       if (selected) {

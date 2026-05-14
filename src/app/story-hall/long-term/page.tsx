@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, Lightbulb, Users, Sparkles } from 'lucide-react';
+import { ArrowLeft, BookOpen, Lightbulb, Sparkles } from 'lucide-react';
 
 export default function LongTermPage() {
   const router = useRouter();

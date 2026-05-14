@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { checkMatchStatus, cancelMatch } from "@/server/match-engine";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(
@@ -20,7 +21,7 @@ export async function GET(
     if (!effectiveUserId) {
       return NextResponse.json(apiError("UNAUTHORIZED", "请先登录"), { status: 401 });
     }
-    const match = await checkMatchStatus(matchId, effectiveUserId);
+    const match = await checkMatchStatus(matchId, effectiveUserId) as { status?: string; roomId?: string };
 
     // v4.3: 如果匹配成功，获取房间和脑洞信息
     let roomData = null;
@@ -46,8 +47,8 @@ export async function GET(
       ...match,
       room: roomData,
     }));
-  } catch (error: any) {
-    if (error.message === "MATCH_NOT_FOUND") {
+  } catch (error: unknown) {
+    if (getErrorMessage(error) === "MATCH_NOT_FOUND") {
       return NextResponse.json(apiError("MATCH_NOT_FOUND", "匹配不存在"), { status: 404 });
     }
     console.error("获取匹配状态失败:", error);
@@ -73,11 +74,11 @@ export async function DELETE(
     const success = await cancelMatch(matchId, effectiveUserId);
 
     return NextResponse.json(apiResponse({ success }));
-  } catch (error: any) {
-    if (error.message === "MATCH_NOT_FOUND") {
+  } catch (error: unknown) {
+    if (getErrorMessage(error) === "MATCH_NOT_FOUND") {
       return NextResponse.json(apiError("MATCH_NOT_FOUND", "匹配不存在"), { status: 404 });
     }
-    if (error.message === "MATCH_ALREADY_RESOLVED") {
+    if (getErrorMessage(error) === "MATCH_ALREADY_RESOLVED") {
       return NextResponse.json(apiError("MATCH_ALREADY_RESOLVED", "匹配已结束"), { status: 400 });
     }
     console.error("取消匹配失败:", error);

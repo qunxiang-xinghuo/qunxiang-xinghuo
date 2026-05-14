@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Eye, Lock, X, Share2, Copy, Bot, RefreshCw,
+  ArrowLeft, Flame, MessageCircle, Send, Trash2, Sparkles, Lock, X, Share2, Copy, Bot, RefreshCw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useSocket } from '@/hooks/useSocket';
 import Image from 'next/image';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 interface Message {
   id: string; userId: string; content: string;
@@ -31,7 +32,7 @@ export default function RoomPage() {
   const router = useRouter();
   const roomId = params.id as string;
   const { user: authUser } = useAuth();
-  const { isConnected, joinRoom, leaveRoom, on, off, removeAllListeners } = useSocket();
+  const { isConnected, joinRoom, leaveRoom, on, off } = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -79,7 +80,7 @@ export default function RoomPage() {
   const [publishingSpark, setPublishingSpark] = useState(false);
 
   // v8.5: 邀请房间超时弹窗
-  const [inviteCountdown, setInviteCountdown] = useState(120); // 2分钟 = 120秒
+  const [, setInviteCountdown] = useState(120); // 2分钟 = 120秒
   const [showInviteTimeoutModal, setShowInviteTimeoutModal] = useState(false);
   const [inviteExtended, setInviteExtended] = useState(false);
   const inviteTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -154,11 +155,11 @@ export default function RoomPage() {
           setRoomType(room.type);
           setIsAiRoom(room.isAiRoom);
           setInviteCode(room.inviteCode || '');
-          setParticipantCount(room.participants?.filter((p: any) => p.role === 'actor').length || 0);
+          setParticipantCount(room.participants?.filter((p: { role: string }) => p.role === 'actor').length || 0);
           setActProgress(room.actProgress || 0);
 
           if (room.messages && Array.isArray(room.messages)) {
-            setMessages(room.messages.map((m: any) => ({
+            setMessages(room.messages.map((m: { id: string; senderId?: string; userId?: string; content: string; createdAt: string; identity?: string; isSpark?: boolean }) => ({
               id: m.id, userId: m.senderId || m.userId, content: m.content,
               timestamp: new Date(m.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
               identity: m.identity, isSpark: m.isSpark,
@@ -188,15 +189,15 @@ export default function RoomPage() {
             }
             setParticipantImages(imgMap);
 
-            const me = room.participants.find((p: any) => p.userId === userId);
+            const me = room.participants.find((p: { userId: string; identity?: string; user?: { image?: string; id: string } }) => p.userId === userId);
             if (me) {
               setMyRoleName(me.identity || '我');
               // 从 story.roles 找 openingInfo
               if (room.story?.roles) {
-                const myRole = room.story.roles.find((r: any) => r.name === me.identity);
+                const myRole = room.story.roles.find((r: { name: string; openingInfo?: string }) => r.name === me.identity);
                 if (myRole?.openingInfo) setMyOpeningInfo(myRole.openingInfo);
                 // 找 AI 角色
-                const aiRole = room.story.roles.find((r: any) => r.name !== me.identity);
+                const aiRole = room.story.roles.find((r: { name: string }) => r.name !== me.identity);
                 if (aiRole) setAiRoleName(aiRole.name);
               }
             }
@@ -270,8 +271,8 @@ export default function RoomPage() {
     const currentUserId = userIdRef.current || userId || 'me';
     joinRoom(roomId, currentUserId, myRoleName || '我');
 
-    const handleNewMessage = (data: any) => {
-      const raw = data.message || data;
+    const handleNewMessage = (data: unknown) => {
+      const raw = data as { id?: string; content?: string; senderId?: string; userId?: string; createdAt?: string; identity?: string; isSpark?: boolean };
       const msgId = raw.id || `msg-${Date.now()}`;
       const senderId = raw.senderId || raw.userId;
       // 使用 ref 获取最新 userId，避免闭包陈旧
@@ -279,15 +280,15 @@ export default function RoomPage() {
       setMessages((prev) => {
         if (prev.some((m) => m.id === msgId)) return prev;
         return [...prev, {
-          id: msgId, userId: senderId, content: raw.content,
+          id: msgId, userId: senderId || 'unknown', content: raw.content || '',
           timestamp: new Date(raw.createdAt || Date.now()).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          identity: raw.identity, isSpark: raw.isSpark,
+          identity: raw.identity || '', isSpark: raw.isSpark || false,
         }];
       });
     };
     // v8.5: 对方离开提示
-    const handleOpponentLeft = (data: any) => {
-      const leftUserId = data.userId;
+    const handleOpponentLeft = (data: unknown) => {
+      const leftUserId = (data as { userId?: string }).userId;
       if (leftUserId === userIdRef.current) return;
       alert('对方已结束对白，即将返回发现页');
       router.push('/home');
@@ -381,7 +382,6 @@ export default function RoomPage() {
     isProcessingAI.current = true;
     try {
       const msgCount = currentMsgCount;
-      let systemPrompt = '';
       let topic = '';
 
       let context = '';
@@ -591,7 +591,7 @@ export default function RoomPage() {
     if (isReadonly) return;
     // 压入一个空状态，使 popstate 能被拦截
     history.pushState({ roomGuard: true }, '');
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = (_e: PopStateEvent) => {
       if (!isReadonly) {
         if (confirm('房间仍在进行中，确定要返回吗？')) {
           // 允许返回

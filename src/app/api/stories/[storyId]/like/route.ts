@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db as prisma } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { getToken } from "next-auth/jwt";
+import { getErrorCode } from "@/lib/error-utils";
 
 /**
  * POST /api/stories/:storyId/like
@@ -66,9 +67,9 @@ export async function POST(
       const updated = await prisma.story.findUnique({ where: { id: storyId }, select: { hotScore: true } });
       return NextResponse.json(apiResponse({ liked: true, hotScore: updated?.hotScore || 0, message: "点赞成功" }));
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Story Like] Error:", error);
-    if (error?.code === "P2002" && storyId && effectiveUserId) {
+    if (getErrorCode(error)  === "P2002" && storyId && effectiveUserId) {
       const like = await prisma.storyLike.findUnique({
         where: { storyId_userId: { storyId, userId: effectiveUserId } },
       });

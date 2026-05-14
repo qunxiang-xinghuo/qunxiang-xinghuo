@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 type Choice = 'ai' | 'wait' | 'exit';
 
@@ -14,7 +15,7 @@ function DuoTimeoutContent() {
   useEffect(() => { setMounted(true); }, []);
 
   const searchParams = useSearchParams();
-  const matchId = searchParams.get('matchId');
+  const _matchId = searchParams.get('matchId');
   const round = parseInt(searchParams.get('round') || '1', 10);
   const [choice, setChoice] = useState<Choice | null>(null);
   const [error, setError] = useState('');
@@ -80,9 +81,9 @@ function DuoTimeoutContent() {
         setError('创建房间失败: ' + errMsg + '，请返回首页重试');
         setChoice(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[DuoTimeout] 创建AI房间异常:', err);
-      setError('网络异常: ' + (err.message || '请检查网络连接') + '，请返回首页重试');
+      setError('网络异常: ' + (getErrorMessage(err) || '请检查网络连接') + '，请返回首页重试');
       setChoice(null);
     }
   };

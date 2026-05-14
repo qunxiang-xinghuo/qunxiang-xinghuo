@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { runCrawlerOnce } from '@/lib/crawler';
 import { db } from '@/lib/db';
 import { apiResponse, apiError } from '@/lib/utils';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 const ADMIN_KEY = process.env.CRAWLER_ADMIN_KEY || 'dev-crawler-key';
 
@@ -23,8 +24,8 @@ export async function POST(request: NextRequest) {
 
     const result = await runCrawlerOnce();
     return NextResponse.json(apiResponse(result));
-  } catch (e: any) {
-    console.error('[Crawler API] 手动触发失败:', e.message);
+  } catch (e: unknown) {
+    console.error('[Crawler API] 手动触发失败:', getErrorMessage(e));
     return NextResponse.json(apiError('INTERNAL_SERVER_ERROR', '抓取失败'), { status: 500 });
   }
 }
@@ -61,8 +62,8 @@ export async function GET(request: NextRequest) {
           : null,
       })
     );
-  } catch (e: any) {
-    console.error('[Crawler API] 状态查询失败:', e.message);
+  } catch (e: unknown) {
+    console.error('[Crawler API] 状态查询失败:', getErrorMessage(e));
     return NextResponse.json(apiError('INTERNAL_SERVER_ERROR', '查询失败'), { status: 500 });
   }
 }

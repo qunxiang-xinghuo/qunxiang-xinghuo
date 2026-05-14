@@ -62,7 +62,7 @@ export async function POST(
     });
 
     return NextResponse.json(apiResponse({ branch: updatedBranch }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[BranchVote POST] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "投票失败"), { status: 500 });
   }

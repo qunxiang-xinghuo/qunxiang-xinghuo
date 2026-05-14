@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { db } from "./db";
 import ZhihuProvider from "./auth/zhihu-provider";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 declare module "next-auth" {
   interface Session {
@@ -173,8 +174,8 @@ export const authOptions: NextAuthOptions = {
           } else {
             console.log("[Auth] 知乎用户已存在:", user.id);
           }
-        } catch (err: any) {
-          console.error("[Auth] 知乎用户创建失败:", err.message);
+        } catch (err: unknown) {
+          console.error("[Auth] 知乎用户创建失败:", getErrorMessage(err));
           // 不阻断登录，继续用 JWT
         }
       }

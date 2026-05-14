@@ -15,7 +15,7 @@ interface RoleInput {
 interface StoryTemplate {
   id: string;
   name: string;
-  icon: any;
+  icon: React.ElementType;
   color: string;
   bg: string;
   border: string;

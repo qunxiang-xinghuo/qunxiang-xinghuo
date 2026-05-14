@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import TopBar from '@/components/layout/TopBar';
 import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
-import { ScrollText, Clock, BookOpen, Users, PenTool } from 'lucide-react';
+import { Clock, BookOpen, Users, PenTool } from 'lucide-react';
 
 const features = [
   { icon: BookOpen, title: '发起故事', desc: '创建一个群像故事项目，设定世界观和角色' },

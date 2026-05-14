@@ -7,6 +7,7 @@ import { ArrowLeft, Eye, Flame, MessageCircle, ChevronUp, ChevronDown } from 'lu
 import { useSwipeable } from 'react-swipeable';
 import { useSocket } from '@/hooks/useSocket';
 import Image from 'next/image';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 interface Message {
   id: string;
@@ -141,8 +142,8 @@ export default function SpectateRoomPage() {
     if (!roomId) return;
     joinRoom(roomId, stableUserId, '观众');
 
-    const handleNewMessage = (data: any) => {
-      const raw = data.message || data;
+    const handleNewMessage = (data: unknown) => {
+      const raw = data as { id?: string; content?: string; senderId?: string; userId?: string; createdAt?: string; identity?: string; isSpark?: boolean };
       const msgId = raw.id || `msg-${Date.now()}`;
       if (!raw.content) return;
       setMessages((prev) => {
@@ -150,10 +151,10 @@ export default function SpectateRoomPage() {
         return [...prev, {
           id: msgId,
           userId: raw.senderId || raw.userId || 'unknown',
-          content: raw.content,
+          content: raw.content || '',
           timestamp: new Date(raw.createdAt || Date.now()).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          identity: raw.identity,
-          isSpark: raw.isSpark,
+          identity: raw.identity || '',
+          isSpark: raw.isSpark || false,
         }];
       });
     };

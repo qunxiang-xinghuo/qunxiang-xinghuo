@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
             status: "approved",
           },
         });
-      } catch (e) {
+      } catch (_e) {
         // 忽略唯一键冲突
       }
     }

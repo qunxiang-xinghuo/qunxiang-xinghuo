@@ -8,6 +8,7 @@
  */
 
 import { searchKnowledgeBase, type SearchResult, type SearchOptions } from "./vector-store";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // ── 类型定义 ──
 
@@ -17,7 +18,7 @@ export interface RAGIntent {
   workflow: WorkflowType;
   confidence: number;
   reasoning: string;
-  suggestedParams?: Record<string, any>;
+  suggestedParams?: Record<string, unknown>;
 }
 
 export interface RAGResult {
@@ -138,9 +139,9 @@ async function aiClassify(message: string): Promise<RAGIntent> {
       return { workflow: "chat", confidence: 0.5, reasoning: "Cannot parse result" };
     }
 
-    let parsed: any;
+    let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(jsonMatch[0]);
+      parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
     } catch {
       return { workflow: "chat", confidence: 0.5, reasoning: "JSON解析失败" };
     }
@@ -152,11 +153,11 @@ async function aiClassify(message: string): Promise<RAGIntent> {
         ? workflow
         : "chat",
       confidence,
-      reasoning: parsed.reasoning || "AI classified",
-      suggestedParams: parsed.params || {},
+      reasoning: String(parsed.reasoning || "AI classified"),
+      suggestedParams: (parsed.params as Record<string, unknown>) || {},
     };
-  } catch (err: any) {
-    console.warn("[RAG Engine] AI intent classify failed:", err.message);
+  } catch (err: unknown) {
+    console.warn("[RAG Engine] AI intent classify failed:", getErrorMessage(err));
     return { workflow: "chat", confidence: 0.5, reasoning: "Classify error" };
   }
 }
@@ -193,7 +194,7 @@ export class RAGEngine {
       searchOptions.type = "brainhole";
     }
 
-    const keyword = intent.suggestedParams?.keyword || message;
+    const keyword = String(intent.suggestedParams?.keyword || message);
     const documents = await searchKnowledgeBase(keyword, searchOptions);
 
     return {

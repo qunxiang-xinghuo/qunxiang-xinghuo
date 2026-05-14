@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Radar, Sparkles, User, Bot, ArrowRight, RefreshCw,
 } from 'lucide-react';
+import { getErrorMessage } from '@/lib/error-utils';
 import TopBar from '@/components/layout/TopBar';
 import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
 
@@ -33,7 +34,7 @@ function DuoWaitingContent() {
 
   const [elapsedTime, setElapsedTime] = useState(0);
   const [status, setStatus] = useState<MatchStatus>('matching');
-  const [matchData, setMatchData] = useState<any>(null);
+  const [, setMatchData] = useState<unknown>(null);
   const [brainholeInfo, setBrainholeInfo] = useState<BrainholeInfo | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
   const [matchError, setMatchError] = useState<string>('');
@@ -117,7 +118,7 @@ function DuoWaitingContent() {
         setMatchError('创建AI房间失败，请重试');
         setCreatingAiRoom(false);
       }
-    } catch (err) {
+    } catch (_err) {
       setMatchError('网络异常，请重试');
       setCreatingAiRoom(false);
     }
@@ -195,8 +196,8 @@ function DuoWaitingContent() {
         } else {
           setMatchError(result.message || '匹配请求未成功');
         }
-      } catch (err: any) {
-        setMatchError(err?.message || '网络异常');
+      } catch (err: unknown) {
+        setMatchError(getErrorMessage(err) || '网络异常');
       }
     }, MATCH_DELAY);
     return () => clearTimeout(matchTimer);

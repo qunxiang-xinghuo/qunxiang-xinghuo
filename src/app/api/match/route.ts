@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { matchRequestSchema } from "@/lib/validators/match";
 import { findMatch } from "@/server/match-engine";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function POST(request: NextRequest) {
@@ -25,8 +26,8 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json();
       console.log("[MatchAPI] 请求体:", JSON.stringify(body));
-    } catch (parseErr: any) {
-      console.error("[MatchAPI] 请求体解析失败:", parseErr.message);
+    } catch (parseErr: unknown) {
+      console.error("[MatchAPI] 请求体解析失败:", getErrorMessage(parseErr));
       return NextResponse.json(apiError("BAD_REQUEST", "请求体格式错误，请检查JSON格式"), { status: 400 });
     }
 
@@ -97,18 +98,19 @@ export async function POST(request: NextRequest) {
         brainholeTitle: matchResult.brainholeTitle,
       }), { status: 202 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[MatchAPI] ========== 请求匹配失败 ==========");
-    console.error("[MatchAPI] 错误消息:", error.message);
-    console.error("[MatchAPI] 错误堆栈:", error.stack);
+    console.error("[MatchAPI] 错误消息:", getErrorMessage(error));
+    console.error("[MatchAPI] 错误堆栈:", (error as Error).stack);
 
     // v4.6: Zod验证错误的友好提示
-    if (error.name === 'ZodError' && error.issues) {
-      const issues = error.issues.map((i: any) => `${i.path.join('.')}: ${i.message}`).join('; ');
+    const err = error as { name?: string; issues?: Array<{ path: string[] }> };
+    if (err.name === 'ZodError' && err.issues) {
+      const issues = err.issues.map((i) => `${i.path.join('.')}: ${getErrorMessage(i)}`).join('; ');
       console.error("[MatchAPI] 数据验证错误:", issues);
       return NextResponse.json(apiError("VALIDATION_ERROR", `参数验证失败: ${issues}`), { status: 400 });
     }
 
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "请求匹配失败: " + (error.message || "未知错误")), { status: 500 });
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "请求匹配失败: " + (getErrorMessage(error) || "未知错误")), { status: 500 });
   }
 }

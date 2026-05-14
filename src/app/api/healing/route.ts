@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { encrypt } from "@/lib/crypto";
 import { z } from "zod";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // GET: 获取当前用户的疗愈会话列表
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
@@ -35,8 +36,8 @@ export async function GET(request: NextRequest) {
       createdAt: s.createdAt,
       closedAt: s.closedAt,
     }))));
-  } catch (error: any) {
-    console.error("[Healing GET] 错误:", error.message);
+  } catch (error: unknown) {
+    console.error("[Healing GET] 错误:", getErrorMessage(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取会话列表失败"), { status: 500 });
   }
 }
@@ -104,8 +105,8 @@ export async function POST(request: NextRequest) {
       sessionId: healingSession.id,
       title: healingSession.title,
     }), { status: 201 });
-  } catch (error: any) {
-    console.error("[Healing POST] 错误:", error.message);
+  } catch (error: unknown) {
+    console.error("[Healing POST] 错误:", getErrorMessage(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建疗愈会话失败"), { status: 500 });
   }
 }

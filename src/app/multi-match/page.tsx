@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Sparkles, User, Edit3, Check, Zap, Flame, ArrowRight, Clock } from 'lucide-react';
+import { Sparkles, User, Edit3, Check, Zap, Flame } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 
 interface BrainholeItem {
@@ -76,7 +76,7 @@ function MultiMatchContent() {
       .then((r) => r.json())
       .then((res) => {
         if (res.success && res.data?.brainholes) {
-          const list = res.data.brainholes.map((b: any) => ({
+          const list = res.data.brainholes.map((b: { id: unknown; title: unknown; scenario?: unknown; category?: unknown; hotScore?: unknown; content?: unknown; source?: unknown; tags?: unknown[] }) => ({
             id: String(b.id),
             title: String(b.title),
             scenario: String(b.scenario || '').slice(0, 100),
@@ -100,7 +100,7 @@ function MultiMatchContent() {
       .then((r) => r.json())
       .then((res) => {
         if (res.success && res.data) {
-          const labels = res.data.map((i: any) => i.label);
+          const labels = res.data.map((i: { label: string }) => i.label);
           setZhihuIdentities(labels);
           if (labels.length > 0) setSelectedZhihuId(labels[0]);
         }
@@ -149,7 +149,7 @@ function MultiMatchContent() {
         setMatchError(result.message || '匹配请求失败');
         setIsMatching(false);
       }
-    } catch (err) {
+    } catch (_err) {
       setMatchError('网络错误，请重试');
       setIsMatching(false);
     }

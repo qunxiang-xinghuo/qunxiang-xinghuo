@@ -4,13 +4,11 @@ import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { brainholeCreateSchema, brainholeQuerySchema } from "@/lib/validators/brainhole";
 import { ZodError } from "zod";
+import { Prisma } from "@/generated/prisma/client";
 
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-    
     // 解析查询参数
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
@@ -32,7 +30,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // 构建查询条件
-    const where: any = { status };
+    const where: Prisma.BrainholeWhereInput = { status };
 
     if (difficulty) {
       where.difficulty = difficulty;
@@ -44,8 +42,8 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { scenario: { contains: search, mode: "insensitive" } },
+        { title: { contains: search } },
+        { scenario: { contains: search } },
       ];
     }
 
@@ -60,8 +58,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 泡泡模式：按热度排序，返回更多字段
-    const orderBy: any = mode === 'bubble'
-      ? { hotScore: 'desc' as const }
+    const orderBy: Prisma.BrainholeOrderByWithRelationInput = mode === 'bubble'
+      ? { hotScore: 'desc' }
       : { [sortBy]: sortOrder };
 
     // 获取脑洞列表
@@ -90,9 +88,9 @@ export async function GET(request: NextRequest) {
     ]);
 
     // 格式化响应数据
-    const formattedBrainholes = brainholes.map((brainhole: any) => ({
+    const formattedBrainholes = brainholes.map((brainhole) => ({
       ...brainhole,
-      tags: brainhole.tags.map((bt: any) => bt.tag),
+      tags: brainhole.tags.map((bt) => bt.tag),
     }));
 
     // 泡泡模式响应格式

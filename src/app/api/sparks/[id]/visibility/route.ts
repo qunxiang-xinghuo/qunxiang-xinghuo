@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db as prisma } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
-import { liukanshanReview } from "@/lib/ai/review";
+
 
 /**
  * PUT /api/sparks/:id/visibility

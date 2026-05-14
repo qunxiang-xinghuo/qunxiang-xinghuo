@@ -36,14 +36,14 @@ export function useBrainhole() {
       .then((result) => {
         if (!mounted) return;
         if (result.success && result.data?.brainholes) {
-          const mapped: Brainhole[] = result.data.brainholes.map((b: any) => ({
+          const mapped: Brainhole[] = result.data.brainholes.map((b: { id: unknown; title: unknown; scenario?: unknown; category?: unknown; hotScore?: unknown; content?: unknown; source?: unknown; tags?: unknown[] }) => ({
             id: String(b.id),
             title: String(b.title),
             content: String(b.scenario || b.content || ''),
             source: String(b.source || '群像星火'),
             tags: Array.isArray(b.tags)
-              ? b.tags.map((t: any) =>
-                  typeof t === 'string' ? t : String(t.name || t.tag?.name || '')
+              ? b.tags.map((t: unknown) =>
+                  typeof t === 'string' ? t : String((t as { name?: string }).name || (t as { tag?: { name?: string } }).tag?.name || '')
                 ).filter(Boolean)
               : undefined,
           }));

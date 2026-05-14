@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
 
   try {
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
     // 活跃AI房间：正在和刘看山聊天的房间（有在线真人）
     const activeAiRooms = await db.room.findMany({
@@ -75,18 +74,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const mapRoom = (room: any) => ({
+    const mapRoom = (room: typeof activeAiRooms[number]) => ({
       id: room.id,
       type: room.type,
       status: room.status,
       isAiRoom: room.isAiRoom,
       title: room.brainhole?.title || room.story?.title || "未命名",
       createdAt: room.createdAt.toISOString(),
-      lastMessageAt: room.messages?.[0]?.createdAt?.toISOString() || null,
+      lastMessageAt: ((room as typeof room & { messages?: Array<{ createdAt: Date }> }).messages)?.[0]?.createdAt?.toISOString() || null,
       participantCount: room.participants.length,
-      onlineCount: room.participants.filter((p: any) => p.isOnline).length,
+      onlineCount: room.participants.filter((p) => p.isOnline).length,
       messageCount: room._count.messages,
-      participants: room.participants.map((p: any) => p.identity).filter(Boolean),
+      participants: room.participants.map((p) => p.identity).filter(Boolean),
     });
 
     return NextResponse.json(apiResponse({

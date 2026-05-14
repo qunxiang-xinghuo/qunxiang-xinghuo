@@ -57,8 +57,8 @@ export default function ZhihuZhidaPage() {
       } else {
         setError(json.error?.message || '回答生成失败');
       }
-    } catch (e: any) {
-      if (e.name === 'AbortError') return;
+    } catch (e: unknown) {
+      if ((e as { name?: string }).name === 'AbortError') return;
       setError('网络错误，请重试');
     } finally {
       setLoading(false);

@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Plus, X, ScrollText, Clock, Users, AlertCircle,
-  CheckCircle2, ChevronRight, Sparkles,
+  ArrowLeft, Plus, X, ScrollText, Users, AlertCircle,
+  CheckCircle2, Sparkles,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -96,7 +96,7 @@ export default function CreateStoryPage() {
       } else {
         alert(data.message || '提交失败');
       }
-    } catch (e) {
+    } catch (_e) {
       if (!isMounted.current) return;
       alert('网络错误，请稍后重试');
     } finally {

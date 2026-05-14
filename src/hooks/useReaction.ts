@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 export interface Reaction {
   id: string;
@@ -53,10 +54,10 @@ export function useReaction(brainholeId?: string) {
       } else {
         setError(result.error || '加载反应失败');
       }
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
+    } catch (err: unknown) {
+      if ((err as { name?: string }).name === 'AbortError') return;
       console.error('[useReaction] Fetch error:', err);
-      setError(err instanceof Error ? err.message : String(err));
+      setError(err instanceof Error ? getErrorMessage(err) : String(err));
     } finally {
       setLoading(false);
     }
@@ -89,9 +90,9 @@ export function useReaction(brainholeId?: string) {
       }
       setError(result.error || '提交失败');
       return null;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[useReaction] Submit error:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
       return null;
     }
   };

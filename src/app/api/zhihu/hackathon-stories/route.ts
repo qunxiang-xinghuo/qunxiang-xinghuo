@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getHackathonStoryList } from "@/lib/zhihu-api";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 /**
  * GET /api/zhihu/hackathon-stories
@@ -9,10 +10,10 @@ export async function GET() {
   try {
     const data = await getHackathonStoryList();
     return NextResponse.json(data);
-  } catch (err: any) {
-    console.error("[Hackathon Stories] 获取失败:", err.message);
+  } catch (err: unknown) {
+    console.error("[Hackathon Stories] 获取失败:", getErrorMessage(err));
     return NextResponse.json(
-      { status: 1, msg: err.message || "获取故事列表失败", data: null },
+      { status: 1, msg: getErrorMessage(err) || "获取故事列表失败", data: null },
       { status: 500 }
     );
   }

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { Eye, Users, MessageCircle, ChevronRight, ArrowLeft, Radio } from 'lucide-react';
+import { Eye, Users, MessageCircle, ChevronRight, Radio } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -35,7 +35,7 @@ export default function SpectatePage() {
   useEffect(() => { setMounted(true); }, []);
 
   const { isAuthenticated } = useRequireAuth();
-  const { status: sessionStatus } = useSession();
+  useSession();
   const [rooms, setRooms] = useState<PublicRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,7 +53,7 @@ export default function SpectatePage() {
         } else {
           setError('加载失败');
         }
-      } catch (e) {
+  } catch (_e) {
         setError('网络错误');
       } finally {
         setLoading(false);

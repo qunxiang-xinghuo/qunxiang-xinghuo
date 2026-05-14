@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 /**
  * POST /api/stories/:storyId/join-ai
@@ -108,8 +109,8 @@ export async function POST(
       openingInfo: userRole.openingInfo || "",
       aiRoleName: aiName,
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Story Join AI] Error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", error.message || "创建AI房间失败"), { status: 500 });
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", getErrorMessage(error) || "创建AI房间失败"), { status: 500 });
   }
 }

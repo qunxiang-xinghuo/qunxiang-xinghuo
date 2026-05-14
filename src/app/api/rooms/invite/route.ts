@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去除易混淆字符 0O1I
@@ -24,7 +25,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    let { identity, brainholeId } = body;
+    const { identity } = body;
+    let { brainholeId } = body;
 
     if (!identity) {
       return NextResponse.json(apiError("BAD_REQUEST", "缺少身份参数"), { status: 400 });
@@ -61,9 +63,9 @@ export async function POST(request: NextRequest) {
         update: {},
         create: { id: effectiveUserId, name: identity, email: safeEmail },
       });
-    } catch (userErr: any) {
-      console.error('[Invite API] 用户创建失败:', userErr.message, 'userId=', effectiveUserId);
-      return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "用户创建失败: " + userErr.message), { status: 500 });
+    } catch (userErr: unknown) {
+      console.error('[Invite API] 用户创建失败:', getErrorMessage(userErr), 'userId=', effectiveUserId);
+      return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "用户创建失败: " + getErrorMessage(userErr)), { status: 500 });
     }
 
     // v7.0-test15: 使用try/catch捕获P2002唯一约束冲突，结合重试生成邀请码
@@ -98,22 +100,22 @@ export async function POST(request: NextRequest) {
           roomId: room.id,
           inviteCode,
         }), { status: 201 });
-      } catch (err: any) {
-        if (err?.code === 'P2002') {
+      } catch (err: unknown) {
+        if (getErrorCode(err)  === 'P2002') {
           // P2002 可能是 inviteCode 重复，重试
           console.log(`[Invite API] inviteCode 冲突，重试 (${attempts + 1}/${maxAttempts})`);
           inviteCode = generateInviteCode();
           attempts++;
           continue;
         }
-        console.error('[Invite API] 创建房间失败:', err.message);
+        console.error('[Invite API] 创建房间失败:', getErrorMessage(err));
         throw err;
       }
     }
 
     return NextResponse.json(apiError("CONFLICT", "邀请码生成失败，请重试"), { status: 409 });
-  } catch (error: any) {
-    console.error("[Invite API] 错误:", error instanceof Error ? error.message : String(error));
+  } catch (error: unknown) {
+    console.error("[Invite API] 错误:", error instanceof Error ? getErrorMessage(error) : String(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建邀请房间失败"), { status: 500 });
   }
 }

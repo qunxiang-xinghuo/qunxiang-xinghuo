@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Camera, User, Lock, AlertCircle, Eye, EyeOff, X,
+  Camera, User, Lock, AlertCircle, Eye, EyeOff, X,
 } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
@@ -139,7 +139,7 @@ export default function SettingsPage() {
       } else {
         setToast({ type: 'error', message: data.error?.message || '头像上传失败' });
       }
-    } catch (e) {
+    } catch (_e) {
       setToast({ type: 'error', message: '网络错误，请重试' });
     } finally {
       setSaving(false);
@@ -183,7 +183,7 @@ export default function SettingsPage() {
       } else {
         setToast({ type: 'error', message: data.error?.message || '用户名修改失败' });
       }
-    } catch (e) {
+    } catch (_e) {
       setToast({ type: 'error', message: '网络错误，请重试' });
     } finally {
       setSaving(false);
@@ -226,7 +226,7 @@ export default function SettingsPage() {
       } else {
         setToast({ type: 'error', message: data.error?.message || '密码修改失败' });
       }
-    } catch (e) {
+    } catch (_e) {
       setToast({ type: 'error', message: '网络错误，请重试' });
     } finally {
       setSaving(false);

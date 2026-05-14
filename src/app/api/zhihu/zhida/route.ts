@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }));
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = (error as any).issues?.[0]?.message || "验证失败";
+      const firstError = error.issues?.[0]?.message || "验证失败";
       return NextResponse.json(
         apiError(firstError, "VALIDATION_ERROR"),
         { status: 400 }

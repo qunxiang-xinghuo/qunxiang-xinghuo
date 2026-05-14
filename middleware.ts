@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
   // v9.5-fix: App Router middleware 中直接传 NextRequest
   // secureCookie 必须与 auth.ts 中 cookie 的 secure 选项一致（当前为 false）
   const token = await getToken({
-    req: request as any,
+    req: request,
     secret: process.env.NEXTAUTH_SECRET!,
     secureCookie: false,
   });

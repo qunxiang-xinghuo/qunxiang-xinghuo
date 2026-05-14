@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Send, Flame, Lock, ArrowLeft, Globe, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Send, Flame, Lock, Globe } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import LiuKanshanAvatar from '@/components/layout/LiuKanshanAvatar';
 
@@ -30,7 +29,7 @@ export default function HealingSessionPage() {
   const [closing, setClosing] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [stableUserId, setStableUserId] = useState('guest');
 
@@ -253,7 +252,7 @@ export default function HealingSessionPage() {
           <>
             <div className="flex gap-2 items-end">
               <input
-                ref={inputRef as any}
+                ref={inputRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => {

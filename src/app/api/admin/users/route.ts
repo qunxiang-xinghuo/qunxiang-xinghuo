@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { checkAdmin } from "@/lib/admin-utils";
 import { hash } from "bcryptjs";
+import { Prisma } from "@/generated/prisma/client";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // GET: 用户列表 + 搜索
 export async function GET(request: NextRequest) {
@@ -15,12 +17,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.trim();
 
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { username: { contains: search, mode: "insensitive" } },
+        { name: { contains: search } },
+        { email: { contains: search } },
+        { username: { contains: search } },
       ];
     }
 
@@ -118,7 +120,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(apiError("BAD_REQUEST", "用户ID必填"), { status: 400 });
     }
 
-    const data: any = {};
+    const data: Prisma.UserUpdateInput = {};
     if (username !== undefined) data.username = username;
     if (name !== undefined) data.name = name;
     if (password) data.password = await hash(password, 10);
@@ -135,9 +137,9 @@ export async function PUT(request: NextRequest) {
       name: user.name,
       isAdmin: user.isAdmin,
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Admin Users PUT] Error:", error);
-    if (error.code === "P2025") {
+    if (getErrorCode(error) === "P2025") {
       return NextResponse.json(apiError("NOT_FOUND", "用户不存在"), { status: 404 });
     }
     return NextResponse.json(apiError("SERVER_ERROR", "更新失败"), { status: 500 });
@@ -160,8 +162,7 @@ export async function DELETE(request: NextRequest) {
 
     // 不能删除自己
     const token = await checkAdmin(request);
-    // @ts-ignore
-    const adminUserId = token?.userId;
+    const adminUserId = (token as { userId?: string })?.userId;
     if (id === adminUserId) {
       return NextResponse.json(apiError("FORBIDDEN", "不能删除自己"), { status: 403 });
     }
@@ -208,9 +209,9 @@ export async function DELETE(request: NextRequest) {
     });
 
     return NextResponse.json(apiResponse({ message: "用户已删除" }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Admin Users DELETE] Error:", error);
-    if (error.code === "P2025") {
+    if (getErrorCode(error) === "P2025") {
       return NextResponse.json(apiResponse({ message: "用户不存在或已删除" }));
     }
     return NextResponse.json(apiError("SERVER_ERROR", "删除失败"), { status: 500 });

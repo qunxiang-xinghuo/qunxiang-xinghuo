@@ -6,6 +6,7 @@ import multer from "multer";
 import path from "path";
 import { writeFile } from "fs/promises";
 import { Readable } from "stream";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // Multer 配置：内存存储，限制 2MB
 const upload = multer({
@@ -63,13 +64,17 @@ export async function POST(req: NextRequest) {
     const fakeReq = new FakeRequest(headers, req.method || "POST", req.url || "/", buffer);
 
     // 运行 multer 中间件
-    const fileInfo: any = await new Promise((resolve, reject) => {
-      upload.single("image")(fakeReq as any, {} as any, (err: any) => {
+    interface MulterFile {
+      buffer: Buffer;
+      originalname: string;
+    }
+    const fileInfo = await new Promise<MulterFile | undefined>((resolve, reject) => {
+      upload.single("image")(fakeReq as unknown as Parameters<ReturnType<typeof upload.single>>[0], {} as unknown as Parameters<ReturnType<typeof upload.single>>[1], (err: unknown) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve((fakeReq as any).file);
+        resolve((fakeReq as unknown as { file?: MulterFile }).file);
       });
     });
 
@@ -105,13 +110,13 @@ export async function POST(req: NextRequest) {
       user: updated,
       imageUrl,
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Update Avatar API] Error:", error);
-    if (error.message?.includes("File too large")) {
+    if (getErrorMessage(error)?.includes("File too large")) {
       return NextResponse.json(apiError("BAD_REQUEST", "图片大小不能超过 2MB"), { status: 400 });
     }
-    if (error.message?.includes("请上传有效的图片文件")) {
-      return NextResponse.json(apiError("BAD_REQUEST", error.message), { status: 400 });
+    if (getErrorMessage(error)?.includes("请上传有效的图片文件")) {
+      return NextResponse.json(apiError("BAD_REQUEST", getErrorMessage(error)), { status: 400 });
     }
     return NextResponse.json(apiError("SERVER_ERROR", "头像上传失败"), { status: 500 });
   }

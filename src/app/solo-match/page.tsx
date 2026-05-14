@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Bot, ArrowRight, Sparkles, Shuffle, User } from 'lucide-react';
@@ -65,7 +64,7 @@ export default function SoloMatchPage() {
         setError('创建房间失败，请重试');
         setCreating(false);
       }
-    } catch (err) {
+    } catch (_err) {
       setError('网络异常，请重试');
       setCreating(false);
     }
@@ -88,7 +87,7 @@ export default function SoloMatchPage() {
           <h2 className="text-lg font-bold text-white/90 mb-1">与刘看山对话</h2>
           <p className="text-xs text-white/40 leading-relaxed max-w-[260px] mx-auto">
             一只好奇心重的北极狐，<br />
-            喜欢问"为什么"，偶尔也会调皮
+            喜欢问&quot;为什么&quot;，偶尔也会调皮
           </p>
         </motion.div>
 

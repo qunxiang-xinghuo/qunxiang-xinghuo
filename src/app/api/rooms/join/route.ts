@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       roomId: room.id,
       alreadyJoined: false,
     }), { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Join API] 错误:", error instanceof Error ? error.message : String(error));
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "服务器错误，请稍后重试"), { status: 500 });
   }

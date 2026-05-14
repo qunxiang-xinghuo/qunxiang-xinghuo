@@ -52,14 +52,14 @@ export function decrypt(ciphertextBase64: string): string {
 /**
  * 批量加密对象中的指定字段
  */
-export function encryptFields<T extends Record<string, any>>(
+export function encryptFields<T extends Record<string, unknown>>(
   obj: T,
   fields: (keyof T)[]
 ): T {
   const result = { ...obj };
   for (const field of fields) {
     if (typeof result[field] === "string" && result[field]) {
-      (result as any)[field] = encrypt(result[field] as string);
+      (result as Record<string, string>)[field as string] = encrypt(result[field] as string);
     }
   }
   return result;
@@ -68,7 +68,7 @@ export function encryptFields<T extends Record<string, any>>(
 /**
  * 批量解密对象中的指定字段
  */
-export function decryptFields<T extends Record<string, any>>(
+export function decryptFields<T extends Record<string, unknown>>(
   obj: T,
   fields: (keyof T)[]
 ): T {
@@ -76,7 +76,7 @@ export function decryptFields<T extends Record<string, any>>(
   for (const field of fields) {
     if (typeof result[field] === "string" && result[field]) {
       try {
-        (result as any)[field] = decrypt(result[field] as string);
+        (result as Record<string, string>)[field as string] = decrypt(result[field] as string);
       } catch (e) {
         // 如果解密失败（明文存储的旧数据），保持原值
         console.warn(`[Crypto] Decrypt failed for field ${String(field)}, using raw value`);

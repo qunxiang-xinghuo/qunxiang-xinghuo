@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { MatchCriteriaInput } from "@/lib/validators/match";
+import { Prisma } from "@/generated/prisma/client";
 
 export interface MatchResult {
   matched: boolean;
@@ -54,14 +55,14 @@ async function _findMatch(
   userId: string,
   criteria: MatchCriteriaInput
 ): Promise<MatchResult> {
-  let {
-    brainholeId,
+  const {
     excludeUserId,
     preferDifferentIdentity,
     timeoutMinutes,
     mode,
     identity,
   } = criteria;
+  let { brainholeId } = criteria;
 
   console.log(
     "[MatchEngine v8.3-queue] findMatch start - userId:",
@@ -108,7 +109,7 @@ async function _findMatch(
       }
 
       const now = new Date();
-      const baseWhere: any = {
+      const baseWhere: Prisma.MatchRequestWhereInput = {
         status: "waiting",
         expiresAt: { gt: now },
         userId: { not: excludeUserId || userId },
@@ -128,8 +129,8 @@ async function _findMatch(
         // 优先不同身份，但相同身份也能匹配
         const orderedMatches = preferDifferentIdentity
           ? [
-              ...stage1Matches.filter((c: any) => c.identity !== (identity || "default")),
-              ...stage1Matches.filter((c: any) => c.identity === (identity || "default")),
+              ...stage1Matches.filter((c) => c.identity !== (identity || "default")),
+              ...stage1Matches.filter((c) => c.identity === (identity || "default")),
             ]
           : stage1Matches;
 
@@ -177,8 +178,8 @@ async function _findMatch(
       // 优先不同身份，但相同身份也能匹配
       const orderedStage2 = preferDifferentIdentity
         ? [
-            ...stage2Matches.filter((c: any) => c.identity !== (identity || "default")),
-            ...stage2Matches.filter((c: any) => c.identity === (identity || "default")),
+            ...stage2Matches.filter((c) => c.identity !== (identity || "default")),
+            ...stage2Matches.filter((c) => c.identity === (identity || "default")),
           ]
         : stage2Matches;
 
@@ -337,7 +338,7 @@ async function _findMatch(
 /**
  * 事务内乐观锁抢占匹配请求
  */
-async function claimMatchRequestTx(tx: any, requestId: string): Promise<boolean> {
+async function claimMatchRequestTx(tx: Prisma.TransactionClient, requestId: string): Promise<boolean> {
   const result = await tx.matchRequest.updateMany({
     where: { id: requestId, status: "waiting" },
     data: { status: "matched" },
@@ -349,15 +350,15 @@ async function claimMatchRequestTx(tx: any, requestId: string): Promise<boolean>
  * 事务内创建双人匹配房间 —— 所有DB写操作在事务中原子执行
  */
 async function createDuetMatchTx(
-  tx: any,
+  tx: Prisma.TransactionClient,
   userId: string,
   matchRequestId: string,
-  matchedRequest: any,
+  matchedRequest: { id: string; userId: string; identity: string | null },
   brainholeId: string,
   brainholeTitle: string,
   strategy: string,
   identity: string
-): Promise<any> {
+): Promise<{ id: string }> {
   const room = await tx.room.create({
     data: {
       brainholeId: brainholeId || undefined,
@@ -368,8 +369,8 @@ async function createDuetMatchTx(
     },
   });
 
-  // 更新 matchedRequest
-  const updates: Promise<any>[] = [
+    // 更新 matchedRequest
+    const updates: Promise<unknown>[] = [
     tx.matchRequest.update({
       where: { id: matchedRequest.id },
       data: {
@@ -446,7 +447,7 @@ async function createDuetMatchTx(
  * 事务内从 approved 池中随机选 brainhole
  * v8.0-crawler: 优先从最近7天的知乎热榜脑洞中选取（70%概率）
  */
-async function pickRandomBrainholeTx(tx: any): Promise<any> {
+async function pickRandomBrainholeTx(tx: Prisma.TransactionClient): Promise<{ id: string; title: string } | null> {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   // 策略：70% 概率优先从最近7天的 zhihu_hot 选取
@@ -477,7 +478,7 @@ async function pickRandomBrainholeTx(tx: any): Promise<any> {
   if (pool.length === 0) return null;
 
   // 热度加权随机
-  const totalScore = pool.reduce((sum: number, b: any) => sum + (b.hotScore || 1), 0);
+  const totalScore = pool.reduce((sum: number, b: { hotScore: number | null }) => sum + (b.hotScore || 1), 0);
   let randomPoint = Math.random() * totalScore;
   for (const b of pool) {
     randomPoint -= (b.hotScore || 1);
@@ -514,7 +515,7 @@ export async function cancelMatch(
 }
 
 export async function checkMatchStatus(matchId: string, userId: string) {
-  let match = await db.matchRequest.findFirst({
+  const match = await db.matchRequest.findFirst({
     where: { id: matchId, userId },
     include: {
       brainhole: true,
@@ -539,7 +540,7 @@ export async function checkMatchStatus(matchId: string, userId: string) {
 
   // v8.3-fix: 轮询时尝试主动配对 — 处理两个已 waiting 用户互相发现的情况
   if (match.status === "waiting") {
-    const paired = await new Promise<any | null>((resolve, reject) => {
+    const paired = await new Promise<unknown | null>((resolve, reject) => {
       matchQueue = matchQueue
         .then(async () => {
           try {

@@ -2,6 +2,7 @@ import { PrismaClient } from "../generated/prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import path from "path";
 import fs from "fs";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -32,8 +33,8 @@ function createPrismaClient() {
     const client = new PrismaClient({ adapter });
     console.log("[Prisma] Client created successfully");
     return client;
-  } catch (e: any) {
-    console.error("[Prisma] Failed to create client:", e.message);
+  } catch (e: unknown) {
+    console.error("[Prisma] Failed to create client:", getErrorMessage(e));
     throw e;
   }
 }

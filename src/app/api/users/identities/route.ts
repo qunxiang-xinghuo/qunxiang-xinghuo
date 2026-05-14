@@ -61,9 +61,9 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(apiResponse(identity), { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      const firstError = (error as any).issues?.[0]?.message || "验证失败";
+      const firstError = error.issues?.[0]?.message || "验证失败";
       return NextResponse.json(apiError("VALIDATION_ERROR", firstError), { status: 400 });
     }
     console.error("创建用户身份失败:", error);

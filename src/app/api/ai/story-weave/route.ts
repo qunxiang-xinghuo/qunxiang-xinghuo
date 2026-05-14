@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiResponse, apiError } from "@/lib/utils";
 import { weaveStory, generateBranchOptions } from "@/lib/ai/story-weaver";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,8 +33,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(apiResponse(result));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryWeave API] Error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "生成失败: " + error.message), { status: 500 });
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "生成失败: " + getErrorMessage(error)), { status: 500 });
   }
 }

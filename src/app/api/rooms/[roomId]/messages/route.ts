@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { sendMessage } from "@/server/room-manager";
 import { broadcastToRoom } from "@/server/io";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 const sendMessageSchema = z.object({
   content: z.string().min(1, "消息内容不能为空").max(2000, "消息内容不能超过2000字"),
@@ -85,14 +86,14 @@ export async function POST(
     }
 
     return NextResponse.json(apiResponse(message));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("发送消息失败:", error);
     
-    if (error.message === "ROOM_PAUSED") {
+    if (getErrorMessage(error) === "ROOM_PAUSED") {
       return NextResponse.json(apiError("ROOM_PAUSED", "房间已暂停，只有导演可以发送备注"), { status: 400 });
-    } else if (error.message === "ROOM_CLOSED") {
+    } else if (getErrorMessage(error) === "ROOM_CLOSED") {
       return NextResponse.json(apiError("ROOM_CLOSED", "房间已关闭"), { status: 400 });
-    } else if (error.message === "NOT_PARTICIPANT") {
+    } else if (getErrorMessage(error) === "NOT_PARTICIPANT") {
       return NextResponse.json(apiError("NOT_PARTICIPANT", "不是房间参与者"), { status: 403 });
     }
     

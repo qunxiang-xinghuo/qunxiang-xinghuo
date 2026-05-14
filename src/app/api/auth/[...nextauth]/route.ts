@@ -5,7 +5,7 @@ import { withCallbackParams } from "@/lib/auth/callback-store";
 
 const handler = NextAuth(authOptions);
 
-async function wrappedHandler(req: NextRequest, ctx: any) {
+async function wrappedHandler(req: NextRequest, ctx: Record<string, unknown>) {
   const url = new URL(req.url);
   if (url.pathname.includes("/callback/zhihu")) {
     const params: Record<string, string> = {};

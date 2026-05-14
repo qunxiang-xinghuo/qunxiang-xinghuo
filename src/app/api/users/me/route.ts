@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(apiResponse(user));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[User Me API] Error:", error);
     return NextResponse.json(apiError("SERVER_ERROR", "服务器错误"), { status: 500 });
   }

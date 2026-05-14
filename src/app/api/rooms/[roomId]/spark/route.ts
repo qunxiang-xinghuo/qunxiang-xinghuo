@@ -4,6 +4,7 @@ import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
 import { markSpark } from "@/server/room-manager";
 import { broadcastToRoom } from "@/server/io";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 const markSparkSchema = z.object({
   messageId: z.string().cuid("无效的消息ID"),
@@ -46,14 +47,14 @@ export async function POST(
     }
 
     return NextResponse.json(apiResponse(updatedMessage));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("标记火花失败:", error);
     
-    if (error.message === "MESSAGE_NOT_FOUND") {
+    if (getErrorMessage(error) === "MESSAGE_NOT_FOUND") {
       return NextResponse.json(apiError("MESSAGE_NOT_FOUND", "消息不存在"), { status: 404 });
-    } else if (error.message === "ALREADY_SPARKED") {
+    } else if (getErrorMessage(error) === "ALREADY_SPARKED") {
       return NextResponse.json(apiError("ALREADY_SPARKED", "消息已被标记为火花"), { status: 400 });
-    } else if (error.message === "NOT_PARTICIPANT") {
+    } else if (getErrorMessage(error) === "NOT_PARTICIPANT") {
       return NextResponse.json(apiError("NOT_PARTICIPANT", "不是房间参与者"), { status: 403 });
     }
     

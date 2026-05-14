@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { z } from "zod";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // v9.3-emergency-fix: AI房间创建API — 暴力清理+无脑新建+兜底报错
 export async function POST(request: NextRequest) {
@@ -23,12 +24,12 @@ export async function POST(request: NextRequest) {
         data: { status: "closed", closedAt: new Date() },
       });
       console.log("[AI Room API] 清理卡死AI房间:", closedCount.count, "个");
-    } catch (cleanupErr: any) {
-      console.warn("[AI Room API] 清理旧房间失败（非致命）:", cleanupErr.message);
+    } catch (cleanupErr: unknown) {
+      console.warn("[AI Room API] 清理旧房间失败（非致命）:", getErrorMessage(cleanupErr));
     }
 
     // 兼容空 body
-    let body: any = {};
+    let body: Record<string, unknown> = {};
     try {
       body = await request.json();
       console.log("[AI Room API] 请求体:", JSON.stringify(body));
@@ -54,7 +55,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let { brainholeId, identity, agents: agentConfigs } = validation.data;
+    const { brainholeId, agents: agentConfigs } = validation.data;
+    let { identity } = validation.data;
     if (!identity) {
       const userRecord = await db.user.findUnique({ where: { id: userId }, select: { name: true } });
       identity = userRecord?.name || '我';
@@ -76,9 +78,9 @@ export async function POST(request: NextRequest) {
           email: `${userId}@guest.local`,
         },
       });
-    } catch (userErr: any) {
-      if (userErr.code !== 'P2002') {
-        console.error("[AI Room API] 用户记录创建失败:", userErr.message);
+    } catch (userErr: unknown) {
+      if (getErrorCode(userErr) !== 'P2002') {
+        console.error("[AI Room API] 用户记录创建失败:", getErrorMessage(userErr));
         throw userErr;
       }
     }
@@ -96,9 +98,9 @@ export async function POST(request: NextRequest) {
             email: `${agentUserId}@system.local`,
           },
         });
-      } catch (aiUserErr: any) {
-        if (aiUserErr.code !== 'P2002') {
-          console.error("[AI Room API] AI Agent用户记录失败:", aiUserErr.message);
+      } catch (aiUserErr: unknown) {
+        if (getErrorCode(aiUserErr) !== 'P2002') {
+          console.error("[AI Room API] AI Agent用户记录失败:", getErrorMessage(aiUserErr));
           throw aiUserErr;
         }
       }
@@ -205,29 +207,32 @@ export async function POST(request: NextRequest) {
       agents,
     }), { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // v9.3-emergency-fix: 兜底报错 — 打印具体错误到日志，返回友好提示
+    const errMsg = getErrorMessage(error);
+    const errCode = getErrorCode(error);
     console.error("[AI Room API] ========== 创建AI房间失败 ==========");
-    console.error("[AI Room API] 错误类型:", error?.constructor?.name || "Unknown");
-    console.error("[AI Room API] 错误消息:", error?.message || "无错误消息");
-    console.error("[AI Room API] 错误代码:", error?.code || "无错误代码");
-    console.error("[AI Room API] 错误堆栈:", error?.stack || "无堆栈");
+    console.error("[AI Room API] 错误类型:", (error as { constructor?: { name?: string } })?.constructor?.name || "Unknown");
+    console.error("[AI Room API] 错误消息:", errMsg || "无错误消息");
+    console.error("[AI Room API] 错误代码:", errCode || "无错误代码");
+    console.error("[AI Room API] 错误堆栈:", (error as { stack?: string })?.stack || "无堆栈");
 
     // 尝试提取 Prisma 具体错误信息
-    if (error?.meta) {
-      console.error("[AI Room API] Prisma meta:", JSON.stringify(error.meta));
+    const errMeta = (error as { meta?: unknown }).meta;
+    if (errMeta) {
+      console.error("[AI Room API] Prisma meta:", JSON.stringify(errMeta));
     }
-    if (error?.message?.includes("Foreign key constraint")) {
+    if (errMsg.includes("Foreign key constraint")) {
       console.error("[AI Room API] 外键约束失败 — 检查关联表数据是否存在");
     }
-    if (error?.message?.includes("Unique constraint")) {
+    if (errMsg.includes("Unique constraint")) {
       console.error("[AI Room API] 唯一约束冲突 — 检查重复数据");
     }
 
     return NextResponse.json(
       apiError(
         "INTERNAL_SERVER_ERROR",
-        `创建失败：${error?.message || "未知错误"}。请找开发人员查看服务器日志。`
+        `创建失败：${errMsg || "未知错误"}。请找开发人员查看服务器日志。`
       ),
       { status: 500 }
     );

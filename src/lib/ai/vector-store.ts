@@ -9,6 +9,7 @@
  */
 
 import { db } from "@/lib/db";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 // ── 类型定义 ──
 
@@ -19,7 +20,7 @@ export interface VectorDocument {
   content: string;
   keywords: string[];
   embedding?: number[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface SearchResult {
@@ -103,10 +104,10 @@ async function getEmbedding(text: string): Promise<number[] | undefined> {
     _embedCache.set(cacheKey, embedding);
 
     return embedding;
-  } catch (err: any) {
-    console.warn("[VectorStore] 嵌入 API 调用失败:", err.message);
+  } catch (err: unknown) {
+    console.warn("[VectorStore] 嵌入 API 调用失败:", getErrorMessage(err));
     // v9.3-fix: 网络错误临时降级，下次请求会重试
-    if (err.message?.includes("fetch") || err.message?.includes("network")) {
+    if (getErrorMessage(err)?.includes("fetch") || getErrorMessage(err)?.includes("network")) {
       console.warn("[VectorStore] 网络错误，下次请求将重试嵌入 API");
     } else {
       _embeddingAvailable = false;
@@ -339,7 +340,7 @@ async function getEmbeddingsBatch(texts: string[]): Promise<(number[] | undefine
     }
 
     const data = await res.json();
-    const embeddings = data.data?.map((d: any) => d.embedding) || [];
+    const embeddings = data.data?.map((d: { embedding: number[] }) => d.embedding) || [];
 
     for (let i = 0; i < uncachedIndices.length; i++) {
       const emb = embeddings[i];
@@ -355,8 +356,8 @@ async function getEmbeddingsBatch(texts: string[]): Promise<(number[] | undefine
         _embedCache.set(cacheKey, emb);
       }
     }
-  } catch (err: any) {
-    console.warn("[VectorStore] 批量嵌入 API 调用失败:", err.message);
+  } catch (err: unknown) {
+    console.warn("[VectorStore] 批量嵌入 API 调用失败:", getErrorMessage(err));
   }
 
   return results;
@@ -551,8 +552,8 @@ export async function buildVectorIndex(): Promise<void> {
         }
       }, 5 * 60 * 1000); // 5分钟
     }
-  } catch (err: any) {
-    console.error("[VectorStore] 索引构建失败:", err.message);
+  } catch (err: unknown) {
+    console.error("[VectorStore] 索引构建失败:", getErrorMessage(err));
     _embeddingAvailable = false;
     _indexBuilt = true;
   }

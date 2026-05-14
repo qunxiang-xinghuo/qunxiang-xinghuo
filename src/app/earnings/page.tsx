@@ -24,7 +24,7 @@ const mockEarnings: EarningItem[] = [
 ];
 
 export default function EarningsPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 

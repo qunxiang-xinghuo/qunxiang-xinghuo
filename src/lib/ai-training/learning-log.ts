@@ -6,6 +6,7 @@
  */
 
 import { db } from '@/lib/db';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 type SceneType = 'healing' | 'brainhole' | 'story' | 'catalyst';
 
@@ -35,8 +36,8 @@ export async function recordLearningLog(entry: LearningLogEntry): Promise<void> 
         sparked: entry.sparked ?? false,
       },
     });
-  } catch (e: any) {
-    console.error('[AI Learning] 记录失败:', e.message);
+  } catch (e: unknown) {
+    console.error('[AI Learning] 记录失败:', getErrorMessage(e));
     // 学习日志记录失败不应影响主流程
   }
 }
@@ -62,8 +63,8 @@ export async function recordCatalystLog(params: {
       },
     });
     return log.id;
-  } catch (e: any) {
-    console.error('[AI Catalyst] 记录失败:', e.message);
+  } catch (e: unknown) {
+    console.error('[AI Catalyst] 记录失败:', getErrorMessage(e));
     return '';
   }
 }
@@ -82,8 +83,8 @@ export async function updateCatalystResponse(
       where: { id: logId },
       data: { responded, sparked },
     });
-  } catch (e: any) {
-    console.error('[AI Catalyst] 更新失败:', e.message);
+  } catch (e: unknown) {
+    console.error('[AI Catalyst] 更新失败:', getErrorMessage(e));
   }
 }
 
@@ -106,7 +107,7 @@ export async function batchRecordLearningLogs(
         sparked: e.sparked ?? false,
       })),
     });
-  } catch (e: any) {
-    console.error('[AI Learning] 批量记录失败:', e.message);
+  } catch (e: unknown) {
+    console.error('[AI Learning] 批量记录失败:', getErrorMessage(e));
   }
 }

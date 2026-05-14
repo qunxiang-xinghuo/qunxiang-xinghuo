@@ -20,7 +20,7 @@ export async function getCatalystPrompt(brainholeId: string): Promise<string | n
     }
 
     // 提取标签
-    const tags = brainhole.tags.map((bt: any) => bt.tag.name);
+    const tags = brainhole.tags.map((bt) => bt.tag.name);
     
     // 根据难度和标签获取提示
     let category = "general";
@@ -78,7 +78,7 @@ export async function generateCatalystFromHistory(
 
     // 分析反应模式
     const lastReaction = userReactions[0];
-    const hasSpark = userReactions.some((r: any) => r.isSpark);
+    const hasSpark = userReactions.some((r) => r.isSpark);
     
     // 基于历史生成个性化提示
     let basePrompt = getFallbackPrompt();

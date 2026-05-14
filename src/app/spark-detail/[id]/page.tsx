@@ -2,7 +2,6 @@
 // v8.3-fix: 改用 Prisma 直接查询，避免生产环境 localhost:3000 不可访问
 export const dynamic = 'force-dynamic';
 
-import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import SparkDetailClient from './SparkDetailClient';
 

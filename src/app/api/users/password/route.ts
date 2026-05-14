@@ -69,7 +69,7 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json(apiResponse({ message: "密码修改成功" }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Update Password API] Error:", error);
     return NextResponse.json(apiError("SERVER_ERROR", "服务器错误"), { status: 500 });
   }

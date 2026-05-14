@@ -4,13 +4,11 @@ import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
 import { reactionCreateSchema, reactionQuerySchema } from "@/lib/validators/reaction";
 import { z } from "zod";
+import { Prisma } from "@/generated/prisma/client";
 
 // v7.0-fix6: 改用 getToken，App Router 中 getServerSession 不可靠
 export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-    
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
     const validatedQuery = reactionQuerySchema.parse(queryParams);
@@ -18,7 +16,7 @@ export async function GET(request: NextRequest) {
     const { page, limit, brainholeId, roomId, userId: queryUserId, identity, isSpark, sortBy, sortOrder } = validatedQuery;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.ReactionWhereInput = {};
     
     if (brainholeId) where.brainholeId = brainholeId;
     if (roomId) where.roomId = roomId;

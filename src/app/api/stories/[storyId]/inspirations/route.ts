@@ -16,7 +16,7 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(apiResponse({ inspirations }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryInspirations GET] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "获取灵感失败"), { status: 500 });
   }
@@ -29,9 +29,6 @@ export async function POST(
 ) {
   try {
     const { storyId } = await params;
-    const token = await getToken({ secureCookie: false, req: request, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string | undefined) || (token?.sub as string | undefined);
-
     let body;
     try {
       body = await request.json();
@@ -53,7 +50,7 @@ export async function POST(
     });
 
     return NextResponse.json(apiResponse({ inspiration }), { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[StoryInspirations POST] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "添加灵感失败"), { status: 500 });
   }

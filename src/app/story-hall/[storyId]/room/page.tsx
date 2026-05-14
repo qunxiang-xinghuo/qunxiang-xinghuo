@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Pause, Play, Sparkles, BookOpen, Lightbulb, Vote, Users, Crown, MessageSquare, Flame, Bookmark, XCircle } from 'lucide-react';
+import { Send, Pause, Play, Sparkles, BookOpen, Lightbulb, Vote, Users, Crown, Bookmark, XCircle } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import { useSocket } from '@/hooks/useSocket';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 interface StoryMessage {
   id: string;
@@ -51,7 +52,7 @@ export default function StoryRoomPage() {
   const [branches, setBranches] = useState<StoryBranch[]>([]);
   const [showBranches, setShowBranches] = useState(false);
   const [showInspirations, setShowInspirations] = useState(false);
-  const [inspirations, setInspirations] = useState<any[]>([]);
+  const [inspirations, setInspirations] = useState<Array<{ id: string; content: string }>>([]);
   const [generatingBranch, setGeneratingBranch] = useState(false);
   const [myIdentity, setMyIdentity] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
@@ -74,7 +75,7 @@ export default function StoryRoomPage() {
       if (result.success && result.data?.story) {
         setStory(result.data.story);
         const uid = localStorage.getItem('xh_user_id') || '';
-        const myRole = result.data.story.roles.find((r: any) => r.claimedBy === uid);
+        const myRole = result.data.story.roles.find((r: { claimedBy?: string; name: string }) => r.claimedBy === uid);
         if (myRole) setMyIdentity(myRole.name);
       }
     } catch (e) { console.error('[StoryRoom] loadStory failed:', e); }
@@ -149,7 +150,7 @@ export default function StoryRoomPage() {
       const result = await res.json();
       if (result.success && result.data?.message) socketSend(`story-${storyId}`, result.data.message);
       else setSendError('发送失败');
-    } catch (e) {
+    } catch (_e) {
       setSendError('网络异常，发送失败');
     }
   };
@@ -322,19 +323,19 @@ export default function StoryRoomPage() {
               ) : (
                 <div className="space-y-2">
                   {branches.map((branch) => {
-                    let opts: any[] = [];
-                    try { opts = JSON.parse(branch.options || '[]'); } catch { opts = []; }
+                    let opts: Array<{ text?: string } | string> = [];
+                    try { opts = JSON.parse(branch.options || '[]') as Array<{ text?: string } | string>; } catch { opts = []; }
                     return (
                       <div key={branch.id} className="bg-slate-800/30 rounded-lg p-2.5 border border-slate-700/15">
                         <p className="text-[11px] text-slate-300 mb-1.5">{branch.content}</p>
                         <div className="space-y-1">
-                          {opts.map((opt: any, idx: number) => (
+                          {opts.map((opt: { text?: string } | string, idx: number) => (
                             <div key={idx} className="flex items-center gap-1.5">
                               <button onClick={() => handleVote(branch.id, idx)} disabled={branch.status === 'resolved'}
                                 className={`flex-1 text-left text-[10px] px-2.5 py-1.5 rounded-md transition-colors ${
                                   branch.winnerIdx === idx ? 'bg-emerald-500/12 text-emerald-400 border border-emerald-500/20' : 'bg-slate-700/20 text-slate-500 hover:bg-slate-700/30'
                                 }`}>
-                                {opt.text || opt}
+                                {(typeof opt === 'object' ? opt.text : opt) || String(opt)}
                               </button>
                               {isDirector && branch.status !== 'resolved' && (
                                 <button onClick={() => handleResolveBranch(branch.id, idx)}
@@ -366,7 +367,7 @@ export default function StoryRoomPage() {
                 <p className="text-[10px] text-slate-600 text-center py-3">AI生成的备用灵感将保存在这里</p>
               ) : (
                 <div className="space-y-1.5">
-                  {inspirations.map((inp) => (
+                  {inspirations.map((inp: { id: string; content: string }) => (
                     <div key={inp.id} className="text-[10px] text-slate-500 bg-slate-700/20 rounded-md px-2.5 py-1.5 border border-slate-700/10">{inp.content}</div>
                   ))}
                 </div>

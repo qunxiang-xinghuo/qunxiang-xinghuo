@@ -40,9 +40,9 @@ export async function GET(
 
     const formattedBrainhole = {
       ...brainhole,
-      tags: (brainhole as any).tags.map((bt: any) => bt.tag),
-      reactionCount: (brainhole as any)._count.reactions,
-      collectionCount: (brainhole as any)._count.collections,
+      tags: brainhole.tags.map((bt) => bt.tag),
+      reactionCount: brainhole._count.reactions,
+      collectionCount: brainhole._count.collections,
     };
 
     return NextResponse.json(apiResponse(formattedBrainhole));

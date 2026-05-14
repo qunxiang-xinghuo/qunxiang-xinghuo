@@ -8,6 +8,7 @@
 import { db } from '@/lib/db';
 import { fetchZhihuHotList, filterHotItems } from './zhihu-hot';
 import { transformHotItem } from './ai-transform';
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 let crawlerTimer: NodeJS.Timeout | null = null;
 let isRunning = false;
@@ -104,8 +105,8 @@ export async function runCrawlerOnce(): Promise<{
 
         saved++;
         console.log(`[Crawler] 已保存: ${result.title}`);
-      } catch (e: any) {
-        console.error(`[Crawler] 保存失败: ${item.title}`, e.message);
+      } catch (e: unknown) {
+        console.error(`[Crawler] 保存失败: ${item.title}`, getErrorMessage(e));
       }
 
       // 每条之间间隔 1 秒，避免 API 限流
@@ -114,8 +115,8 @@ export async function runCrawlerOnce(): Promise<{
 
     console.log(`[Crawler] ====== 完成: ${saved}/${transformed} 条已保存 ======`);
     return { fetched: hotItems.length, filtered: filtered.length, transformed, saved };
-  } catch (e: any) {
-    console.error('[Crawler] 流程异常:', e.message);
+  } catch (e: unknown) {
+    console.error('[Crawler] 流程异常:', getErrorMessage(e));
     return { fetched: 0, filtered: 0, transformed: 0, saved: 0 };
   } finally {
     isRunning = false;

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Sparkles, MessageSquare, ArrowRight, UserCheck, Lock, Check, X, Clock, Play, Shield, UserCircle, Tag, PenTool, Crown, Flame, BookOpen, Theater, Star, Scroll, Eye, KeyRound, Target, Zap, Bookmark } from 'lucide-react';
+import { Users, Sparkles, MessageSquare, ArrowRight, Lock, Check, X, Clock, Play, Shield, UserCircle, Tag, Crown, Flame, BookOpen, Theater, Star, KeyRound, Target, Bookmark } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import ClaimRoleModal from '@/components/story/ClaimRoleModal';
 
@@ -21,19 +21,19 @@ interface StoryDetail {
   status: string; director: { id: string; name: string | null };
   maxActors: number; minActors: number; roles: StoryRole[];
   chapters: { id: string; title: string; status: string }[];
-  messages: any[]; createdAt: string;
+  messages: unknown[]; createdAt: string;
   _count: { messages: number; inspirations: number };
   hook?: string;
   genre?: string;
 }
 
-const statusConfig: Record<string, any> = {
+const statusConfig: Record<string, unknown> = {
   recruiting: { text: '招募演员', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Users, barColor: 'bg-emerald-500', gradient: 'from-emerald-500/10 to-teal-500/5' },
   ongoing: { text: '正在上演', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock, barColor: 'bg-xh-gold', gradient: 'from-xh-gold/10 to-xh-gold-dark/5' },
   completed: { text: '已杀青', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: MessageSquare, barColor: 'bg-blue-500', gradient: 'from-blue-500/10 to-cyan-500/5' },
 };
 
-const claimConfig: Record<string, any> = {
+const claimConfig: Record<string, unknown> = {
   unclaimed: { text: '待认领', color: 'text-slate-400', bg: 'bg-slate-700/20', border: 'border-slate-600/20', icon: UserCircle, avatarBg: 'bg-slate-700/40' },
   pending: { text: '试镜中', color: 'text-xh-gold', bg: 'bg-xh-gold/10', border: 'border-xh-gold/20', icon: Clock, avatarBg: 'bg-xh-gold/20' },
   approved: { text: '已入组', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Check, avatarBg: 'bg-emerald-500/20' },
@@ -113,7 +113,7 @@ export default function StoryDetailPage() {
   const isDirector = story?.director.id === currentUserId;
   const allApproved = story ? story.roles.every((r) => r.claimStatus === 'approved') : false;
   const pendingRoles = story ? story.roles.filter((r) => r.claimStatus === 'pending' && r.claimedBy) : [];
-  const sc = story ? statusConfig[story.status] || statusConfig.recruiting : statusConfig.recruiting;
+  const sc = (story ? statusConfig[story.status] || statusConfig.recruiting : statusConfig.recruiting) as { text: string; color: string; bg: string; border: string; icon: React.ComponentType<{ size?: number }>; barColor: string; gradient: string };
   const isDemo = storyId.startsWith('demo-');
   const progress = story && story.roles.length > 0 ? Math.round((story.roles.filter(r => r.claimStatus === 'approved').length / story.roles.length) * 100) : 0;
 
@@ -277,7 +277,7 @@ export default function StoryDetailPage() {
 
           <div className="space-y-2">
             {story.roles.map((role, index) => {
-              const cs = claimConfig[role.claimStatus] || claimConfig.unclaimed;
+              const cs = (claimConfig[role.claimStatus] || claimConfig.unclaimed) as { text: string; color: string; bg: string; border: string; icon: React.ComponentType<{ size?: number }>; avatarBg: string };
               const CSIcon = cs.icon;
               const isMyClaim = role.claimedBy === currentUserId;
               const canClaim = !role.claimedBy && story.status === 'recruiting' && role.claimStatus === 'unclaimed';
@@ -405,8 +405,8 @@ export default function StoryDetailPage() {
                 <span className="text-sm font-medium text-blue-400">系统范例剧本</span>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed mb-3">
-                这是一个系统提供的范例剧本，展示了群像共创的完整结构。每个角色都有<strong>隐藏秘密</strong>和<strong>核心动机</strong>，点击"查看秘密"可以体验完整的人物设定。
-                真正的创作从"发起故事"开始，你也可以创建属于自己的剧本。
+                这是一个系统提供的范例剧本，展示了群像共创的完整结构。每个角色都有<strong>隐藏秘密</strong>和<strong>核心动机</strong>，点击&quot;查看秘密&quot;可以体验完整的人物设定。
+                真正的创作从&quot;发起故事&quot;开始，你也可以创建属于自己的剧本。
               </p>
               <div className="flex gap-2">
                 <button onClick={() => router.push('/story-hall')}

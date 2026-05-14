@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Flame, Clock, ChevronLeft, ChevronRight,
+  Flame, Clock, ChevronRight,
   ArrowLeft, Trash2, ShieldAlert, ShieldCheck,
 } from 'lucide-react';
 

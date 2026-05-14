@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { signOut } from 'next-auth/react';
 import {
-  Settings, Flame, BookOpen, ChevronRight, LogOut, Coins, ScrollText, UserCircle,
+  Settings, Flame, ChevronRight, LogOut, Coins, ScrollText, UserCircle,
   Shield, Heart,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useRequireAuth';

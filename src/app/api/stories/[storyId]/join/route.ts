@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 /**
  * POST /api/stories/:storyId/join
@@ -73,15 +74,14 @@ export async function POST(
     }
 
     // 乐观锁：尝试 claim 角色（只有 claimedBy 为 null 时才成功）
-    let claimedRole;
     try {
-      claimedRole = await db.storyRole.update({
+      await db.storyRole.update({
         where: { id: roleId, claimedBy: null },
         data: { claimedBy: userId, claimedAt: new Date(), claimStatus: "active" },
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       // P2025 = Record to update not found（已被他人 claim）
-      if (e.code === 'P2025') {
+      if (getErrorCode(e) === 'P2025') {
         return NextResponse.json(apiError("CONFLICT", "该角色已被选择"), { status: 409 });
       }
       throw e;
@@ -153,8 +153,8 @@ export async function POST(
       roleName: role.name,
       openingInfo: role.openingInfo || "",
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Story Join] Error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", error.message || "加入失败"), { status: 500 });
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", getErrorMessage(error) || "加入失败"), { status: 500 });
   }
 }

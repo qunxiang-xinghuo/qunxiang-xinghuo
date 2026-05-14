@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiResponse, apiError } from "@/lib/utils";
 import { zhidaChat } from "@/lib/zhihu-dev-api";
 import { getPersona } from "@/lib/ai/personas";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 /**
  * v6.0: AI 催化问题生成
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // 构建上下文
     const contextMessages = messages.length > 0
-      ? messages.map((m: any) => `${m.role === 'user' ? '用户' : '对方'}: ${m.content}`).join("\n")
+      ? messages.map((m: { role: string; content: string }) => `${m.role === 'user' ? '用户' : '对方'}: ${m.content}`).join("\n")
       : "对话刚开始";
 
     const prompt = `主题：${topicStr}
@@ -66,8 +67,8 @@ ${contextMessages}
           prompts = content.split("\n").filter((s: string) => s.trim().length > 0).slice(0, 3);
           source = "deepseek";
         }
-      } catch (err: any) {
-        console.error("[Catalyst] DeepSeek error:", err.message);
+      } catch (err: unknown) {
+        console.error("[Catalyst] DeepSeek error:", getErrorMessage(err));
       }
     }
 
@@ -80,8 +81,8 @@ ${contextMessages}
         const content = zhidaResult.choices?.[0]?.message?.content || "";
         prompts = content.split("\n").filter((s: string) => s.trim().length > 0).slice(0, 3);
         source = "zhida";
-      } catch (err: any) {
-        console.error("[Catalyst] Zhida error:", err.message);
+      } catch (err: unknown) {
+        console.error("[Catalyst] Zhida error:", getErrorMessage(err));
       }
     }
 
@@ -101,8 +102,8 @@ ${contextMessages}
     }).filter(p => p.length > 0);
 
     return NextResponse.json(apiResponse({ prompts, source }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Catalyst] Fatal error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", error instanceof Error ? error.message : "AI催化生成失败"), { status: 500 });
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", error instanceof Error ? getErrorMessage(error) : "AI催化生成失败"), { status: 500 });
   }
 }

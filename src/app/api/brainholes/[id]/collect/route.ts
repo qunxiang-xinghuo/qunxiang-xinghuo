@@ -37,7 +37,7 @@ export async function POST(
       return NextResponse.json(apiError("BRAINHOLE_ALREADY_COLLECTED", "已收藏该脑洞"), { status: 400 });
     }
 
-    const collection = await db.brainholeCollection.create({
+    await db.brainholeCollection.create({
       data: {
         userId,
         brainholeId: id,

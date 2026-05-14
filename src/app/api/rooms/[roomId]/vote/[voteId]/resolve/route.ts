@@ -110,7 +110,7 @@ export async function POST(
     });
 
     return NextResponse.json(apiResponse(updatedVote));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("结束投票失败:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "结束投票失败"), { status: 500 });
   }

@@ -1,3 +1,4 @@
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 /**
  * 知乎热榜抓取模块
  *
@@ -48,24 +49,20 @@ export async function fetchZhihuHotList(limit: number = 20): Promise<ZhihuHotIte
     const list = data?.data || [];
 
     const items: ZhihuHotItem[] = list
-      .map((item: any) => {
+      .map((item: { target?: { title?: string; excerpt?: string }; detail_text?: string }) => {
         const target = item?.target || {};
         return {
           title: target?.title?.trim() || '',
           excerpt: target?.excerpt?.trim() || '',
           detailText: item?.detail_text?.trim() || '',
-          url: target?.url || '',
+          url: (target as { url?: string }).url || '',
         };
       })
       .filter((item: ZhihuHotItem) => item.title.length > 0);
 
     return items.slice(0, limit);
-  } catch (e: any) {
-    if (e.name === 'AbortError') {
-      console.error('[Crawler] 知乎热榜请求超时');
-    } else {
-      console.error('[Crawler] 知乎热榜抓取失败:', e.message);
-    }
+  } catch (e: unknown) {
+    console.error('[ZhihuHot] 爬取失败:', getErrorMessage(e));
     return [];
   } finally {
     clearTimeout(t);

@@ -43,14 +43,14 @@ export default function BubbleCloud({ limit = 20 }: BubbleCloudProps) {
       const result = await res.json();
       console.log('[BubbleCloud] API result:', result.success, 'count:', result.data?.brainholes?.length);
       if (result.success && result.data?.brainholes && result.data.brainholes.length > 0) {
-        const list: BubbleItem[] = result.data.brainholes.map((b: any) => ({
+        const list: BubbleItem[] = result.data.brainholes.map((b: { id: string; title: string; scenario?: string; category?: string; hotScore?: number }) => ({
           id: b.id,
           title: b.title,
           scenario: b.scenario || '',
           hotScore: b.hotScore || 50,
           category: b.category || 'general',
-          difficulty: b.difficulty || 'medium',
-          source: b.source || 'fallback',
+          difficulty: (b as { difficulty?: string }).difficulty || 'medium',
+          source: (b as { source?: string }).source || 'fallback',
         }));
         setBubbles(list);
       } else {

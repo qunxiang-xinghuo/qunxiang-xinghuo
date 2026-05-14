@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
 import { apiResponse, apiError } from "@/lib/utils";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 /**
  * GET /api/stories/:storyId/catalyst?roomId=xxx
@@ -91,7 +92,7 @@ export async function GET(
           console.error("[Catalyst] DeepSeek API 错误:", res.status, errText.slice(0, 200));
         }
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
+        const msg = e instanceof Error ? getErrorMessage(e) : String(e);
         console.error("[Catalyst] DeepSeek 失败:", msg);
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
@@ -111,7 +112,7 @@ export async function GET(
         prompt = result.choices?.[0]?.message?.content || "";
         source = "zhida";
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
+        const msg = e instanceof Error ? getErrorMessage(e) : String(e);
         console.error("[Catalyst] 知乎直答 失败:", msg);
       } finally {
         if (t) clearTimeout(t);
@@ -129,13 +130,13 @@ export async function GET(
       phase,
       source,
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Story Catalyst] Error:", error);
-    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", error.message || "获取催化提示失败"), { status: 500 });
+    return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", getErrorMessage(error) || "获取催化提示失败"), { status: 500 });
   }
 }
 
-function buildDmPrompt(story: any, phase: string, msgCount: number) {
+function buildDmPrompt(story: { title: string; eraBackground: string | null; act1Reveal: string | null; act2Reveal: string | null; act3Reveal: string | null; act4Truth: string | null }, phase: string, msgCount: number) {
   const actMap: Record<string, string> = {
     act1: story.act1Reveal || "",
     act2: story.act2Reveal || "",
@@ -167,7 +168,7 @@ function buildDmPrompt(story: any, phase: string, msgCount: number) {
   return { system, user };
 }
 
-function getFallbackPrompt(story: any, phase: string): string {
+function getFallbackPrompt(story: { title: string }, phase: string): string {
   const fallbacks: Record<string, string[]> = {
     act1: [
       "窗外突然传来一阵异响，你注意到对方的眼神闪烁了一下",

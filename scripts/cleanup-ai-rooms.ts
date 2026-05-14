@@ -28,8 +28,8 @@ async function cleanupAiRooms() {
         data: { status: "closed", closedAt: new Date() },
       });
       console.log(`[Cleanup] 已关闭房间: ${room.id} (创建于 ${room.createdAt.toISOString()})`);
-    } catch (err: any) {
-      console.error(`[Cleanup] 关闭房间失败: ${room.id}`, err.message);
+    } catch (err: unknown) {
+      console.error(`[Cleanup] 关闭房间失败: ${room.id}`, err instanceof Error ? err.message : String(err));
     }
   }
 

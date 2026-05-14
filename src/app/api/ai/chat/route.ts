@@ -13,6 +13,7 @@ import {
 } from "@/lib/ai/agent-tools";
 import { WorkflowEngine } from "@/lib/ai/workflow-engine";
 import { buildVectorIndex, forceKeywordMode } from "@/lib/ai/vector-store";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -42,13 +43,13 @@ async function ensureIndex() {
     buildVectorIndex().then(() => {
       indexBuilt = true;
       indexBuilding = false;
-    }).catch((err: any) => {
-      console.warn("[AI Chat] 后台索引构建失败:", err.message);
+    }).catch((err: unknown) => {
+      console.warn("[AI Chat] 后台索引构建失败:", err instanceof Error ? getErrorMessage(err) : String(err));
       forceKeywordMode();
       indexBuilding = false;
     });
-  } catch (err: any) {
-    console.warn("[AI Chat] 索引启动失败:", err.message);
+  } catch (err: unknown) {
+    console.warn("[AI Chat] 索引启动失败:", getErrorMessage(err));
     indexBuilding = false;
   }
 }
@@ -194,8 +195,8 @@ export async function POST(request: NextRequest) {
           const errText = await res.text();
           console.error("[AI Chat] DeepSeek API 错误:", res.status, errText);
         }
-      } catch (err: any) {
-        console.error("[AI Chat] DeepSeek 异常:", err.message);
+      } catch (err: unknown) {
+        console.error("[AI Chat] DeepSeek 异常:", getErrorMessage(err));
       }
     } else {
       console.warn("[AI Chat] DEEPSEEK_API_KEY 未配置");
@@ -223,8 +224,8 @@ export async function POST(request: NextRequest) {
       zhidaContent = zhidaResult.choices?.[0]?.message?.content || "";
       zhidaOk = !!zhidaContent;
       console.log("[AI Chat] 知乎直答 成功, 内容长度:", zhidaContent.length);
-    } catch (err: any) {
-      console.error("[AI Chat] 知乎直答 异常:", err.message);
+    } catch (err: unknown) {
+      console.error("[AI Chat] 知乎直答 异常:", getErrorMessage(err));
     }
 
     // ==================== 选择最佳回复 ====================
@@ -249,7 +250,7 @@ export async function POST(request: NextRequest) {
 
           const naturalReply = stripToolCall(finalContent) || finalContent;
           const checkpointInfo = toolResult.checkpoint
-            ? `\n\n【检查点结果】\n${toolResult.checkpoint.checks.map((c: any) => `- ${c.name}: ${c.pass ? '✅' : '❌'} ${c.message}`).join('\n')}\n\n总体: ${toolResult.checkpoint.pass ? '检查通过，继续下一步' : '检查未通过，后端已尝试自动回退/重试，以上是最终结论'}`
+            ? `\n\n【检查点结果】\n${toolResult.checkpoint.checks.map((c: { name: string; pass: boolean; message: string }) => `- ${c.name}: ${c.pass ? '✅' : '❌'} ${c.message}`).join('\n')}\n\n总体: ${toolResult.checkpoint.pass ? '检查通过，继续下一步' : '检查未通过，后端已尝试自动回退/重试，以上是最终结论'}`
             : '';
           const followUpMessages = [
             { role: "system" as const, content: systemPrompt },
@@ -290,8 +291,8 @@ export async function POST(request: NextRequest) {
             } else {
               console.error("[AI Chat] Agent 二次调用失败:", res2.status);
             }
-          } catch (err: any) {
-            console.error("[AI Chat] Agent 二次调用异常:", err.message);
+          } catch (err: unknown) {
+            console.error("[AI Chat] Agent 二次调用异常:", getErrorMessage(err));
           }
         }
       }
@@ -305,7 +306,7 @@ export async function POST(request: NextRequest) {
       console.log("[AI Chat] 两个API都失败，使用角色兜底:", effectivePersonaKey || 'catalyst');
     }
 
-    const responsePayload: any = {
+    const responsePayload: Record<string, unknown> = {
       content: finalContent,
       source,
       workflow: workflowType,
@@ -316,10 +317,10 @@ export async function POST(request: NextRequest) {
     if (workflowToolResults) responsePayload.workflowToolResults = workflowToolResults;
 
     return NextResponse.json(apiResponse(responsePayload));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[AI Chat] 致命错误:", error);
     return NextResponse.json(
-      apiError("INTERNAL_SERVER_ERROR", error instanceof Error ? error.message : "AI回复生成失败"),
+      apiError("INTERNAL_SERVER_ERROR", error instanceof Error ? getErrorMessage(error) : "AI回复生成失败"),
       { status: 500 }
     );
   }

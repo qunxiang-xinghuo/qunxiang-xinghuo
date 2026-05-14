@@ -4,6 +4,7 @@
  */
 import { zhidaChat } from "@/lib/zhihu-dev-api";
 import { getPersona } from "@/lib/ai/personas";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 export interface ReviewResult {
   approved: boolean;
@@ -61,8 +62,8 @@ export async function liukanshanReview(content: string): Promise<ReviewResult> {
           }
         }
       }
-    } catch (err: any) {
-      console.error("[AI Review] DeepSeek 审核异常:", err.message);
+    } catch (err: unknown) {
+      console.error("[AI Review] DeepSeek 审核异常:", getErrorMessage(err));
     }
   }
 
@@ -93,8 +94,8 @@ export async function liukanshanReview(content: string): Promise<ReviewResult> {
         };
       }
     }
-  } catch (err: any) {
-    console.error("[AI Review] 知乎直答 审核异常:", err.message);
+  } catch (err: unknown) {
+    console.error("[AI Review] 知乎直答 审核异常:", getErrorMessage(err));
   }
 
   // v8.1-fix: 两个 API 都失败或超时，默认通过（不因技术故障卡住用户）

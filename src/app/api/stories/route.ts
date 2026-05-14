@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         status: "pending_review", // 提交后进入审核队列
         // 角色
         roles: {
-          create: roles.map((r: any, i: number) => ({
+          create: roles.map((r: { name: string; description: string; openingInfo: string; sortOrder?: number }, i: number) => ({
             name: r.name.trim(),
             description: r.description.trim(),
             openingInfo: r.openingInfo.trim(),
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       status: story.status,
       message: "故事已提交审核",
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Stories Create] Error:", error);
     console.error("[Stories Create] Error:", error);
     return NextResponse.json(apiError("INTERNAL_SERVER_ERROR", "创建失败，请稍后重试"), { status: 500 });

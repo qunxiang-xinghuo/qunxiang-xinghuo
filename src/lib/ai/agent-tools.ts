@@ -8,12 +8,12 @@
 
 export interface ToolCall {
   tool: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
 }
 
 export interface ToolResult {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 
@@ -259,6 +259,7 @@ Step 2b: 没真人 → create_room(type="ai_duet") → "我先陪你聊，真人
 // ============================================================================
 
 import { db } from "@/lib/db";
+import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 
 /** 解析 AI 回复末尾的工具调用 JSON */
 export function parseToolCall(content: string): ToolCall | null {
@@ -332,7 +333,7 @@ const RETRY_CONFIG: Record<
   string,
   {
     maxRetries: number;
-    transform: (params: Record<string, any>, attempt: number) => Record<string, any>;
+    transform: (params: Record<string, unknown>, attempt: number) => Record<string, unknown>;
   }
 > = {
   search_stories: {
@@ -355,7 +356,7 @@ const RETRY_CONFIG: Record<
 async function runCheckpoint(
   tool: string,
   result: ToolResult,
-  params: Record<string, any>
+  params: Record<string, unknown>
 ): Promise<CheckpointResult> {
   const checks: CheckpointResult["checks"] = [];
   let pass = true;
@@ -363,13 +364,13 @@ async function runCheckpoint(
   switch (tool) {
     case "search_stories": {
       const hasResults =
-        result.success && Array.isArray(result.data) && result.data.length > 0;
+        result.success && Array.isArray(result.data) && (result.data as Array<unknown>).length > 0;
       checks.push({
         id: "has_results",
         name: "搜索结果非空",
         pass: hasResults,
         message: hasResults
-          ? `找到 ${result.data.length} 个故事`
+          ? `找到 ${(result.data as Array<unknown>).length} 个故事`
           : "未找到匹配的故事",
       });
       if (!hasResults) pass = false;
@@ -377,8 +378,8 @@ async function runCheckpoint(
       // 相关性检查（仅当有关键词时）
       if (hasResults && params.keyword) {
         const keyword = params.keyword.toString().toLowerCase();
-        const hasRelevant = result.data.some(
-          (s: any) =>
+        const hasRelevant = (result.data as Array<Record<string, unknown>>).some(
+          (s: { title?: string; era?: string; summary?: string }) =>
             (s.title?.toLowerCase() || "").includes(keyword) ||
             (s.era?.toLowerCase() || "").includes(keyword) ||
             (s.summary?.toLowerCase() || "").includes(keyword)
@@ -396,7 +397,7 @@ async function runCheckpoint(
 
       // v9.3: 摘要长度检查
       if (hasResults) {
-        const allShort = result.data.every((s: any) => {
+        const allShort = (result.data as Array<Record<string, unknown>>).every((s: { summary?: string }) => {
           const summaryLen = (s.summary || "").length;
           return summaryLen <= 300;
         });
@@ -414,13 +415,13 @@ async function runCheckpoint(
 
     case "search_brainholes": {
       const hasBH =
-        result.success && Array.isArray(result.data) && result.data.length > 0;
+        result.success && Array.isArray(result.data) && (result.data as Array<unknown>).length > 0;
       checks.push({
         id: "has_results",
         name: "搜索结果非空",
         pass: hasBH,
         message: hasBH
-          ? `找到 ${result.data.length} 个话题`
+          ? `找到 ${(result.data as Array<unknown>).length} 个话题`
           : "未找到匹配的话题",
       });
       if (!hasBH) pass = false;
@@ -429,13 +430,13 @@ async function runCheckpoint(
 
     case "find_online_user": {
       const hasMatches =
-        result.success && Array.isArray(result.data) && result.data.length > 0;
+        result.success && Array.isArray(result.data) && (result.data as Array<unknown>).length > 0;
       checks.push({
         id: "has_matches",
         name: "找到匹配用户",
         pass: hasMatches,
         message: hasMatches
-          ? `找到 ${result.data.length} 个等待中的用户`
+          ? `找到 ${(result.data as Array<unknown>).length} 个等待中的用户`
           : "暂无等待中的用户，建议启动兜底陪聊",
       });
       // 没找到匹配是正常情况，不标记为 fail（让 AI 启动兜底）
@@ -444,13 +445,13 @@ async function runCheckpoint(
     }
 
     case "create_room": {
-      const created = result.success && !!result.data?.roomId;
+      const created = result.success && !!(result.data as Record<string, unknown>)?.roomId;
       checks.push({
         id: "room_created",
         name: "房间创建成功",
         pass: created,
         message: created
-          ? `房间 ${result.data.roomId} 创建成功`
+          ? `房间 ${(result.data as Record<string, unknown>).roomId} 创建成功`
           : "房间创建失败",
       });
       if (!created) pass = false;
@@ -472,7 +473,7 @@ async function runCheckpoint(
 /** 执行单次工具（不含检查点） */
 async function executeSingleTool(
   tool: string,
-  params: any,
+  params: unknown,
   context: ToolContext
 ): Promise<ToolResult> {
   switch (tool) {
@@ -506,9 +507,9 @@ export async function executeToolCall(
     // 执行工具
     try {
       result = await executeSingleTool(tool, currentParams, context);
-    } catch (err: any) {
-      console.error(`[Agent Tool] ${tool} 执行异常:`, err.message);
-      result = { success: false, error: err.message || "工具执行失败" };
+    } catch (err: unknown) {
+      console.error(`[Agent Tool] ${tool} 执行异常:`, getErrorMessage(err));
+      result = { success: false, error: getErrorMessage(err) || "工具执行失败" };
     }
 
     // 运行检查点
@@ -540,10 +541,10 @@ export async function executeToolCall(
 
 // ── 内部执行函数 ──
 
-async function execSearchStories(params: any): Promise<ToolResult> {
-  const { keyword } = params || {};
+async function execSearchStories(params: unknown): Promise<ToolResult> {
+  const { keyword } = (params as Record<string, unknown>) || {};
 
-  const where: any = {
+  const where: Record<string, unknown> = {
     status: { in: ["open", "recruiting"] },
   };
 
@@ -583,10 +584,10 @@ async function execSearchStories(params: any): Promise<ToolResult> {
   };
 }
 
-async function execSearchBrainholes(params: any): Promise<ToolResult> {
-  const { category, limit = 5 } = params || {};
+async function execSearchBrainholes(params: unknown): Promise<ToolResult> {
+  const { category, limit = 5 } = (params as Record<string, unknown>) || {};
 
-  const where: any = { status: "approved" };
+  const where: Record<string, unknown> = { status: "approved" };
   if (category && typeof category === "string") {
     where.category = category;
   }
@@ -615,10 +616,10 @@ async function execSearchBrainholes(params: any): Promise<ToolResult> {
   };
 }
 
-async function execFindOnlineUser(params: any): Promise<ToolResult> {
-  const { brainholeId } = params || {};
+async function execFindOnlineUser(params: unknown): Promise<ToolResult> {
+  const { brainholeId } = (params as Record<string, unknown>) || {};
 
-  const where: any = { status: "waiting" };
+  const where: Record<string, unknown> = { status: "waiting" };
   if (brainholeId && typeof brainholeId === "string") {
     where.brainholeId = brainholeId;
   }
@@ -649,10 +650,10 @@ async function execFindOnlineUser(params: any): Promise<ToolResult> {
 }
 
 async function execCreateRoom(
-  params: any,
+  params: unknown,
   context: ToolContext
 ): Promise<ToolResult> {
-  const { type, brainholeId, storyId, identity } = params || {};
+  const { type, brainholeId, storyId, identity } = (params as Record<string, unknown> || {});
 
   if (!context.userId) {
     return { success: false, error: "需要登录才能创建房间" };
@@ -663,10 +664,10 @@ async function execCreateRoom(
     select: { name: true },
   });
 
-  let userIdentity = identity || context.identity || user?.name || "我";
+  const userIdentity = identity || context.identity || user?.name || "我";
   const roomType = type === "story_duet" ? "story_duet" : "ai_duet";
 
-  let finalBrainholeId = brainholeId;
+  let finalBrainholeId = brainholeId as string | undefined;
   let brainholeTitle = "";
   let brainholeScenario = "";
 
@@ -709,7 +710,7 @@ async function execCreateRoom(
   let storyScene = "";
   if (storyId) {
     const story = await db.story.findUnique({
-      where: { id: storyId },
+      where: { id: storyId as string },
       select: { title: true, eraBackground: true, storySummary: true },
     });
     if (story) {
@@ -721,8 +722,8 @@ async function execCreateRoom(
   const room = await db.$transaction(async (tx) => {
     const newRoom = await tx.room.create({
       data: {
-        brainholeId: finalBrainholeId || null,
-        storyId: storyId || null,
+        brainholeId: finalBrainholeId ? String(finalBrainholeId) : null,
+        storyId: storyId ? String(storyId) : null,
         type: roomType,
         status: "active",
         maxRound: 10,
@@ -736,7 +737,7 @@ async function execCreateRoom(
       data: {
         roomId: newRoom.id,
         userId: context.userId,
-        identity: userIdentity,
+        identity: userIdentity as string,
         role: "actor",
         isOnline: true,
       },
