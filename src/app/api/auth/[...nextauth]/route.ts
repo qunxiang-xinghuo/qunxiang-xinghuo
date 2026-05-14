@@ -4,8 +4,11 @@ import { authOptions } from "@/lib/auth";
 import { withCallbackParams } from "@/lib/auth/callback-store";
 
 const handler = NextAuth(authOptions);
+type AuthRouteContext = {
+  params: Promise<{ nextauth: string[] }>;
+};
 
-async function wrappedHandler(req: NextRequest, ctx: Record<string, unknown>) {
+async function wrappedHandler(req: NextRequest, ctx: AuthRouteContext) {
   const url = new URL(req.url);
   if (url.pathname.includes("/callback/zhihu")) {
     const params: Record<string, string> = {};

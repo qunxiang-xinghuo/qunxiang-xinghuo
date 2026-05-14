@@ -143,8 +143,10 @@ export default function StoryRoomPage() {
     setSendError('');
     if (inputRef.current) inputRef.current.style.height = 'auto';
     try {
+      const guestId = localStorage.getItem('xh_user_id');
       const res = await fetch(`/api/stories/${storyId}/messages`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(guestId ? { 'x-guest-id': guestId } : {}) },
         body: JSON.stringify({ content, identity: myIdentity }),
       });
       const result = await res.json();

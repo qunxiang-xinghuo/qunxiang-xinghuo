@@ -45,7 +45,7 @@ jobs:
     - name: Build
       run: npm run build
       env:
-        DATABASE_URL: "file:./dev.db"
+        DATABASE_URL: "file:./test.db"
         NEXTAUTH_SECRET: "build-secret-for-ci"
         NEXTAUTH_URL: "http://localhost:3000"
         NEXT_PUBLIC_APP_URL: "http://localhost:3000"

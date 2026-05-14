@@ -85,7 +85,15 @@ export async function POST(request: NextRequest) {
     } else {
       console.log("[MatchAPI] 匹配未完成，进入等待状态. matchId:", matchResult.matchId, "strategy:", matchResult.strategy, "brainhole:", matchResult.brainholeTitle);
       if (matchResult.message === "MATCH_ALREADY_EXISTS") {
-        return NextResponse.json(apiError("MATCH_ALREADY_EXISTS", "已有活跃匹配请求"), { status: 400 });
+        return NextResponse.json(apiResponse({
+          matchId: matchResult.matchId,
+          roomType: matchResult.roomType,
+          status: "waiting",
+          message: matchResult.message,
+          strategy: matchResult.strategy,
+          brainholeId: matchResult.brainholeId,
+          brainholeTitle: matchResult.brainholeTitle,
+        }), { status: 202 });
       }
 
       return NextResponse.json(apiResponse({

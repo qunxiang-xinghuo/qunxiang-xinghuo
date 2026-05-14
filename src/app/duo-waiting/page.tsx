@@ -46,6 +46,24 @@ function DuoWaitingContent() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const navTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const cancelMatchRequest = useCallback(async (currentMatchId?: string | null) => {
+    const targetMatchId = currentMatchId || matchId;
+    if (!targetMatchId) return;
+    try {
+      const guestId = localStorage.getItem('xh_user_id');
+      await fetch(`/api/match/${targetMatchId}`, {
+        method: 'DELETE',
+        headers: guestId ? { 'x-guest-id': guestId } : {},
+      });
+    } catch {
+      // 忽略取消失败，避免打断用户流
+    } finally {
+      if (localStorage.getItem('xh_duo_match_id') === targetMatchId) {
+        localStorage.removeItem('xh_duo_match_id');
+      }
+    }
+  }, [matchId]);
+
   const pollMatchStatus = useCallback(async (currentMatchId: string) => {
     if (!currentMatchId || status !== 'matching') return false;
     try {
@@ -131,6 +149,15 @@ function DuoWaitingContent() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      const activeMatchId = localStorage.getItem('xh_duo_match_id');
+      if (activeMatchId) {
+        void cancelMatchRequest(activeMatchId);
+      }
+    };
+  }, [cancelMatchRequest]);
+
   // 初始化匹配
   useEffect(() => {
     const savedIdentity = localStorage.getItem('xh_duo_identity');
@@ -167,6 +194,12 @@ function DuoWaitingContent() {
     // v8.5: 邀请模式直接创建房间并进入
     if (isInviteMode) {
       createInviteRoomAndEnter();
+      return;
+    }
+
+    const savedMatchId = localStorage.getItem('xh_duo_match_id');
+    if (savedMatchId) {
+      setMatchId(savedMatchId);
       return;
     }
 
@@ -211,13 +244,15 @@ function DuoWaitingContent() {
         const next = prev + 1;
         if (next >= MATCH_TIMEOUT) {
           if (timerRef.current) clearInterval(timerRef.current);
+          void cancelMatchRequest(matchId);
+          setMatchId(null);
           setStatus('timeout');
         }
         return next;
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status]);
+  }, [status, matchId, cancelMatchRequest]);
 
   // 轮询匹配状态
   useEffect(() => {
@@ -399,10 +434,12 @@ function DuoWaitingContent() {
                 </button>
 
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    await cancelMatchRequest(matchId);
                     setStatus('matching');
                     setElapsedTime(0);
                     setMatchError('');
+                    setMatchId(null);
                     const savedIdentity = localStorage.getItem('xh_duo_identity');
                     if (savedIdentity) {
                       const guestId = localStorage.getItem('xh_user_id');

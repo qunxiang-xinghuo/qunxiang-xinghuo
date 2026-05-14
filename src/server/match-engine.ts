@@ -90,6 +90,8 @@ async function _findMatch(
         console.log("[MatchEngine] 用户已有活跃匹配:", existingMatch.id);
         return {
           matched: false,
+          matchId: existingMatch.id,
+          roomType: mode,
           message: "MATCH_ALREADY_EXISTS",
         };
       }

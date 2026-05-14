@@ -55,8 +55,37 @@ export async function POST(
     }
 
     const { content, identity, chapterId, isDirectorNote = false } = body;
-    if (!content || !identity) {
-      return NextResponse.json(apiError("BAD_REQUEST", "缺少content或identity"), { status: 400 });
+    if (!content || typeof content !== "string" || !content.trim()) {
+      return NextResponse.json(apiError("BAD_REQUEST", "缺少content"), { status: 400 });
+    }
+
+    const story = await db.story.findUnique({
+      where: { id: storyId },
+      select: { directorId: true },
+    });
+    if (!story) {
+      return NextResponse.json(apiError("NOT_FOUND", "故事不存在"), { status: 404 });
+    }
+
+    let resolvedIdentity = "";
+    if (isDirectorNote) {
+      if (story.directorId !== effectiveUserId) {
+        return NextResponse.json(apiError("FORBIDDEN", "只有导演可以发送导演提示"), { status: 403 });
+      }
+      resolvedIdentity = typeof identity === "string" && identity.trim() ? identity.trim() : "导演";
+    } else {
+      const claimedRole = await db.storyRole.findFirst({
+        where: {
+          storyId,
+          claimedBy: effectiveUserId,
+          claimStatus: { in: ["approved", "active"] },
+        },
+        select: { name: true },
+      });
+      if (!claimedRole) {
+        return NextResponse.json(apiError("FORBIDDEN", "你未认领该故事角色，不能发送消息"), { status: 403 });
+      }
+      resolvedIdentity = claimedRole.name;
     }
 
     const message = await db.storyMessage.create({
@@ -64,8 +93,8 @@ export async function POST(
         storyId,
         chapterId: chapterId || null,
         senderId: effectiveUserId,
-        content,
-        identity,
+        content: content.trim(),
+        identity: resolvedIdentity,
         isDirectorNote,
       },
     });
