@@ -47,7 +47,7 @@ export default function ClaimRoleModal({
       } else {
         setError(result.error?.message || '认领失败');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('网络错误');
     } finally {
       setLoading(false);

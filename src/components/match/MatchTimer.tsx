@@ -9,7 +9,7 @@ interface MatchTimerProps {
   className?: string;
 }
 
-export default function MatchTimer({ brainholeTitle, elapsedTime = 0, className = '' }: MatchTimerProps) {
+export default function MatchTimer({ brainholeTitle: _brainholeTitle, elapsedTime = 0, className = '' }: MatchTimerProps) {
   return (
     <div className={`flex flex-col items-center justify-center ${className}`}>
       <div className="relative mb-8">

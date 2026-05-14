@@ -1,7 +1,6 @@
 import crypto from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
-const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 
@@ -77,7 +76,7 @@ export function decryptFields<T extends Record<string, unknown>>(
     if (typeof result[field] === "string" && result[field]) {
       try {
         (result as Record<string, string>)[field as string] = decrypt(result[field] as string);
-      } catch (e) {
+      } catch (_e) {
         // 如果解密失败（明文存储的旧数据），保持原值
         console.warn(`[Crypto] Decrypt failed for field ${String(field)}, using raw value`);
       }

@@ -1,6 +1,5 @@
 import { PrismaClient } from "../generated/prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import path from "path";
 import fs from "fs";
 import { getErrorMessage, getErrorCode } from "@/lib/error-utils";
 

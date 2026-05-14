@@ -5,7 +5,6 @@
  * 支持剧本、叙事、对白三种格式。
  */
 
-import { getIO } from '@/server/io'
 import { getPersona } from '@/lib/ai/personas'
 
 export interface Spark {
@@ -38,7 +37,7 @@ export interface StoryWeaveResponse {
 // DeepSeek API 调用
 // ============================================================================
 
-interface DeepSeekMessage {
+interface _DeepSeekMessage {
   role: string
   content: string
 }

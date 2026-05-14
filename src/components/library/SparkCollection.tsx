@@ -13,7 +13,7 @@ interface SparkCollectionProps {
 }
 
 export default function SparkCollection({
-  id,
+  id: _id,
   title,
   brainholeTitle,
   reactionCount,

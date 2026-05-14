@@ -13,7 +13,7 @@ interface SparkWallProps {
   className?: string;
 }
 
-export default function SparkWall({ isOpen, onClose, sparkedMessages, className = '' }: SparkWallProps) {
+export default function SparkWall({ isOpen, onClose, sparkedMessages, className: _className = '' }: SparkWallProps) {
   if (!isOpen) return null;
 
   return (

@@ -165,7 +165,7 @@ function extractKeywords(text: string): string[] {
   return [...new Set(keywords)];
 }
 
-function extractKeywordsWeighted(text: string): { word: string; weight: number }[] {
+function _extractKeywordsWeighted(text: string): { word: string; weight: number }[] {
   const words = extractKeywords(text);
   const freq = new Map<string, number>();
   for (const w of words) {
@@ -214,8 +214,8 @@ function searchKeywordIndex(query: string, options: SearchOptions = {}): SearchR
     if (!doc) continue;
     // v9.3-fix: 改用 BM25 式评分 = matched / queryLength * log(totalDocs / docFreq)
     // 简化版：matched / queryKeywords.length（对长文档更公平）
-    const queryCoverage = matched / Math.max(queryKeywords.length, 1);
-    const docDensity = matched / Math.max(totalDocKw, 1);
+  const _queryCoverage = matched / Math.max(queryKeywords.length, 1);
+  const _docDensity = matched / Math.max(totalDocKw, 1);
     // v9.3-fix: 评分公式改为 matched / queryKeywords.length（对长文档更公平）
     const score = matched / Math.max(queryKeywords.length, 1);
     results.push({ document: doc, score });

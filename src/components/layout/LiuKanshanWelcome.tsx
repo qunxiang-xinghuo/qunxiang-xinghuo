@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import LiuKanshanAvatar from './LiuKanshanAvatar';
 
 interface Props {

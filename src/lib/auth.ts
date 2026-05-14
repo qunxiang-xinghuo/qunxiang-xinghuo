@@ -151,7 +151,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile: _profile }) {
       // v9.3: 知乎 OAuth 用户自动创建/关联
       if (account?.provider === "zhihu" && user.id) {
         try {

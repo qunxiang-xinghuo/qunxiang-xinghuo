@@ -85,13 +85,13 @@ export async function getAIPrompt(
 
 export async function generateStoryFromSparks(
   sparks: Array<{ content: string; identity: string; timestamp: Date }>,
-  format: "script" | "narrative" = "script"
+  _format: "script" | "narrative" = "script"
 ): Promise<string> {
   // Phase 4: This will integrate with AI service
   return "故事串联功能即将上线，敬请期待！";
 }
 
-export async function analyzeEmotion(content: string): Promise<string[]> {
+export async function analyzeEmotion(_content: string): Promise<string[]> {
   // Phase 4: This will integrate with AI service
   return ["neutral"];
 }

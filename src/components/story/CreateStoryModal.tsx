@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, Sparkles, BookOpen, Theater, Flame, Lightbulb, Zap, Globe, ChevronRight, Users } from 'lucide-react';
+import { X, Sparkles, Theater, Flame, Lightbulb, Zap, Globe, ChevronRight, Users } from 'lucide-react';
 
 interface RoleInput {
   name: string;

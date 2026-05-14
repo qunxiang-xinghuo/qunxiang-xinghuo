@@ -13,7 +13,7 @@ interface BubblePreviewProps {
   onCollect?: (id: string) => void;
 }
 
-export default function BubblePreview({ bubble, position, onClose, onCollect }: BubblePreviewProps) {
+export default function BubblePreview({ bubble, position: _position, onClose, onCollect }: BubblePreviewProps) {
   const router = useRouter();
 
   if (!bubble) return null;

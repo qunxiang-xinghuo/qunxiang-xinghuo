@@ -159,7 +159,7 @@ async function summarizeLearningLogs(): Promise<number> {
 
     const total = logs.length;
     const responded = logs.filter((l) => l.userResponded).length;
-    const sparked = logs.filter((l) => l.sparked).length;
+    const _sparked = logs.filter((l) => l.sparked).length;
     const hitRate = total > 0 ? responded / total : 0;
 
     // 找到最佳时机（回应率最高的 messageIndex）

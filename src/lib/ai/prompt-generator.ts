@@ -13,7 +13,7 @@
 import { getFallbackPrompt } from './fallback-prompts'
 import { getPersona } from '@/lib/ai/personas'
 
-interface DeepSeekMessage {
+interface _DeepSeekMessage {
   role: string
   content: string
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, User, ChevronLeft } from 'lucide-react';
+import { Bell, ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 

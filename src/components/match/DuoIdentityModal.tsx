@@ -23,7 +23,7 @@ export default function DuoIdentityModal({ isOpen, brainholeTitle, onClose, onCo
   const [selectedZhihuId, setSelectedZhihuId] = useState('');
   const [customLabel, setCustomLabel] = useState('');
   const [aiGenerated, setAiGenerated] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   // 获取用户已有身份
   useEffect(() => {

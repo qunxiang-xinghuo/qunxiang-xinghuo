@@ -14,7 +14,7 @@ interface StoryCardProps {
 }
 
 export default function StoryCard({
-  id,
+  id: _id,
   title,
   preview,
   createdAt,

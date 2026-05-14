@@ -43,7 +43,7 @@ jobs:
         NODE_ENV: "test"
     
     - name: Build
-      run: npm run build
+      run: npm run build:ci
       env:
         DATABASE_URL: "file:./test.db"
         NEXTAUTH_SECRET: "build-secret-for-ci"

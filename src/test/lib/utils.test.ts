@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { cn, apiResponse, apiError, validateEnvVars, type ApiResponse } from '@/lib/utils';
 
 describe('Utility Functions', () => {
@@ -114,6 +114,10 @@ describe('Utility Functions', () => {
   });
 
   describe('validateEnvVars()', () => {
+    const restoreEnv = (originalEnv: NodeJS.ProcessEnv) => {
+      process.env = originalEnv;
+    };
+
     it('should not throw when all required environment variables are present', () => {
       const originalEnv = process.env;
       process.env = {
@@ -124,34 +128,31 @@ describe('Utility Functions', () => {
 
       expect(() => validateEnvVars(['DATABASE_URL', 'NEXTAUTH_SECRET'])).not.toThrow();
 
-      process.env = originalEnv;
+      restoreEnv(originalEnv);
     });
 
     it('should throw error when environment variables are missing', () => {
       const originalEnv = process.env;
-      process.env = {
-        ...originalEnv,
-        DATABASE_URL: 'sqlite://test.db',
-        // NEXTAUTH_SECRET is missing
-      };
+      process.env = { ...originalEnv };
+      process.env.DATABASE_URL = 'sqlite://test.db';
+      delete process.env.NEXTAUTH_SECRET;
 
       expect(() => validateEnvVars(['DATABASE_URL', 'NEXTAUTH_SECRET']))
         .toThrow('Missing required environment variables: NEXTAUTH_SECRET');
 
-      process.env = originalEnv;
+      restoreEnv(originalEnv);
     });
 
     it('should throw error when multiple environment variables are missing', () => {
       const originalEnv = process.env;
-      process.env = {
-        ...originalEnv,
-        // Both are missing
-      };
+      process.env = { ...originalEnv };
+      delete process.env.DATABASE_URL;
+      delete process.env.NEXTAUTH_SECRET;
 
       expect(() => validateEnvVars(['DATABASE_URL', 'NEXTAUTH_SECRET']))
         .toThrow('Missing required environment variables: DATABASE_URL, NEXTAUTH_SECRET');
 
-      process.env = originalEnv;
+      restoreEnv(originalEnv);
     });
 
     it('should handle empty required variables list', () => {
