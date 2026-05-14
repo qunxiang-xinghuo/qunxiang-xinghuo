@@ -7,6 +7,15 @@ const eslintConfig = defineConfig([
   ...nextTs,
   {
     rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
       // React 19 strict hooks — 需要架构级重构才能修复，暂时降级为 warn
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/purity": "warn",
@@ -25,6 +34,7 @@ const eslintConfig = defineConfig([
   },
   globalIgnores([
     ".next/**",
+    "coverage/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

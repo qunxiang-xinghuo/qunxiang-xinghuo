@@ -36,7 +36,7 @@ jobs:
       run: npm run test:ci
       env:
         DATABASE_URL: "file:./test.db"
-        NEXTAUTH_SECRET: "test-secret-for-ci"
+        NEXTAUTH_SECRET: "test-secret-for-ci-environment-2026-32chars"
         NEXTAUTH_URL: "http://localhost:3000"
         NEXT_PUBLIC_APP_URL: "http://localhost:3000"
         NEXT_PUBLIC_SOCKET_URL: "http://localhost:3001"
@@ -46,7 +46,7 @@ jobs:
       run: npm run build:ci
       env:
         DATABASE_URL: "file:./test.db"
-        NEXTAUTH_SECRET: "build-secret-for-ci"
+        NEXTAUTH_SECRET: "build-secret-for-ci-environment-2026-32chars"
         NEXTAUTH_URL: "http://localhost:3000"
         NEXT_PUBLIC_APP_URL: "http://localhost:3000"
         NEXT_PUBLIC_SOCKET_URL: "http://localhost:3001"
