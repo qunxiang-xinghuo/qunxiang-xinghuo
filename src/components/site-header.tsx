@@ -16,17 +16,26 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-line/50">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-14">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border/60">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <span className="font-serif text-[13px] tracking-[2px] text-ink-faint group-hover:text-ink-light transition-colors duration-300">
-              群像 ·{' '}
-              <span className="text-blue-mid group-hover:text-brand-gold transition-colors duration-300">
-                星火
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-blue to-brand-blue-light flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-serif text-base font-semibold text-ink tracking-wide">
+                群像·星火
               </span>
-            </span>
+              <span className="text-[10px] text-ink-muted tracking-wider hidden sm:inline">
+                创作工坊
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Nav */}
@@ -40,10 +49,10 @@ export function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-3 py-1.5 text-xs tracking-wider rounded-lg transition-all duration-300 ${
+                  className={`nav-link px-4 py-2 text-[13px] tracking-wide rounded-lg transition-all duration-300 ${
                     isActive
-                      ? 'text-blue-dark bg-card-inner font-medium'
-                      : 'text-ink-faint hover:text-ink-light hover:bg-card-inner/50'
+                      ? 'text-brand-blue font-medium'
+                      : 'text-ink-secondary hover:text-ink'
                   }`}
                 >
                   {item.label}
@@ -54,7 +63,7 @@ export function SiteHeader() {
 
           {/* Mobile Menu Button */}
           <button
-            className="sm:hidden p-2 text-ink-faint hover:text-ink-light transition-colors"
+            className="sm:hidden p-2.5 rounded-lg text-ink-secondary hover:bg-gray-50 transition-colors"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="菜单"
           >
@@ -65,11 +74,12 @@ export function SiteHeader() {
               fill="none"
               stroke="currentColor"
               strokeWidth="1.5"
+              strokeLinecap="round"
             >
               {menuOpen ? (
                 <path d="M18 6L6 18M6 6l12 12" />
               ) : (
-                <path d="M4 8h16M4 16h16" />
+                <path d="M4 7h16M4 12h16M4 17h16" />
               )}
             </svg>
           </button>
@@ -77,7 +87,7 @@ export function SiteHeader() {
 
         {/* Mobile Nav */}
         {menuOpen && (
-          <nav className="sm:hidden pb-4 border-t border-line/50 mt-2 pt-3">
+          <nav className="sm:hidden pb-4 border-t border-border/40 mt-1 pt-3">
             {navItems.map((item) => {
               const isActive =
                 item.href === '/'
@@ -88,10 +98,10 @@ export function SiteHeader() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMenuOpen(false)}
-                  className={`block px-3 py-2 text-sm tracking-wider rounded-lg transition-all duration-300 ${
+                  className={`block px-4 py-2.5 text-sm tracking-wide rounded-lg transition-all duration-200 ${
                     isActive
-                      ? 'text-blue-dark bg-card-inner'
-                      : 'text-ink-faint hover:text-ink-light'
+                      ? 'text-brand-blue bg-brand-blue/5 font-medium'
+                      : 'text-ink-secondary hover:text-ink hover:bg-gray-50'
                   }`}
                 >
                   {item.label}

@@ -11,33 +11,33 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
   return (
     <div className="relative">
       {/* Spark Bar */}
-      <div className="flex justify-center gap-6 mb-8 py-4 border-y border-line">
+      <div className="flex justify-center gap-8 mb-10 py-5 border-y border-border/60">
         {story.sparks.map((spark) => (
           <div key={spark.label} className="text-center">
-            <div className="text-sm mb-1">
+            <div className="text-base mb-1.5">
               {spark.icon === 'fire'
                 ? Array(spark.count).fill('🔥').join('')
                 : spark.icon === 'sparkle'
                   ? '💫'
                   : '✨'}
             </div>
-            <div className="text-[9px] text-ink-ghost tracking-wider">
-              {spark.label} x{spark.count}
+            <div className="text-[10px] text-ink-muted tracking-wider">
+              {spark.label} <span className="text-ink-secondary font-medium">x{spark.count}</span>
             </div>
           </div>
         ))}
       </div>
 
       {/* Opening scene preview */}
-      <div className="bg-card-bg rounded-2xl card-shadow p-6 mb-6">
-        <div className="text-center mb-4">
-          <span className="text-[10px] text-ink-ghost tracking-[3px]">
+      <div className="bg-card-bg rounded-2xl card-shadow p-6 sm:p-8 mb-6">
+        <div className="text-center mb-6">
+          <span className="text-[11px] text-ink-muted tracking-[3px]">
             {story.subtitle}
           </span>
         </div>
 
         {/* First few dialogue blocks */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {story.blocks.slice(0, 6).map((block, i) => {
             if (block.type === 'chapter') {
               return (
@@ -58,32 +58,32 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
               return (
                 <div
                   key={i}
-                  className={`flex items-start gap-3 ${isLeft ? '' : 'flex-row-reverse'}`}
+                  className={`flex items-start gap-3.5 ${isLeft ? '' : 'flex-row-reverse'}`}
                 >
                   <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 font-sans ${
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${
                       isLeft
-                        ? 'bg-gradient-to-br from-[#7ab0d4] to-[#4a88b8]'
-                        : 'bg-gradient-to-br from-[#d4a574] to-[#b8885a]'
+                        ? 'bg-gradient-to-br from-[#5a9ed8] to-[#2d5f8a]'
+                        : 'bg-gradient-to-br from-[#d4a574] to-[#a07040]'
                     }`}
                   >
                     {block.character?.[0]}
                   </div>
-                  <div className="max-w-[420px]">
+                  <div className="max-w-[440px]">
                     <div
-                      className={`text-[11px] font-semibold tracking-wider mb-1 font-sans ${
+                      className={`text-[11px] font-semibold tracking-wider mb-1.5 ${
                         isLeft
                           ? 'text-brand-blue'
-                          : 'text-ink-ghost text-right'
+                          : 'text-ink-muted text-right'
                       }`}
                     >
                       {block.character}
                     </div>
                     <div
-                      className={`text-[14.5px] leading-[1.9] whitespace-pre-line ${
+                      className={`text-[15px] leading-[1.9] whitespace-pre-line ${
                         isLeft
-                          ? 'bg-card-bg p-3.5 rounded-[4px_16px_16px_16px] text-ink card-shadow'
-                          : 'bg-gradient-to-br from-[#3a5a7e] to-[#2a4a6e] p-3.5 rounded-[16px_4px_16px_16px] text-white/90'
+                          ? 'bg-card-bg p-4 rounded-[4px_16px_16px_16px] text-ink card-shadow border border-border/40'
+                          : 'bg-gradient-to-br from-[#2d5f8a] to-[#1a3a5c] p-4 rounded-[16px_4px_16px_16px] text-white/90'
                       }`}
                     >
                       {block.text ?? ''}
@@ -101,17 +101,10 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
       <div className="text-center">
         <Link
           href={`/stories/${story.id}`}
-          className="inline-flex items-center gap-2 px-6 py-3 text-xs text-ink-faint border border-line rounded-2xl hover:border-brand-gold/40 hover:text-brand-gold transition-all duration-500 tracking-wider"
+          className="inline-flex items-center gap-2 text-sm text-brand-blue hover:text-brand-blue-light transition-colors duration-300 tracking-wide"
         >
-          阅读完整故事
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          >
+          继续阅读
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </Link>
