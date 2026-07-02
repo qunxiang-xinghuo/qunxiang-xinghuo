@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import type { Scene } from '@/lib/data';
 
@@ -9,194 +10,173 @@ interface SceneDetailProps {
 
 export function SceneDetail({ scene }: SceneDetailProps) {
   const [activeRole, setActiveRole] = useState(0);
-  const [entered, setEntered] = useState(false);
 
   return (
-    <div className="px-4 pb-20">
-      <div className="max-w-md mx-auto">
-        {/* Ticket Card */}
-        <div className="opacity-0 animate-fade-in-up">
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-            {/* Scene Visual Window */}
-            <div className="h-44 relative overflow-hidden bg-gradient-to-br from-[#b4cce0] via-[#9cbcd4] to-[#9cbfa8]">
-              {/* Sun */}
-              <div className="absolute top-[12%] right-[18%] w-7 h-7 rounded-full bg-radial-[circle] from-[#fff8e8] via-[#f0e8c8] to-transparent shadow-[0_0_40px_rgba(240,224,180,0.35)]" />
+    <div className="opacity-0 animate-ticket-in">
+      {/* Back Button */}
+      <Link
+        href="/scenes"
+        className="inline-flex items-center gap-1 text-xs text-ink-faint hover:text-ink-light transition-colors duration-300 tracking-wider mb-8"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        返回场景库
+      </Link>
 
-              {/* Light spots */}
-              <div className="absolute w-1.5 h-1.5 rounded-full bg-white/50 animate-float" style={{ top: '25%', left: '12%' }} />
-              <div className="absolute w-2 h-2 rounded-full bg-[#fff8dc]/40 animate-float" style={{ top: '45%', left: '30%', animationDelay: '0.8s' }} />
-              <div className="absolute w-1 h-1 rounded-full bg-white/40 animate-float" style={{ top: '20%', left: '55%', animationDelay: '1.5s' }} />
+      {/* Ticket Card */}
+      <div className="ticket-card">
+        {/* Scenic Window */}
+        <div className="relative h-48 sm:h-56 overflow-hidden">
+          {/* Sky */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(180deg, #c8d8e8 0%, #d8e4f0 30%, #e4ecf4 60%, #eef4f8 100%)',
+            }}
+          />
 
-              {/* Clouds */}
-              <div className="absolute w-20 h-7 bg-white/40 rounded-full blur-[1px] top-[15%] left-[4%] animate-float" style={{ animationDuration: '24s' }} />
-              <div className="absolute w-16 h-5 bg-white/35 rounded-full blur-[1px] top-[38%] left-[42%] animate-float" style={{ animationDuration: '28s', animationDirection: 'reverse' }} />
+          {/* Sun */}
+          <div className="absolute top-8 right-12 w-16 h-16 rounded-full bg-white/60 blur-sm" />
+          <div className="absolute top-9 right-13 w-14 h-14 rounded-full bg-white/80" />
 
-              {/* Plane */}
-              <div className="absolute top-[32%] text-white/50 text-sm animate-[fly_14s_linear_infinite]">
-                ✈
+          {/* Clouds */}
+          <div className="absolute top-12 left-8 w-20 h-6 bg-white/50 rounded-full blur-sm" />
+          <div className="absolute top-16 left-12 w-16 h-5 bg-white/40 rounded-full blur-sm" />
+          <div className="absolute top-8 right-24 w-24 h-7 bg-white/30 rounded-full blur-sm" />
+
+          {/* Ground */}
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#a8c8a0] to-[#c8d8b8]" />
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-[#90b888]" />
+
+          {/* Plane */}
+          <div className="absolute top-16 animate-fly">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"
+                fill="#4a6888"
+                opacity="0.6"
+              />
+            </svg>
+          </div>
+
+          {/* Scene Title Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-[10px] tracking-[4px] text-ink-faint/80 mb-2">
+                {scene.location}
               </div>
-
-              {/* Grass */}
-              <div className="absolute bottom-0 left-0 right-0 h-10">
-                <svg viewBox="0 0 400 35" preserveAspectRatio="none" className="w-full h-full">
-                  <path d="M0 18 Q40 10 80 18 Q120 26 160 16 Q200 8 240 16 Q280 24 320 14 Q360 6 400 16 L400 35 L0 35Z" fill="rgba(156,191,168,0.4)" />
-                  <path d="M0 24 Q50 16 100 24 Q150 32 200 22 Q250 14 300 22 Q350 30 400 20 L400 35 L0 35Z" fill="rgba(156,191,168,0.2)" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Ticket holes */}
-            <div className="flex justify-between px-4 -mt-2.5 relative z-10">
-              {Array.from({ length: 11 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="w-5 h-5 rounded-full bg-[#f2f6fa] shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)]"
-                />
-              ))}
-            </div>
-
-            {/* Content */}
-            <div className="px-5 pb-6">
-              {/* Tag row */}
-              <div className="flex items-center gap-2.5 my-3">
-                <div className="flex-1 h-px bg-[#e8edf2]" />
-                <span className="text-[9px] text-ink-ghost tracking-[0.2em]">
-                  场 景 入 口
-                </span>
-                <div className="flex-1 h-px bg-[#e8edf2]" />
-              </div>
-
-              {/* Title */}
-              <div className="mb-5">
-                <h1 className="font-serif text-3xl font-black text-ink tracking-[0.2em] leading-tight mb-2">
-                  {scene.title}
-                </h1>
-                <div className="flex items-center gap-2 text-[10px] text-ink-faint">
-                  {scene.tags.map((tag, i) => (
-                    <span key={tag} className="flex items-center gap-2">
-                      {i > 0 && (
-                        <span className="w-0.5 h-0.5 rounded-full bg-brand-blue/30" />
-                      )}
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Story description */}
-              <div className="py-3 border-y border-[#e8edf2]">
-                <p className="font-serif text-sm leading-relaxed text-ink-light text-justify">
-                  {scene.description}
-                </p>
-              </div>
-
-              {/* Opening line */}
-              <div className="mt-3 p-3.5 bg-[#eef2f5] rounded-xl border-l-2 border-brand-blue/30">
-                <p className="text-xs text-ink-light leading-relaxed italic">
-                  <span className="text-ink font-semibold not-italic">
-                    {scene.roles[0]?.name}
-                  </span>
-                  走上前，沉默了两秒。
-                  <br />
-                  {scene.openingLine}
-                </p>
-              </div>
-
-              {/* Role tabs */}
-              <div className="mt-5">
-                <div className="flex gap-0 bg-[#eef2f5] rounded-xl p-0.5 mb-3">
-                  {scene.roles.map((role, i) => (
-                    <button
-                      key={role.name}
-                      onClick={() => setActiveRole(i)}
-                      className={`flex-1 py-2.5 rounded-[10px] text-center transition-all duration-300 cursor-pointer ${
-                        activeRole === i
-                          ? 'bg-white shadow-sm'
-                          : 'bg-transparent'
-                      }`}
-                    >
-                      <span
-                        className={`font-serif text-base font-bold block transition-colors duration-300 ${
-                          activeRole === i ? 'text-ink' : 'text-ink-ghost'
-                        }`}
-                      >
-                        {role.name}
-                      </span>
-                      <span
-                        className={`text-[9px] mt-0.5 block transition-colors duration-300 ${
-                          activeRole === i
-                            ? 'text-brand-blue'
-                            : 'text-ink-ghost'
-                        }`}
-                      >
-                        {role.desc}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Role body */}
-                {scene.roles.map((role, i) => (
-                  <div
-                    key={role.name}
-                    className={`${activeRole === i ? 'block' : 'hidden'}`}
-                  >
-                    <p className="text-xs text-ink-light leading-relaxed py-2">
-                      你是
-                      <span className="text-[#245080] font-bold">
-                        {role.name}
-                      </span>
-                      。{role.identity}
-                    </p>
-                    <div className="p-3 bg-[#eef2f5] rounded-xl flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-[#e8edf2] flex items-center justify-center flex-shrink-0">
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          className="fill-ink-faint"
-                        >
-                          <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-[10px] text-brand-blue font-medium">
-                          你有一个秘密
-                        </div>
-                        <div className="text-[10px] text-ink-ghost mt-0.5">
-                          {role.secretHint}
-                        </div>
-                      </div>
-                      <span className="text-[8px] text-brand-gold bg-brand-gold/5 px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                        对话揭晓
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Enter button */}
-              <div className="mt-5">
-                <button
-                  onClick={() => setEntered(!entered)}
-                  className="w-full py-4 bg-gradient-to-r from-[#4a8ec8] via-[#3a78b0] to-[#2e64a0] text-white text-sm tracking-widest rounded-2xl transition-all duration-500 shadow-[0_4px_20px_rgba(46,100,160,0.22)] hover:shadow-[0_8px_32px_rgba(46,100,160,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] cursor-pointer"
-                >
-                  {entered ? '寻找搭档中...' : '接受角色，开始对话'}
-                </button>
-              </div>
+              <h1 className="font-serif text-3xl sm:text-4xl text-ink tracking-wider drop-shadow-sm">
+                {scene.title}
+              </h1>
             </div>
           </div>
         </div>
 
-        {/* Hints */}
-        <div className="mt-5 flex flex-col items-center gap-2 opacity-0 animate-fade-in delay-500">
-          <p className="text-[10px] text-ink-ghost/40">
-            与一位陌生人共同演绎这个故事
+        {/* Content */}
+        <div className="p-6 sm:p-8">
+          {/* Tags */}
+          <div className="flex flex-wrap justify-center gap-2 mb-6">
+            {scene.tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] px-3 py-1 rounded-full bg-card-inner text-ink-ghost"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-ink-faint text-center leading-relaxed mb-8 max-w-md mx-auto">
+            {scene.description}
           </p>
-          <p className="text-[10px] text-ink-ghost/40">
-            对话通常持续 10-20 分钟
-          </p>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 h-px bg-line" />
+            <span className="text-[10px] text-ink-ghost tracking-wider">
+              角 色
+            </span>
+            <div className="flex-1 h-px bg-line" />
+          </div>
+
+          {/* Role Tabs */}
+          <div className="flex gap-2 mb-6">
+            {scene.roles.map((role, i) => (
+              <button
+                key={role.name}
+                onClick={() => setActiveRole(i)}
+                className={`flex-1 py-2.5 text-xs tracking-wider rounded-xl border transition-all duration-300 ${
+                  activeRole === i
+                    ? 'border-brand-gold/40 bg-brand-gold/5 text-brand-gold'
+                    : 'border-line text-ink-faint hover:border-blue-soft/40 hover:text-ink-light'
+                }`}
+              >
+                {role.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Role Detail */}
+          <div className="bg-card-inner rounded-2xl p-5 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-bright to-blue-deep flex items-center justify-center text-white text-xs font-bold">
+                {scene.roles[activeRole].name[0]}
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-ink">
+                  {scene.roles[activeRole].name}
+                </div>
+                <div className="text-[10px] text-ink-ghost">
+                  {scene.roles[activeRole].identity}
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-ink-light leading-relaxed mb-3">
+              {scene.roles[activeRole].desc}
+            </p>
+            <div className="text-[10px] text-ink-faint">
+              <span className="text-ink-ghost">秘密提示：</span>
+              {scene.roles[activeRole].secretHint}
+            </div>
+          </div>
+
+          {/* Secret Hint */}
+          <div className="bg-gradient-to-r from-blue-deep/5 to-blue-dark/5 rounded-xl p-4 mb-6 border border-blue-deep/10">
+            <div className="flex items-center gap-2 mb-2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                className="text-blue-deep/60"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span className="text-[10px] text-blue-deep/60 tracking-wider">
+                秘 密 提 示
+              </span>
+            </div>
+            <p className="text-xs text-ink-faint italic">
+              {scene.roles[activeRole].secret}
+            </p>
+          </div>
+
+          {/* CTA */}
+          <button className="w-full py-3.5 bg-gradient-to-r from-blue-deep to-blue-dark text-white text-sm tracking-widest rounded-2xl transition-all duration-500 shadow-[0_4px_20px_rgba(36,80,128,0.22)] hover:shadow-[0_8px_32px_rgba(36,80,128,0.35)] hover:-translate-y-0.5">
+            接受角色，开始对话
+          </button>
         </div>
       </div>
     </div>

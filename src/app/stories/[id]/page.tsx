@@ -1,33 +1,32 @@
-import type { Metadata } from 'next';
-import { stories } from '@/lib/data';
 import { notFound } from 'next/navigation';
+import { getStoryById } from '@/lib/data';
 import { StoryReader } from '@/components/story-reader';
 
-interface Props {
+interface StoryDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: StoryDetailPageProps) {
   const { id } = await params;
-  const story = stories.find((s) => s.id === id);
-  if (!story) return { title: '故事未找到' };
+  const story = getStoryById(id);
+  if (!story) return { title: '故事不存在' };
   return {
-    title: story.title,
-    description: `${story.subtitle} — 来自群像·星火的真实对话`,
+    title: `${story.title} - 故事集`,
+    description: story.description,
   };
 }
 
-export async function generateStaticParams() {
-  return stories.map((story) => ({ id: story.id }));
-}
-
-export default async function StoryDetailPage({ params }: Props) {
+export default async function StoryDetailPage({ params }: StoryDetailPageProps) {
   const { id } = await params;
-  const story = stories.find((s) => s.id === id);
+  const story = getStoryById(id);
 
   if (!story) {
     notFound();
   }
 
-  return <StoryReader story={story!} />;
+  return (
+    <div className="site-bg">
+      <StoryReader story={story} />
+    </div>
+  );
 }

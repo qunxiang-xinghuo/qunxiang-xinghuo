@@ -34,6 +34,7 @@ export interface Story {
   title: string;
   sceneId: string;
   subtitle: string;
+  description: string;
   tags: string[];
   sparks: { label: string; count: number; icon: string }[];
   blocks: StoryBlock[];
@@ -180,6 +181,7 @@ export const stories: Story[] = [
     title: '好久不见',
     sceneId: 'airport-reunion',
     subtitle: '机场 · 十年 · 重逢',
+    description: '高中时最好的朋友，十年没见。今天在机场，你一眼就认出了他。一段关于重逢、秘密和未说出口的话的故事。',
     tags: ['重逢', '秘密', '反转', '金句', '余韵'],
     sparks: [
       { label: '重逢', count: 1, icon: 'fire' },
@@ -392,3 +394,12 @@ export const storySeeds: StorySeed[] = [
     createdAt: '2025-06-15',
   },
 ];
+
+// Helper functions
+export function getSceneById(id: string): Scene | undefined {
+  return scenes.find((s) => s.id === id);
+}
+
+export function getStoryById(id: string): Story | undefined {
+  return stories.find((s) => s.id === id);
+}

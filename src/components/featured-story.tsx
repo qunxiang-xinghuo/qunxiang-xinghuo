@@ -11,29 +11,27 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
   return (
     <div className="relative">
       {/* Spark Bar */}
-      <div className="flex justify-center gap-6 mb-8 py-4 border-y border-white/5">
+      <div className="flex justify-center gap-6 mb-8 py-4 border-y border-line">
         {story.sparks.map((spark) => (
           <div key={spark.label} className="text-center">
             <div className="text-sm mb-1">
               {spark.icon === 'fire'
-                ? Array(spark.count)
-                    .fill('🔥')
-                    .join('')
+                ? Array(spark.count).fill('🔥').join('')
                 : spark.icon === 'sparkle'
                   ? '💫'
                   : '✨'}
             </div>
-            <div className="text-[9px] text-ink-ghost/40 tracking-wider">
+            <div className="text-[9px] text-ink-ghost tracking-wider">
               {spark.label} x{spark.count}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Opening scene */}
-      <div className="bg-white/[0.03] rounded-2xl border border-white/5 p-6 mb-6">
+      {/* Opening scene preview */}
+      <div className="bg-card-bg rounded-2xl card-shadow p-6 mb-6">
         <div className="text-center mb-4">
-          <span className="text-[10px] text-ink-ghost/40 tracking-[0.3em]">
+          <span className="text-[10px] text-ink-ghost tracking-[3px]">
             {story.subtitle}
           </span>
         </div>
@@ -43,18 +41,14 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
           {story.blocks.slice(0, 6).map((block, i) => {
             if (block.type === 'chapter') {
               return (
-                <div key={i} className="chapter-divider text-ink-ghost/30">
+                <div key={i} className="chapter-divider">
                   {block.chapterTitle}
                 </div>
               );
             }
             if (block.type === 'thought') {
               return (
-                <div
-                  key={i}
-                  className="thought-block text-ink-faint/40 !border-white/10 !bg-gradient-to-r !from-white/[0.02] !to-transparent"
-                  style={{ animationDelay: `${i * 0.1}s` }}
-                >
+                <div key={i} className="thought-block">
                   {block.text ?? ''}
                 </div>
               );
@@ -67,7 +61,7 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
                   className={`flex items-start gap-3 ${isLeft ? '' : 'flex-row-reverse'}`}
                 >
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 font-sans ${
                       isLeft
                         ? 'bg-gradient-to-br from-[#7ab0d4] to-[#4a88b8]'
                         : 'bg-gradient-to-br from-[#d4a574] to-[#b8885a]'
@@ -75,25 +69,21 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
                   >
                     {block.character?.[0]}
                   </div>
-                  <div
-                    className={`max-w-[85%] ${
-                      isLeft
-                        ? 'bg-white/[0.04] rounded-[4px_16px_16px_16px]'
-                        : 'bg-gradient-to-br from-[#3a5a7e]/40 to-[#2a4a6e]/40 rounded-[16px_4px_16px_16px]'
-                    } p-3.5`}
-                  >
+                  <div className="max-w-[420px]">
                     <div
-                      className={`text-[10px] font-medium mb-1 tracking-wider ${
+                      className={`text-[11px] font-semibold tracking-wider mb-1 font-sans ${
                         isLeft
-                          ? 'text-brand-blue/60'
-                          : 'text-white/30 text-right'
+                          ? 'text-brand-blue'
+                          : 'text-ink-ghost text-right'
                       }`}
                     >
                       {block.character}
                     </div>
                     <div
-                      className={`text-sm leading-relaxed whitespace-pre-line ${
-                        isLeft ? 'text-white/70' : 'text-white/70'
+                      className={`text-[14.5px] leading-[1.9] whitespace-pre-line ${
+                        isLeft
+                          ? 'bg-card-bg p-3.5 rounded-[4px_16px_16px_16px] text-ink card-shadow'
+                          : 'bg-gradient-to-br from-[#3a5a7e] to-[#2a4a6e] p-3.5 rounded-[16px_4px_16px_16px] text-white/90'
                       }`}
                     >
                       {block.text ?? ''}
@@ -111,7 +101,7 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
       <div className="text-center">
         <Link
           href={`/stories/${story.id}`}
-          className="inline-flex items-center gap-2 px-6 py-3 text-xs text-ink-faint/60 border border-white/10 rounded-xl hover:border-brand-gold/30 hover:text-brand-gold transition-all duration-500 tracking-wider"
+          className="inline-flex items-center gap-2 px-6 py-3 text-xs text-ink-faint border border-line rounded-2xl hover:border-brand-gold/40 hover:text-brand-gold transition-all duration-500 tracking-wider"
         >
           阅读完整故事
           <svg
