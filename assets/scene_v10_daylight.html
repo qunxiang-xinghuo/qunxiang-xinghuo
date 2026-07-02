@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>群像·星火 — 好久不见</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+  :root{
+    --bg:#f2f6fa;
+    --card:#ffffff;
+    --card-inner:#eef2f5;
+    --ink:#1c3454;
+    --ink-light:#4a6e8e;
+    --ink-faint:#88a8c4;
+    --ink-ghost:#b4c8d8;
+    --blue-dark:#245080;
+    --blue-deep:#3a70a8;
+    --blue-mid:#4a88c0;
+    --blue-bright:#5a9ed8;
+    --blue-soft:#8ab8dc;
+    --line:#d8e0e8;
+    --line-light:#e8edf2;
+    --gold:#c4a040;
+    --shadow:0 4px 24px rgba(28,52,84,0.06);
+    --shadow-hover:0 8px 40px rgba(28,52,84,0.10);
+  }
+
+  body{
+    font-family:'Noto Sans SC',sans-serif;
+    background:linear-gradient(180deg,#f6f9fb 0%,var(--bg) 40%,#e6eef4 100%);
+    min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+    padding:20px 16px 32px;overflow-x:hidden;
+  }
+
+  .top{
+    width:100%;max-width:380px;
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:14px;opacity:0;animation:fadeIn .5s ease forwards;
+  }
+  .logo{font-family:'Noto Serif SC',serif;font-size:13px;color:var(--ink-faint);letter-spacing:2px}
+  .logo span{color:var(--blue-mid)}
+  .avatar{
+    width:30px;height:30px;border-radius:50%;
+    background:linear-gradient(135deg,var(--blue-soft),var(--blue-mid));
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:transform .3s ease;
+    box-shadow:0 2px 8px rgba(58,112,168,0.2);
+  }
+  .avatar:hover{transform:scale(1.1)}
+  .avatar svg{width:14px;height:14px;fill:white}
+
+  .ticket-wrap{
+    width:100%;max-width:380px;
+    opacity:0;animation:ticketIn 1.2s .2s cubic-bezier(0.22,1,0.36,1) forwards;
+  }
+  @keyframes ticketIn{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
+
+  .ticket{
+    background:var(--card);border-radius:24px;
+    box-shadow:var(--shadow);overflow:hidden;
+    transition:all .5s cubic-bezier(0.22,1,0.36,1);
+  }
+  .ticket:hover{box-shadow:var(--shadow-hover);transform:translateY(-3px)}
+
+  /* === 画面窗口：白天 蓝天白云草地 === */
+  .window{
+    height:185px;position:relative;overflow:hidden;
+    background:linear-gradient(175deg,#b4cce0 0%,#9cbcd4 30%,#84acd0 60%,#9cbfa8 100%);
+  }
+  /* 太阳 */
+  .sun{
+    position:absolute;top:12%;right:18%;
+    width:28px;height:28px;border-radius:50%;
+    background:radial-gradient(circle,#fff8e8 0%,#f0e8c8 40%,transparent 70%);
+    box-shadow:0 0 40px rgba(240,224,180,0.35),0 0 80px rgba(240,224,180,0.15);
+  }
+  /* 阳光光斑 - 白天机场玻璃反光 */
+  .light-spot{
+    position:absolute;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,0.7) 0%,transparent 70%);
+    animation:spotDrift 5s ease-in-out infinite;
+  }
+  .light-spot-warm{
+    position:absolute;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,248,220,0.55) 0%,transparent 65%);
+    animation:spotDrift 6s ease-in-out infinite;
+  }
+  @keyframes spotDrift{
+    0%,100%{opacity:.4;transform:scale(1)}
+    50%{opacity:.8;transform:scale(1.3)}
+  }
+  /* 云 */
+  .cloud{position:absolute;background:rgba(255,255,255,0.5);border-radius:50px;filter:blur(1px)}
+  .cloud-1{width:80px;height:28px;top:15%;left:4%;animation:float 24s ease-in-out infinite}
+  .cloud-2{width:65px;height:22px;top:38%;left:42%;animation:float 28s ease-in-out infinite reverse}
+  .cloud-3{width:45px;height:16px;top:10%;left:68%;opacity:.45;animation:float 22s ease-in-out infinite 1s}
+  @keyframes float{0%,100%{transform:translateX(0)}50%{transform:translateX(18px)}}
+  /* 飞机 */
+  .plane{position:absolute;top:32%;animation:fly 14s linear infinite}
+  .plane::before{content:'✈';font-size:14px;color:rgba(255,255,255,0.55)}
+  .plane::after{content:'';position:absolute;top:50%;left:-40px;width:50px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3))}
+  @keyframes fly{0%{left:-8%;opacity:0}5%{opacity:1}95%{opacity:1}100%{left:105%;opacity:0}}
+  /* 草地 */
+  .grass{position:absolute;bottom:0;left:0;right:0;height:38px}
+  .grass svg{width:100%;height:100%}
+
+  .holes{
+    display:flex;justify-content:space-between;padding:0 18px;
+    margin-top:-10px;position:relative;z-index:3;
+  }
+  .hole{width:20px;height:20px;border-radius:50%;background:var(--bg);box-shadow:inset 0 1px 3px rgba(0,0,0,0.06)}
+
+  .content{padding:4px 22px 24px}
+
+  .tag-row{display:flex;align-items:center;gap:10px;margin:6px 0 14px}
+  .tag-line{flex:1;height:1px;background:var(--line-light)}
+  .tag-text{font-size:10px;color:var(--ink-ghost);letter-spacing:3px}
+
+  .title-area{margin-bottom:18px}
+  .title{font-family:'Noto Serif SC',serif;font-size:38px;font-weight:900;color:var(--ink);letter-spacing:10px;line-height:1.15;margin-bottom:8px}
+  .title-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-faint)}
+  .title-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--blue-soft)}
+
+  .story{padding:14px 0 16px;border-top:1px solid var(--line-light);border-bottom:1px solid var(--line-light)}
+  .story-text{font-family:'Noto Serif SC',serif;font-size:14px;line-height:2.4;color:var(--ink-light);text-align:justify}
+  .story-text .hl{color:var(--blue-dark);font-weight:700;border-bottom:3px solid rgba(58,112,168,0.12);border-radius:1px}
+
+  .opening{margin:14px 0 6px;padding:14px 16px;background:var(--card-inner);border-radius:12px;border-left:2px solid var(--blue-soft);cursor:pointer;transition:all .3s ease}
+  .opening:hover{background:#e4eaef;transform:translateX(2px)}
+  .opening-text{font-size:12.5px;color:var(--ink-light);line-height:1.9;font-style:italic}
+  .opening-text .spk{color:var(--ink);font-weight:600;font-style:normal}
+
+  .roles{padding-top:14px}
+  .role-tabs{display:flex;gap:0;background:var(--card-inner);border-radius:12px;padding:3px;margin-bottom:12px}
+  .role-tab{flex:1;padding:10px 6px;border-radius:10px;text-align:center;cursor:pointer;transition:all .35s ease;border:none;background:transparent}
+  .role-tab.active{background:var(--card);box-shadow:0 1px 6px rgba(28,52,84,0.06)}
+  .role-tab .r-name{font-family:'Noto Serif SC',serif;font-size:16px;font-weight:700;color:var(--ink-ghost);display:block;transition:color .3s ease}
+  .role-tab.active .r-name{color:var(--ink)}
+  .role-tab .r-desc{font-size:10px;color:var(--ink-ghost);margin-top:2px;transition:color .3s ease}
+  .role-tab.active .r-desc{color:var(--blue-mid)}
+  .role-body{display:none}
+  .role-body.on{display:block;animation:bodyIn .45s cubic-bezier(0.22,1,0.36,1)}
+  @keyframes bodyIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .identity{font-size:12.5px;color:var(--ink-light);line-height:1.9;padding:2px 0 10px}
+  .identity .name{color:var(--blue-dark);font-weight:700}
+
+  .secret{padding:10px 12px;background:var(--card-inner);border-radius:10px;display:flex;align-items:center;gap:10px}
+  .secret-mark{width:24px;height:24px;border-radius:50%;background:var(--line-light);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .secret-mark svg{width:11px;height:11px;fill:var(--ink-faint)}
+  .secret-txt{flex:1}
+  .secret-label{font-size:11px;color:var(--blue-mid);font-weight:500}
+  .secret-hint{font-size:11px;color:var(--ink-ghost);margin-top:1px}
+  .secret-tag{font-size:9px;color:var(--gold);background:rgba(196,160,64,0.08);padding:2px 7px;border-radius:6px;white-space:nowrap}
+
+  /* 按钮 */
+  .btn-wrap{padding:18px 0 4px}
+  .enter-btn{
+    width:100%;padding:18px;
+    background:linear-gradient(135deg,#4a8ec8 0%,#3a78b0 50%,#2e64a0 100%);
+    border:none;border-radius:16px;
+    color:#fff;
+    font-family:'Noto Sans SC',sans-serif;
+    font-size:15px;font-weight:500;
+    letter-spacing:4px;cursor:pointer;
+    position:relative;overflow:hidden;
+    transition:all .4s cubic-bezier(0.22,1,0.36,1);
+    box-shadow:0 4px 20px rgba(46,100,160,0.22);
+  }
+  .enter-btn::before{
+    content:'';position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse 85% 75% at 20% 25%, transparent 30%, rgba(255,255,255,0.07) 32%, transparent 38%),
+      radial-gradient(ellipse 70% 85% at 80% 70%, transparent 35%, rgba(255,255,255,0.06) 38%, transparent 45%),
+      radial-gradient(ellipse 90% 60% at 55% 85%, transparent 40%, rgba(255,255,255,0.08) 43%, transparent 50%),
+      radial-gradient(ellipse 55% 80% at 75% 20%, transparent 45%, rgba(255,255,255,0.05) 48%, transparent 55%),
+      radial-gradient(ellipse 80% 65% at 15% 75%, transparent 50%, rgba(255,255,255,0.06) 53%, transparent 60%),
+      radial-gradient(ellipse 40% 45% at 65% 40%, transparent 20%, rgba(255,255,255,0.09) 25%, transparent 32%),
+      radial-gradient(ellipse 50% 35% at 30% 55%, transparent 25%, rgba(255,255,255,0.07) 30%, transparent 38%);
+    pointer-events:none;
+    animation:rippleSlow 15s linear infinite;
+  }
+  @keyframes rippleSlow{
+    from{transform:rotate(0deg) scale(1)}
+    50%{transform:rotate(180deg) scale(1.08)}
+    to{transform:rotate(360deg) scale(1)}
+  }
+  .enter-btn span{position:relative;z-index:2}
+  .enter-btn:hover{
+    transform:translateY(-3px);
+    box-shadow:0 8px 32px rgba(46,100,160,0.35);
+    background:linear-gradient(135deg,#5a9ed8 0%,#4a88c0 50%,#3e74b0 100%);
+  }
+  .enter-btn:active{transform:translateY(0) scale(0.97)}
+
+  .hints{
+    width:100%;max-width:380px;margin-top:20px;
+    display:flex;flex-direction:column;gap:8px;align-items:center;
+    opacity:0;animation:fadeIn .5s 1.1s ease forwards;
+  }
+  .hint{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-ghost)}
+
+  @keyframes fadeIn{to{opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="logo">群像 · <span>星火</span></div>
+  <div class="avatar">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+  </div>
+</div>
+
+<div class="ticket-wrap">
+  <div class="ticket">
+
+    <div class="window">
+      <!-- 太阳 -->
+      <div class="sun"></div>
+      <!-- 阳光光斑 - 白天机场玻璃反光 -->
+      <div class="light-spot" style="width:6px;height:6px;top:25%;left:12%;animation-delay:0s"></div>
+      <div class="light-spot-warm" style="width:8px;height:8px;top:45%;left:30%;animation-delay:.8s"></div>
+      <div class="light-spot" style="width:5px;height:5px;top:20%;left:55%;animation-delay:1.5s"></div>
+      <div class="light-spot-warm" style="width:7px;height:7px;top:55%;left:72%;animation-delay:2.2s"></div>
+      <div class="light-spot" style="width:4px;height:4px;top:35%;left:85%;animation-delay:.5s"></div>
+      <div class="light-spot-warm" style="width:6px;height:6px;top:60%;left:45%;animation-delay:1.8s"></div>
+      <div class="light-spot" style="width:5px;height:5px;top:15%;left:40%;animation-delay:1s"></div>
+      <!-- 云 -->
+      <div class="cloud cloud-1"></div>
+      <div class="cloud cloud-2"></div>
+      <div class="cloud cloud-3"></div>
+      <!-- 飞机 -->
+      <div class="plane"></div>
+      <!-- 草地 -->
+      <div class="grass">
+        <svg viewBox="0 0 400 35" preserveAspectRatio="none">
+          <path d="M0 18 Q40 10 80 18 Q120 26 160 16 Q200 8 240 16 Q280 24 320 14 Q360 6 400 16 L400 35 L0 35Z" fill="rgba(156,191,168,0.4)"/>
+          <path d="M0 24 Q50 16 100 24 Q150 32 200 22 Q250 14 300 22 Q350 30 400 20 L400 35 L0 35Z" fill="rgba(156,191,168,0.2)"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="holes">
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+      <div class="hole"></div><div class="hole"></div>
+    </div>
+
+    <div class="content">
+      <div class="tag-row">
+        <div class="tag-line"></div>
+        <div class="tag-text">场 景 入 口 · 第 01 场</div>
+        <div class="tag-line"></div>
+      </div>
+
+      <div class="title-area">
+        <h1 class="title">好久不见</h1>
+        <div class="title-meta">
+          <span>重逢</span><div class="dot"></div><span>机场</span><div class="dot"></div><span>十年</span>
+        </div>
+      </div>
+
+      <div class="story">
+        <p class="story-text">
+          你们是高中时最好的朋友，十年没见。今天在机场，你一眼就认出了他。他正低头看手机，还没发现你。你忽然想起，<span class="hl">有一句话，你欠了十年</span>。
+        </p>
+      </div>
+
+      <div class="opening" onclick="playAudio()">
+        <div class="opening-text">
+          <span class="spk">林屿</span>走上前，站在<span class="spk">苏远</span>面前，沉默了两秒。<br>
+          "……好久不见。你还记得我吗？"
+        </div>
+      </div>
+
+      <div class="roles">
+        <div class="role-tabs">
+          <button class="role-tab active" onclick="switchRole(0)">
+            <span class="r-name">林屿</span>
+            <span class="r-desc">不告而别</span>
+          </button>
+          <button class="role-tab" onclick="switchRole(1)">
+            <span class="r-name">苏远</span>
+            <span class="r-desc">等了一夏</span>
+          </button>
+        </div>
+
+        <div class="role-body on" id="rb-0">
+          <div class="identity">
+            你是<span class="name">林屿</span>。十年前突然消失的那个转学生。今天从日本回来，在这座机场转机——没想到会遇见他。
+          </div>
+          <div class="secret">
+            <div class="secret-mark">
+              <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7z"/></svg>
+            </div>
+            <div class="secret-txt">
+              <div class="secret-label">你有一个秘密</div>
+              <div class="secret-hint">关于你离开的真正原因</div>
+            </div>
+            <div class="secret-tag">对话揭晓</div>
+          </div>
+        </div>
+
+        <div class="role-body" id="rb-1">
+          <div class="identity">
+            你是<span class="name">苏远</span>。那个夏天之后，你再也没有等过任何人。今天是来接一位新朋友——你告诉自己，该走出来了。
+          </div>
+          <div class="secret">
+            <div class="secret-mark">
+              <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7z"/></svg>
+            </div>
+            <div class="secret-txt">
+              <div class="secret-label">你有一个秘密</div>
+              <div class="secret-hint">关于你为什么还在等</div>
+            </div>
+            <div class="secret-tag">对话揭晓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-wrap">
+        <button class="enter-btn" onclick="enter()">
+          <span>接受角色，开始对话</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hints">
+  <div class="hint">与一位陌生人共同演绎这个故事</div>
+  <div class="hint">对话通常持续 10-20 分钟</div>
+</div>
+
+<script>
+function switchRole(i){
+  document.querySelectorAll('.role-tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  document.querySelectorAll('.role-body').forEach((b,j)=>{
+    b.classList.toggle('on',j===i);
+    b.style.display=j===i?'block':'none';
+  });
+}
+function playAudio(){
+  const o=document.querySelector('.opening');
+  o.style.transform='scale(0.99)';
+  setTimeout(()=>o.style.transform='scale(1)',150);
+}
+function enter(){
+  const b=document.querySelector('.enter-btn');
+  b.innerHTML='<span>寻找搭档中...</span>';
+  setTimeout(()=>{
+    b.innerHTML='<span>接受角色，开始对话</span>';
+  },2500);
+}
+</script>
+</body>
+</html>
