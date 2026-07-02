@@ -94,8 +94,8 @@ export function StoryReader({ story }: StoryReaderProps) {
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${
                     isLeft
-                      ? 'bg-gradient-to-br from-[#5a9ed8] to-[#2d5f8a]'
-                      : 'bg-gradient-to-br from-[#d4a574] to-[#a07040]'
+                      ? 'bg-gradient-to-br from-[#5BA8D8] to-[#2A7FB8]'
+                      : 'bg-gradient-to-br from-[#F2B880] to-[#D4A574]'
                   }`}
                 >
                   {block.character?.[0]}
@@ -114,7 +114,7 @@ export function StoryReader({ story }: StoryReaderProps) {
                     className={`text-[15px] leading-[1.9] whitespace-pre-line ${
                       isLeft
                         ? 'bg-card-bg p-4 rounded-[4px_16px_16px_16px] text-ink card-shadow border border-border/40'
-                        : 'bg-gradient-to-br from-[#2d5f8a] to-[#1a3a5c] p-4 rounded-[16px_4px_16px_16px] text-white/90'
+                        : 'bg-gradient-to-br from-[#2A7FB8] to-[#1F6090] p-4 rounded-[16px_4px_16px_16px] text-white/90'
                     }`}
                   >
                     {block.text ?? ''}

@@ -36,17 +36,19 @@
     'Times New Roman', Times, serif;
 
   /* === 群像·星火 Design System === */
-  /* Simplified: 3 text levels + 2 accents + 2 structural */
-  --color-bg: #f8f9fb;
-  --color-bg-warm: #faf9f7;
+  /* Ocean Healing Series: 深海蓝 + 鎏金 + 治愈感 */
+  --color-bg: #f5f8fc;
+  --color-bg-warm: #faf8f5;
   --color-card-bg: #ffffff;
   --color-ink: #1a2740;
   --color-ink-secondary: #5a6b80;
   --color-ink-muted: #94a3b8;
-  --color-brand-blue: #2d5f8a;
-  --color-brand-blue-light: #4a8bc2;
-  --color-brand-gold: #c49b2c;
-  --color-brand-gold-light: #e8c864;
+  --color-brand-blue: #2A7FB8;
+  --color-brand-blue-light: #5BA8D8;
+  --color-brand-blue-deep: #1F6090;
+  --color-brand-gold: #D4A574;
+  --color-brand-gold-light: #F2B880;
+  --color-brand-gold-glow: #FFE4C4;
   --color-border: #e5e7eb;
   --color-border-light: #f0f2f5;
 }
@@ -75,10 +77,19 @@
 
 /* ===== 群像·星火 Custom Styles ===== */
 
-/* Page background - clean, minimal */
+/* Page background - ocean healing atmosphere */
 .site-bg {
-  background: #f8f9fb;
+  background: linear-gradient(180deg, #f5f8fc 0%, #faf8f5 50%, #f5f8fc 100%);
   min-height: 100dvh;
+}
+
+/* Subtle golden glow for atmospheric elements */
+.golden-glow {
+  box-shadow: 0 0 40px -10px rgba(212, 165, 116, 0.3);
+}
+
+.golden-glow-sm {
+  box-shadow: 0 0 20px -5px rgba(212, 165, 116, 0.2);
 }
 
 /* Animations */
@@ -133,7 +144,7 @@
 
 /* Gold shimmer text - more refined */
 .text-gold-shimmer {
-  background: linear-gradient(90deg, #c49b2c 0%, #e8c864 30%, #c49b2c 60%, #e8c864 100%);
+  background: linear-gradient(90deg, #D4A574 0%, #F2B880 30%, #D4A574 60%, #F2B880 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

@@ -36,7 +36,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 opacity-0 animate-fade-in-up delay-300">
             <Link
               href="/scenes"
-              className="group px-8 py-3.5 bg-gradient-to-r from-brand-blue to-brand-blue-light text-white text-sm font-medium tracking-wide rounded-xl transition-all duration-300 shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/30 hover:-translate-y-0.5 flex items-center gap-2"
+              className="group px-8 py-3.5 bg-gradient-to-r from-[#2A7FB8] to-[#5BA8D8] text-white text-sm font-medium tracking-wide rounded-xl transition-all duration-300 shadow-lg shadow-[#2A7FB8]/25 hover:shadow-xl hover:shadow-[#2A7FB8]/35 hover:-translate-y-0.5 flex items-center gap-2"
             >
               进入场景库
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
