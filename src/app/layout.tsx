@@ -1,13 +1,28 @@
 import type { Metadata } from 'next';
+import { Noto_Serif_SC, Noto_Sans_SC } from 'next/font/google';
 import { Inspector } from 'react-dev-inspector';
 import './globals.css';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 
+const notoSerif = Noto_Serif_SC({
+  subsets: ['latin'],
+  weight: ['400', '600', '700', '900'],
+  variable: '--font-serif',
+  display: 'swap',
+});
+
+const notoSans = Noto_Sans_SC({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: {
     default: '群像·星火 — 创作工坊',
-    template: '%s — 群像·星火',
+    template: '%s | 群像·星火',
   },
   description:
     '给两个陌生人一个场景，让他们在对话中，把彼此变成故事里的角色。群像·星火创作工坊。',
@@ -37,7 +52,9 @@ export default function RootLayout({
 
   return (
     <html lang="zh-CN">
-      <body className="antialiased">
+      <body
+        className={`${notoSerif.variable} ${notoSans.variable} ${notoSans.className} antialiased`}
+      >
         {isDev && <Inspector />}
         <SiteHeader />
         <main className="min-h-screen">{children}</main>
