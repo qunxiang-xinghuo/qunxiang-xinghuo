@@ -1,6 +1,9 @@
-import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import path from 'path';
+
+// 使用 require 导入 PrismaClient，因为 Prisma 7 的 ES modules 导出有问题
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { PrismaClient } = require('@prisma/client');
 
 type PrismaClientType = InstanceType<typeof PrismaClient>;
 
