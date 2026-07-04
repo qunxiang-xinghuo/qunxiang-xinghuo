@@ -178,9 +178,12 @@ export function SceneDetail({ scene }: SceneDetailProps) {
           </div>
 
           {/* CTA */}
-          <button className="w-full py-4 bg-gradient-to-r from-brand-blue to-brand-blue-light text-white text-sm font-medium tracking-widest rounded-xl transition-all duration-300 shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/30 hover:-translate-y-0.5">
+          <Link
+            href={`/scenes/${scene.id}/play`}
+            className="block w-full py-4 bg-gradient-to-r from-brand-blue to-brand-blue-light text-white text-sm font-medium tracking-widest rounded-xl transition-all duration-300 shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/30 hover:-translate-y-0.5 text-center"
+          >
             接受角色，开始对话
-          </button>
+          </Link>
         </div>
       </div>
     </div>

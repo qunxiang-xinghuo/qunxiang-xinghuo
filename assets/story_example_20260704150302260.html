@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>好久不见 — 群像·星火示例故事</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  :root{
+    --bg:#f5f7fa;
+    --ink:#1a2e4a;
+    --ink-light:#4a6888;
+    --ink-faint:#8a9db0;
+    --ink-ghost:#b0b8c4;
+    --blue:#3a6a9e;
+    --gold:#c8a848;
+    --line:#dce2ea;
+    --card:#ffffff;
+  }
+
+  body{
+    font-family:'Noto Serif SC',serif;
+    background:linear-gradient(180deg,#f7f9fb 0%,var(--bg) 50%,#e8edf2 100%);
+    min-height:100dvh;
+    padding:40px 16px;
+    overflow-x:hidden;
+  }
+
+  .story-wrap{
+    max-width:560px;
+    margin:0 auto;
+  }
+
+  /* 标题区 */
+  .header{text-align:center;margin-bottom:48px;opacity:0;animation:fadeIn 1s ease forwards}
+  .scene-tag{font-size:11px;color:var(--ink-faint);letter-spacing:4px;margin-bottom:16px}
+  .title{font-size:42px;font-weight:900;color:var(--ink);letter-spacing:12px;line-height:1.2;margin-bottom:12px}
+  .subtitle{font-size:13px;color:var(--ink-faint);letter-spacing:2px}
+  .divider{width:40px;height:1px;background:var(--line);margin:24px auto 0}
+
+  /* 火花标记 */
+  .spark-bar{
+    display:flex;
+    justify-content:center;
+    gap:24px;
+    margin-bottom:40px;
+    padding:16px 0;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    opacity:0;animation:fadeIn 1s .3s ease forwards;
+  }
+  .spark-item{text-align:center}
+  .spark-icon{font-size:18px;margin-bottom:4px}
+  .spark-label{font-size:10px;color:var(--ink-faint);letter-spacing:1px}
+
+  /* 对话体 */
+  .dialogue{position:relative}
+
+  /* 内心独白 */
+  .thought{
+    font-style:italic;
+    color:var(--ink-faint);
+    font-size:13.5px;
+    line-height:1.8;
+    padding:12px 20px;
+    margin:8px 0;
+    border-left:2px solid var(--line);
+    background:linear-gradient(90deg,rgba(220,226,234,0.3),transparent);
+  }
+  .thought::before{content:"❧ ";color:var(--gold)}
+
+  /* 对话气泡 - 林屿（左） */
+  .msg-lin{
+    margin:20px 0;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    opacity:0;animation:msgIn .6s ease forwards;
+  }
+  .msg-lin .avatar{
+    width:36px;height:36px;border-radius:50%;
+    background:linear-gradient(135deg,#7ab0d4,#4a88b8);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:13px;font-weight:700;flex-shrink:0;
+    font-family:'Noto Sans SC',sans-serif;
+  }
+  .msg-lin .bubble{
+    background:var(--card);
+    padding:14px 18px;
+    border-radius:4px 16px 16px 16px;
+    box-shadow:0 2px 12px rgba(26,46,74,0.06);
+    max-width:420px;
+  }
+  .msg-lin .name{font-size:11px;color:var(--blue);font-weight:600;margin-bottom:4px;letter-spacing:1px;font-family:'Noto Sans SC',sans-serif}
+  .msg-lin .text{font-size:14.5px;color:var(--ink);line-height:1.9}
+
+  /* 对话气泡 - 苏远（右） */
+  .msg-su{
+    margin:20px 0;
+    display:flex;
+    align-items:flex-start;
+    justify-content:flex-end;
+    gap:12px;
+    opacity:0;animation:msgIn .6s ease forwards;
+  }
+  .msg-su .avatar{
+    width:36px;height:36px;border-radius:50%;
+    background:linear-gradient(135deg,#d4a574,#b8885a);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:13px;font-weight:700;flex-shrink:0;
+    font-family:'Noto Sans SC',sans-serif;
+  }
+  .msg-su .bubble{
+    background:linear-gradient(135deg,#3a5a7e,#2a4a6e);
+    padding:14px 18px;
+    border-radius:16px 4px 16px 16px;
+    box-shadow:0 2px 12px rgba(26,46,74,0.1);
+    max-width:420px;
+  }
+  .msg-su .name{font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;margin-bottom:4px;letter-spacing:1px;text-align:right;font-family:'Noto Sans SC',sans-serif}
+  .msg-su .text{font-size:14.5px;color:rgba(255,255,255,0.9);line-height:1.9}
+
+  /* 火花高亮 */
+  .spark-moment{
+    position:relative;
+  }
+  .spark-moment::after{
+    content:"✦";
+    position:absolute;
+    right:-20px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--gold);
+    font-size:14px;
+    opacity:.6;
+  }
+
+  /* 章节分隔 */
+  .chapter{
+    text-align:center;
+    margin:40px 0;
+    color:var(--ink-ghost);
+    font-size:11px;
+    letter-spacing:6px;
+    opacity:0;animation:fadeIn 1s ease forwards;
+  }
+  .chapter::before,.chapter::after{
+    content:"";display:inline-block;width:30px;height:1px;background:var(--line);vertical-align:middle;margin:0 12px;
+  }
+
+  /* 结尾 */
+  .ending{
+    margin-top:48px;
+    padding:24px;
+    background:linear-gradient(135deg,rgba(200,168,72,0.06),rgba(58,106,158,0.04));
+    border-radius:16px;
+    text-align:center;
+    opacity:0;animation:fadeIn 1s .5s ease forwards;
+  }
+  .ending-text{font-size:13px;color:var(--ink-light);line-height:2;font-style:italic}
+  .ending-tag{font-size:10px;color:var(--ink-ghost);margin-top:16px;letter-spacing:2px}
+
+  /* 底部信息 */
+  .footer{
+    margin-top:40px;
+    text-align:center;
+    font-size:11px;
+    color:var(--ink-ghost);
+    letter-spacing:1px;
+    padding-bottom:20px;
+  }
+  .footer a{color:var(--blue);text-decoration:none}
+
+  @keyframes fadeIn{to{opacity:1}}
+  @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  /* 逐条延迟 */
+  .msg-lin:nth-child(3){animation-delay:.1s}
+  .msg-lin:nth-child(5){animation-delay:.2s}
+  .msg-lin:nth-child(7){animation-delay:.3s}
+  .msg-su:nth-child(2){animation-delay:.05s}
+  .msg-su:nth-child(4){animation-delay:.15s}
+  .msg-su:nth-child(6){animation-delay:.25s}
+
+  @media(max-width:480px){
+    .title{font-size:32px;letter-spacing:8px}
+    .msg-lin .bubble,.msg-su .bubble{max-width:280px}
+  }
+</style>
+</head>
+<body>
+
+<div class="story-wrap">
+
+  <div class="header">
+    <div class="scene-tag">群 像 · 星 火 · 示 例 故 事</div>
+    <h1 class="title">好久不见</h1>
+    <div class="subtitle">机场 · 十年 · 重逢</div>
+    <div class="divider"></div>
+  </div>
+
+  <div class="spark-bar">
+    <div class="spark-item">
+      <div class="spark-icon">🔥</div>
+      <div class="spark-label">重逢 x1</div>
+    </div>
+    <div class="spark-item">
+      <div class="spark-icon">🔥🔥</div>
+      <div class="spark-label">秘密 x1</div>
+    </div>
+    <div class="spark-item">
+      <div class="spark-icon">🔥</div>
+      <div class="spark-label">反转 x1</div>
+    </div>
+    <div class="spark-item">
+      <div class="spark-icon">💫</div>
+      <div class="spark-label">金句 x2</div>
+    </div>
+    <div class="spark-item">
+      <div class="spark-icon">✨</div>
+      <div class="spark-label">余韵 x1</div>
+    </div>
+  </div>
+
+  <div class="dialogue">
+
+    <div class="chapter">开 场</div>
+
+    <div class="msg-lin spark-moment">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"……好久不见。你还记得我吗？"</div>
+      </div>
+    </div>
+
+    <div class="msg-su spark-moment">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">"我并不想记得你。不过很遗憾，我记得。"</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="thought">机场大厅人来人往。她说那句话的时候，眼神闪了一下——不是不想记得，是想装作不记得，但没装成功。</div>
+
+    <div class="chapter">试 探</div>
+
+    <div class="msg-lin">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"你是几点飞机？我想跟你聊一聊——当年我为何不告而别，可以吗？"</div>
+      </div>
+    </div>
+
+    <div class="thought">她假装理直气壮，但尾音在"可以吗"三个字上软了下来。那是请求的语气，不是通知。</div>
+
+    <div class="msg-su">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">"算了，这么多年了，我不感兴趣了。"</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="thought">嘴上这么说，可脚没动。转身走了两步，又停了。不是不感兴趣，是太感兴趣了，以至于不知道该怎么面对答案。</div>
+
+    <div class="msg-lin">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"你感不感兴趣不重要，重点是不管怎样都一定要告诉你。"</div>
+      </div>
+    </div>
+
+    <div class="thought">她拽住了他的衣袖。在机场，这个动作比任何台词都重。</div>
+
+    <div class="msg-su">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">"好吧，我只听你说一句话。如果这句话没有留下我，那就请你松开手。"</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="chapter">秘 密</div>
+
+    <div class="msg-lin spark-moment">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"其实当年我家破产了。当时还年轻，面子上过不去。"</div>
+      </div>
+    </div>
+
+    <div class="thought">十年的沉默，就为这一句话。说出来只需要两秒钟，但走到能说出这句话的那一天，花了三千六百多天。</div>
+
+    <div class="msg-su spark-moment">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">"我在乎你破产不破产吗？我是那样的人吗？"</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="thought">声音比想象的大。不是生气她走了，是生气他不信任自己——不信任他们的关系经得起这件事。</div>
+
+    <div class="msg-lin">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"我知道你不是这样的人。对不起，我当时只想逃离，不想被任何人找到。"</div>
+      </div>
+    </div>
+
+    <div class="thought">逃离。这个词比"离开"更诚实。她逃了十年，不是因为不想见，是因为没准备好被原谅。</div>
+
+    <div class="chapter">缓 和</div>
+
+    <div class="msg-lin">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"……请我喝咖啡。"</div>
+      </div>
+    </div>
+
+    <div class="thought">憋了许久，就这一句。不是"我们和好吧"，不是"我原谅你了"——是"请我喝咖啡"。那是比原谅更复杂的东西：我想继续了解你，但我还不打算说出口。</div>
+
+    <div class="msg-lin spark-moment">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"没想到多年不见，你竟然喜欢喝咖啡这个苦东西了。"</div>
+      </div>
+    </div>
+
+    <div class="msg-su spark-moment">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">（哼了一声，径直走向咖啡店，嘴里嘟囔着）<br>"我也只喝拿铁而已，又不是美式。"</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="thought">只喝拿铁。很苏远的说法——不直接说自己还是喝甜的，但用否定句式告诉你"我不吃苦"。十年了，说话的方式一点没变。</div>
+
+    <div class="msg-lin">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">（拖着行李箱，假装没听到他的碎碎念，故意转头问）<br>"你要喝什么？"</div>
+      </div>
+    </div>
+
+    <div class="msg-su">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">"美式。"</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="msg-lin">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"再加一杯美式。"（拿着叫号器）<br>"我们坐这边沙发吧。"</div>
+      </div>
+    </div>
+
+    <div class="msg-lin">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"你的美式可能一会就好了。你还用之前的电话号码吗？"</div>
+      </div>
+    </div>
+
+    <div class="msg-su">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">"嗯。"<br>"我一直没换号码。"</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="thought">轻声的"嗯"，然后是"一直没换"。两句话中间隔了两秒钟——第一秒是嘴硬，第二秒是诚实。</div>
+
+    <div class="chapter">离 别</div>
+
+    <div class="msg-lin">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">（拿出手机，拨了烂熟于心的那个旧号码）<br>响了一声。挂断。</div>
+      </div>
+    </div>
+
+    <div class="thought">一声。够了。</div>
+
+    <div class="msg-su">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">（我听到手机响了，低头看了一眼。屏幕上显示着一串陌生又熟悉的号码。还没来得及接，你就挂了。我愣了一下，然后笑了——那个旧号码，我从来没删过。我把这串新号码存进通讯录，名字那一栏，输入了"小屿"。通讯录里跳出来另一个"小屿"，十年前的号码。我没有删掉旧的，只是把新的也存了进去。）<br><br>两个小屿。</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="thought">他盯着屏幕看了一会儿，然后把手机翻过来扣在桌上。</div>
+
+    <div class="msg-su">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">"真的很高兴和你重逢。"<br>"等我处理完舅舅的事，我给你打电话。"</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="msg-lin">
+      <div class="avatar">林</div>
+      <div class="bubble">
+        <div class="name">林屿</div>
+        <div class="text">"去吧，别耽误了。"</div>
+      </div>
+    </div>
+
+    <div class="thought">"别耽误了"——说的是他的飞机，还是别的什么？她没想。</div>
+
+    <div class="msg-su">
+      <div class="bubble">
+        <div class="name">苏远</div>
+        <div class="text">（站起来，走向安检。没有回头。广播在催了。）</div>
+      </div>
+      <div class="avatar">苏</div>
+    </div>
+
+    <div class="chapter">余 韵</div>
+
+    <div class="thought">林屿还坐在沙发上。<br><br>取号器突然响了。她回过神来，端着两杯饮料走回去——一杯美式，一杯热巧克力。<br><br>咖啡还冰，巧克力还热。但她没有喝。<br><br>窗外有飞机起飞。她看着它滑向跑道，加速，离地，消失在天际线的那一端。<br><br>然后她想起了十年前的他们——是那么开心，张扬地笑着。<br><br><span style="color:var(--ink-faint)">而苏远在安检口，排到了队伍的最前面。把手机从口袋里掏出来，屏幕还亮着——通讯录里，两个相同的名字，一旧一新，挨在一起。</span><br><br><span style="color:var(--gold)">他没有删旧的。也没有打新的。</span><br><br><span style="color:var(--ink-faint)">他只是，把它们都存在了那里。</span><br><br><span style="color:var(--ink-faint)">等他处理完舅舅的事，也许可以去找她。</span><br><br><span style="color:var(--gold)">可是，这件事，不简单。</span></div>
+
+  </div>
+
+  <div class="ending">
+    <div class="ending-text">"两个人在机场相遇，说了再见。<br>但也许，这才是故事的开始。"</div>
+    <div class="ending-tag">— 由 林屿 & 苏远 共创 —</div>
+  </div>
+
+  <div class="footer">
+    <p>这个故事来自 <a href="https://qunxiangxinghuo.cn">群像·星火</a> 的真实对话</p>
+    <p style="margin-top:8px">给两个陌生人一个场景，让他们在对话中，把彼此变成故事里的角色。</p>
+  </div>
+
+</div>
+
+</body>
+</html>
