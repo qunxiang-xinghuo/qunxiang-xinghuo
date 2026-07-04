@@ -64,7 +64,7 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
                     className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${
                       isLeft
                         ? 'bg-gradient-to-br from-[#5a9ed8] to-[#2d5f8a]'
-                        : 'bg-gradient-to-br from-[#d4a574] to-[#a07040]'
+                        : 'bg-gradient-to-br from-[#7EC8E8] to-[#5AB0D8]'
                     }`}
                   >
                     {block.character?.[0]}
