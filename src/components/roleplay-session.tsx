@@ -19,16 +19,17 @@ interface Message {
   isSpark?: boolean;
 }
 
-/* ===== story_example.html 精确配色 ===== */
+/* ===== 浅蓝明亮色系 ===== */
 const COLORS = {
-  bg: '#f5f7fa',
-  ink: '#1a2e4a',
-  inkLight: '#4a6888',
-  inkFaint: '#8a9db0',
-  inkGhost: '#b0b8c4',
-  blue: '#3a6a9e',
-  gold: '#c8a848',
-  line: '#dce2ea',
+  bg: '#f0f7ff',
+  ink: '#2c3e50',
+  inkLight: '#5a7a9a',
+  inkFaint: '#8aafc8',
+  inkGhost: '#b0d0e8',
+  blue: '#4A9ED8',
+  blueBright: '#5CC8F0',
+  gold: '#e8b84a',
+  line: '#d8eaf5',
   card: '#ffffff',
 };
 
@@ -174,7 +175,7 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
     return (
       <div
         style={{
-          background: `linear-gradient(180deg, #f7f9fb 0%, ${COLORS.bg} 50%, #e8edf2 100%)`,
+          background: `linear-gradient(180deg, #f0f8ff 0%, ${COLORS.bg} 50%, #e8f4ff 100%)`,
           minHeight: '100dvh',
           fontFamily: "'Noto Serif SC', serif",
         }}
@@ -289,18 +290,18 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
                   borderRadius: 16,
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 2px 12px rgba(26,46,74,0.04)',
+                  boxShadow: '0 2px 12px rgba(74,158,216,0.06)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = COLORS.gold;
+                  e.currentTarget.style.borderColor = COLORS.blueBright;
                   e.currentTarget.style.boxShadow =
-                    '0 4px 20px rgba(200,168,72,0.12)';
+                    '0 4px 20px rgba(90,176,216,0.15)';
                   e.currentTarget.style.transform = 'translateY(-2px)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = COLORS.line;
                   e.currentTarget.style.boxShadow =
-                    '0 2px 12px rgba(26,46,74,0.04)';
+                    '0 2px 12px rgba(74,158,216,0.06)';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
@@ -371,7 +372,7 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
             style={{
               marginTop: 32,
               padding: '16px 20px',
-              background: `linear-gradient(135deg, rgba(200,168,72,0.04), rgba(58,106,158,0.03))`,
+              background: `linear-gradient(135deg, rgba(90,176,216,0.06), rgba(126,200,232,0.04))`,
               borderRadius: 12,
               border: `1px solid ${COLORS.line}`,
               opacity: 0,
@@ -414,7 +415,7 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
   return (
     <div
       style={{
-        background: `linear-gradient(180deg, #f7f9fb 0%, ${COLORS.bg} 50%, #e8edf2 100%)`,
+        background: `linear-gradient(180deg, #f0f8ff 0%, ${COLORS.bg} 50%, #e8f4ff 100%)`,
         minHeight: '100dvh',
         fontFamily: "'Noto Serif SC', serif",
         display: 'flex',
@@ -775,7 +776,7 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
                   <div
                     style={{
                       fontSize: 11,
-                      color: isLeft ? COLORS.blue : 'rgba(255,255,255,0.5)',
+                      color: isLeft ? COLORS.blue : COLORS.inkLight,
                       fontWeight: 600,
                       marginBottom: 4,
                       letterSpacing: 1,
@@ -789,16 +790,16 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
                     style={{
                       background: isLeft
                         ? COLORS.card
-                        : 'linear-gradient(135deg, #3a5a7e, #2a4a6e)',
+                        : 'linear-gradient(135deg, #7EC8E8, #5AB0D8)',
                       padding: '14px 18px',
                       borderRadius: isLeft
                         ? '4px 16px 16px 16px'
                         : '16px 4px 16px 16px',
                       boxShadow: isLeft
-                        ? '0 2px 12px rgba(26,46,74,0.06)'
-                        : '0 2px 12px rgba(26,46,74,0.1)',
+                        ? '0 2px 12px rgba(74,158,216,0.08)'
+                        : '0 2px 12px rgba(90,176,216,0.12)',
                       fontSize: 14.5,
-                      color: isLeft ? COLORS.ink : 'rgba(255,255,255,0.9)',
+                      color: isLeft ? COLORS.ink : '#1a3a50',
                       lineHeight: 1.9,
                       whiteSpace: 'pre-line',
                     }}

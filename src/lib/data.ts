@@ -62,7 +62,7 @@ export const scenes: Scene[] = [
           '你是林屿。十年前突然消失的那个转学生。今天从日本回来，在这座机场转机——没想到会遇见他。',
         secret: '当年我家破产了。当时还年轻，面子上过不去。',
         secretHint: '关于你离开的真正原因',
-        color: '#4a88b8',
+        color: '#5AB0D8',
       },
       {
         name: '苏远',
@@ -72,7 +72,7 @@ export const scenes: Scene[] = [
           '你是苏远。那个夏天之后，你再也没有等过任何人。今天是来接一位新朋友——你告诉自己，该走出来了。',
         secret: '我一直没换号码。我在等一个不会回来的人。',
         secretHint: '关于你为什么还在等',
-        color: '#b8885a',
+        color: '#E8A862',
       },
     ],
     status: 'completed',
