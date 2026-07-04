@@ -95,7 +95,7 @@ export function StoryReader({ story }: StoryReaderProps) {
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${
                     isLeft
                       ? 'bg-gradient-to-br from-[#5BA8D8] to-[#2A7FB8]'
-                      : 'bg-gradient-to-br from-[#F2B880] to-[#D4A574]'
+                      : 'bg-gradient-to-br from-[#7EC8E8] to-[#5BA8D8]'
                   }`}
                 >
                   {block.character?.[0]}

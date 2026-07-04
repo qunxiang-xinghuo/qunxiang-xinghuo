@@ -29,7 +29,7 @@ const COLORS = {
   blue: '#4a9fd8',
   blueBright: '#6bc0f0',
   blueDeep: '#3a7fc0',
-  gold: '#c8a848',
+  gold: '#7EC8E8',
   line: '#d8eaf5',
   card: '#ffffff',
   aiBlue: '#5ba8d8',
