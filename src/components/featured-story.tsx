@@ -63,7 +63,7 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${
                       isLeft
-                        ? 'bg-gradient-to-br from-[#5a9ed8] to-[#2d5f8a]'
+                        ? 'bg-gradient-to-br from-[#5BA8D8] to-[#4a9fd8]'
                         : 'bg-gradient-to-br from-[#7EC8E8] to-[#5AB0D8]'
                     }`}
                   >
@@ -83,7 +83,7 @@ export function FeaturedStory({ story }: FeaturedStoryProps) {
                       className={`text-[15px] leading-[1.9] whitespace-pre-line ${
                         isLeft
                           ? 'bg-card-bg p-4 rounded-[4px_16px_16px_16px] text-ink card-shadow border border-border/40'
-                          : 'bg-gradient-to-br from-[#2d5f8a] to-[#1a3a5c] p-4 rounded-[16px_4px_16px_16px] text-white/90'
+                          : 'bg-gradient-to-br from-[#4a9fd8] to-[#3a8fc8] p-4 rounded-[16px_4px_16px_16px] text-white/90'
                       }`}
                     >
                       {block.text ?? ''}

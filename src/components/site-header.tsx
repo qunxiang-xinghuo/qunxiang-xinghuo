@@ -9,7 +9,6 @@ const navItems = [
   { href: '/scenes', label: '场景库' },
   { href: '/stories', label: '故事集' },
   { href: '/workshop', label: 'AI创作' },
-  { href: '/zhihu', label: '知乎搜索' },
 ];
 
 export function SiteHeader() {

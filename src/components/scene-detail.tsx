@@ -60,7 +60,7 @@ export function SceneDetail({ scene }: SceneDetailProps) {
 
           {/* Ground */}
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#4a9fd8] to-[#7EC8E8]" />
-          <div className="absolute bottom-0 left-0 right-0 h-10 bg-[#78a870]" />
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-[#B0E0E6]" />
 
           {/* Plane */}
           <div className="absolute top-20 animate-fly">
