@@ -19,20 +19,21 @@ interface Message {
   isSpark?: boolean;
 }
 
-/* ===== 浅蓝明亮色系 ===== */
+/* ===== 蓝白色系 ===== */
 const COLORS = {
   bg: '#f0f7ff',
-  ink: '#2c3e50',
-  inkLight: '#5a7a9a',
-  inkFaint: '#8aafc8',
-  inkGhost: '#b0d0e8',
-  blue: '#4A9ED8',
-  blueBright: '#5CC8F0',
-  gold: '#e8b84a',
+  ink: '#1e3a5f',
+  inkLight: '#4a7ab0',
+  inkFaint: '#8aacc8',
+  inkGhost: '#b0cce0',
+  blue: '#4a9fd8',
+  blueBright: '#6bc0f0',
+  blueDeep: '#3a7fc0',
+  gold: '#c8a848',
   line: '#d8eaf5',
   card: '#ffffff',
-  aiPurple: '#9b7ec8',
-  aiPurpleLight: '#e8dff5',
+  aiBlue: '#5ba8d8',
+  aiBlueLight: '#e0f0ff',
 };
 
 /* ===== AI 催化提示库 ===== */
@@ -624,9 +625,9 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
                   style={{
                     margin: '24px 0',
                     padding: '16px 20px',
-                    background: `linear-gradient(135deg, ${COLORS.aiPurpleLight}, ${COLORS.card})`,
+                    background: `linear-gradient(135deg, ${COLORS.aiBlueLight}, ${COLORS.card})`,
                     borderRadius: 12,
-                    border: `1px solid ${COLORS.aiPurple}30`,
+                    border: `1px solid ${COLORS.aiBlue}30`,
                     position: 'relative',
                     animation: 'rpMsgIn 0.4s ease',
                   }}
@@ -636,7 +637,7 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
                       position: 'absolute',
                       top: -8,
                       left: 16,
-                      background: COLORS.aiPurple,
+                      background: COLORS.aiBlue,
                       color: '#fff',
                       fontSize: 10,
                       padding: '2px 8px',
@@ -649,7 +650,7 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
                   <div
                     style={{
                       fontSize: 13,
-                      color: COLORS.aiPurple,
+                      color: COLORS.aiBlue,
                       lineHeight: 1.8,
                       fontStyle: 'italic',
                       marginTop: 4,
@@ -829,10 +830,10 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
               style={{
                 margin: '16px 0',
                 padding: '12px 16px',
-                background: COLORS.aiPurpleLight,
+                background: COLORS.aiBlueLight,
                 borderRadius: 12,
                 fontSize: 13,
-                color: COLORS.aiPurple,
+                color: COLORS.aiBlue,
                 animation: 'rpPulse 1s ease infinite',
               }}
             >
@@ -866,7 +867,7 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
             onClick={handleAICatalyst}
             disabled={isAIThinking}
             style={{
-              background: `linear-gradient(135deg, ${COLORS.aiPurple}, ${COLORS.aiPurple}dd)`,
+              background: `linear-gradient(135deg, ${COLORS.aiBlue}, ${COLORS.aiBlue}dd)`,
               border: 'none',
               borderRadius: 20,
               padding: '8px 16px',
@@ -886,11 +887,11 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
             disabled={isAIThinking}
             style={{
               background: `${COLORS.card}`,
-              border: `1px solid ${COLORS.aiPurple}40`,
+              border: `1px solid ${COLORS.aiBlue}40`,
               borderRadius: 20,
               padding: '8px 16px',
               fontSize: 12,
-              color: COLORS.aiPurple,
+              color: COLORS.aiBlue,
               cursor: isAIThinking ? 'not-allowed' : 'pointer',
               opacity: isAIThinking ? 0.6 : 1,
             }}
