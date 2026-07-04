@@ -19,6 +19,19 @@ interface Message {
   isSpark?: boolean;
 }
 
+/* ===== story_example.html 精确配色 ===== */
+const COLORS = {
+  bg: '#f5f7fa',
+  ink: '#1a2e4a',
+  inkLight: '#4a6888',
+  inkFaint: '#8a9db0',
+  inkGhost: '#b0b8c4',
+  blue: '#3a6a9e',
+  gold: '#c8a848',
+  line: '#dce2ea',
+  card: '#ffffff',
+};
+
 export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySessionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -33,7 +46,6 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
   const myRole: Role = scene.roles[myRoleIndex];
   const otherRole: Role | undefined = scene.roles[1 - myRoleIndex];
 
-  // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
@@ -42,7 +54,6 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Focus input on mode change
   useEffect(() => {
     inputRef.current?.focus();
   }, [inputMode]);
@@ -99,7 +110,6 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
 
   const handleStart = () => {
     setHasStarted(true);
-    // Add opening line if exists
     if (scene.openingLine && messages.length === 0) {
       const openingMsg: Message = {
         id: 'opening',
@@ -152,30 +162,115 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
     URL.revokeObjectURL(url);
   };
 
-  // Role selection screen
+  // Determine if a character is "left" (first role) or "right" (second role)
+  const isLeftRole = (charName: string) => charName === scene.roles[0].name;
+  const getRoleColor = (charName: string) => {
+    const role = scene.roles.find((r) => r.name === charName);
+    return role?.color || '#888';
+  };
+
+  /* ===== Role Selection Screen ===== */
   if (!hasStarted) {
     return (
-      <div className="min-h-screen site-bg flex items-center justify-center px-4 py-12">
-        <div className="max-w-lg w-full">
-          {/* Scene Info */}
-          <div className="text-center mb-10 opacity-0 animate-fade-in">
-            <div className="text-[11px] tracking-[4px] text-ink-muted mb-3">
-              {scene.location}
+      <div
+        style={{
+          background: `linear-gradient(180deg, #f7f9fb 0%, ${COLORS.bg} 50%, #e8edf2 100%)`,
+          minHeight: '100dvh',
+          fontFamily: "'Noto Serif SC', serif",
+        }}
+      >
+        <div style={{ maxWidth: 560, margin: '0 auto', padding: '40px 16px' }}>
+          {/* Header */}
+          <div
+            style={{
+              textAlign: 'center',
+              marginBottom: 48,
+              opacity: 0,
+              animation: 'rpFadeIn 1s ease forwards',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                color: COLORS.inkFaint,
+                letterSpacing: 4,
+                marginBottom: 16,
+              }}
+            >
+              {scene.location.toUpperCase()}
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl text-ink tracking-wide mb-4">
+            <h1
+              style={{
+                fontSize: 42,
+                fontWeight: 900,
+                color: COLORS.ink,
+                letterSpacing: 12,
+                lineHeight: 1.2,
+                marginBottom: 12,
+              }}
+            >
               {scene.title}
             </h1>
-            <p className="text-sm text-ink-secondary leading-relaxed max-w-md mx-auto">
+            <div
+              style={{
+                fontSize: 13,
+                color: COLORS.inkFaint,
+                letterSpacing: 2,
+              }}
+            >
+              {scene.tags.join(' · ')}
+            </div>
+            <div
+              style={{
+                width: 40,
+                height: 1,
+                background: COLORS.line,
+                margin: '24px auto 0',
+              }}
+            />
+          </div>
+
+          {/* Description */}
+          <div
+            style={{
+              textAlign: 'center',
+              marginBottom: 40,
+              opacity: 0,
+              animation: 'rpFadeIn 1s 0.2s ease forwards',
+            }}
+          >
+            <p
+              style={{
+                fontSize: 14,
+                color: COLORS.inkLight,
+                lineHeight: 2,
+                maxWidth: 440,
+                margin: '0 auto',
+              }}
+            >
               {scene.description}
             </p>
-            <div className="w-10 h-0.5 bg-brand-gold/40 mx-auto mt-6 rounded-full" />
           </div>
 
           {/* Role Selection */}
-          <div className="space-y-4 opacity-0 animate-fade-in-up delay-200">
-            <div className="text-center text-[11px] text-ink-muted tracking-[3px] mb-6">
+          <div
+            style={{
+              opacity: 0,
+              animation: 'rpFadeIn 1s 0.4s ease forwards',
+            }}
+          >
+            <div
+              style={{
+                textAlign: 'center',
+                fontSize: 11,
+                color: COLORS.inkGhost,
+                letterSpacing: 3,
+                marginBottom: 24,
+              }}
+            >
               选择你要扮演的角色
             </div>
+
             {scene.roles.map((role, i) => (
               <button
                 key={role.name}
@@ -183,26 +278,78 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
                   setMyRoleIndex(i);
                   handleStart();
                 }}
-                className="w-full text-left p-5 rounded-2xl border border-border/60 bg-card-bg hover:border-brand-gold/40 hover:shadow-lg hover:shadow-brand-blue/5 transition-all duration-300 group"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '20px 24px',
+                  marginBottom: 12,
+                  background: COLORS.card,
+                  border: `1px solid ${COLORS.line}`,
+                  borderRadius: 16,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 2px 12px rgba(26,46,74,0.04)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.gold;
+                  e.currentTarget.style.boxShadow =
+                    '0 4px 20px rgba(200,168,72,0.12)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.line;
+                  e.currentTarget.style.boxShadow =
+                    '0 2px 12px rgba(26,46,74,0.04)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
               >
-                <div className="flex items-center gap-4">
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                  }}
+                >
                   <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
                     style={{
-                      background: `linear-gradient(135deg, ${role.color}, ${role.color}dd)`,
+                      width: 48,
+                      height: 48,
+                      borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${role.color}cc, ${role.color})`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: 18,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                      fontFamily: "'Noto Sans SC', sans-serif",
                     }}
                   >
                     {role.shortName}
                   </div>
-                  <div className="flex-1">
-                    <div className="text-base font-semibold text-ink group-hover:text-brand-blue transition-colors">
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 600,
+                        color: COLORS.ink,
+                        marginBottom: 4,
+                      }}
+                    >
                       {role.name}
                     </div>
-                    <div className="text-[11px] text-ink-muted mt-0.5">
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: COLORS.inkFaint,
+                      }}
+                    >
                       {role.identity}
                     </div>
                   </div>
-                  <div className="text-ink-muted group-hover:text-brand-gold transition-colors">
+                  <div style={{ color: COLORS.inkGhost }}>
                     <svg
                       width="20"
                       height="20"
@@ -220,265 +367,691 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
           </div>
 
           {/* Secret Hints */}
-          <div className="mt-8 p-4 rounded-xl bg-brand-blue/5 border border-brand-blue/10 opacity-0 animate-fade-in-up delay-400">
-            <div className="text-[10px] text-brand-blue/60 tracking-[2px] mb-2">
+          <div
+            style={{
+              marginTop: 32,
+              padding: '16px 20px',
+              background: `linear-gradient(135deg, rgba(200,168,72,0.04), rgba(58,106,158,0.03))`,
+              borderRadius: 12,
+              border: `1px solid ${COLORS.line}`,
+              opacity: 0,
+              animation: 'rpFadeIn 1s 0.6s ease forwards',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                color: COLORS.gold,
+                letterSpacing: 2,
+                marginBottom: 10,
+              }}
+            >
               秘密提示（仅自己可见）
             </div>
-            <div className="space-y-2">
-              {scene.roles.map((role) => (
-                <div key={role.name} className="text-xs text-ink-secondary">
-                  <span className="font-medium text-ink">{role.name}：</span>
-                  {role.secretHint}
-                </div>
-              ))}
-            </div>
+            {scene.roles.map((role) => (
+              <div
+                key={role.name}
+                style={{
+                  fontSize: 12,
+                  color: COLORS.inkLight,
+                  marginBottom: 6,
+                  lineHeight: 1.8,
+                }}
+              >
+                <span style={{ color: COLORS.ink, fontWeight: 600 }}>
+                  {role.name}：
+                </span>
+                {role.secretHint}
+              </div>
+            ))}
           </div>
         </div>
       </div>
     );
   }
 
-  // Main chat interface
+  /* ===== Main Chat Interface ===== */
   return (
-    <div className="min-h-screen site-bg flex flex-col">
+    <div
+      style={{
+        background: `linear-gradient(180deg, #f7f9fb 0%, ${COLORS.bg} 50%, #e8edf2 100%)`,
+        minHeight: '100dvh',
+        fontFamily: "'Noto Serif SC', serif",
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {/* Top Bar */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-border/40">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          background: 'rgba(255,255,255,0.85)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: `1px solid ${COLORS.line}`,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 560,
+            margin: '0 auto',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
               style={{
-                background: `linear-gradient(135deg, ${myRole.color}, ${myRole.color}dd)`,
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: `linear-gradient(135deg, ${myRole.color}cc, ${myRole.color})`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: "'Noto Sans SC', sans-serif",
               }}
             >
               {myRole.shortName}
             </div>
             <div>
-              <div className="text-sm font-medium text-ink">{scene.title}</div>
-              <div className="text-[10px] text-ink-muted">
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: COLORS.ink,
+                }}
+              >
+                {scene.title}
+              </div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: COLORS.inkFaint,
+                  fontFamily: "'Noto Sans SC', sans-serif",
+                }}
+              >
                 你扮演 {myRole.name}
                 {otherRole ? ` · 对方是 ${otherRole.name}` : ''}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', gap: 6 }}>
             <button
               onClick={() => setShowRoleSelect(!showRoleSelect)}
-              className="text-[11px] px-3 py-1.5 rounded-lg border border-border text-ink-secondary hover:border-brand-blue/30 hover:text-brand-blue transition-colors"
+              style={{
+                fontSize: 11,
+                padding: '5px 12px',
+                borderRadius: 8,
+                border: `1px solid ${COLORS.line}`,
+                background: 'transparent',
+                color: COLORS.inkLight,
+                cursor: 'pointer',
+                fontFamily: "'Noto Sans SC', sans-serif",
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = COLORS.blue;
+                e.currentTarget.style.color = COLORS.blue;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = COLORS.line;
+                e.currentTarget.style.color = COLORS.inkLight;
+              }}
             >
               切换角色
             </button>
             <button
               onClick={handleExportStory}
-              className="text-[11px] px-3 py-1.5 rounded-lg border border-brand-gold/30 text-brand-gold hover:bg-brand-gold/5 transition-colors"
+              style={{
+                fontSize: 11,
+                padding: '5px 12px',
+                borderRadius: 8,
+                border: `1px solid ${COLORS.gold}40`,
+                background: 'transparent',
+                color: COLORS.gold,
+                cursor: 'pointer',
+                fontFamily: "'Noto Sans SC', sans-serif",
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = `${COLORS.gold}10`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
             >
               导出故事
             </button>
             <button
               onClick={handleClear}
-              className="text-[11px] px-3 py-1.5 rounded-lg border border-border text-ink-muted hover:border-red-200 hover:text-red-400 transition-colors"
+              style={{
+                fontSize: 11,
+                padding: '5px 12px',
+                borderRadius: 8,
+                border: `1px solid ${COLORS.line}`,
+                background: 'transparent',
+                color: COLORS.inkGhost,
+                cursor: 'pointer',
+                fontFamily: "'Noto Sans SC', sans-serif",
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#e88';
+                e.currentTarget.style.color = '#c66';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = COLORS.line;
+                e.currentTarget.style.color = COLORS.inkGhost;
+              }}
             >
               清空
             </button>
           </div>
         </div>
 
-        {/* Role switcher dropdown */}
+        {/* Role switcher */}
         {showRoleSelect && (
-          <div className="max-w-2xl mx-auto px-4 pb-3">
-            <div className="flex gap-2">
-              {scene.roles.map((role, i) => (
-                <button
-                  key={role.name}
-                  onClick={() => {
-                    setMyRoleIndex(i);
-                    setShowRoleSelect(false);
-                  }}
-                  className={`flex-1 py-2 text-xs rounded-lg border transition-all ${
-                    i === myRoleIndex
-                      ? 'border-brand-gold/40 bg-brand-gold/5 text-brand-gold'
-                      : 'border-border text-ink-secondary hover:border-brand-blue/30'
-                  }`}
-                >
-                  {role.shortName} · {role.name}
-                </button>
-              ))}
-            </div>
+          <div
+            style={{
+              maxWidth: 560,
+              margin: '0 auto',
+              padding: '0 16px 10px',
+              display: 'flex',
+              gap: 8,
+            }}
+          >
+            {scene.roles.map((role, i) => (
+              <button
+                key={role.name}
+                onClick={() => {
+                  setMyRoleIndex(i);
+                  setShowRoleSelect(false);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '8px 0',
+                  fontSize: 12,
+                  borderRadius: 8,
+                  border: `1px solid ${i === myRoleIndex ? `${COLORS.gold}60` : COLORS.line}`,
+                  background:
+                    i === myRoleIndex ? `${COLORS.gold}08` : 'transparent',
+                  color:
+                    i === myRoleIndex ? COLORS.gold : COLORS.inkLight,
+                  cursor: 'pointer',
+                  fontFamily: "'Noto Sans SC', sans-serif",
+                  transition: 'all 0.2s',
+                }}
+              >
+                {role.shortName} · {role.name}
+              </button>
+            ))}
           </div>
         )}
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-8">
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto', padding: '32px 16px 120px' }}>
           {/* Scene header */}
-          <div className="text-center mb-8 opacity-0 animate-fade-in">
-            <div className="text-[10px] tracking-[4px] text-ink-muted mb-2">
-              {scene.location}
+          <div
+            style={{
+              textAlign: 'center',
+              marginBottom: 40,
+              opacity: 0,
+              animation: 'rpFadeIn 1s ease forwards',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                color: COLORS.inkFaint,
+                letterSpacing: 4,
+                marginBottom: 16,
+              }}
+            >
+              {scene.location.toUpperCase()}
             </div>
-            <div className="text-xs text-ink-secondary">
+            <h1
+              style={{
+                fontSize: 36,
+                fontWeight: 900,
+                color: COLORS.ink,
+                letterSpacing: 10,
+                lineHeight: 1.2,
+                marginBottom: 8,
+              }}
+            >
+              {scene.title}
+            </h1>
+            <div
+              style={{
+                fontSize: 12,
+                color: COLORS.inkFaint,
+                letterSpacing: 2,
+              }}
+            >
               对话开始 · {scene.roles.map((r) => r.name).join(' & ')}
             </div>
+            <div
+              style={{
+                width: 40,
+                height: 1,
+                background: COLORS.line,
+                margin: '20px auto 0',
+              }}
+            />
           </div>
 
-          {/* Messages */}
-          <div className="space-y-4">
-            {messages.map((msg) => {
-              if (msg.type === 'thought') {
-                return (
-                  <div
-                    key={msg.id}
-                    className="thought-block opacity-0 animate-fade-in-up"
-                  >
-                    {msg.text}
-                  </div>
-                );
-              }
+          {/* Spark bar */}
+          {messages.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 24,
+                marginBottom: 32,
+                padding: '12px 0',
+                borderTop: `1px solid ${COLORS.line}`,
+                borderBottom: `1px solid ${COLORS.line}`,
+              }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 14, marginBottom: 2 }}>
+                  {'🔥'.repeat(
+                    messages.filter((m) => m.isSpark).length || 1
+                  )}
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: COLORS.inkFaint,
+                    letterSpacing: 1,
+                    fontFamily: "'Noto Sans SC', sans-serif",
+                  }}
+                >
+                  高光 x{messages.filter((m) => m.isSpark).length || 1}
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 14, marginBottom: 2 }}>💬</div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: COLORS.inkFaint,
+                    letterSpacing: 1,
+                    fontFamily: "'Noto Sans SC', sans-serif",
+                  }}
+                >
+                  对话 x{messages.filter((m) => m.type === 'dialogue').length}
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 14, marginBottom: 2 }}>❧</div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: COLORS.inkFaint,
+                    letterSpacing: 1,
+                    fontFamily: "'Noto Sans SC', sans-serif",
+                  }}
+                >
+                  独白 x{messages.filter((m) => m.type === 'thought').length}
+                </div>
+              </div>
+            </div>
+          )}
 
-              const isLeft = msg.character === scene.roles[0].name;
-              const role = scene.roles.find((r) => r.name === msg.character);
+          {/* Messages */}
+          {messages.map((msg) => {
+            if (msg.type === 'thought') {
               return (
                 <div
                   key={msg.id}
-                  className={`flex items-start gap-3 opacity-0 animate-msg-in ${isLeft ? '' : 'flex-row-reverse'}`}
+                  style={{
+                    fontStyle: 'italic',
+                    color: COLORS.inkFaint,
+                    fontSize: 13.5,
+                    lineHeight: 1.8,
+                    padding: '12px 20px',
+                    margin: '8px 0',
+                    borderLeft: `2px solid ${COLORS.line}`,
+                    background: `linear-gradient(90deg, rgba(220,226,234,0.3), transparent)`,
+                    borderRadius: '0 8px 8px 0',
+                    opacity: 0,
+                    animation: 'rpMsgIn 0.6s ease forwards',
+                  }}
                 >
+                  <span style={{ color: COLORS.gold, marginRight: 4 }}>❧</span>
+                  {msg.text}
+                </div>
+              );
+            }
+
+            const isLeft = isLeftRole(msg.character || '');
+            const roleColor = getRoleColor(msg.character || '');
+
+            return (
+              <div
+                key={msg.id}
+                style={{
+                  margin: '20px 0',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: isLeft ? 'flex-start' : 'flex-end',
+                  gap: 12,
+                  opacity: 0,
+                  animation: 'rpMsgIn 0.6s ease forwards',
+                  position: 'relative',
+                }}
+              >
+                {isLeft && (
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                     style={{
-                      background: role
-                        ? `linear-gradient(135deg, ${role.color}, ${role.color}dd)`
-                        : '#888',
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${roleColor}cc, ${roleColor})`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                      fontFamily: "'Noto Sans SC', sans-serif",
                     }}
                   >
                     {msg.character?.[0]}
                   </div>
-                  <div className="max-w-[420px]">
-                    <div
-                      className={`text-[10px] font-semibold tracking-wider mb-1 ${
-                        isLeft ? 'text-brand-blue' : 'text-ink-muted text-right'
-                      }`}
-                    >
-                      {msg.character}
-                    </div>
-                    <div
-                      className={`text-[14px] leading-[1.9] whitespace-pre-line ${
-                        isLeft
-                          ? 'bg-card-bg p-3.5 rounded-[4px_14px_14px_14px] text-ink card-shadow border border-border/40'
-                          : 'bg-gradient-to-br from-[#2A7FB8] to-[#1F6090] p-3.5 rounded-[14px_4px_14px_14px] text-white/90'
-                      }`}
-                    >
-                      {msg.text}
-                    </div>
-                    {msg.isSpark && (
-                      <div className="mt-1 text-[10px] text-brand-gold flex items-center gap-1">
-                        ✨ 高光时刻
-                      </div>
-                    )}
+                )}
+                <div style={{ maxWidth: 420 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: isLeft ? COLORS.blue : 'rgba(255,255,255,0.5)',
+                      fontWeight: 600,
+                      marginBottom: 4,
+                      letterSpacing: 1,
+                      textAlign: isLeft ? 'left' : 'right',
+                      fontFamily: "'Noto Sans SC', sans-serif",
+                    }}
+                  >
+                    {msg.character}
                   </div>
+                  <div
+                    style={{
+                      background: isLeft
+                        ? COLORS.card
+                        : 'linear-gradient(135deg, #3a5a7e, #2a4a6e)',
+                      padding: '14px 18px',
+                      borderRadius: isLeft
+                        ? '4px 16px 16px 16px'
+                        : '16px 4px 16px 16px',
+                      boxShadow: isLeft
+                        ? '0 2px 12px rgba(26,46,74,0.06)'
+                        : '0 2px 12px rgba(26,46,74,0.1)',
+                      fontSize: 14.5,
+                      color: isLeft ? COLORS.ink : 'rgba(255,255,255,0.9)',
+                      lineHeight: 1.9,
+                      whiteSpace: 'pre-line',
+                    }}
+                  >
+                    {msg.text}
+                  </div>
+                  {msg.isSpark && (
+                    <div
+                      style={{
+                        marginTop: 4,
+                        fontSize: 10,
+                        color: COLORS.gold,
+                        textAlign: isLeft ? 'left' : 'right',
+                        fontFamily: "'Noto Sans SC', sans-serif",
+                      }}
+                    >
+                      ✨ 高光时刻
+                    </div>
+                  )}
                 </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
+                {!isLeft && (
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${roleColor}cc, ${roleColor})`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                      fontFamily: "'Noto Sans SC', sans-serif",
+                    }}
+                  >
+                    {msg.character?.[0]}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
 
           {/* Empty state */}
           {messages.length === 0 && (
-            <div className="text-center py-16 text-ink-muted text-sm">
-              <div className="text-2xl mb-3">💬</div>
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '60px 0',
+                color: COLORS.inkGhost,
+                fontSize: 13,
+                opacity: 0,
+                animation: 'rpFadeIn 1s ease forwards',
+              }}
+            >
+              <div style={{ fontSize: 28, marginBottom: 12 }}>💬</div>
               <div>对话还没有开始</div>
-              <div className="text-xs mt-1">在下方输入你的第一句台词吧</div>
+              <div
+                style={{
+                  fontSize: 12,
+                  marginTop: 6,
+                  color: COLORS.inkGhost,
+                }}
+              >
+                在下方输入你的第一句台词吧
+              </div>
             </div>
           )}
         </div>
       </div>
 
       {/* Input Area */}
-      <div className="sticky bottom-0 bg-white/90 backdrop-blur-md border-t border-border/40">
-        <div className="max-w-2xl mx-auto px-4 py-3">
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(12px)',
+          borderTop: `1px solid ${COLORS.line}`,
+          zIndex: 20,
+        }}
+      >
+        <div style={{ maxWidth: 560, margin: '0 auto', padding: '10px 16px 14px' }}>
           {/* Mode Toggle */}
-          <div className="flex items-center gap-2 mb-2">
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 8,
+            }}
+          >
             <button
               onClick={() => setInputMode('dialogue')}
-              className={`text-[11px] px-3 py-1.5 rounded-lg transition-all ${
-                inputMode === 'dialogue'
-                  ? 'bg-brand-blue/10 text-brand-blue font-medium'
-                  : 'text-ink-muted hover:text-ink-secondary'
-              }`}
+              style={{
+                fontSize: 11,
+                padding: '5px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background:
+                  inputMode === 'dialogue' ? `${COLORS.blue}15` : 'transparent',
+                color:
+                  inputMode === 'dialogue' ? COLORS.blue : COLORS.inkFaint,
+                fontWeight: inputMode === 'dialogue' ? 600 : 400,
+                cursor: 'pointer',
+                fontFamily: "'Noto Sans SC', sans-serif",
+                transition: 'all 0.2s',
+              }}
             >
               💬 对话
             </button>
             <button
               onClick={() => setInputMode('thought')}
-              className={`text-[11px] px-3 py-1.5 rounded-lg transition-all ${
-                inputMode === 'thought'
-                  ? 'bg-brand-gold/10 text-brand-gold font-medium'
-                  : 'text-ink-muted hover:text-ink-secondary'
-              }`}
+              style={{
+                fontSize: 11,
+                padding: '5px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background:
+                  inputMode === 'thought' ? `${COLORS.gold}15` : 'transparent',
+                color:
+                  inputMode === 'thought' ? COLORS.gold : COLORS.inkFaint,
+                fontWeight: inputMode === 'thought' ? 600 : 400,
+                cursor: 'pointer',
+                fontFamily: "'Noto Sans SC', sans-serif",
+                transition: 'all 0.2s',
+              }}
             >
               ❧ 内心独白
             </button>
             {inputMode === 'dialogue' && (
               <button
                 onClick={() => setIsMarkingSpark(!isMarkingSpark)}
-                className={`text-[11px] px-3 py-1.5 rounded-lg transition-all ml-auto ${
-                  isMarkingSpark
-                    ? 'bg-brand-gold/10 text-brand-gold font-medium'
-                    : 'text-ink-muted hover:text-ink-secondary'
-                }`}
+                style={{
+                  fontSize: 11,
+                  padding: '5px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: isMarkingSpark
+                    ? `${COLORS.gold}15`
+                    : 'transparent',
+                  color: isMarkingSpark ? COLORS.gold : COLORS.inkFaint,
+                  fontWeight: isMarkingSpark ? 600 : 400,
+                  cursor: 'pointer',
+                  marginLeft: 'auto',
+                  fontFamily: "'Noto Sans SC', sans-serif",
+                  transition: 'all 0.2s',
+                }}
               >
                 ✨ 标记高光
               </button>
             )}
           </div>
 
-          {/* Input */}
-          <div className="flex items-end gap-2">
-            <div className="flex-1 relative">
-              <textarea
-                ref={inputRef}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={
-                  inputMode === 'dialogue'
-                    ? `以 ${myRole.name} 的身份说些什么...`
-                    : '写下此刻的内心独白...'
-                }
-                rows={1}
-                className="w-full resize-none rounded-xl border border-border/60 bg-gray-50/50 px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand-blue/40 focus:bg-white transition-all"
-                style={{
-                  minHeight: '44px',
-                  maxHeight: '120px',
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
-                }}
-              />
-            </div>
+          {/* Input Row */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+            <textarea
+              ref={inputRef}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                inputMode === 'dialogue'
+                  ? `以 ${myRole.name} 的身份说些什么...`
+                  : '写下此刻的内心独白...'
+              }
+              rows={1}
+              style={{
+                flex: 1,
+                resize: 'none',
+                borderRadius: 12,
+                border: `1px solid ${COLORS.line}`,
+                background: '#fafbfc',
+                padding: '12px 16px',
+                fontSize: 14,
+                color: COLORS.ink,
+                fontFamily: "'Noto Serif SC', serif",
+                outline: 'none',
+                minHeight: 44,
+                maxHeight: 120,
+                lineHeight: 1.6,
+                transition: 'all 0.2s',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor =
+                  inputMode === 'dialogue' ? `${COLORS.blue}60` : `${COLORS.gold}60`;
+                e.currentTarget.style.background = '#fff';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = COLORS.line;
+                e.currentTarget.style.background = '#fafbfc';
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+              }}
+            />
             <button
               onClick={handleSend}
               disabled={!inputText.trim()}
-              className={`h-11 px-5 rounded-xl text-sm font-medium transition-all ${
-                inputText.trim()
-                  ? inputMode === 'dialogue'
-                    ? 'bg-brand-blue text-white hover:bg-brand-blue/90 shadow-sm'
-                    : 'bg-brand-gold text-white hover:bg-brand-gold/90 shadow-sm'
-                  : 'bg-gray-100 text-ink-muted cursor-not-allowed'
-              }`}
+              style={{
+                height: 44,
+                padding: '0 20px',
+                borderRadius: 12,
+                border: 'none',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: inputText.trim() ? 'pointer' : 'not-allowed',
+                fontFamily: "'Noto Sans SC', sans-serif",
+                transition: 'all 0.2s',
+                background: !inputText.trim()
+                  ? '#eee'
+                  : inputMode === 'dialogue'
+                    ? COLORS.blue
+                    : COLORS.gold,
+                color: !inputText.trim()
+                  ? COLORS.inkGhost
+                  : '#fff',
+                boxShadow: inputText.trim()
+                  ? `0 2px 8px ${inputMode === 'dialogue' ? `${COLORS.blue}30` : `${COLORS.gold}30`}`
+                  : 'none',
+              }}
             >
               发送
             </button>
           </div>
 
           {/* Hint */}
-          <div className="text-[10px] text-ink-muted mt-2 text-center">
+          <div
+            style={{
+              textAlign: 'center',
+              fontSize: 10,
+              color: COLORS.inkGhost,
+              marginTop: 6,
+              fontFamily: "'Noto Sans SC', sans-serif",
+            }}
+          >
             按 Enter 发送 · Shift+Enter 换行
             {inputMode === 'thought' && ' · 内心独白只有你自己能看到'}
           </div>
         </div>
       </div>
+
+      {/* Inline CSS animations */}
+      <style>{`
+        @keyframes rpFadeIn { to { opacity: 1; } }
+        @keyframes rpMsgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
     </div>
   );
 }
