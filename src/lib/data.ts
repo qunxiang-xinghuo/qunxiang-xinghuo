@@ -12,7 +12,9 @@ export interface Scene {
 }
 
 export interface Role {
-  name: string;
+  name: string;        // 角色名（用于显示）
+  realName: string;    // 真实人名
+  gender: 'male' | 'female';  // 性别
   shortName: string;
   desc: string;
   identity: string;
@@ -56,6 +58,8 @@ export const scenes: Scene[] = [
     roles: [
       {
         name: '林屿',
+        realName: '林屿',
+        gender: 'male',
         shortName: '林',
         desc: '不告而别',
         identity:
@@ -66,6 +70,8 @@ export const scenes: Scene[] = [
       },
       {
         name: '苏远',
+        realName: '苏远',
+        gender: 'male',
         shortName: '苏',
         desc: '等了一夏',
         identity:
@@ -87,8 +93,10 @@ export const scenes: Scene[] = [
     openingLine: '"你脸上……给。"',
     roles: [
       {
-        name: '角色 A',
-        shortName: 'A',
+        name: '陈默',
+        realName: '陈默',
+        gender: 'female',
+        shortName: '陈',
         desc: '迟到的求职者',
         identity:
           '你刚结束一场糟糕的面试。衣服被雨淋湿了，头发也乱了。你走进这家咖啡馆只是想躲雨，顺便整理一下情绪。',
@@ -97,8 +105,10 @@ export const scenes: Scene[] = [
         color: '#7EC8E8',
       },
       {
-        name: '角色 B',
-        shortName: 'B',
+        name: '周然',
+        realName: '周然',
+        gender: 'male',
+        shortName: '周',
         desc: '偷闲的老板',
         identity:
           '你是这家咖啡馆的老板。今天难得给自己放半天假，坐在角落里看书。你注意到对面那个人浑身湿透地坐下来。',
@@ -119,8 +129,10 @@ export const scenes: Scene[] = [
     openingLine: '"你知道吗，这趟车过了下一站，就不走了。"',
     roles: [
       {
-        name: '角色 A',
-        shortName: 'A',
+        name: '许安然',
+        realName: '许安然',
+        gender: 'female',
+        shortName: '许',
         desc: '回乡的人',
         identity:
           '你在外地工作了五年，今天终于要回家了。但你不确定"家"还是不是你记忆中的样子。',
@@ -129,12 +141,14 @@ export const scenes: Scene[] = [
         color: '#7EC8E8',
       },
       {
-        name: '角色 B',
-        shortName: 'B',
+        name: '陆行',
+        realName: '陆行',
+        gender: 'male',
+        shortName: '陆',
         desc: '流浪的人',
         identity:
           '你没有目的地。买了一张最便宜的硬座票，坐到哪算哪。你已经很久没有跟陌生人说过话了。',
-        secret: '你其实认出了对面的人，但 TA 没有认出你。',
+        secret: '你其实认出了对面的人，但她没有认出你。',
         secretHint: '关于你为什么突然开口',
         color: '#ffffff',
       },
@@ -151,18 +165,22 @@ export const scenes: Scene[] = [
     openingLine: '"你也睡不着？"',
     roles: [
       {
-        name: '角色 A',
-        shortName: 'A',
+        name: '沈一',
+        realName: '沈一',
+        gender: 'male',
+        shortName: '沈',
         desc: '失眠的邻居',
         identity:
           '你搬进这栋公寓三个月了，从没在天台遇到过人。今天你发现，原来一直有人比你更晚睡。',
-        secret: '你每天上天台，是因为这里能看到对面楼里一盏永远亮着的灯——那是 TA 的房间。',
+        secret: '你每天上天台，是因为这里能看到对面楼里一盏永远亮着的灯——那是她的房间。',
         secretHint: '关于你为什么总是这个时间上来',
         color: '#7EC8E8',
       },
       {
-        name: '角色 B',
-        shortName: 'B',
+        name: '顾念',
+        realName: '顾念',
+        gender: 'female',
+        shortName: '顾',
         desc: '写不完的信',
         identity:
           '你在写一封信，但不知道该寄给谁。每天晚上你来天台，对着城市的灯光念那些写好的句子。',
