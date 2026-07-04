@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Scene } from '@/lib/data';
 
 interface SceneDetailProps {
@@ -10,9 +10,12 @@ interface SceneDetailProps {
 
 export function SceneDetail({ scene }: SceneDetailProps) {
   const [activeRole, setActiveRole] = useState(0);
+  const [roomId, setRoomId] = useState('');
   
-  // Generate room ID once when component mounts
-  const roomId = useMemo(() => `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, []);
+  // Generate room ID after mount using useEffect
+  useEffect(() => {
+    setRoomId(`room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  }, []);
 
   return (
     <div className="opacity-0 animate-ticket-in">
