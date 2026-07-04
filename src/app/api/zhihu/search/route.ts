@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 // Zhihu API configuration
 const ZHIHU_API_BASE = 'https://developer.zhihu.com/api/v1/content';
-const ZHIHU_ACCESS_SECRET = process.env.ZHIHU_ACCESS_SECRET || '';
+const ZHIHU_API_KEY = process.env.ZHIHU_API_KEY || '';
 
 interface ZhihuSearchResult {
   id: string;
@@ -33,7 +33,7 @@ interface ZhihuHotItem {
 // Helper function to generate Zhihu API headers
 function getZhihuHeaders() {
   return {
-    'Authorization': `Bearer ${ZHIHU_ACCESS_SECRET}`,
+    'Authorization': `Bearer ${ZHIHU_API_KEY}`,
     'X-Request-Timestamp': Math.floor(Date.now() / 1000).toString(),
     'Content-Type': 'application/json',
   };
@@ -46,9 +46,9 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('query');
     const type = searchParams.get('type') || 'zhihu_search'; // zhihu_search, global_search, hot_list
 
-    if (!ZHIHU_ACCESS_SECRET) {
+    if (!ZHIHU_API_KEY) {
       return NextResponse.json(
-        { error: 'Zhihu API not configured. Please set ZHIHU_ACCESS_SECRET environment variable.' },
+        { error: 'Zhihu API not configured. Please set ZHIHU_API_KEY environment variable.' },
         { status: 500 }
       );
     }
@@ -120,9 +120,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { query, type = 'zhihu_search' } = body;
 
-    if (!ZHIHU_ACCESS_SECRET) {
+    if (!ZHIHU_API_KEY) {
       return NextResponse.json(
-        { error: 'Zhihu API not configured. Please set ZHIHU_ACCESS_SECRET environment variable.' },
+        { error: 'Zhihu API not configured. Please set ZHIHU_API_KEY environment variable.' },
         { status: 500 }
       );
     }

@@ -186,7 +186,7 @@ export default function ZhihuSearchPage() {
                     <li>访问 <a href="https://open.zhihu.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">知乎开放平台</a></li>
                     <li>登录并进入个人中心</li>
                     <li>获取你的 Access Secret</li>
-                    <li>在环境变量中设置 <code className="bg-blue-100 px-1 rounded">ZHIHU_ACCESS_SECRET</code></li>
+                    <li>在环境变量中设置 <code className="bg-blue-100 px-1 rounded">ZHIHU_API_KEY</code></li>
                   </ol>
                 </div>
               </div>
