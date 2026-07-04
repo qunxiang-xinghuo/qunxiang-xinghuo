@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  conversations Conversation[]
+  stories       Story[]
+  
+  // Sessions
+  sessions      Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Scene {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  location    String
+  tags        String   // JSON array as string
+  prompt      String
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  roles         Role[]
+  conversations Conversation[]
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  sceneId     String
+  name        String
+  description String
+  color       String
+  personality String
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  scene Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  
+  // Conversation participants
+  conversations ConversationRole[]
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  sceneId     String
+  userId      String
+  status      String    @default("active") // active, completed, archived
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  scene   Scene              @relation(fields: [sceneId], references: [id])
+  user    User               @relation(fields: [userId], references: [id])
+  roles   ConversationRole[]
+  messages Message[]
+  story   Story?
+}
+
+model ConversationRole {
+  id             String @id @default(cuid())
+  conversationId String
+  roleId         String
+  userId         String?
+  isAI           Boolean @default(false)
+  
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  roleId         String
+  content        String
+  type           String   @default("dialogue") // dialogue, thought, narration
+  isHighlight    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Story {
+  id             String   @id @default(cuid())
+  conversationId String   @unique
+  userId         String
+  title          String
+  content        String   // Markdown content
+  summary        String
+  status         String   @default("draft") // draft, published
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+}

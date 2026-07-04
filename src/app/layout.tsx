@@ -4,6 +4,7 @@ import { Inspector } from 'react-dev-inspector';
 import './globals.css';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
+import { Providers } from '@/components/providers/session-provider';
 
 const notoSerif = Noto_Serif_SC({
   subsets: ['latin'],
@@ -55,10 +56,12 @@ export default function RootLayout({
       <body
         className={`${notoSerif.variable} ${notoSans.variable} ${notoSans.className} antialiased`}
       >
-        {isDev && <Inspector />}
-        <SiteHeader />
-        <main className="min-h-screen">{children}</main>
-        <SiteFooter />
+        <Providers>
+          {isDev && <Inspector />}
+          <SiteHeader />
+          <main className="min-h-screen">{children}</main>
+          <SiteFooter />
+        </Providers>
       </body>
     </html>
   );

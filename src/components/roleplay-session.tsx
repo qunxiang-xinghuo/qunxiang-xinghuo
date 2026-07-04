@@ -227,10 +227,43 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
     URL.revokeObjectURL(url);
   };
 
-  // AI 催化：生成对话引导
-  const handleAICatalyst = () => {
+  // AI 催化：生成对话引导（使用真实 AI）
+  const handleAICatalyst = async () => {
     setIsAIThinking(true);
-    setTimeout(() => {
+    try {
+      const lastMessage = messages.filter(m => m.type === 'dialogue').slice(-1)[0]?.text || '';
+      const conversationHistory = messages
+        .filter(m => m.type === 'dialogue' || m.type === 'thought')
+        .slice(-10)
+        .map(m => ({
+          role: m.type === 'dialogue' ? 'user' as const : 'assistant' as const,
+          content: m.character ? `${m.character}: ${m.text}` : m.text,
+        }));
+
+      const response = await fetch('/api/ai/catalyst', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sceneId: scene.id,
+          messageCount: messages.length,
+          lastMessage,
+          conversationHistory,
+        }),
+      });
+
+      const data = await response.json();
+      const catalystText = data.catalyst || '让对话继续，说出你心里想说的那句话...';
+      
+      const aiMsg: Message = {
+        id: `ai-${Date.now()}`,
+        type: 'ai-catalyst',
+        text: catalystText,
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (error) {
+      console.error('AI catalyst error:', error);
+      // Fallback to local prompt
       const catalystText = getAICatalyst(scene.id, messages.length);
       const aiMsg: Message = {
         id: `ai-${Date.now()}`,
@@ -239,8 +272,9 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, aiMsg]);
+    } finally {
       setIsAIThinking(false);
-    }, 800);
+    }
   };
 
   // AI 旁白：生成故事叙述
