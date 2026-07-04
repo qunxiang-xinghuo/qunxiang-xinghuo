@@ -12,7 +12,7 @@ type InputMode = 'dialogue' | 'thought';
 
 interface Message {
   id: string;
-  type: 'dialogue' | 'thought';
+  type: 'dialogue' | 'thought' | 'ai-catalyst' | 'ai-narration';
   character?: string;
   text: string;
   timestamp: number;
@@ -31,7 +31,67 @@ const COLORS = {
   gold: '#e8b84a',
   line: '#d8eaf5',
   card: '#ffffff',
+  aiPurple: '#9b7ec8',
+  aiPurpleLight: '#e8dff5',
 };
+
+/* ===== AI 催化提示库 ===== */
+const AI_CATALYST_PROMPTS: Record<string, string[]> = {
+  airport: [
+    '十年没见的两个人，第一句话该怎么说？也许不是"你好"，而是沉默...',
+    '行李转盘还在转，但你们都没有去看。这个瞬间，时间好像停了。',
+    '他/她变了，又好像没变。你注意到了什么细节？',
+    '机场的广播在催促，但你们谁都不想先开口。',
+    '也许可以问一个简单的问题："这些年，过得好吗？"',
+    '回忆涌上来了。你想起了什么？',
+  ],
+  cafe: [
+    '咖啡凉了，但你们都没注意到。',
+    '杯子上写着名字，但你们都在避免叫对方的名字。',
+    '窗外的雨停了，但气氛还是很凝重。',
+    '也许可以聊聊这杯咖啡的味道？',
+    '他/她低头搅拌咖啡的样子，和十年前一样。',
+  ],
+  train: [
+    '火车还有最后一站就要到终点。有些话，再不说就来不及了。',
+    '窗外的风景在倒退，就像时间。',
+    '也许可以问："你下一站去哪？"',
+    '车厢里很安静，但你们心里都很吵。',
+    '也许可以说出那个藏了很久的秘密。',
+  ],
+  rooftop: [
+    '夜风很凉，但你们都不想进去。',
+    '城市的灯火在脚下，但你们只看得到彼此。',
+    '也许可以聊聊为什么来这里。',
+    '沉默也是一种对话。',
+    '也许可以说出那句一直没说的话。',
+  ],
+};
+
+function getAICatalyst(sceneId: string, messageCount: number): string {
+  const prompts = AI_CATALYST_PROMPTS[sceneId] || AI_CATALYST_PROMPTS.airport;
+  const index = messageCount % prompts.length;
+  return prompts[index];
+}
+
+function getAINarration(scene: Scene, messages: Message[]): string {
+  const dialogueCount = messages.filter(m => m.type === 'dialogue').length;
+  const thoughtCount = messages.filter(m => m.type === 'thought').length;
+  
+  if (dialogueCount === 0) {
+    return `故事开始了。${scene.roles[0].name}和${scene.roles[1].name}在这个场景中相遇。空气中弥漫着一种说不清的情绪...`;
+  }
+  if (dialogueCount < 3) {
+    return `对话刚刚开始，有些生疏，有些试探。十年的时光横亘在中间，谁都不知道该怎么跨越。`;
+  }
+  if (thoughtCount > dialogueCount) {
+    return `内心独白比说出口的话还多。也许，真正想说的话，还藏在心里。`;
+  }
+  if (dialogueCount > 5) {
+    return `对话渐渐深入，那些藏在心底的话，开始一点一点浮出水面。`;
+  }
+  return `故事在继续，每一句话都在拉近彼此的距离。`;
+}
 
 export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySessionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -41,6 +101,7 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
   const [showRoleSelect, setShowRoleSelect] = useState(false);
   const [isMarkingSpark, setIsMarkingSpark] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [isAIThinking, setIsAIThinking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -132,17 +193,19 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
   };
 
   const handleExportStory = () => {
-    const blocks: StoryBlock[] = messages.map((msg) => {
-      if (msg.type === 'thought') {
-        return { type: 'thought', text: msg.text };
-      }
-      return {
-        type: 'dialogue',
-        character: msg.character,
-        text: msg.text,
-        isSpark: msg.isSpark,
-      };
-    });
+    const blocks: StoryBlock[] = messages
+      .filter(m => m.type !== 'ai-catalyst' && m.type !== 'ai-narration')
+      .map((msg) => {
+        if (msg.type === 'thought') {
+          return { type: 'thought', text: msg.text };
+        }
+        return {
+          type: 'dialogue',
+          character: msg.character,
+          text: msg.text,
+          isSpark: msg.isSpark,
+        };
+      });
 
     const storyData = {
       title: scene.title,
@@ -163,12 +226,47 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
     URL.revokeObjectURL(url);
   };
 
+  // AI 催化：生成对话引导
+  const handleAICatalyst = () => {
+    setIsAIThinking(true);
+    setTimeout(() => {
+      const catalystText = getAICatalyst(scene.id, messages.length);
+      const aiMsg: Message = {
+        id: `ai-${Date.now()}`,
+        type: 'ai-catalyst',
+        text: catalystText,
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+      setIsAIThinking(false);
+    }, 800);
+  };
+
+  // AI 旁白：生成故事叙述
+  const handleAINarration = () => {
+    setIsAIThinking(true);
+    setTimeout(() => {
+      const narrationText = getAINarration(scene, messages);
+      const aiMsg: Message = {
+        id: `ai-narr-${Date.now()}`,
+        type: 'ai-narration',
+        text: narrationText,
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+      setIsAIThinking(false);
+    }, 800);
+  };
+
   // Determine if a character is "left" (first role) or "right" (second role)
   const isLeftRole = (charName: string) => charName === scene.roles[0].name;
   const getRoleColor = (charName: string) => {
     const role = scene.roles.find((r) => r.name === charName);
     return role?.color || '#888';
   };
+
+  // Get avatar initial
+  const getAvatarInitial = (charName: string) => charName.charAt(0);
 
   /* ===== Role Selection Screen ===== */
   if (!hasStarted) {
@@ -198,54 +296,24 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
                 marginBottom: 16,
               }}
             >
-              {scene.location.toUpperCase()}
+              {scene.location} · {scene.tags.join(' · ')}
             </div>
             <h1
               style={{
-                fontSize: 42,
-                fontWeight: 900,
+                fontSize: 28,
                 color: COLORS.ink,
-                letterSpacing: 12,
-                lineHeight: 1.2,
+                fontWeight: 600,
                 marginBottom: 12,
               }}
             >
               {scene.title}
             </h1>
-            <div
-              style={{
-                fontSize: 13,
-                color: COLORS.inkFaint,
-                letterSpacing: 2,
-              }}
-            >
-              {scene.tags.join(' · ')}
-            </div>
-            <div
-              style={{
-                width: 40,
-                height: 1,
-                background: COLORS.line,
-                margin: '24px auto 0',
-              }}
-            />
-          </div>
-
-          {/* Description */}
-          <div
-            style={{
-              textAlign: 'center',
-              marginBottom: 40,
-              opacity: 0,
-              animation: 'rpFadeIn 1s 0.2s ease forwards',
-            }}
-          >
             <p
               style={{
                 fontSize: 14,
                 color: COLORS.inkLight,
-                lineHeight: 2,
-                maxWidth: 440,
+                lineHeight: 1.8,
+                maxWidth: 400,
                 margin: '0 auto',
               }}
             >
@@ -257,78 +325,68 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
           <div
             style={{
               opacity: 0,
-              animation: 'rpFadeIn 1s 0.4s ease forwards',
+              animation: 'rpFadeIn 1s ease 0.3s forwards',
             }}
           >
             <div
               style={{
                 textAlign: 'center',
-                fontSize: 11,
-                color: COLORS.inkGhost,
-                letterSpacing: 3,
+                fontSize: 12,
+                color: COLORS.inkFaint,
+                letterSpacing: 2,
                 marginBottom: 24,
               }}
             >
               选择你要扮演的角色
             </div>
 
-            {scene.roles.map((role, i) => (
-              <button
-                key={role.name}
-                onClick={() => {
-                  setMyRoleIndex(i);
-                  handleStart();
-                }}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '20px 24px',
-                  marginBottom: 12,
-                  background: COLORS.card,
-                  border: `1px solid ${COLORS.line}`,
-                  borderRadius: 16,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 2px 12px rgba(74,158,216,0.06)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = COLORS.blueBright;
-                  e.currentTarget.style.boxShadow =
-                    '0 4px 20px rgba(90,176,216,0.15)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = COLORS.line;
-                  e.currentTarget.style.boxShadow =
-                    '0 2px 12px rgba(74,158,216,0.06)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <div
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {scene.roles.map((role, idx) => (
+                <button
+                  key={role.name}
+                  onClick={() => {
+                    setMyRoleIndex(idx);
+                    handleStart();
+                  }}
                   style={{
+                    background: COLORS.card,
+                    border: `1px solid ${COLORS.line}`,
+                    borderRadius: 12,
+                    padding: '20px 24px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 16,
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 2px 8px rgba(74,158,216,0.08)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(74,158,216,0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(74,158,216,0.08)';
                   }}
                 >
+                  {/* Avatar */}
                   <div
                     style={{
                       width: 48,
                       height: 48,
                       borderRadius: '50%',
-                      background: `linear-gradient(135deg, ${role.color}cc, ${role.color})`,
+                      background: `linear-gradient(135deg, ${role.color}, ${role.color}dd)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#fff',
                       fontSize: 18,
-                      fontWeight: 700,
+                      fontWeight: 600,
                       flexShrink: 0,
-                      fontFamily: "'Noto Sans SC', sans-serif",
                     }}
                   >
-                    {role.shortName}
+                    {role.name.charAt(0)}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div
@@ -343,70 +401,68 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
                     </div>
                     <div
                       style={{
-                        fontSize: 12,
-                        color: COLORS.inkFaint,
+                        fontSize: 13,
+                        color: COLORS.inkLight,
+                        lineHeight: 1.5,
                       }}
                     >
-                      {role.identity}
+                      {role.desc}
                     </div>
                   </div>
-                  <div style={{ color: COLORS.inkGhost }}>
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <path d="M9 18l6-6-6-6" />
-                    </svg>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: COLORS.blue,
+                      flexShrink: 0,
+                    }}
+                  >
+                    扮演 →
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Secret Hints */}
+          {/* Scene Info */}
           <div
             style={{
-              marginTop: 32,
-              padding: '16px 20px',
-              background: `linear-gradient(135deg, rgba(90,176,216,0.06), rgba(126,200,232,0.04))`,
+              marginTop: 48,
+              padding: '20px 24px',
+              background: `${COLORS.card}80`,
               borderRadius: 12,
               border: `1px solid ${COLORS.line}`,
               opacity: 0,
-              animation: 'rpFadeIn 1s 0.6s ease forwards',
+              animation: 'rpFadeIn 1s ease 0.6s forwards',
             }}
           >
             <div
               style={{
-                fontSize: 10,
-                color: COLORS.gold,
+                fontSize: 12,
+                color: COLORS.inkFaint,
                 letterSpacing: 2,
-                marginBottom: 10,
+                marginBottom: 12,
               }}
             >
-              秘密提示（仅自己可见）
+              场景设定
             </div>
-            {scene.roles.map((role) => (
-              <div
-                key={role.name}
-                style={{
-                  fontSize: 12,
-                  color: COLORS.inkLight,
-                  marginBottom: 6,
-                  lineHeight: 1.8,
-                }}
-              >
-                <span style={{ color: COLORS.ink, fontWeight: 600 }}>
-                  {role.name}：
-                </span>
-                {role.secretHint}
-              </div>
-            ))}
+            <div
+              style={{
+                fontSize: 14,
+                color: COLORS.inkLight,
+                lineHeight: 1.8,
+              }}
+            >
+              {scene.description}
+            </div>
           </div>
         </div>
+
+        <style>{`
+          @keyframes rpFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -422,88 +478,57 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
         flexDirection: 'column',
       }}
     >
-      {/* Top Bar */}
+      {/* Header */}
       <div
         style={{
+          background: `${COLORS.card}ee`,
+          backdropFilter: 'blur(10px)',
+          borderBottom: `1px solid ${COLORS.line}`,
+          padding: '12px 16px',
           position: 'sticky',
           top: 0,
-          zIndex: 10,
-          background: 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: `1px solid ${COLORS.line}`,
+          zIndex: 100,
         }}
       >
         <div
           style={{
             maxWidth: 560,
             margin: '0 auto',
-            padding: '10px 16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div>
             <div
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: `linear-gradient(135deg, ${myRole.color}cc, ${myRole.color})`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 700,
-                fontFamily: "'Noto Sans SC', sans-serif",
+                fontSize: 14,
+                fontWeight: 600,
+                color: COLORS.ink,
               }}
             >
-              {myRole.shortName}
+              {scene.title}
             </div>
-            <div>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: COLORS.ink,
-                }}
-              >
-                {scene.title}
-              </div>
-              <div
-                style={{
-                  fontSize: 10,
-                  color: COLORS.inkFaint,
-                  fontFamily: "'Noto Sans SC', sans-serif",
-                }}
-              >
-                你扮演 {myRole.name}
-                {otherRole ? ` · 对方是 ${otherRole.name}` : ''}
-              </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: COLORS.inkFaint,
+              }}
+            >
+              扮演：{myRole.name}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={() => setShowRoleSelect(!showRoleSelect)}
               style={{
-                fontSize: 11,
-                padding: '5px 12px',
-                borderRadius: 8,
+                background: 'none',
                 border: `1px solid ${COLORS.line}`,
-                background: 'transparent',
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 12,
                 color: COLORS.inkLight,
                 cursor: 'pointer',
-                fontFamily: "'Noto Sans SC', sans-serif",
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = COLORS.blue;
-                e.currentTarget.style.color = COLORS.blue;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = COLORS.line;
-                e.currentTarget.style.color = COLORS.inkLight;
               }}
             >
               切换角色
@@ -511,86 +536,53 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
             <button
               onClick={handleExportStory}
               style={{
-                fontSize: 11,
-                padding: '5px 12px',
-                borderRadius: 8,
-                border: `1px solid ${COLORS.gold}40`,
-                background: 'transparent',
-                color: COLORS.gold,
+                background: COLORS.blue,
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 12,
+                color: '#fff',
                 cursor: 'pointer',
-                fontFamily: "'Noto Sans SC', sans-serif",
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = `${COLORS.gold}10`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
               }}
             >
               导出故事
             </button>
-            <button
-              onClick={handleClear}
-              style={{
-                fontSize: 11,
-                padding: '5px 12px',
-                borderRadius: 8,
-                border: `1px solid ${COLORS.line}`,
-                background: 'transparent',
-                color: COLORS.inkGhost,
-                cursor: 'pointer',
-                fontFamily: "'Noto Sans SC', sans-serif",
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#e88';
-                e.currentTarget.style.color = '#c66';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = COLORS.line;
-                e.currentTarget.style.color = COLORS.inkGhost;
-              }}
-            >
-              清空
-            </button>
           </div>
         </div>
 
-        {/* Role switcher */}
+        {/* Role Select Dropdown */}
         {showRoleSelect && (
           <div
             style={{
               maxWidth: 560,
-              margin: '0 auto',
-              padding: '0 16px 10px',
-              display: 'flex',
-              gap: 8,
+              margin: '12px auto 0',
+              padding: '12px',
+              background: COLORS.card,
+              borderRadius: 8,
+              border: `1px solid ${COLORS.line}`,
             }}
           >
-            {scene.roles.map((role, i) => (
+            {scene.roles.map((role, idx) => (
               <button
                 key={role.name}
                 onClick={() => {
-                  setMyRoleIndex(i);
+                  setMyRoleIndex(idx);
                   setShowRoleSelect(false);
                 }}
                 style={{
-                  flex: 1,
-                  padding: '8px 0',
-                  fontSize: 12,
-                  borderRadius: 8,
-                  border: `1px solid ${i === myRoleIndex ? `${COLORS.gold}60` : COLORS.line}`,
-                  background:
-                    i === myRoleIndex ? `${COLORS.gold}08` : 'transparent',
-                  color:
-                    i === myRoleIndex ? COLORS.gold : COLORS.inkLight,
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '8px 12px',
+                  background: idx === myRoleIndex ? `${COLORS.blue}15` : 'transparent',
+                  border: 'none',
+                  borderRadius: 4,
                   cursor: 'pointer',
-                  fontFamily: "'Noto Sans SC', sans-serif",
-                  transition: 'all 0.2s',
+                  fontSize: 13,
+                  color: idx === myRoleIndex ? COLORS.blue : COLORS.inkLight,
                 }}
               >
-                {role.shortName} · {role.name}
+                {role.name} {idx === myRoleIndex ? '✓' : ''}
               </button>
             ))}
           </div>
@@ -598,143 +590,154 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
       </div>
 
       {/* Messages Area */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ maxWidth: 560, margin: '0 auto', padding: '32px 16px 120px' }}>
-          {/* Scene header */}
-          <div
-            style={{
-              textAlign: 'center',
-              marginBottom: 40,
-              opacity: 0,
-              animation: 'rpFadeIn 1s ease forwards',
-            }}
-          >
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '24px 16px',
+        }}
+      >
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+          {messages.length === 0 && (
             <div
               style={{
-                fontSize: 11,
+                textAlign: 'center',
+                padding: '60px 20px',
                 color: COLORS.inkFaint,
-                letterSpacing: 4,
-                marginBottom: 16,
+                fontSize: 14,
               }}
             >
-              {scene.location.toUpperCase()}
-            </div>
-            <h1
-              style={{
-                fontSize: 36,
-                fontWeight: 900,
-                color: COLORS.ink,
-                letterSpacing: 10,
-                lineHeight: 1.2,
-                marginBottom: 8,
-              }}
-            >
-              {scene.title}
-            </h1>
-            <div
-              style={{
-                fontSize: 12,
-                color: COLORS.inkFaint,
-                letterSpacing: 2,
-              }}
-            >
-              对话开始 · {scene.roles.map((r) => r.name).join(' & ')}
-            </div>
-            <div
-              style={{
-                width: 40,
-                height: 1,
-                background: COLORS.line,
-                margin: '20px auto 0',
-              }}
-            />
-          </div>
-
-          {/* Spark bar */}
-          {messages.length > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 24,
-                marginBottom: 32,
-                padding: '12px 0',
-                borderTop: `1px solid ${COLORS.line}`,
-                borderBottom: `1px solid ${COLORS.line}`,
-              }}
-            >
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 14, marginBottom: 2 }}>
-                  {'🔥'.repeat(
-                    messages.filter((m) => m.isSpark).length || 1
-                  )}
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: COLORS.inkFaint,
-                    letterSpacing: 1,
-                    fontFamily: "'Noto Sans SC', sans-serif",
-                  }}
-                >
-                  高光 x{messages.filter((m) => m.isSpark).length || 1}
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 14, marginBottom: 2 }}>💬</div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: COLORS.inkFaint,
-                    letterSpacing: 1,
-                    fontFamily: "'Noto Sans SC', sans-serif",
-                  }}
-                >
-                  对话 x{messages.filter((m) => m.type === 'dialogue').length}
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 14, marginBottom: 2 }}>❧</div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: COLORS.inkFaint,
-                    letterSpacing: 1,
-                    fontFamily: "'Noto Sans SC', sans-serif",
-                  }}
-                >
-                  独白 x{messages.filter((m) => m.type === 'thought').length}
-                </div>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>💬</div>
+              <div>对话还未开始</div>
+              <div style={{ fontSize: 12, marginTop: 8 }}>
+                在下方输入框开始你的第一句话
               </div>
             </div>
           )}
 
-          {/* Messages */}
           {messages.map((msg) => {
+            // AI Catalyst Message
+            if (msg.type === 'ai-catalyst') {
+              return (
+                <div
+                  key={msg.id}
+                  style={{
+                    margin: '24px 0',
+                    padding: '16px 20px',
+                    background: `linear-gradient(135deg, ${COLORS.aiPurpleLight}, ${COLORS.card})`,
+                    borderRadius: 12,
+                    border: `1px solid ${COLORS.aiPurple}30`,
+                    position: 'relative',
+                    animation: 'rpMsgIn 0.4s ease',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: -8,
+                      left: 16,
+                      background: COLORS.aiPurple,
+                      color: '#fff',
+                      fontSize: 10,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      fontWeight: 600,
+                    }}
+                  >
+                    AI 催化
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: COLORS.aiPurple,
+                      lineHeight: 1.8,
+                      fontStyle: 'italic',
+                      marginTop: 4,
+                    }}
+                  >
+                    ✨ {msg.text}
+                  </div>
+                </div>
+              );
+            }
+
+            // AI Narration Message
+            if (msg.type === 'ai-narration') {
+              return (
+                <div
+                  key={msg.id}
+                  style={{
+                    margin: '24px 0',
+                    padding: '16px 20px',
+                    background: `${COLORS.card}80`,
+                    borderRadius: 12,
+                    border: `1px dashed ${COLORS.inkGhost}`,
+                    textAlign: 'center',
+                    animation: 'rpMsgIn 0.4s ease',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: COLORS.inkGhost,
+                      letterSpacing: 2,
+                      marginBottom: 8,
+                    }}
+                  >
+                    — 旁白 —
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: COLORS.inkLight,
+                      lineHeight: 1.8,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    {msg.text}
+                  </div>
+                </div>
+              );
+            }
+
+            // Thought Message
             if (msg.type === 'thought') {
               return (
                 <div
                   key={msg.id}
                   style={{
-                    fontStyle: 'italic',
-                    color: COLORS.inkFaint,
-                    fontSize: 13.5,
-                    lineHeight: 1.8,
-                    padding: '12px 20px',
-                    margin: '8px 0',
-                    borderLeft: `2px solid ${COLORS.line}`,
-                    background: `linear-gradient(90deg, rgba(220,226,234,0.3), transparent)`,
+                    margin: '16px 0',
+                    padding: '12px 16px',
+                    borderLeft: `3px solid ${getRoleColor(myRole.name)}`,
+                    background: `${getRoleColor(myRole.name)}08`,
                     borderRadius: '0 8px 8px 0',
-                    opacity: 0,
-                    animation: 'rpMsgIn 0.6s ease forwards',
+                    animation: 'rpMsgIn 0.4s ease',
                   }}
                 >
-                  <span style={{ color: COLORS.gold, marginRight: 4 }}>❧</span>
-                  {msg.text}
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: COLORS.inkFaint,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {myRole.name}的内心独白
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      color: COLORS.inkLight,
+                      fontStyle: 'italic',
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    {msg.text}
+                  </div>
                 </div>
               );
             }
 
+            // Dialogue Message
             const isLeft = isLeftRole(msg.character || '');
             const roleColor = getRoleColor(msg.character || '');
 
@@ -742,224 +745,247 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
               <div
                 key={msg.id}
                 style={{
-                  margin: '20px 0',
                   display: 'flex',
+                  flexDirection: isLeft ? 'row' : 'row-reverse',
                   alignItems: 'flex-start',
-                  justifyContent: isLeft ? 'flex-start' : 'flex-end',
                   gap: 12,
-                  opacity: 0,
-                  animation: 'rpMsgIn 0.6s ease forwards',
-                  position: 'relative',
+                  margin: '16px 0',
+                  animation: 'rpMsgIn 0.4s ease',
                 }}
               >
-                {isLeft && (
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: '50%',
-                      background: `linear-gradient(135deg, ${roleColor}cc, ${roleColor})`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                      fontFamily: "'Noto Sans SC', sans-serif",
-                    }}
-                  >
-                    {msg.character?.[0]}
-                  </div>
-                )}
-                <div style={{ maxWidth: 420 }}>
+                {/* Avatar */}
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${roleColor}, ${roleColor}cc)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    flexShrink: 0,
+                  }}
+                >
+                  {getAvatarInitial(msg.character || '')}
+                </div>
+
+                {/* Message Content */}
+                <div
+                  style={{
+                    maxWidth: '70%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: isLeft ? 'flex-start' : 'flex-end',
+                  }}
+                >
+                  {/* Character Name */}
                   <div
                     style={{
                       fontSize: 11,
-                      color: isLeft ? COLORS.blue : COLORS.inkLight,
-                      fontWeight: 600,
+                      color: roleColor,
                       marginBottom: 4,
-                      letterSpacing: 1,
-                      textAlign: isLeft ? 'left' : 'right',
-                      fontFamily: "'Noto Sans SC', sans-serif",
+                      fontWeight: 500,
                     }}
                   >
                     {msg.character}
+                    {msg.isSpark && (
+                      <span style={{ color: COLORS.gold, marginLeft: 6 }}>
+                        ✨ 高光
+                      </span>
+                    )}
                   </div>
+
+                  {/* Bubble */}
                   <div
                     style={{
                       background: isLeft
                         ? COLORS.card
-                        : 'linear-gradient(135deg, #7EC8E8, #5AB0D8)',
-                      padding: '14px 18px',
+                        : `linear-gradient(135deg, ${roleColor}, ${roleColor}dd)`,
+                      color: isLeft ? COLORS.ink : '#fff',
+                      padding: '12px 16px',
                       borderRadius: isLeft
                         ? '4px 16px 16px 16px'
                         : '16px 4px 16px 16px',
                       boxShadow: isLeft
-                        ? '0 2px 12px rgba(74,158,216,0.08)'
-                        : '0 2px 12px rgba(90,176,216,0.12)',
-                      fontSize: 14.5,
-                      color: isLeft ? COLORS.ink : '#1a3a50',
-                      lineHeight: 1.9,
-                      whiteSpace: 'pre-line',
+                        ? '0 2px 8px rgba(74,158,216,0.08)'
+                        : '0 2px 8px rgba(0,0,0,0.1)',
+                      fontSize: 14,
+                      lineHeight: 1.7,
                     }}
                   >
                     {msg.text}
                   </div>
-                  {msg.isSpark && (
-                    <div
-                      style={{
-                        marginTop: 4,
-                        fontSize: 10,
-                        color: COLORS.gold,
-                        textAlign: isLeft ? 'left' : 'right',
-                        fontFamily: "'Noto Sans SC', sans-serif",
-                      }}
-                    >
-                      ✨ 高光时刻
-                    </div>
-                  )}
                 </div>
-                {!isLeft && (
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: '50%',
-                      background: `linear-gradient(135deg, ${roleColor}cc, ${roleColor})`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                      fontFamily: "'Noto Sans SC', sans-serif",
-                    }}
-                  >
-                    {msg.character?.[0]}
-                  </div>
-                )}
               </div>
             );
           })}
-          <div ref={messagesEndRef} />
 
-          {/* Empty state */}
-          {messages.length === 0 && (
+          {/* AI Thinking Indicator */}
+          {isAIThinking && (
             <div
               style={{
-                textAlign: 'center',
-                padding: '60px 0',
-                color: COLORS.inkGhost,
+                margin: '16px 0',
+                padding: '12px 16px',
+                background: COLORS.aiPurpleLight,
+                borderRadius: 12,
                 fontSize: 13,
-                opacity: 0,
-                animation: 'rpFadeIn 1s ease forwards',
+                color: COLORS.aiPurple,
+                animation: 'rpPulse 1s ease infinite',
               }}
             >
-              <div style={{ fontSize: 28, marginBottom: 12 }}>💬</div>
-              <div>对话还没有开始</div>
-              <div
-                style={{
-                  fontSize: 12,
-                  marginTop: 6,
-                  color: COLORS.inkGhost,
-                }}
-              >
-                在下方输入你的第一句台词吧
-              </div>
+              AI 正在思考...
             </div>
           )}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* AI Action Buttons */}
+      <div
+        style={{
+          background: `${COLORS.card}ee`,
+          backdropFilter: 'blur(10px)',
+          borderTop: `1px solid ${COLORS.line}`,
+          padding: '8px 16px',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 560,
+            margin: '0 auto',
+            display: 'flex',
+            gap: 8,
+            justifyContent: 'center',
+          }}
+        >
+          <button
+            onClick={handleAICatalyst}
+            disabled={isAIThinking}
+            style={{
+              background: `linear-gradient(135deg, ${COLORS.aiPurple}, ${COLORS.aiPurple}dd)`,
+              border: 'none',
+              borderRadius: 20,
+              padding: '8px 16px',
+              fontSize: 12,
+              color: '#fff',
+              cursor: isAIThinking ? 'not-allowed' : 'pointer',
+              opacity: isAIThinking ? 0.6 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            ✨ AI 催化
+          </button>
+          <button
+            onClick={handleAINarration}
+            disabled={isAIThinking}
+            style={{
+              background: `${COLORS.card}`,
+              border: `1px solid ${COLORS.aiPurple}40`,
+              borderRadius: 20,
+              padding: '8px 16px',
+              fontSize: 12,
+              color: COLORS.aiPurple,
+              cursor: isAIThinking ? 'not-allowed' : 'pointer',
+              opacity: isAIThinking ? 0.6 : 1,
+            }}
+          >
+            📖 AI 旁白
+          </button>
+          <button
+            onClick={handleClear}
+            style={{
+              background: 'none',
+              border: `1px solid ${COLORS.line}`,
+              borderRadius: 20,
+              padding: '8px 16px',
+              fontSize: 12,
+              color: COLORS.inkFaint,
+              cursor: 'pointer',
+            }}
+          >
+            清空
+          </button>
         </div>
       </div>
 
       {/* Input Area */}
       <div
         style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(12px)',
+          background: COLORS.card,
           borderTop: `1px solid ${COLORS.line}`,
-          zIndex: 20,
+          padding: '12px 16px',
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
         }}
       >
-        <div style={{ maxWidth: 560, margin: '0 auto', padding: '10px 16px 14px' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
           {/* Mode Toggle */}
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
               gap: 8,
               marginBottom: 8,
+              alignItems: 'center',
             }}
           >
             <button
               onClick={() => setInputMode('dialogue')}
               style={{
-                fontSize: 11,
-                padding: '5px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background:
-                  inputMode === 'dialogue' ? `${COLORS.blue}15` : 'transparent',
-                color:
-                  inputMode === 'dialogue' ? COLORS.blue : COLORS.inkFaint,
-                fontWeight: inputMode === 'dialogue' ? 600 : 400,
+                background: inputMode === 'dialogue' ? COLORS.blue : 'transparent',
+                border: `1px solid ${inputMode === 'dialogue' ? COLORS.blue : COLORS.line}`,
+                borderRadius: 16,
+                padding: '4px 12px',
+                fontSize: 12,
+                color: inputMode === 'dialogue' ? '#fff' : COLORS.inkLight,
                 cursor: 'pointer',
-                fontFamily: "'Noto Sans SC', sans-serif",
-                transition: 'all 0.2s',
               }}
             >
-              💬 对话
+              对话
             </button>
             <button
               onClick={() => setInputMode('thought')}
               style={{
-                fontSize: 11,
-                padding: '5px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background:
-                  inputMode === 'thought' ? `${COLORS.gold}15` : 'transparent',
-                color:
-                  inputMode === 'thought' ? COLORS.gold : COLORS.inkFaint,
-                fontWeight: inputMode === 'thought' ? 600 : 400,
+                background: inputMode === 'thought' ? COLORS.gold : 'transparent',
+                border: `1px solid ${inputMode === 'thought' ? COLORS.gold : COLORS.line}`,
+                borderRadius: 16,
+                padding: '4px 12px',
+                fontSize: 12,
+                color: inputMode === 'thought' ? '#fff' : COLORS.inkLight,
                 cursor: 'pointer',
-                fontFamily: "'Noto Sans SC', sans-serif",
-                transition: 'all 0.2s',
               }}
             >
-              ❧ 内心独白
+              内心独白
             </button>
-            {inputMode === 'dialogue' && (
-              <button
-                onClick={() => setIsMarkingSpark(!isMarkingSpark)}
-                style={{
-                  fontSize: 11,
-                  padding: '5px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: isMarkingSpark
-                    ? `${COLORS.gold}15`
-                    : 'transparent',
-                  color: isMarkingSpark ? COLORS.gold : COLORS.inkFaint,
-                  fontWeight: isMarkingSpark ? 600 : 400,
-                  cursor: 'pointer',
-                  marginLeft: 'auto',
-                  fontFamily: "'Noto Sans SC', sans-serif",
-                  transition: 'all 0.2s',
-                }}
-              >
-                ✨ 标记高光
-              </button>
-            )}
+            <div style={{ flex: 1 }} />
+            <button
+              onClick={() => setIsMarkingSpark(!isMarkingSpark)}
+              style={{
+                background: isMarkingSpark ? `${COLORS.gold}20` : 'transparent',
+                border: `1px solid ${isMarkingSpark ? COLORS.gold : COLORS.line}`,
+                borderRadius: 16,
+                padding: '4px 12px',
+                fontSize: 12,
+                color: isMarkingSpark ? COLORS.gold : COLORS.inkFaint,
+                cursor: 'pointer',
+              }}
+            >
+              ✨ 标记高光
+            </button>
           </div>
 
-          {/* Input Row */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+          {/* Input */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              alignItems: 'flex-end',
+            }}
+          >
             <textarea
               ref={inputRef}
               value={inputText}
@@ -967,91 +993,59 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
               onKeyDown={handleKeyDown}
               placeholder={
                 inputMode === 'dialogue'
-                  ? `以 ${myRole.name} 的身份说些什么...`
-                  : '写下此刻的内心独白...'
+                  ? `以${myRole.name}的身份说话...`
+                  : `写下${myRole.name}的内心想法...`
               }
-              rows={1}
+              rows={2}
               style={{
                 flex: 1,
-                resize: 'none',
-                borderRadius: 12,
                 border: `1px solid ${COLORS.line}`,
-                background: '#fafbfc',
-                padding: '12px 16px',
+                borderRadius: 12,
+                padding: '10px 14px',
                 fontSize: 14,
-                color: COLORS.ink,
                 fontFamily: "'Noto Serif SC', serif",
+                resize: 'none',
                 outline: 'none',
-                minHeight: 44,
-                maxHeight: 120,
-                lineHeight: 1.6,
-                transition: 'all 0.2s',
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor =
-                  inputMode === 'dialogue' ? `${COLORS.blue}60` : `${COLORS.gold}60`;
-                e.currentTarget.style.background = '#fff';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = COLORS.line;
-                e.currentTarget.style.background = '#fafbfc';
-              }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+                background: inputMode === 'thought' ? `${COLORS.gold}08` : COLORS.card,
               }}
             />
             <button
               onClick={handleSend}
               disabled={!inputText.trim()}
               style={{
-                height: 44,
-                padding: '0 20px',
-                borderRadius: 12,
+                background: inputText.trim()
+                  ? inputMode === 'thought'
+                    ? COLORS.gold
+                    : COLORS.blue
+                  : COLORS.line,
                 border: 'none',
-                fontSize: 13,
-                fontWeight: 600,
+                borderRadius: 12,
+                padding: '10px 20px',
+                fontSize: 14,
+                color: '#fff',
                 cursor: inputText.trim() ? 'pointer' : 'not-allowed',
-                fontFamily: "'Noto Sans SC', sans-serif",
-                transition: 'all 0.2s',
-                background: !inputText.trim()
-                  ? '#eee'
-                  : inputMode === 'dialogue'
-                    ? COLORS.blue
-                    : COLORS.gold,
-                color: !inputText.trim()
-                  ? COLORS.inkGhost
-                  : '#fff',
-                boxShadow: inputText.trim()
-                  ? `0 2px 8px ${inputMode === 'dialogue' ? `${COLORS.blue}30` : `${COLORS.gold}30`}`
-                  : 'none',
+                fontWeight: 500,
               }}
             >
               发送
             </button>
           </div>
-
-          {/* Hint */}
-          <div
-            style={{
-              textAlign: 'center',
-              fontSize: 10,
-              color: COLORS.inkGhost,
-              marginTop: 6,
-              fontFamily: "'Noto Sans SC', sans-serif",
-            }}
-          >
-            按 Enter 发送 · Shift+Enter 换行
-            {inputMode === 'thought' && ' · 内心独白只有你自己能看到'}
-          </div>
         </div>
       </div>
 
-      {/* Inline CSS animations */}
       <style>{`
-        @keyframes rpFadeIn { to { opacity: 1; } }
-        @keyframes rpMsgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes rpFadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes rpMsgIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes rpPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
       `}</style>
     </div>
   );
