@@ -12,6 +12,8 @@
 - **Database**: SQLite + Prisma 7
 - **Auth**: NextAuth v5
 - **AI**: coze-coding-dev-sdk (豆包大模型)
+- **Real-time**: Socket.io (双人实时通信)
+- **Integration**: 知乎开放平台 API
 
 ## 目录结构
 ```
@@ -25,29 +27,39 @@ src/
 │   ├── scenes/
 │   │   ├── page.tsx            # 场景库列表
 │   │   ├── [id]/page.tsx       # 场景详情（票根式卡片）
-│   │   └── [id]/play/page.tsx  # 角色扮演交互页面
+│   │   ├── [id]/play/page.tsx  # 单人角色扮演交互页面
+│   │   └── [id]/multiplayer/page.tsx  # 双人实时角色扮演页面
 │   ├── stories/
 │   │   ├── page.tsx            # 故事集/心理剧记录
 │   │   └── [id]/page.tsx       # 故事详情（沉浸式阅读）
 │   ├── seeds/page.tsx          # 故事种子（未开发灵感）
+│   ├── zhihu/page.tsx          # 知乎搜索页面
 │   └── api/
 │       ├── auth/[...nextauth]/route.ts  # NextAuth 认证
 │       ├── auth/register/route.ts       # 用户注册
 │       ├── sessions/route.ts            # 会话管理
 │       ├── sessions/[id]/messages/route.ts  # 消息管理
 │       ├── stories/route.ts             # 故事管理
-│       └── ai/catalyst/route.ts         # AI 催化（真实 LLM）
+│       ├── ai/catalyst/route.ts         # AI 催化（真实 LLM）
+│       └── zhihu/search/route.ts        # 知乎搜索 API
 ├── components/
 │   ├── site-header.tsx         # 顶部导航
 │   ├── site-footer.tsx         # 底部信息
 │   ├── featured-story.tsx      # 首页精选故事预览
-│   ├── scene-detail.tsx        # 场景详情组件（角色切换）
+│   ├── scene-detail.tsx        # 场景详情组件（角色切换 + 双人模式入口）
 │   ├── story-reader.tsx        # 沉浸式故事阅读器
-│   ├── roleplay-session.tsx    # 角色扮演交互组件（核心）
+│   ├── roleplay-session.tsx    # 单人角色扮演交互组件
 │   └── providers/session-provider.tsx  # NextAuth Provider
+├── hooks/
+│   └── use-socket.ts           # Socket.io 客户端 Hook
 ├── types/
 │   └── next-auth.d.ts          # NextAuth 类型扩展
 └── lib/
+    ├── data.ts                 # 数据层（场景、故事、种子）
+    ├── prisma.ts               # Prisma 客户端单例
+    ├── socket-server.ts        # Socket.io 服务端
+    └── utils.ts                # 工具函数
+```
     ├── data.ts                 # 数据层（场景、故事、种子）
     ├── prisma.ts               # Prisma 客户端单例
     └── utils.ts                # 工具函数

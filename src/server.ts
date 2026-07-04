@@ -1,6 +1,7 @@
 import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
+import { initSocketIO } from './lib/socket-server';
 
 const dev = process.env.COZE_PROJECT_ENV !== 'PROD';
 const hostname = process.env.HOSTNAME || 'localhost';
@@ -25,11 +26,16 @@ app.prepare().then(() => {
     console.error(err);
     process.exit(1);
   });
+
+  // 初始化 Socket.IO
+  initSocketIO(server);
+
   server.listen(port, () => {
     console.log(
       `> Server listening at http://${hostname}:${port} as ${
         dev ? 'development' : process.env.COZE_PROJECT_ENV
       }`,
     );
+    console.log(`> Socket.IO path: /api/socketio`);
   });
 });
