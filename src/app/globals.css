@@ -36,21 +36,21 @@
     'Times New Roman', Times, serif;
 
   /* === 群像·星火 Design System === */
-  /* Ocean Healing Series: 深海蓝 + 鎏金 + 治愈感 */
-  --color-bg: #f5f8fc;
-  --color-bg-warm: #faf8f5;
+  /* Pure Light Blue + White: 明亮浅蓝 + 纯白 */
+  --color-bg: #f0f8ff;
+  --color-bg-warm: #f0f8ff;
   --color-card-bg: #ffffff;
-  --color-ink: #1a2740;
-  --color-ink-secondary: #5a6b80;
-  --color-ink-muted: #94a3b8;
-  --color-brand-blue: #2A7FB8;
-  --color-brand-blue-light: #5BA8D8;
-  --color-brand-blue-deep: #1F6090;
-  --color-brand-gold: #7EC8E8;
-  --color-brand-gold-light: #A8DCF0;
-  --color-brand-gold-glow: #D4EEF8;
-  --color-border: #e5e7eb;
-  --color-border-light: #f0f2f5;
+  --color-ink: #1a2e4a;
+  --color-ink-secondary: #4a6888;
+  --color-ink-muted: #8a9db0;
+  --color-brand-blue: #4a9fd8;
+  --color-brand-blue-light: #7EC8E8;
+  --color-brand-blue-deep: #3a8fc8;
+  --color-brand-accent: #7EC8E8;
+  --color-brand-accent-light: #A8DCF0;
+  --color-brand-accent-glow: #D4EEF8;
+  --color-border: #e0e8f0;
+  --color-border-light: #eef4fa;
 }
 
 :root {
@@ -77,9 +77,9 @@
 
 /* ===== 群像·星火 Custom Styles ===== */
 
-/* Page background - ocean healing atmosphere */
+/* Page background - pure light blue atmosphere */
 .site-bg {
-  background: linear-gradient(180deg, #f5f8fc 0%, #faf8f5 50%, #f5f8fc 100%);
+  background: linear-gradient(180deg, #f0f8ff 0%, #ffffff 50%, #f0f8ff 100%);
   min-height: 100dvh;
 }
 
@@ -282,7 +282,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #c49b2c, #e8c864);
+  background: linear-gradient(90deg, #4a9fd8, #7EC8E8);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -296,7 +296,7 @@
   transition: border-color 0.3s ease;
 }
 .seed-card:hover {
-  border-left-color: #c49b2c;
+  border-left-color: #4a9fd8;
 }
 
 /* Navigation link hover */
