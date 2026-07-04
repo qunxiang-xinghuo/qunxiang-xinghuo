@@ -1,9 +1,13 @@
 import { notFound } from 'next/navigation';
-import { getSceneById } from '@/lib/data';
+import { getSceneById, scenes } from '@/lib/data';
 import { SceneDetail } from '@/components/scene-detail';
 
 interface SceneDetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+export function generateStaticParams() {
+  return scenes.map((scene) => ({ id: scene.id }));
 }
 
 export async function generateMetadata({ params }: SceneDetailPageProps) {

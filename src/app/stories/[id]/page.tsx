@@ -1,9 +1,13 @@
 import { notFound } from 'next/navigation';
-import { getStoryById } from '@/lib/data';
+import { getStoryById, stories } from '@/lib/data';
 import { StoryReader } from '@/components/story-reader';
 
 interface StoryDetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+export function generateStaticParams() {
+  return stories.map((story) => ({ id: story.id }));
 }
 
 export async function generateMetadata({ params }: StoryDetailPageProps) {
