@@ -7,6 +7,13 @@ export interface Scene {
   tags: string[];
   description: string;
   openingLine: string;
+  atmosphere?: string;
+  coverColor?: string;
+  time?: string;
+  catalystPrompts?: {
+    aiNarration?: string[];
+    aiCatalyst?: string[];
+  };
   roles: Role[];
   status: 'ready' | 'in_progress' | 'completed';
 }
@@ -37,7 +44,12 @@ export interface Story {
   sceneId: string;
   subtitle: string;
   description: string;
+  excerpt?: string;
+  content?: string;
   tags: string[];
+  coverColor?: string;
+  participants?: string[];
+  duration?: string;
   sparks: { label: string; count: number; icon: string }[];
   blocks: StoryBlock[];
   endingText: string;
@@ -59,7 +71,7 @@ export const scenes: Scene[] = [
       {
         name: '林屿',
         realName: '林屿',
-        gender: 'male',
+        gender: 'female',
         shortName: '林',
         desc: '不告而别',
         identity:
@@ -189,6 +201,147 @@ export const scenes: Scene[] = [
         color: '#ffffff',
       },
     ],
+    status: 'ready',
+  },
+  {
+    id: 'hospital-waiting',
+    title: '医院走廊',
+    atmosphere: '消毒水味、白色灯光、长椅上的等待',
+    time: '深夜',
+    location: '医院走廊',
+    description: '手术室的灯还亮着。两个陌生人坐在走廊两端，都在等同一个消息。',
+    roles: [
+      {
+        name: '方晴',
+        realName: '方晴',
+        gender: 'female',
+        shortName: '晴',
+        desc: '患者的女儿',
+        identity: '你是方晴。父亲突然住院，你从外地赶回来。手术已经进行了四个小时。',
+        secret: '你和父亲已经三年没说话了。',
+        secretHint: '关于你和父亲的矛盾',
+        color: '#7EC8E8',
+      },
+      {
+        name: '周远',
+        realName: '周远',
+        gender: 'male',
+        shortName: '周',
+        desc: '患者的主治医生',
+        identity: '你是周远。你是这台手术的主治医生。但患者的女儿不知道，你和她父亲是旧识。',
+        secret: '你当年离开，是因为被她父亲拒绝了。',
+        secretHint: '关于你和她父亲的过往',
+        color: '#ffffff',
+      },
+    ],
+    openingLine: '"手术还在进行中。你是……他的家属吗？"',
+    tags: ['医院', '等待', '父女', '旧识'],
+    catalystPrompts: {
+      aiNarration: [
+        '手术室的灯突然闪了一下。',
+        '走廊尽头的窗户开了一条缝，夜风带着凉意吹进来。',
+        '护士推着药车经过，轮子在地砖上发出轻微的声响。',
+      ],
+      aiCatalyst: [
+        '你盯着手术室的灯，数着秒。四个小时了。',
+        '他认出了你。但你不确定他会不会先开口。',
+        '走廊很长，你们之间的距离刚好够说完一个秘密。',
+      ],
+    },
+    status: 'ready',
+  },
+  {
+    id: 'bookstore-rain',
+    title: '书店避雨',
+    atmosphere: '书香、雨声、暖黄灯光',
+    time: '傍晚',
+    location: '旧书店',
+    description: '突如其来的暴雨，把两个陌生人困在同一家旧书店。书架之间，目光偶尔相遇。',
+    roles: [
+      {
+        name: '叶知秋',
+        realName: '叶知秋',
+        gender: 'female',
+        shortName: '叶',
+        desc: '自由撰稿人',
+        identity: '你是叶知秋。你来这里找一本绝版的诗集，却遇上了暴雨。',
+        secret: '你在找一个从未见过面的笔友，你们通信五年，但从未见面。',
+        secretHint: '关于你的笔友',
+        color: '#7EC8E8',
+      },
+      {
+        name: '宋辞',
+        realName: '宋辞',
+        gender: 'male',
+        shortName: '宋',
+        desc: '书店老板',
+        identity: '你是宋辞。这家书店是你爷爷留下的。今天有个女孩来了又走，来了又走。',
+        secret: '你就是她找了五年的笔友。你认出了她的笔迹。',
+        secretHint: '关于你和她的秘密',
+        color: '#ffffff',
+      },
+    ],
+    openingLine: '"雨好像停了。你要……再看一会儿吗？"',
+    tags: ['书店', '雨天', '笔友', '相遇'],
+    catalystPrompts: {
+      aiNarration: [
+        '雨点敲打着玻璃窗，像一首没有旋律的歌。',
+        '书架之间的灯光很暖，照在旧书的封面上。',
+        '咖啡的香气混着纸张的味道，让人想留下来。',
+      ],
+      aiCatalyst: [
+        '她第三次走到那个书架前，手指划过书脊，却没有抽出一本。',
+        '你认出了她的字迹。那封信，你还留着。',
+        '雨还在下，但你们之间的距离，比刚才近了一些。',
+      ],
+    },
+    status: 'ready',
+  },
+  {
+    id: 'elevator-stuck',
+    title: '电梯故障',
+    atmosphere: '密闭空间、应急灯、手机微光',
+    time: '深夜',
+    location: '写字楼电梯',
+    description: '加班到深夜，电梯突然停在了两层楼之间。只有两个人，一部故障的电梯。',
+    roles: [
+      {
+        name: '程晚',
+        realName: '程晚',
+        gender: 'female',
+        shortName: '程',
+        desc: '实习生',
+        identity: '你是程晚。今天是入职第一天，加班到最晚。电梯里只有你和另一个人。',
+        secret: '你认出了他。他是你一周前在地铁上帮过的人。',
+        secretHint: '关于你们的偶遇',
+        color: '#7EC8E8',
+      },
+      {
+        name: '陆沉',
+        realName: '陆沉',
+        gender: 'male',
+        shortName: '陆',
+        desc: '公司高管',
+        identity: '你是陆沉。你是这家公司的副总裁。电梯故障了，只有你和那个实习生。',
+        secret: '你记得她。那天在地铁上，是她帮你捡起了散落的文件。',
+        secretHint: '关于你对她的印象',
+        color: '#ffffff',
+      },
+    ],
+    openingLine: '"好像……卡住了。你按紧急呼叫了吗？"',
+    tags: ['电梯', '加班', '偶遇', '密闭'],
+    catalystPrompts: {
+      aiNarration: [
+        '应急灯闪烁着，在狭小的空间里投下摇晃的影子。',
+        '手机信号只有一格，勉强能发消息。',
+        '电梯微微晃动，像是随时会再动一下。',
+      ],
+      aiCatalyst: [
+        '她站在角落，手里还握着没来得及放下的工牌。',
+        '你认出了她。但这时候说"我记得你"，好像不太合适。',
+        '电梯很安静，安静到能听见彼此的呼吸。',
+      ],
+    },
     status: 'ready',
   },
 ];
@@ -361,6 +514,179 @@ export const stories: Story[] = [
     endingTag: '— 由 林屿 & 苏远 共创 —',
     createdAt: '2025-06-15',
     status: 'finished',
+  },
+  {
+    id: 'bookstore-rain-story',
+    title: '未寄出的信',
+    sceneId: 'bookstore-rain',
+    subtitle: '雨中的旧书店',
+    description: '五年的通信，从未见面的笔友。一场暴雨，把两个人困在同一家旧书店。',
+    coverColor: '#7EC8E8',
+    participants: ['叶知秋', '宋辞'],
+    duration: '45分钟',
+    excerpt: '五年的通信，从未见面的笔友。一场暴雨，把两个人困在同一家旧书店。',
+    blocks: [
+      { type: 'chapter', chapterTitle: '第一幕 · 雨' },
+      {
+        type: 'thought',
+        text: '暴雨来得突然。\n\n叶知秋站在旧书店的屋檐下，看着雨水顺着瓦片流下来，像一道帘子。她手里还攥着那张纸条——上面写着一个地址，和一个名字。\n\n"宋辞。"\n\n她来找他。找了五年。\n\n五年的通信，他们聊文学，聊生活，聊那些无法对身边人说的话。但从未见面。\n\n今天，她终于鼓起勇气来了。却遇上了暴雨。',
+      },
+      {
+        type: 'dialogue',
+        character: '宋辞',
+        text: '"雨好像停了。你要……再看一会儿吗？"',
+      },
+      { type: 'chapter', chapterTitle: '第二幕 · 认' },
+      {
+        type: 'thought',
+        text: '宋辞认出了她。\n\n不是因为她长得像什么，而是因为——她刚才翻书的方式。\n\n那封信里写过："我找书的时候，总是先闻一闻。旧书的味道，像时间的味道。"\n\n他看着她，看着她指尖划过书脊，看着她微微低头，闻一闻那本旧诗集。\n\n是她。\n\n那个和他通信五年的女孩，就站在他爷爷留下的书店里。',
+      },
+      {
+        type: 'dialogue',
+        character: '叶知秋',
+        text: '"你是……宋辞？"',
+      },
+      {
+        type: 'dialogue',
+        character: '宋辞',
+        text: '"嗯。你是……知秋？"',
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 言' },
+      {
+        type: 'thought',
+        text: '他们没有立刻相认。\n\n也许是太突然，也许是太期待这一刻，反而不知道该怎么开口。\n\n他们继续假装陌生人，聊着天气，聊着书店，聊着这场雨。\n\n但每一句话，都是写给对方的信。\n\n只是这一次，不用再寄出去。',
+      },
+    ],
+    endingText:
+      '"五年的通信，从未见面的笔友。\n一场暴雨，把两个人困在同一家旧书店。\n原来，有些相遇，只需要一场雨的时间。"',
+    endingTag: '— 由 叶知秋 & 宋辞 共创 —',
+    createdAt: '2025-07-01',
+    status: 'finished',
+    tags: ['笔友', '书店', '相遇'],
+    sparks: [
+      { label: '五年通信', count: 1, icon: 'fire' },
+      { label: '从未见面', count: 1, icon: 'fire' },
+    ],
+  },
+  {
+    id: 'elevator-stuck-story',
+    title: '一格信号',
+    subtitle: '电梯故障，只有两个人和一格手机信号',
+    description: '加班到深夜，电梯故障。只有两个人，一部故障的电梯，和一格手机信号。',
+    sceneId: 'elevator-stuck',
+    coverColor: '#B0E0E6',
+    participants: ['程晚', '陆沉'],
+    duration: '30分钟',
+    excerpt: '加班到深夜，电梯故障。只有两个人，一部故障的电梯，和一格手机信号。',
+    blocks: [
+      { type: 'chapter', chapterTitle: '第一幕 · 困' },
+      {
+        type: 'thought',
+        text: '电梯停下来的时候，程晚正在看手机。\n\n屏幕上的时间显示：23:47。\n\n入职第一天，加班到最晚。她以为自己够拼了，没想到还有更拼的——电梯里那个男人，从她进来到现在，一直在看文件。\n\n应急灯亮着，手机信号只有一格。\n\n她试着发了一条消息给妈妈："今天加班，晚点回。"\n\n发送中……',
+      },
+      {
+        type: 'dialogue',
+        character: '陆沉',
+        text: '"好像……卡住了。你按紧急呼叫了吗？"',
+      },
+      { type: 'chapter', chapterTitle: '第二幕 · 认' },
+      {
+        type: 'thought',
+        text: '陆沉认出了她。\n\n一周前，地铁上。一个女孩帮他捡起了散落的文件。\n\n那时候他刚开完一个重要的会议，文件掉了一地。所有人都低着头走过，只有她蹲下来，帮他一张张捡起来。\n\n"没关系，我也经常这样。"她笑着说。\n\n他记得她的笑。\n\n现在，她就在他的电梯里。',
+      },
+      {
+        type: 'dialogue',
+        character: '程晚',
+        text: '"按了，好像没人接。"',
+      },
+      {
+        type: 'dialogue',
+        character: '陆沉',
+        text: '"那……等一会儿吧。"',
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 言' },
+      {
+        type: 'thought',
+        text: '他们开始聊天。\n\n从电梯故障，聊到加班，聊到工作，聊到生活。\n\n他没有说"我记得你"。\n\n她也没有说"我认出了你"。\n\n但每一句话，都是重逢。\n\n电梯修好的时候，已经是凌晨。\n\n他们一起走出大楼，夜风很凉，但心里很暖。',
+      },
+    ],
+    endingText:
+      '"电梯故障了，但有些东西，开始运转了。"',
+    endingTag: '— 由 程晚 & 陆沉 共创 —',
+    createdAt: '2025-07-03',
+    status: 'finished',
+    tags: ['电梯', '故障', '信号'],
+    sparks: [
+      { label: '手机信号', count: 1, icon: 'fire' },
+      { label: '故障电梯', count: 1, icon: 'fire' },
+    ],
+  },
+  {
+    id: 'midnight-taxi-story',
+    title: '凌晨三点的乘客',
+    subtitle: '有些乘客，载的不是人，是一段放不下的过去',
+    description: '凌晨三点，出租车司机载着一个不想回家的乘客。',
+    sceneId: 'midnight-taxi',
+    coverColor: '#7EC8E8',
+    participants: ['周然', '陈默'],
+    duration: '25分钟',
+    excerpt: '凌晨三点，出租车司机载着一个不想回家的乘客。',
+    blocks: [
+      { type: 'chapter', chapterTitle: '第一幕 · 上车' },
+      {
+        type: 'thought',
+        text: '凌晨三点，城市终于安静了。\n\n周然把车停在酒吧街路口，等最后一个客人。他不想回家——家里太安静了，安静得能听见自己的心跳。\n\n一个女孩拉开车门坐进来。妆花了，高跟鞋拎在手里，赤脚踩在脚垫上。\n\n"去哪？"\n\n"随便开。"',
+      },
+      { type: 'chapter', chapterTitle: '第二幕 · 聊' },
+      {
+        type: 'thought',
+        text: '他们聊了很多。\n\n她说她刚分手，他说他刚离婚。她说她不知道去哪，他说他不想回家。\n\n他们都没有问对方的名字。\n\n有时候，陌生人比熟人更适合倾听。',
+      },
+    ],
+    endingText:
+      '"凌晨三点，两个不想回家的人。\n一辆出租车，一段不需要名字的对话。"',
+    endingTag: '— 由 周然 & 陈默 共创 —',
+    createdAt: '2025-07-05',
+    status: 'finished',
+    tags: ['凌晨', '出租车', '陌生人'],
+    sparks: [
+      { label: '凌晨三点', count: 1, icon: 'fire' },
+      { label: '不想回家', count: 1, icon: 'fire' },
+    ],
+  },
+  {
+    id: 'rooftop-story',
+    title: '天台上的秘密',
+    subtitle: '深夜天台，两个失眠的人',
+    description: '深夜的天台，两个失眠的人，和一个不能说的秘密。',
+    sceneId: 'rooftop-night',
+    coverColor: '#B0E0E6',
+    participants: ['沈一', '顾念'],
+    duration: '35分钟',
+    excerpt: '深夜的天台，两个失眠的人，和一个不能说的秘密。',
+    blocks: [
+      { type: 'chapter', chapterTitle: '第一幕 · 相遇' },
+      {
+        type: 'thought',
+        text: '凌晨两点，沈一又失眠了。\n\n他习惯性地走上天台。这是他的秘密基地——没人知道他会来这里。\n\n但今晚，天台上已经有一个人了。\n\n一个女孩坐在边缘，双腿悬空，看着城市的灯火。',
+      },
+      { type: 'chapter', chapterTitle: '第二幕 · 秘密' },
+      {
+        type: 'thought',
+        text: '他们没有问对方为什么来这里。\n\n只是并肩坐着，看星星，看灯火，看这座沉睡的城市。\n\n然后她开口了。\n\n"我有一个秘密，藏了很久。"',
+      },
+    ],
+    endingText:
+      '"深夜的天台，两个失眠的人。\n有些秘密，只能对陌生人说。"',
+    endingTag: '— 由 沈一 & 顾念 共创 —',
+    createdAt: '2025-07-06',
+    status: 'finished',
+    tags: ['深夜', '失眠', '秘密'],
+    sparks: [
+      { label: '深夜的天台', count: 1, icon: 'fire' },
+      { label: '失眠的陌生人', count: 1, icon: 'fire' },
+      { label: '不能说的秘密', count: 1, icon: 'fire' },
+    ],
   },
 ];
 
