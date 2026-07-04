@@ -205,7 +205,9 @@ export default function MultiplayerPlayPage() {
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                        role.color === '#ffffff' ? 'border-2 border-[var(--color-brand-blue)] text-[var(--color-brand-blue)]' : 'text-white'
+                      }`}
                       style={{ backgroundColor: role.color }}
                     >
                       {role.name[0]}
