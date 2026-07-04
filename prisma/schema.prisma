@@ -119,3 +119,32 @@ model Story {
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id])
 }
+
+// 知乎数据采集存储
+model ZhihuContent {
+  id          String   @id @default(cuid())
+  type        String   // scene, character, emotion, story
+  query       String   // 搜索关键词
+  title       String
+  content     String
+  summary     String   // AI 生成的摘要
+  sourceUrl   String?
+  tags        String   // JSON array as string
+  createdAt   DateTime @default(now())
+  
+  @@index([type])
+  @@index([query])
+}
+
+// AI 生成记录
+model AIGeneration {
+  id          String   @id @default(cuid())
+  type        String   // scene, character, secret, story_polish
+  prompt      String   // 输入提示
+  result      String   // 生成结果
+  context     String?  // 使用的知乎上下文
+  userId      String?
+  createdAt   DateTime @default(now())
+  
+  @@index([type])
+}

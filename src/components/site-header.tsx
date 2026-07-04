@@ -8,7 +8,7 @@ const navItems = [
   { href: '/', label: '首页' },
   { href: '/scenes', label: '场景库' },
   { href: '/stories', label: '故事集' },
-  { href: '/seeds', label: '故事种子' },
+  { href: '/workshop', label: 'AI创作' },
   { href: '/zhihu', label: '知乎搜索' },
 ];
 
