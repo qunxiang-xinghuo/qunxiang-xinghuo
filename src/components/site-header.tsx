@@ -3,17 +3,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 const navItems = [
   { href: '/', label: '首页' },
   { href: '/scenes', label: '场景库' },
   { href: '/stories', label: '故事集' },
-  { href: '/workshop', label: 'AI创作' },
+  { href: '/workshop', label: 'AI 创作' },
 ];
 
 export function SiteHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: session } = useSession();
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border/60">
@@ -60,6 +62,38 @@ export function SiteHeader() {
               );
             })}
           </nav>
+
+          {/* User Menu */}
+          <div className="hidden sm:flex items-center gap-3">
+            {session?.user ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-ink-secondary hover:text-ink hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="w-6 h-6 rounded-full bg-brand-blue/10 flex items-center justify-center">
+                    <span className="text-xs font-medium text-brand-blue">
+                      {session.user.email?.[0].toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                  <span className="text-xs">{session.user.email}</span>
+                </Link>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="px-3 py-1.5 text-sm text-ink-muted hover:text-ink-secondary transition-colors"
+                >
+                  退出
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="px-4 py-1.5 text-sm text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-colors"
+              >
+                登录
+              </Link>
+            )}
+          </div>
 
           {/* Mobile Menu Button */}
           <button
@@ -108,6 +142,36 @@ export function SiteHeader() {
                 </Link>
               );
             })}
+            <div className="mt-3 pt-3 border-t border-border/40">
+              {session?.user ? (
+                <>
+                  <Link
+                    href="/profile"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-ink-secondary hover:text-ink hover:bg-gray-50 rounded-lg"
+                  >
+                    用户中心
+                  </Link>
+                  <button
+                    onClick={() => {
+                      signOut({ callbackUrl: '/' });
+                      setMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-2.5 text-sm text-ink-muted hover:text-ink-secondary"
+                  >
+                    退出登录
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-2.5 text-sm text-brand-blue hover:bg-brand-blue/5 rounded-lg"
+                >
+                  登录
+                </Link>
+              )}
+            </div>
           </nav>
         )}
       </div>
