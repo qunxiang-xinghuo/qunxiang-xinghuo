@@ -106,11 +106,12 @@ export function getClientIP(headers: Headers): string {
  * Rate Limiting 中间件工厂
  */
 export function withRateLimit(
-  handler: (req: any) => Promise<Response>,
+  handler: (...args: any[]) => Promise<Response>,
   config: RateLimitConfig = RATE_LIMITS.standard,
   getIdentifier?: (req: any) => string
 ) {
-  return async (req: any): Promise<Response> => {
+  return async (...args: any[]): Promise<Response> => {
+    const req = args[0];
     const identifier = getIdentifier
       ? getIdentifier(req)
       : getClientIP(req.headers);
@@ -143,7 +144,7 @@ export function withRateLimit(
       );
     }
 
-    return handler(req);
+    return handler(...args);
   };
 }
 
