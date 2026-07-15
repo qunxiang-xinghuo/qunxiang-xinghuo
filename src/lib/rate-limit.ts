@@ -106,10 +106,13 @@ export function getClientIP(headers: Headers): string {
  * Rate Limiting 中间件工厂
  */
 export function withRateLimit(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: (...args: any[]) => Promise<Response>,
   config: RateLimitConfig = RATE_LIMITS.standard,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getIdentifier?: (req: any) => string
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return async (...args: any[]): Promise<Response> => {
     const req = args[0];
     const identifier = getIdentifier

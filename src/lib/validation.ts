@@ -154,7 +154,7 @@ export function validateInput<T>(
   }
 
   // 返回第一个错误信息
-  const error = result.error.errors[0];
+  const error = result.error.issues[0];
   return {
     success: false,
     error: `${error.path.join('.')}: ${error.message}`,
