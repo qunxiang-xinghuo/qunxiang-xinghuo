@@ -165,3 +165,10 @@ Desktop.ini
 .codegraph/
 
 /src/generated/prisma
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+prisma/*.db
+prisma/*.sqlite
