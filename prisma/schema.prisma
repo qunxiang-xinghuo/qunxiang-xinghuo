@@ -23,6 +23,10 @@ model User {
   
   // Sessions
   sessions      Session[]
+
+  @@index([email])
+  @@index([username])
+  @@index([createdAt])
 }
 
 model Session {
@@ -80,6 +84,11 @@ model Conversation {
   roles   ConversationRole[]
   messages Message[]
   story   Story?
+
+  @@index([userId])
+  @@index([sceneId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model ConversationRole {
@@ -103,6 +112,10 @@ model Message {
   createdAt      DateTime @default(now())
   
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([roleId])
+  @@index([createdAt])
 }
 
 model Story {
@@ -118,6 +131,11 @@ model Story {
   
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([conversationId])
+  @@index([createdAt])
+  @@index([status])
 }
 
 // 知乎数据采集存储
