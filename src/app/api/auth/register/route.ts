@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
+import { validateInput, registerSchema, validationErrorResponse } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: NextRequest) {
+async function handleRegister(request: NextRequest) {
   try {
-    const { email, password, name } = await request.json();
+    const body = await request.json();
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: '邮箱和密码不能为空' },
-        { status: 400 }
-      );
+    // 输入验证
+    const validation = validateInput(registerSchema, body);
+    if (!validation.success) {
+      return validationErrorResponse(validation.error);
     }
+
+    const { email, password, username } = validation.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -35,7 +38,7 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         passwordHash: hashedPassword,
-        username: name || email.split('@')[0],
+        username: username || email.split('@')[0],
       },
     });
 
@@ -51,3 +54,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = withRateLimit(
+  handleRegister,
+  RATE_LIMITS.strict, // 严格限制：1 分钟 5 次
+  (req) => getClientIP(req.headers) // 按 IP 限制
+);

@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
+import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
+import { validateInput, createSessionSchema, validationErrorResponse } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-// POST /api/sessions - Create a new conversation session
-export async function POST(request: NextRequest) {
+async function handleCreateSession(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -22,11 +23,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { sceneId, roleIds } = body;
-
-    if (!sceneId || !roleIds || !Array.isArray(roleIds)) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    
+    // 输入验证
+    const validation = validateInput(createSessionSchema, body);
+    if (!validation.success) {
+      return validationErrorResponse(validation.error);
     }
+
+    const { sceneId } = validation.data;
 
     // Create conversation
     const conversation = await prisma.conversation.create({
@@ -34,20 +38,8 @@ export async function POST(request: NextRequest) {
         sceneId,
         userId: user.id,
         status: 'active',
-        roles: {
-          create: roleIds.map((roleId: string) => ({
-            roleId,
-            userId: user.id,
-            isAI: false,
-          })),
-        },
       },
       include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
         scene: true,
       },
     });
@@ -59,8 +51,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/sessions - Get all conversations for the current user
-export async function GET() {
+async function handleGetSessions() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -80,15 +71,6 @@ export async function GET() {
       where: { userId: user.id },
       include: {
         scene: true,
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-        messages: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
         _count: {
           select: { messages: true },
         },
@@ -102,3 +84,18 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to get conversations' }, { status: 500 });
   }
 }
+
+export const POST = withRateLimit(
+  handleCreateSession,
+  RATE_LIMITS.standard, // 标准限制：1 分钟 60 次
+  (req) => {
+    // 优先使用用户 ID，否则使用 IP
+    const ip = getClientIP(req.headers);
+    return `session_create:${ip}`;
+  }
+);
+
+export const GET = withRateLimit(
+  handleGetSessions,
+  RATE_LIMITS.standard
+);

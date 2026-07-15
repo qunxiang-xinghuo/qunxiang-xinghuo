@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
+import { validateInput, zhihuSearchSchema, validationErrorResponse } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,8 +41,7 @@ function getZhihuHeaders() {
   };
 }
 
-// GET /api/zhihu/search?query=xxx - Search Zhihu content
-export async function GET(request: NextRequest) {
+async function handleZhihuSearch(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('query');
@@ -58,6 +59,14 @@ export async function GET(request: NextRequest) {
         { error: 'Missing query parameter' },
         { status: 400 }
       );
+    }
+
+    // 输入验证（仅对搜索词验证）
+    if (query) {
+      const validation = validateInput(zhihuSearchSchema, { query });
+      if (!validation.success) {
+        return validationErrorResponse(validation.error);
+      }
     }
 
     let endpoint = '';
@@ -114,73 +123,20 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/zhihu/search - Search with request body
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { query, type = 'zhihu_search' } = body;
-
-    if (!ZHIHU_API_KEY) {
-      return NextResponse.json(
-        { error: 'Zhihu API not configured. Please set ZHIHU_API_KEY environment variable.' },
-        { status: 500 }
-      );
-    }
-
-    if (!query && type !== 'hot_list') {
-      return NextResponse.json(
-        { error: 'Missing query parameter' },
-        { status: 400 }
-      );
-    }
-
-    let endpoint = '';
-    let params: Record<string, string> = {};
-
-    switch (type) {
-      case 'zhihu_search':
-        endpoint = `${ZHIHU_API_BASE}/zhihu_search`;
-        params = { Query: query || '' };
-        break;
-      case 'global_search':
-        endpoint = `${ZHIHU_API_BASE}/global_search`;
-        params = { Query: query || '' };
-        break;
-      case 'hot_list':
-        endpoint = `${ZHIHU_API_BASE}/hot_list`;
-        break;
-      default:
-        return NextResponse.json(
-          { error: 'Invalid search type' },
-          { status: 400 }
-        );
-    }
-
-    const url = new URL(endpoint);
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) url.searchParams.append(key, value);
-    });
-
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: getZhihuHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return NextResponse.json(
-        { error: `Zhihu API error: ${response.status}`, details: errorText },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Zhihu search error:', error);
-    return NextResponse.json(
-      { error: 'Failed to search Zhihu' },
-      { status: 500 }
-    );
+export const GET = withRateLimit(
+  handleZhihuSearch,
+  RATE_LIMITS.lenient, // 宽松限制：1 分钟 100 次
+  (req) => {
+    const ip = getClientIP(req.headers);
+    return `zhihu_search:${ip}`;
   }
-}
+);
+
+export const POST = withRateLimit(
+  handleZhihuSearch,
+  RATE_LIMITS.lenient,
+  (req) => {
+    const ip = getClientIP(req.headers);
+    return `zhihu_search:${ip}`;
+  }
+);

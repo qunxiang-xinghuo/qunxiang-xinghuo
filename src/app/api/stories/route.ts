@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
+import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
+import { validateInput, createStorySchema, validationErrorResponse } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-// POST /api/stories - Create a new story from a conversation
-export async function POST(request: NextRequest) {
+async function handleCreateStory(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -22,11 +23,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { conversationId, title, content, summary } = body;
 
-    if (!title || !content || !conversationId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // 输入验证
+    const validation = validateInput(createStorySchema, body);
+    if (!validation.success) {
+      return validationErrorResponse(validation.error);
     }
+
+    const { title, content, conversationId } = validation.data;
 
     // Verify the conversation belongs to the user
     const conversation = await prisma.conversation.findFirst({
@@ -42,7 +46,6 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         content,
-        summary,
         userId: user.id,
         conversationId,
         status: 'draft',
@@ -56,8 +59,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/stories - Get all stories for the current user
-export async function GET() {
+async function handleGetStories() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -87,3 +89,17 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to get stories' }, { status: 500 });
   }
 }
+
+export const POST = withRateLimit(
+  handleCreateStory,
+  RATE_LIMITS.standard,
+  (req) => {
+    const ip = getClientIP(req.headers);
+    return `story_create:${ip}`;
+  }
+);
+
+export const GET = withRateLimit(
+  handleGetStories,
+  RATE_LIMITS.standard
+);

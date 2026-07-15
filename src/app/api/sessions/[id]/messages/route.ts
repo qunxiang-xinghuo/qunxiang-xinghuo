@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
+import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
+import { validateInput, sendMessageSchema, validationErrorResponse } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-// POST /api/sessions/[id]/messages - Add a message to a conversation
-export async function POST(
+async function handleCreateMessage(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -26,11 +27,14 @@ export async function POST(
 
     const { id: conversationId } = await params;
     const body = await request.json();
-    const { content, type, roleId } = body;
 
-    if (!content || !type || !roleId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // 输入验证
+    const validation = validateInput(sendMessageSchema, body);
+    if (!validation.success) {
+      return validationErrorResponse(validation.error);
     }
+
+    const { content, roleId } = validation.data;
 
     // Verify the conversation belongs to the user
     const conversation = await prisma.conversation.findFirst({
@@ -47,7 +51,7 @@ export async function POST(
         conversationId,
         roleId,
         content,
-        type, // dialogue, thought, narration
+        type: 'dialogue',
       },
     });
 
@@ -58,8 +62,7 @@ export async function POST(
   }
 }
 
-// GET /api/sessions/[id]/messages - Get all messages for a conversation
-export async function GET(
+async function handleGetMessages(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -111,3 +114,17 @@ export async function GET(
     return NextResponse.json({ error: 'Failed to get messages' }, { status: 500 });
   }
 }
+
+export const POST = withRateLimit(
+  handleCreateMessage,
+  RATE_LIMITS.standard, // 标准限制：1 分钟 60 次
+  (req) => {
+    const ip = getClientIP(req.headers);
+    return `message_create:${ip}`;
+  }
+);
+
+export const GET = withRateLimit(
+  handleGetMessages,
+  RATE_LIMITS.standard
+);
