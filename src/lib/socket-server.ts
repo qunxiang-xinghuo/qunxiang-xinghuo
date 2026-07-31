@@ -233,6 +233,35 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
       });
     });
 
+    // 双人创作房间事件
+    socket.on('room:join', (data: { roomId: string; role: 'A' | 'B' }) => {
+      const { roomId, role } = data;
+      socket.join(roomId);
+      console.log(`[Socket.IO] User ${socket.id} joined room ${roomId} as ${role}`);
+      socket.to(roomId).emit('room:user-joined', { socketId: socket.id, role });
+    });
+
+    // 发送消息
+    socket.on('room:message', (data: { roomId: string; message: any }) => {
+      const { roomId, message } = data;
+      socket.to(roomId).emit('room:message-received', message);
+      console.log(`[Socket.IO] Message in room ${roomId}`);
+    });
+
+    // 房间状态更新
+    socket.on('room:status-update', (data: { roomId: string; status: any }) => {
+      const { roomId, status } = data;
+      socket.to(roomId).emit('room:status-updated', status);
+    });
+
+    // 离开房间
+    socket.on('room:leave', (data: { roomId: string }) => {
+      const { roomId } = data;
+      socket.leave(roomId);
+      socket.to(roomId).emit('room:user-left', { socketId: socket.id });
+      console.log(`[Socket.IO] User ${socket.id} left room ${roomId}`);
+    });
+
     // 断开连接
     socket.on('disconnect', () => {
       console.log(`[Socket.IO] User disconnected: ${socket.id}`);
