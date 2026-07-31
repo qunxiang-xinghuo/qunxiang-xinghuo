@@ -166,3 +166,69 @@ model AIGeneration {
   
   @@index([type])
 }
+
+// 双人创作房间（无需登录）
+model Room {
+  id              String   @id // 6 位房间号 (ABC123)
+  scene           String   // 场景描述 (最多 200 字)
+  roleAName       String   // 角色 A 名字 (最多 20 字)
+  roleBName       String   // 角色 B 名字 (最多 20 字)
+  roleADescription String? // 角色 A 描述
+  roleBDescription String? // 角色 B 描述
+  
+  // 状态控制
+  status          String   @default("waiting") // waiting, active, completed, expired
+  currentRound    Int      @default(0)         // 当前轮次 (0-10)
+  currentRole     String   @default("A")       // 当前轮到谁 (A/B)
+  hostId          String   // 创建者匿名 ID
+  guestId         String?  // 加入者匿名 ID
+  
+  // 时间控制
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime // 过期时间（24 小时后）
+  lastActiveAt    DateTime @default(now())
+  
+  // 配额管理
+  zhihuCallsUsed  Int      @default(0)  // 知乎 API 已用次数
+  zhihuCallsMax   Int      @default(100) // 知乎 API 最大次数
+  aiCallsUsed     Int      @default(0)  // AI API 已用次数
+  aiCallsMax      Int      @default(50)  // AI API 最大次数
+  
+  // 故事分析结果
+  goldenQuote     String?  // 金句
+  lingeringMood   String?  // 余韵
+  secret          String?  // 秘密
+  plotTwist       String?  // 反转
+  
+  // Relations
+  messages        RoomMessage[]
+  
+  @@index([status])
+  @@index([hostId])
+  @@index([guestId])
+  @@index([expiresAt])
+  @@index([createdAt])
+}
+
+// 双人创作房间消息
+model RoomMessage {
+  id              String   @id @default(cuid())
+  roomId          String   // 房间 ID
+  
+  round           Int      // 轮次 (1-10)
+  role            String   // 角色 (A/B)
+  content         String   // 内容 (最多 100 字)
+  
+  // AI 相关
+  isAI            Boolean  @default(false)
+  aiStyle         String?  // "温情" | "冲突" | "留白"
+  zhihuMaterials  String?  // JSON 数组，知乎素材引用
+  
+  timestamp       DateTime @default(now())
+  
+  room            Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  
+  @@index([roomId])
+  @@index([round])
+  @@index([timestamp])
+}
