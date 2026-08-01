@@ -1,3 +1,20 @@
+/**
+ * 用户资料 API
+ * 
+ * 功能：获取当前登录用户的资料信息
+ * 
+ * 接口：
+ * - GET /api/auth/profile - 获取当前用户资料
+ * 
+ * 返回：
+ * - 成功：用户资料（email, username, createdAt）
+ * - 失败：未登录错误
+ * 
+ * 安全：
+ * - 需要登录才能访问
+ * - 只返回当前用户的信息
+ */
+
 import { authOptions } from '@/lib/auth-config';
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';

@@ -1,3 +1,24 @@
+/**
+ * 知乎素材采集 API
+ * 
+ * 功能：采集知乎平台上的素材内容
+ * 
+ * 接口：
+ * - POST /api/zhihu/collect - 采集知乎素材
+ * 
+ * 请求参数：
+ * - query: 搜索关键词
+ * - limit: 返回数量限制
+ * 
+ * 返回：
+ * - 成功：采集到的素材列表
+ * - 失败：错误信息
+ * 
+ * 注意：
+ * - 需要配置 ZHIHU_API_KEY 环境变量
+ * - 受速率限制保护
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 

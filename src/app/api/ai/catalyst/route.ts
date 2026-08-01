@@ -1,3 +1,21 @@
+/**
+ * AI 催化 API
+ * 
+ * 功能：使用真实 LLM 生成 AI 催化提示
+ * 
+ * 接口：
+ * - POST /api/ai/catalyst - 获取 AI 催化提示
+ * 
+ * 请求参数：
+ * - sceneId: 场景 ID
+ * - messageCount: 消息数量
+ * - lastMessage: 最后一条消息
+ * - conversationHistory: 对话历史
+ * 
+ * 返回：
+ * - AI 生成的催化提示文本
+ */
+
 import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { scenes } from '@/lib/data';

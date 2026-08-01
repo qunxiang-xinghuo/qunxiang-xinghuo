@@ -1,3 +1,26 @@
+/**
+ * 知乎搜索 API
+ * 
+ * 功能：搜索知乎平台上的内容素材
+ * 
+ * 接口：
+ * - GET /api/zhihu/search - 搜索知乎内容
+ * - POST /api/zhihu/search - 搜索知乎内容
+ * 
+ * 请求参数：
+ * - query: 搜索关键词
+ * - type: 搜索类型（article, answer, zvideo）
+ * - limit: 返回数量限制
+ * 
+ * 返回：
+ * - 成功：搜索结果列表
+ * - 失败：错误信息
+ * 
+ * 注意：
+ * - 需要配置 ZHIHU_API_KEY 环境变量
+ * - 受速率限制保护（10次/分钟）
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 import { validateInput, zhihuSearchSchema, validationErrorResponse } from '@/lib/validation';

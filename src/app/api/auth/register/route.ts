@@ -1,3 +1,26 @@
+/**
+ * 用户注册 API
+ * 
+ * 功能：处理用户注册请求
+ * 
+ * 接口：
+ * - POST /api/auth/register - 注册新用户
+ * 
+ * 请求参数：
+ * - email: 用户邮箱
+ * - password: 用户密码
+ * - username: 用户名
+ * 
+ * 返回：
+ * - 注册成功：用户信息（不含密码）
+ * - 注册失败：错误信息
+ * 
+ * 安全：
+ * - 密码使用 bcrypt 加密
+ * - 有速率限制防止恶意注册
+ * - 输入验证防止注入攻击
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';

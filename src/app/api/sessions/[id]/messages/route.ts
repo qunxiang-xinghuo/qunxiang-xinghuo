@@ -1,3 +1,25 @@
+/**
+ * 会话消息 API
+ * 
+ * 功能：管理单人创作会话的消息
+ * 
+ * 接口：
+ * - GET /api/sessions/[id]/messages - 获取会话消息列表
+ * - POST /api/sessions/[id]/messages - 发送消息到会话
+ * 
+ * 请求参数（POST）：
+ * - role: 角色（A/B）
+ * - content: 消息内容
+ * 
+ * 返回：
+ * - 成功：消息列表或创建的消息
+ * - 失败：错误信息
+ * 
+ * 安全：
+ * - 需要登录才能访问
+ * - 只能访问自己的会话
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';

@@ -1,3 +1,25 @@
+/**
+ * 修改密码 API
+ * 
+ * 功能：处理用户修改密码请求
+ * 
+ * 接口：
+ * - POST /api/auth/change-password - 修改当前用户密码
+ * 
+ * 请求参数：
+ * - currentPassword: 当前密码
+ * - newPassword: 新密码
+ * 
+ * 返回：
+ * - 修改成功：成功消息
+ * - 修改失败：错误信息
+ * 
+ * 安全：
+ * - 需要登录才能修改密码
+ * - 密码使用 bcrypt 加密
+ * - 验证当前密码是否正确
+ */
+
 import { authOptions } from '@/lib/auth-config';
 import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';

@@ -1,3 +1,22 @@
+/**
+ * AI 生成 API
+ * 
+ * 功能：自动调用知乎获取素材，使用 LLM 生成内容
+ * 
+ * 接口：
+ * - POST /api/ai/generate - 生成场景/角色/秘密/故事润色
+ * 
+ * 请求参数：
+ * - type: 生成类型 ('scene' | 'character' | 'secret' | 'story_polish')
+ * - prompt: 生成提示
+ * - useZhihuContext: 是否使用知乎上下文
+ * - zhihuQuery: 知乎搜索关键词
+ * - autoCollect: 是否自动采集知乎数据
+ * 
+ * 返回：
+ * - AI 生成的内容
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
