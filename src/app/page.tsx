@@ -35,13 +35,22 @@ export default function HomePage() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 opacity-0 animate-fade-in-up delay-300">
             <Link
+              href="/room/create"
+              className="group px-8 py-3.5 bg-gradient-to-r from-[#4A9FD8] to-[#7EC8E8] text-white text-sm font-medium tracking-wide rounded-xl transition-all duration-300 shadow-lg shadow-[#4A9FD8]/25 hover:shadow-xl hover:shadow-[#4A9FD8]/35 hover:-translate-y-0.5 flex items-center gap-2"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              双人创作
+            </Link>
+            <Link
               href="/scenes"
-              className="group px-8 py-3.5 bg-gradient-to-r from-[#2A7FB8] to-[#5BA8D8] text-white text-sm font-medium tracking-wide rounded-xl transition-all duration-300 shadow-lg shadow-[#2A7FB8]/25 hover:shadow-xl hover:shadow-[#2A7FB8]/35 hover:-translate-y-0.5 flex items-center gap-2"
+              className="px-8 py-3.5 border border-border text-ink-secondary text-sm font-medium tracking-wide rounded-xl hover:border-brand-blue/40 hover:text-brand-blue hover:bg-brand-blue/5 transition-all duration-300"
             >
               进入场景库
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
             </Link>
             <Link
               href="/stories"
