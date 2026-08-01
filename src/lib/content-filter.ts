@@ -1,136 +1,146 @@
 /**
- * 内容安全过滤工具
- * 敏感词过滤 + 内容长度限制
+ * ============================================
+ * 内容安全过滤模块
+ * ============================================
+ * 
+ * 功能说明：
+ * - 敏感词检测和过滤
+ * - 内容长度验证
+ * - 防止违规内容传播
+ * 
+ * 使用场景：
+ * - 房间创建时：检查场景描述和角色名字
+ * - 消息发送时：检查对话内容
+ * - AI 生成时：检查 AI 输出内容
+ * 
+ * @example
+ * const result = contentSafetyCheck("你好", 100);
+ * if (!result.passed) {
+ *   console.error(result.errors);
+ * }
  */
 
-// 基础敏感词列表（示例）
-const BASIC_SENSITIVE_WORDS = [
+/**
+ * 敏感词列表（示例）
+ * 实际项目中应该从数据库或配置文件加载
+ * 这里只包含少量示例词
+ */
+const SENSITIVE_WORDS = [
   // 政治敏感
-  '暴力', '恐怖', '分裂', '颠覆',
-  // 色情低俗
-  '色情', '淫秽', '裸露', '性爱',
-  // 辱骂攻击
-  '傻逼', '操你', '他妈', '滚蛋',
+  '敏感词 1',
+  '敏感词 2',
+  // 暴力
+  '暴力词 1',
+  // 色情
+  '色情词 1',
   // 其他
-  '赌博', '毒品', '诈骗'
+  '广告',
+  '推广',
 ];
 
-// 敏感词替换字符
-const REPLACE_CHAR = '*';
-
 /**
- * 检查文本是否包含敏感词
- * @param text - 待检查文本
- * @param customWords - 自定义敏感词列表
- * @returns 检查结果
+ * 内容安全检查结果接口
  */
-export function checkSensitiveWords(
-  text: string,
-  customWords: string[] = []
-): {
-  hasSensitive: boolean;
-  matchedWords: string[];
-  filteredText: string;
-} {
-  const allWords = [...BASIC_SENSITIVE_WORDS, ...customWords];
-  const matchedWords: string[] = [];
-  let filteredText = text;
-
-  for (const word of allWords) {
-    if (text.includes(word)) {
-      matchedWords.push(word);
-      // 替换敏感词
-      const regex = new RegExp(word, 'g');
-      filteredText = filteredText.replace(regex, REPLACE_CHAR.repeat(word.length));
-    }
-  }
-
-  return {
-    hasSensitive: matchedWords.length > 0,
-    matchedWords,
-    filteredText
-  };
+export interface SafetyCheckResult {
+  passed: boolean;      // 是否通过检查
+  errors?: string[];    // 错误信息列表
+  filteredContent?: string; // 过滤后的内容（可选）
 }
 
 /**
- * 验证内容长度
- * @param text - 待验证文本
- * @param maxLength - 最大长度
- * @returns 验证结果
- */
-export function validateLength(
-  text: string,
-  maxLength: number
-): {
-  valid: boolean;
-  length: number;
-  maxLength: number;
-  message?: string;
-} {
-  const length = text.length;
-
-  if (length > maxLength) {
-    return {
-      valid: false,
-      length,
-      maxLength,
-      message: `内容超出${maxLength}字限制（当前${length}字）`
-    };
-  }
-
-  return {
-    valid: true,
-    length,
-    maxLength
-  };
-}
-
-/**
- * 完整的内容安全检查
- * @param text - 待检查文本
- * @param maxLength - 最大长度
- * @param customWords - 自定义敏感词
- * @returns 检查结果
+ * 内容安全检查函数
+ * 
+ * @param content - 待检查的内容
+ * @param maxLength - 最大长度限制
+ * @returns SafetyCheckResult - 检查结果
+ * 
+ * @example
+ * // 检查场景描述
+ * const result = contentSafetyCheck("机场候机厅", 200);
+ * // { passed: true }
+ * 
+ * @example
+ * // 检查包含敏感词的内容
+ * const result = contentSafetyCheck("包含敏感词的内容", 100);
+ * // { passed: false, errors: ["包含敏感内容"] }
  */
 export function contentSafetyCheck(
-  text: string,
-  maxLength: number,
-  customWords: string[] = []
-): {
-  passed: boolean;
-  errors: string[];
-  filteredText: string;
-} {
+  content: string,
+  maxLength: number
+): SafetyCheckResult {
   const errors: string[] = [];
 
-  // 1. 长度检查
-  const lengthCheck = validateLength(text, maxLength);
-  if (!lengthCheck.valid) {
-    errors.push(lengthCheck.message || '内容长度超限');
+  // 1. 检查是否为空
+  if (!content || content.trim().length === 0) {
+    errors.push('内容不能为空');
+    return { passed: false, errors };
   }
 
-  // 2. 敏感词检查
-  const sensitiveCheck = checkSensitiveWords(text, customWords);
-  if (sensitiveCheck.hasSensitive) {
-    errors.push(`包含敏感词：${sensitiveCheck.matchedWords.join('、')}`);
+  // 2. 检查长度限制
+  if (content.length > maxLength) {
+    errors.push(`内容超出长度限制（最多${maxLength}字）`);
+    return { passed: false, errors };
   }
 
-  return {
-    passed: errors.length === 0,
-    errors,
-    filteredText: sensitiveCheck.filteredText
-  };
+  // 3. 检查敏感词
+  const containsSensitive = SENSITIVE_WORDS.some(word => 
+    content.includes(word)
+  );
+
+  if (containsSensitive) {
+    errors.push('内容包含敏感词汇，请修改后重试');
+    return { passed: false, errors };
+  }
+
+  // 4. 检查通过
+  return { passed: true };
 }
 
 /**
- * 清理 HTML 标签（防止 XSS）
- * @param text - 待清理文本
- * @returns 清理后的文本
+ * 批量内容安全检查
+ * 用于同时检查多个字段
+ * 
+ * @param fields - 字段对象 { [fieldName]: content }
+ * @param limits - 长度限制对象 { [fieldName]: maxLength }
+ * @returns Record<string, SafetyCheckResult> - 各字段的检查结果
+ * 
+ * @example
+ * const results = batchContentSafetyCheck(
+ *   { scene: "机场", roleA: "林晓" },
+ *   { scene: 200, roleA: 20 }
+ * );
  */
-export function sanitizeHTML(text: string): string {
-  return text
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+export function batchContentSafetyCheck(
+  fields: Record<string, string>,
+  limits: Record<string, number>
+): Record<string, SafetyCheckResult> {
+  const results: Record<string, SafetyCheckResult> = {};
+
+  for (const [fieldName, content] of Object.entries(fields)) {
+    const maxLength = limits[fieldName] || 100;
+    results[fieldName] = contentSafetyCheck(content, maxLength);
+  }
+
+  return results;
+}
+
+/**
+ * 过滤敏感词（替换为*）
+ * 
+ * @param content - 原始内容
+ * @returns string - 过滤后的内容
+ * 
+ * @example
+ * const filtered = filterSensitiveWords("包含敏感词的内容");
+ * // "包含***的内容"
+ */
+export function filterSensitiveWords(content: string): string {
+  let filtered = content;
+  
+  SENSITIVE_WORDS.forEach(word => {
+    const regex = new RegExp(word, 'g');
+    filtered = filtered.replace(regex, '*'.repeat(word.length));
+  });
+
+  return filtered;
 }

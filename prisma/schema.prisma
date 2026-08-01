@@ -9,21 +9,25 @@ datasource db {
   provider = "sqlite"
 }
 
+// ============================================
+// 用户模型 - 存储注册用户信息
+// ============================================
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  username      String    @unique
-  passwordHash  String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id            String    @id @default(cuid())  // 用户唯一 ID
+  email         String    @unique               // 邮箱（唯一）
+  username      String    @unique               // 用户名（唯一）
+  passwordHash  String                            // 密码哈希（bcrypt）
+  createdAt     DateTime  @default(now())         // 创建时间
+  updatedAt     DateTime  @updatedAt              // 更新时间
   
-  // Relations
-  conversations Conversation[]
-  stories       Story[]
+  // Relations - 关联关系
+  conversations Conversation[]  // 对话会话列表
+  stories       Story[]         // 创作故事列表
   
-  // Sessions
+  // Sessions - 登录会话
   sessions      Session[]
 
+  // 数据库索引 - 加速查询
   @@index([email])
   @@index([username])
   @@index([createdAt])
@@ -167,41 +171,43 @@ model AIGeneration {
   @@index([type])
 }
 
-// 双人创作房间（无需登录）
+// ============================================
+// 双人创作房间模型（无需登录即可使用）
+// ============================================
 model Room {
-  id              String   @id // 6 位房间号 (ABC123)
-  scene           String   // 场景描述 (最多 200 字)
-  roleAName       String   // 角色 A 名字 (最多 20 字)
-  roleBName       String   // 角色 B 名字 (最多 20 字)
-  roleADescription String? // 角色 A 描述
-  roleBDescription String? // 角色 B 描述
+  id              String   @id                    // 6 位房间号 (如：ABC123)
+  scene           String                          // 场景描述 (最多 200 字)
+  roleAName       String                          // 角色 A 名字 (最多 20 字)
+  roleBName       String                          // 角色 B 名字 (最多 20 字)
+  roleADescription String?                        // 角色 A 详细描述（可选）
+  roleBDescription String?                        // 角色 B 详细描述（可选）
   
   // 状态控制
-  status          String   @default("waiting") // waiting, active, completed, expired
-  currentRound    Int      @default(0)         // 当前轮次 (0-10)
-  currentRole     String   @default("A")       // 当前轮到谁 (A/B)
-  hostId          String   // 创建者匿名 ID
-  guestId         String?  // 加入者匿名 ID
+  status          String   @default("waiting")    // 房间状态：waiting(等待加入), active(对话中), completed(已完成), expired(已过期)
+  currentRound    Int      @default(0)            // 当前轮次 (0-10)，0 表示未开始
+  currentRole     String   @default("A")          // 当前轮到谁发言：A 或 B
+  hostId          String                          // 创建者匿名 ID（用于权限控制）
+  guestId         String?                         // 加入者匿名 ID（加入后填充）
   
   // 时间控制
-  createdAt       DateTime @default(now())
-  expiresAt       DateTime // 过期时间（24 小时后）
-  lastActiveAt    DateTime @default(now())
+  createdAt       DateTime @default(now())        // 房间创建时间
+  expiresAt       DateTime                        // 过期时间（创建后 24 小时）
+  lastActiveAt    DateTime @default(now())        // 最后活跃时间（用于清理判断）
   
-  // 配额管理
-  zhihuCallsUsed  Int      @default(0)  // 知乎 API 已用次数
-  zhihuCallsMax   Int      @default(100) // 知乎 API 最大次数
-  aiCallsUsed     Int      @default(0)  // AI API 已用次数
-  aiCallsMax      Int      @default(50)  // AI API 最大次数
+  // 配额管理 - 防止 API 滥用
+  zhihuCallsUsed  Int      @default(0)            // 知乎 API 已用次数
+  zhihuCallsMax   Int      @default(100)          // 知乎 API 最大次数（每房间）
+  aiCallsUsed     Int      @default(0)            // AI API 已用次数
+  aiCallsMax      Int      @default(50)           // AI API 最大次数（每房间）
   
-  // 故事分析结果
-  goldenQuote     String?  // 金句
-  lingeringMood   String?  // 余韵
-  secret          String?  // 秘密
-  plotTwist       String?  // 反转
+  // 故事分析结果 - 10 轮对话完成后由 AI 提取
+  goldenQuote     String?                         // 金句（最打动人的一句话）
+  lingeringMood   String?                         // 余韵（故事结束后留下的感觉）
+  secret          String?                         // 秘密（对话中隐藏的潜台词）
+  plotTwist       String?                         // 反转（情节转折）
   
-  // Relations
-  messages        RoomMessage[]
+  // Relations - 关联关系
+  messages        RoomMessage[]                   // 房间内的所有消息
   
   @@index([status])
   @@index([hostId])
@@ -210,25 +216,30 @@ model Room {
   @@index([createdAt])
 }
 
-// 双人创作房间消息
+// ============================================
+// 双人创作房间消息模型
+// ============================================
 model RoomMessage {
-  id              String   @id @default(cuid())
-  roomId          String   // 房间 ID
+  id              String   @id @default(cuid())   // 消息唯一 ID
+  roomId          String                          // 所属房间 ID（关联 Room 表）
   
-  round           Int      // 轮次 (1-10)
-  role            String   // 角色 (A/B)
-  content         String   // 内容 (最多 100 字)
+  round           Int                             // 轮次 (1-10)，第几轮对话
+  role            String                          // 发言角色：A 或 B
+  content         String                          // 消息内容 (最多 100 字)
   
-  // AI 相关
-  isAI            Boolean  @default(false)
-  aiStyle         String?  // "温情" | "冲突" | "留白"
-  zhihuMaterials  String?  // JSON 数组，知乎素材引用
+  // AI 相关字段 - 记录消息是否由 AI 生成或辅助
+  isAI            Boolean  @default(false)        // 是否 AI 生成（用户选择 AI 代写时为 true）
+  aiStyle         String?                         // AI 建议风格："温情" | "冲突" | "留白"
+  zhihuMaterials  String?                         // 知乎素材引用（JSON 数组字符串）
   
-  timestamp       DateTime @default(now())
+  timestamp       DateTime @default(now())        // 消息创建时间
   
+  // Relations - 关联关系
   room            Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  // onDelete: Cascade - 当房间被删除时，自动删除所有相关消息
   
-  @@index([roomId])
-  @@index([round])
-  @@index([timestamp])
+  // 索引优化 - 加速查询
+  @@index([roomId])                               // 按房间 ID 查询消息
+  @@index([round])                                // 按轮次排序
+  @@index([timestamp])                            // 按时间排序
 }
