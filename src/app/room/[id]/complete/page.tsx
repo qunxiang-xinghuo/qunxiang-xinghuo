@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { SparkBloomAnimation } from "@/components/spark-bloom-animation";
 
 interface Message {
   id: string;
@@ -238,14 +239,18 @@ ${new Date().toLocaleString("zh-CN")}
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* 标题 */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2">故事完成！</h1>
-        <p className="text-muted-foreground">
-          {room.scene} · {room.roleAName} × {room.roleBName}
-        </p>
-      </div>
+    <>
+      {/* 星火绽放庆祝动画 */}
+      <SparkBloomAnimation />
+
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* 标题 */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2">故事完成！</h1>
+          <p className="text-muted-foreground">
+            {room.scene} · {room.roleAName} × {room.roleBName}
+          </p>
+        </div>
 
       {/* 金句高亮显示 */}
       {analysis && (
@@ -354,5 +359,6 @@ ${new Date().toLocaleString("zh-CN")}
         </Button>
       </div>
     </div>
+    </>
   );
 }

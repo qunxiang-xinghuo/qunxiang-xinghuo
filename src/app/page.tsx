@@ -1,13 +1,16 @@
 import Link from 'next/link';
 import { scenes, stories, storySeeds } from '@/lib/data';
 import { FeaturedStory } from '@/components/featured-story';
+import { ParticleBackground } from '@/components/particle-background';
 
 export default function HomePage() {
   const featuredStory = stories[0];
   const activeScenes = scenes.filter((s) => s.status === 'ready');
 
   return (
-    <div className="site-bg">
+    <div className="site-bg relative">
+      {/* 微光粒子背景 */}
+      <ParticleBackground />
       {/* Hero Section */}
       <section className="relative px-5 pt-24 pb-20 sm:pt-32 sm:pb-28">
         <div className="max-w-3xl mx-auto text-center">
