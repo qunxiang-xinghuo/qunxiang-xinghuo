@@ -217,7 +217,7 @@ async function handleAnalyze(request: NextRequest, { params }: { params: { id: s
       create: {
         roomId,
         title: `${room.scene}：${room.roleAName}与${room.roleBName}`,
-        content: room.messages.map(m => `${m.role === 'A' ? room.roleAName : room.roleBName}: ${m.content}`).join('\n'),
+        content: room.messages.map((m: any) => `${m.role === 'A' ? room.roleAName : room.roleBName}: ${m.content}`).join('\n'),
         analysis: analysis as any,
       },
     });
