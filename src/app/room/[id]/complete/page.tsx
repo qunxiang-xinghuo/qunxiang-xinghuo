@@ -51,8 +51,8 @@ export default function CompletePage() {
         setRoom(roomData.data);
 
         // 触发 AI 分析
-        const analysisResponse = await fetch(`/api/rooms/${params.id}/analyze`, {
-          method: "POST",
+        const analysisResponse = await fetch(`/api/rooms/${params.id}/ai-suggest`, {
+          method: "GET",
         });
         const analysisData = await analysisResponse.json();
 

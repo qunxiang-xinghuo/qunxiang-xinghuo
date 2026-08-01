@@ -33,10 +33,10 @@ export default function JoinRoomPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/rooms/${formData.roomId}/join`, {
+      const response = await fetch(`/api/rooms/${formData.roomId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: formData.role }),
+        body: JSON.stringify({ role: formData.role, guestId: "anonymous" }),
       });
 
       const data = await response.json();
