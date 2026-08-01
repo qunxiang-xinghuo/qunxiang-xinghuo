@@ -167,6 +167,60 @@ ${analysis.goldenQuote}
     toast.success("小红书文案已复制");
   };
 
+  const saveToLocal = () => {
+    if (!room || !analysis) return;
+
+    const content = `# ${room.scene}：${room.roleAName}与${room.roleBName}的 10 轮对话
+
+## 故事背景
+${room.scene}
+
+角色 A：${room.roleAName}
+角色 B：${room.roleBName}
+
+---
+
+## 💬 金句
+> ${analysis.goldenQuote}
+
+## 🌅 余韵
+${analysis.lingeringMood}
+
+##  秘密
+${analysis.secret}
+
+## 🔄 反转
+${analysis.plotTwist}
+
+---
+
+## 完整对话
+
+${room.messages
+  .map(
+    (msg) =>
+      `**第${msg.round}轮** ${msg.role === "A" ? room.roleAName : room.roleBName}：${msg.content}`
+  )
+  .join("\n\n")}
+
+---
+
+创作于 群像·星火
+${new Date().toLocaleString("zh-CN")}
+`;
+
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${room.scene}-${room.roleAName}与${room.roleBName}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("故事已保存到本地");
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -193,20 +247,35 @@ ${analysis.goldenQuote}
         </p>
       </div>
 
+      {/* 金句高亮显示 */}
+      {analysis && (
+        <Card className="mb-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="pt-6 pb-6">
+            <div className="text-center space-y-3">
+              <div className="text-sm text-blue-600 font-medium">💬 故事金句</div>
+              <p className="text-xl md:text-2xl font-serif italic text-gray-800 leading-relaxed">
+                "{analysis.goldenQuote}"
+              </p>
+              <Button
+                onClick={() => {
+                  const quoteText = `"${analysis.goldenQuote}"\n\n—— ${room.scene}\n${room.roleAName} × ${room.roleBName}`;
+                  navigator.clipboard.writeText(quoteText);
+                  toast.success("金句已复制");
+                }}
+                variant="outline"
+                size="sm"
+                className="mt-2"
+              >
+                复制金句
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 分析卡片 */}
       {analysis && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <Card>
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <span>💬</span> 金句
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm italic">"{analysis.goldenQuote}"</p>
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardHeader className="py-3">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -268,13 +337,16 @@ ${analysis.goldenQuote}
 
       {/* 操作按钮 */}
       <div className="flex flex-wrap gap-3 justify-center">
+        <Button onClick={saveToLocal} variant="default">
+          💾 保存到本地
+        </Button>
         <Button onClick={copyStory} variant="outline">
            复制故事
         </Button>
         <Button onClick={shareLink} variant="outline">
           🔗 分享链接
         </Button>
-        <Button onClick={exportToZhihu} variant="default">
+        <Button onClick={exportToZhihu} variant="outline">
           📝 导出为知乎文章
         </Button>
         <Button onClick={exportToXiaohongshu} variant="secondary">

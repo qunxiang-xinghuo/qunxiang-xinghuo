@@ -66,6 +66,40 @@ export default function CreateRoomPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 预设场景按钮 */}
+            <div className="space-y-2">
+              <Label>预设场景（点击快速填入）</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, scene: "机场候机厅，两个多年未见的老友偶然重逢，航班延误让他们有了叙旧的机会" })}
+                  className="text-left h-auto py-2 px-3"
+                >
+                  ✈️ 机场重逢
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, scene: "深夜便利店，两个失眠的陌生人在货架前相遇，分享着各自的孤独" })}
+                  className="text-left h-auto py-2 px-3"
+                >
+                  🏪 深夜便利店
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, scene: "雨夜站台，末班车即将离去，两个人在雨中等待着，是否要一起撑伞同行" })}
+                  className="text-left h-auto py-2 px-3"
+                >
+                  🌧️ 雨夜站台
+                </Button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="scene">场景描述</Label>
               <Textarea
@@ -81,7 +115,7 @@ export default function CreateRoomPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="roleAName">角色 A 名字</Label>
                 <Input
