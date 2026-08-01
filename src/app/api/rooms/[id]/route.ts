@@ -18,7 +18,7 @@ async function handleGetRoom(request: NextRequest, { params }: { params: Promise
       where: { id },
       include: {
         messages: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: { timestamp: 'asc' },
         },
       },
     });

@@ -17,9 +17,9 @@ async function handleGetMessages(request: NextRequest, { params }: { params: Pro
   try {
     const { id } = await params;
     
-    const messages = await prisma.message.findMany({
+    const messages = await prisma.roomMessage.findMany({
       where: { roomId: id },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { timestamp: 'asc' },
     });
 
     return NextResponse.json({
@@ -97,7 +97,7 @@ async function handleSendMessage(request: NextRequest, { params }: { params: Pro
     }
 
     // 创建消息
-    const message = await prisma.message.create({
+    const message = await prisma.roomMessage.create({
       data: {
         roomId: id,
         role,

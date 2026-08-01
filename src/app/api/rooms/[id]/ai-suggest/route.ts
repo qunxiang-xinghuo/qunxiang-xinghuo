@@ -82,14 +82,14 @@ ${roleBName}: 角色 B
 }
 
 // AI 续写建议 API
-async function handleAISuggest(request: NextRequest, { params }: { params: { id: string } }) {
+async function handleAISuggest(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const roomId = params.id;
+    const { id: roomId } = await params;
 
     // 获取房间信息
     const room = await prisma.room.findUnique({
       where: { id: roomId },
-      include: { messages: { orderBy: { createdAt: 'asc' } } },
+      include: { messages: { orderBy: { timestamp: 'asc' } } },
     });
 
     if (!room) {
@@ -152,14 +152,14 @@ async function handleAISuggest(request: NextRequest, { params }: { params: { id:
 }
 
 // 故事分析 API
-async function handleAnalyze(request: NextRequest, { params }: { params: { id: string } }) {
+async function handleAnalyze(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const roomId = params.id;
+    const { id: roomId } = await params;
 
     // 获取房间信息
     const room = await prisma.room.findUnique({
       where: { id: roomId },
-      include: { messages: { orderBy: { createdAt: 'asc' } } },
+      include: { messages: { orderBy: { timestamp: 'asc' } } },
     });
 
     if (!room) {
