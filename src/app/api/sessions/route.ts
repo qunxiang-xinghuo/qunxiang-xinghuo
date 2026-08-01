@@ -1,3 +1,14 @@
+/**
+ * 会话管理 API
+ * 
+ * 功能：
+ * - GET: 获取当前用户的会话列表
+ * - POST: 创建新的角色扮演会话
+ * 
+ * 认证：需要用户登录
+ * 速率限制：60 请求/分钟
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
