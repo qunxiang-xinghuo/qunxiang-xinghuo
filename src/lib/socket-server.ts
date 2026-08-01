@@ -44,8 +44,11 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
   io = new SocketIOServer(httpServer, {
     path: '/api/socketio',
     cors: {
-      origin: '*',
+      origin: process.env.NODE_ENV === 'production'
+        ? ['https://qunxiangxinghuo.cn', 'https://www.qunxiangxinghuo.cn']
+        : '*',
       methods: ['GET', 'POST'],
+      credentials: true,
     },
   });
 
