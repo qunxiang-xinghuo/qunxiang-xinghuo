@@ -1,3 +1,9 @@
+/**
+ * @file scene-detail.tsx
+ * @description 场景详情组件 - 展示场景信息和角色列表
+ * @module components/scene-detail
+ */
+
 'use client';
 
 import Link from 'next/link';

@@ -1,3 +1,9 @@
+/**
+ * @file story-reader.tsx
+ * @description 故事阅读器组件 - 沉浸式故事阅读体验
+ * @module components/story-reader
+ */
+
 'use client';
 
 import type { Story } from '@/lib/data';

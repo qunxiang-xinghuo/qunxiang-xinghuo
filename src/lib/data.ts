@@ -1,3 +1,8 @@
+/**
+ * @fileoverview 数据层
+ * 定义场景、故事、种子等数据结构和初始数据
+ */
+
 // 群像·星火 - 数据层
 
 export interface Scene {

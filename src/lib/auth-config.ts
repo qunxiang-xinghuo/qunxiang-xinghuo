@@ -1,3 +1,8 @@
+/**
+ * @fileoverview NextAuth 认证配置
+ * 配置 NextAuth 的认证选项，包括凭证提供者、会话策略、回调函数等
+ */
+
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@/lib/prisma';

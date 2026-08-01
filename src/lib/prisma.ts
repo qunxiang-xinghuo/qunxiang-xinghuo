@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Prisma 客户端单例
+ * 确保在开发环境下 Prisma 客户端不会被重复创建
+ */
+
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from '@prisma/client';
 import path from 'path';

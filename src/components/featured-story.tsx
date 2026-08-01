@@ -1,3 +1,9 @@
+/**
+ * @file featured-story.tsx
+ * @description 精选故事组件 - 首页展示精选故事
+ * @module components/featured-story
+ */
+
 'use client';
 
 import Link from 'next/link';

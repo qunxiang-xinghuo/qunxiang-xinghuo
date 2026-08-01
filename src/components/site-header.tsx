@@ -1,3 +1,9 @@
+/**
+ * @file site-header.tsx
+ * @description 网站头部组件 - 导航栏和用户菜单
+ * @module components/site-header
+ */
+
 'use client';
 
 import Link from 'next/link';

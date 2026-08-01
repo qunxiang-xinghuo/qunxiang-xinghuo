@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Socket.io 服务器
+ * 实现双人创作的实时通信功能
+ */
+
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 

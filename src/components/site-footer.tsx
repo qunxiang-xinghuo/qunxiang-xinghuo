@@ -1,3 +1,9 @@
+/**
+ * @file site-footer.tsx
+ * @description 网站底部组件 - 显示版权信息和链接
+ * @module components/site-footer
+ */
+
 export function SiteFooter() {
   return (
     <footer className="border-t border-border/60 bg-white/40">

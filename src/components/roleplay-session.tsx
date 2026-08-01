@@ -1,3 +1,9 @@
+/**
+ * @file roleplay-session.tsx
+ * @description 单人角色扮演交互组件 - 用户与AI角色对话
+ * @module components/roleplay-session
+ */
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
