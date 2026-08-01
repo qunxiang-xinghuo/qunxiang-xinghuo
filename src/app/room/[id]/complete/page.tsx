@@ -37,6 +37,9 @@ export default function CompletePage() {
   const [room, setRoom] = useState<Room | null>(null);
   const [analysis, setAnalysis] = useState<StoryAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewContent, setPreviewContent] = useState("");
+  const [previewType, setPreviewType] = useState<"zhihu" | "xiaohongshu">("zhihu");
 
   useEffect(() => {
     loadCompleteData();
@@ -95,6 +98,80 @@ ${room.messages
     const url = `${window.location.origin}/room/${params.id}`;
     navigator.clipboard.writeText(url);
     toast.success("链接已复制");
+  };
+
+  // 预览导出内容
+  const previewExport = (type: "zhihu" | "xiaohongshu") => {
+    if (!room || !analysis) return;
+    
+    setPreviewType(type);
+    
+    if (type === "zhihu") {
+      const content = `# ${room.scene}：${room.roleAName}与${room.roleBName}的 10 轮对话
+
+## 故事背景
+${room.scene}
+
+角色 A：${room.roleAName}
+角色 B：${room.roleBName}
+
+---
+
+## 完整对话
+
+${room.messages
+  .map(
+    (msg) =>
+      `**第${msg.round}轮** ${msg.role === "A" ? room.roleAName : room.roleBName}：${msg.content}`
+  )
+  .join("\n\n")}
+
+---
+
+## 故事分析
+
+### 💬 金句
+> ${analysis.goldenQuote}
+
+### 🌅 余韵
+${analysis.lingeringMood}
+
+### 🔒 秘密
+${analysis.secret}
+
+### 🔄 反转
+${analysis.plotTwist}
+
+---
+
+*由群像·星火创作*
+*https://qunxiangxinghuo.cn*`;
+      setPreviewContent(content);
+    } else {
+      const content = `🎭 ${room.scene}
+
+"${analysis.goldenQuote}"
+
+✨ 10轮对话，两个灵魂的真实碰撞
+
+${room.messages.slice(0, 3).map((msg, i) => 
+  `${msg.role === "A" ? "🅰️" : "🅱️"} ${msg.content}`
+).join("\n")}
+
+... 更多感动等你发现
+
+#角色扮演 #创作 #故事 #情感 #${room.scene.replace(/\s/g, "")}`;
+      setPreviewContent(content);
+    }
+    
+    setShowPreview(true);
+  };
+
+  // 确认导出
+  const confirmExport = () => {
+    navigator.clipboard.writeText(previewContent);
+    toast.success(`${previewType === "zhihu" ? "知乎" : "小红书"}格式已复制`);
+    setShowPreview(false);
   };
 
   const exportToZhihu = () => {
@@ -278,17 +355,23 @@ ${new Date().toLocaleString("zh-CN")}
         </Card>
       )}
 
-      {/* 分析卡片 */}
+      {/* 分析卡片 - 可编辑 */}
       {analysis && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardHeader className="py-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <span>🌅</span> 余韵
+                <span className="text-xs text-muted-foreground ml-auto">可编辑</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm">{analysis.lingeringMood}</p>
+              <textarea
+                className="w-full text-sm border-0 p-0 resize-none focus:outline-none focus:ring-0 bg-transparent"
+                rows={3}
+                value={analysis.lingeringMood}
+                onChange={(e) => setAnalysis({ ...analysis, lingeringMood: e.target.value })}
+              />
             </CardContent>
           </Card>
 
@@ -296,10 +379,16 @@ ${new Date().toLocaleString("zh-CN")}
             <CardHeader className="py-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <span></span> 秘密
+                <span className="text-xs text-muted-foreground ml-auto">可编辑</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm">{analysis.secret}</p>
+              <textarea
+                className="w-full text-sm border-0 p-0 resize-none focus:outline-none focus:ring-0 bg-transparent"
+                rows={3}
+                value={analysis.secret}
+                onChange={(e) => setAnalysis({ ...analysis, secret: e.target.value })}
+              />
             </CardContent>
           </Card>
 
@@ -307,10 +396,16 @@ ${new Date().toLocaleString("zh-CN")}
             <CardHeader className="py-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <span>🔄</span> 反转
+                <span className="text-xs text-muted-foreground ml-auto">可编辑</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm">{analysis.plotTwist}</p>
+              <textarea
+                className="w-full text-sm border-0 p-0 resize-none focus:outline-none focus:ring-0 bg-transparent"
+                rows={3}
+                value={analysis.plotTwist}
+                onChange={(e) => setAnalysis({ ...analysis, plotTwist: e.target.value })}
+              />
             </CardContent>
           </Card>
         </div>
@@ -351,14 +446,42 @@ ${new Date().toLocaleString("zh-CN")}
         <Button onClick={shareLink} variant="outline">
           🔗 分享链接
         </Button>
-        <Button onClick={exportToZhihu} variant="outline">
+        <Button onClick={() => previewExport("zhihu")} variant="outline">
           📝 导出为知乎文章
         </Button>
-        <Button onClick={exportToXiaohongshu} variant="secondary">
+        <Button onClick={() => previewExport("xiaohongshu")} variant="secondary">
           📱 导出为小红书图文
         </Button>
       </div>
-    </div>
+
+      {/* 导出预览模态框 */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>导出预览 - {previewType === "zhihu" ? "知乎" : "小红书"}</span>
+                <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>
+                  ✕
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-auto flex-1">
+              <pre className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-md">
+                {previewContent}
+              </pre>
+            </CardContent>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowPreview(false)}>
+                取消
+              </Button>
+              <Button onClick={confirmExport}>
+                确认复制
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </>
   );
 }
