@@ -1,3 +1,9 @@
+/**
+ * @file 故事集页面
+ * @description 展示所有完成的故事和草稿
+ * 用户可以浏览已完成的故事，查看创作成果
+ */
+
 import Link from 'next/link';
 import { stories } from '@/lib/data';
 

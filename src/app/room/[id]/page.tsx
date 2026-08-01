@@ -1,3 +1,10 @@
+/**
+ * @file 对话页面
+ * @description 双人创作 - 实时对话界面
+ * 两个角色轮流对话，每轮100字限制，共10轮
+ * 支持 AI 续写建议，2秒轮询同步消息
+ */
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";

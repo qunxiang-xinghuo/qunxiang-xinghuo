@@ -1,3 +1,9 @@
+/**
+ * @file 全局布局组件
+ * @description 定义网站整体布局结构，包括 Header、Footer、字体加载、SEO 元信息
+ * 所有页面共享此布局，提供统一的视觉框架和导航体验
+ */
+
 import type { Metadata, Viewport } from 'next';
 import { Noto_Serif_SC, Noto_Sans_SC } from 'next/font/google';
 import { Inspector } from 'react-dev-inspector';

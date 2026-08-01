@@ -1,3 +1,9 @@
+/**
+ * @file 首页 - 群像·星火
+ * @description 展示平台介绍、精选故事、场景库入口
+ * 这是用户访问平台的第一个页面，需要营造剧场感和创作氛围
+ */
+
 import Link from 'next/link';
 import { scenes, stories, storySeeds } from '@/lib/data';
 import { FeaturedStory } from '@/components/featured-story';

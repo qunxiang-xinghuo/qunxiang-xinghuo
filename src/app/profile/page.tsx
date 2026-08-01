@@ -1,3 +1,9 @@
+/**
+ * @file 个人资料页面
+ * @description 用户查看和编辑个人资料
+ * 包括用户名、邮箱、修改密码等功能
+ */
+
 'use client';
 
 import { useSession } from 'next-auth/react';

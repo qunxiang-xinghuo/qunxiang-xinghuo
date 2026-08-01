@@ -1,3 +1,9 @@
+/**
+ * @file 单人扮演页面
+ * @description 用户与 AI 进行单人角色扮演
+ * 使用 RolePlaySession 组件实现对话交互
+ */
+
 import { notFound } from 'next/navigation';
 import { getSceneById, scenes } from '@/lib/data';
 import { RolePlaySession } from '@/components/roleplay-session';

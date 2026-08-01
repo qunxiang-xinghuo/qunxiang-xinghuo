@@ -1,3 +1,9 @@
+/**
+ * @file 创作工坊页面
+ * @description AI 辅助创作工具
+ * 提供场景生成、角色生成、秘密生成、故事润色等功能
+ */
+
 'use client';
 
 import { useState } from 'react';

@@ -1,3 +1,9 @@
+/**
+ * @file 故事详情页面
+ * @description 沉浸式阅读故事内容
+ * 使用 StoryReader 组件展示故事
+ */
+
 import { notFound } from 'next/navigation';
 import { getStoryById, stories } from '@/lib/data';
 import { StoryReader } from '@/components/story-reader';

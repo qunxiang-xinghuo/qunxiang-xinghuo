@@ -1,3 +1,9 @@
+/**
+ * @file 故事种子页面
+ * @description 展示创作灵感和故事种子
+ * 提供金句、反转、秘密、余韵等类型的创作素材
+ */
+
 import { storySeeds } from '@/lib/data';
 
 export default function SeedsPage() {

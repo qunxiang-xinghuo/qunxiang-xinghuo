@@ -1,3 +1,9 @@
+/**
+ * @file 加入房间页面
+ * @description 双人创作 - 加入房间
+ * 输入6位房间号，选择角色，加入创作房间
+ */
+
 "use client";
 
 import { useState } from "react";

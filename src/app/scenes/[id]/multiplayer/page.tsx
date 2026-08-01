@@ -1,3 +1,9 @@
+/**
+ * @file 双人实时扮演页面
+ * @description 两个用户实时进行角色扮演对话
+ * 使用 Socket.io 实现实时通信
+ */
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';

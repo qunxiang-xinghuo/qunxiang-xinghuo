@@ -1,3 +1,8 @@
+/**
+ * @file 缓存管理器单元测试
+ * @description 测试 CacheManager 的核心功能：存取、过期、删除、清空
+ */
+
 import { cache } from '@/lib/cache';
 
 describe('CacheManager', () => {

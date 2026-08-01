@@ -1,3 +1,9 @@
+/**
+ * @file 注册页面
+ * @description 用户注册表单，创建新账户
+ * 密码使用 bcrypt 加密存储
+ */
+
 'use client';
 
 import { useState } from 'react';

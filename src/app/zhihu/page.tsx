@@ -1,3 +1,9 @@
+/**
+ * @file 知乎集成页面
+ * @description 知乎素材搜索和收藏功能
+ * 可以从知乎获取创作素材，收藏有价值的内容
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

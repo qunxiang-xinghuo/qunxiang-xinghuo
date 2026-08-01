@@ -1,3 +1,11 @@
+/**
+ * @file 完成页面
+ * @description 双人创作 - 故事完成页
+ * 展示完成的故事，提取金句、余韵、秘密、反转
+ * 支持导出到知乎、小红书，保存到本地
+ * 包含星火绽放庆祝动画
+ */
+
 "use client";
 
 import { useEffect, useState } from "react";

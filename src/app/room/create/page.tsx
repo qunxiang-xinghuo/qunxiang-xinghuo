@@ -1,3 +1,9 @@
+/**
+ * @file 创建房间页面
+ * @description 双人创作 - 创建房间
+ * 输入场景、角色A、角色B，生成6位房间号和分享链接
+ */
+
 "use client";
 
 import { useState } from "react";

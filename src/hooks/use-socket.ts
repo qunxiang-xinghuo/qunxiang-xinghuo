@@ -1,3 +1,10 @@
+/**
+ * @file Socket.IO 客户端 Hook
+ * @description 封装 Socket.IO 连接管理，提供双人实时角色扮演通信能力
+ * 支持事件：消息收发、用户加入/离开、会话开始、内心独白、AI 催化、火花标记
+ * 注意：当前实际使用 2 秒轮询降级方案，Socket.IO 作为备用通道
+ */
+
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';

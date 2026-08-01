@@ -1,3 +1,9 @@
+/**
+ * @file 自定义服务器入口
+ * @description 生产环境下的服务器启动文件，集成 Next.js 和 Socket.IO
+ * 用于 production 模式下手动创建 HTTP 服务器并挂载 Socket.IO
+ */
+
 import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';

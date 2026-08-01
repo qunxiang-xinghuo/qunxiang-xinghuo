@@ -1,3 +1,9 @@
+/**
+ * @file 登录页面
+ * @description 用户登录表单，支持邮箱+密码登录
+ * 使用 NextAuth credentials 认证
+ */
+
 'use client';
 
 import { useState } from 'react';

@@ -1,3 +1,9 @@
+/**
+ * @file 场景详情页面
+ * @description 展示单个场景的详细信息
+ * 包括场景描述、角色设定、单人/双人创作入口
+ */
+
 import { notFound } from 'next/navigation';
 import { getSceneById, scenes } from '@/lib/data';
 import { SceneDetail } from '@/components/scene-detail';

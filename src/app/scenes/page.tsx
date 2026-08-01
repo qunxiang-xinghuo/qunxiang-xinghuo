@@ -1,3 +1,9 @@
+/**
+ * @file 场景库页面
+ * @description 展示所有可用的创作场景
+ * 用户可以浏览场景列表，选择感兴趣的场景进行创作
+ */
+
 import Link from 'next/link';
 import { scenes } from '@/lib/data';
 
