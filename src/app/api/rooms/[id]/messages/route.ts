@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 import { z } from 'zod';
+import { contentSafetyCheck } from '@/lib/content-filter';
 
 // 发送消息 Schema
 const sendMessageSchema = z.object({
@@ -83,6 +84,15 @@ async function handleSendMessage(request: NextRequest, { params }: { params: Pro
       return NextResponse.json(
         { success: false, error: `当前轮到${room.currentRole === 'A' ? room.roleAName : room.roleBName}发言` },
         { status: 409 }
+      );
+    }
+
+    // 敏感词检查
+    const safetyCheck = contentSafetyCheck(content, 100);
+    if (!safetyCheck.passed) {
+      return NextResponse.json(
+        { success: false, error: safetyCheck.errors?.join(', ') || '内容包含敏感词' },
+        { status: 400 }
       );
     }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 import { z } from 'zod';
+import { contentSafetyCheck } from '@/lib/content-filter';
 
 // 生成 6 位房间号
 function generateRoomId(): string {
@@ -34,6 +35,31 @@ async function handleCreateRoom(request: NextRequest) {
     }
 
     const { scene, roleAName, roleBName } = validation.data;
+
+    // 敏感词检查
+    const sceneCheck = contentSafetyCheck(scene, 200);
+    if (!sceneCheck.passed) {
+      return NextResponse.json(
+        { success: false, error: `场景描述包含敏感内容：${sceneCheck.errors?.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    const roleACheck = contentSafetyCheck(roleAName, 20);
+    if (!roleACheck.passed) {
+      return NextResponse.json(
+        { success: false, error: `角色 A 名字包含敏感内容：${roleACheck.errors?.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    const roleBCheck = contentSafetyCheck(roleBName, 20);
+    if (!roleBCheck.passed) {
+      return NextResponse.json(
+        { success: false, error: `角色 B 名字包含敏感内容：${roleBCheck.errors?.join(', ')}` },
+        { status: 400 }
+      );
+    }
 
     // 生成唯一房间号
     let roomId = generateRoomId();
