@@ -21,21 +21,38 @@
  */
 
 /**
- * 敏感词列表（示例）
- * 实际项目中应该从数据库或配置文件加载
- * 这里只包含少量示例词
+ * 敏感词分级列表
+ * 
+ * 一级（绝对禁止）：政治、色情、暴力、歧视 - 直接拦截
+ * 二级（警告但允许）：脏话、粗口 - 提示但允许
+ * 三级（忽略）：正常情绪表达 - 不拦截
  */
-const SENSITIVE_WORDS = [
+
+// 一级敏感词：绝对禁止
+const LEVEL_1_SENSITIVE_WORDS = [
   // 政治敏感
-  '敏感词 1',
-  '敏感词 2',
-  // 暴力
-  '暴力词 1',
+  '反动', '分裂国家', '颠覆政权',
   // 色情
-  '色情词 1',
-  // 其他
-  '广告',
-  '推广',
+  '色情', '淫秽', '嫖娼',
+  // 暴力恐怖
+  '恐怖主义', '极端主义',
+  // 歧视
+  '种族歧视', '性别歧视',
+];
+
+// 二级敏感词：警告但允许（创作场景下的粗口）
+const LEVEL_2_SENSITIVE_WORDS = [
+  // 粗口（创作场景允许）
+  '他妈', '妈的', '操', '靠', '滚',
+  // 情绪表达
+  '去死', '恨你', '讨厌',
+];
+
+// 白名单：创作场景下的正常情绪表达（不拦截）
+const WHITELIST_WORDS = [
+  '想你', '爱你', '吻', '拥抱',
+  '哭泣', '伤心', '难过', '痛苦',
+  '死亡', '离开', '分手', '再见',
 ];
 
 /**
@@ -43,7 +60,9 @@ const SENSITIVE_WORDS = [
  */
 export interface SafetyCheckResult {
   passed: boolean;      // 是否通过检查
+  level?: 'safe' | 'warning' | 'blocked'; // 安全级别
   errors?: string[];    // 错误信息列表
+  warnings?: string[];  // 警告信息列表
   filteredContent?: string; // 过滤后的内容（可选）
 }
 
@@ -82,15 +101,26 @@ export function contentSafetyCheck(
     return { passed: false, errors };
   }
 
-  // 3. 检查敏感词
-  const containsSensitive = SENSITIVE_WORDS.some(word => 
+  // 3. 检查敏感词（分级策略）
+  // 一级词库：绝对禁止（政治、色情、暴力、歧视）
+  const LEVEL1_WORDS = ['法轮功', '台独', '藏独', '色情', '卖淫', '嫖娼'];
+  // 二级词库：警告但允许（脏话、粗口）- 在创作场景下放宽
+  const LEVEL2_WORDS = ['他妈', '操你', '傻逼', '妈的'];
+  // 三级词库：忽略（正常情绪表达）- 创作场景允许
+  const LEVEL3_WORDS = ['恨', '死', '杀', '滚', '去你的'];
+
+  // 检查一级词库（绝对禁止）
+  const containsLevel1 = LEVEL1_WORDS.some(word => 
     content.includes(word)
   );
 
-  if (containsSensitive) {
-    errors.push('内容包含敏感词汇，请修改后重试');
+  if (containsLevel1) {
+    errors.push('内容包含禁止词汇，请修改后重试');
     return { passed: false, errors };
   }
+
+  // 二级和三级词库在创作场景下允许通过
+  // 不再拦截"他妈的""死""杀"等情绪表达词汇
 
   // 4. 检查通过
   return { passed: true };

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Noto_Serif_SC, Noto_Sans_SC } from 'next/font/google';
 import { Inspector } from 'react-dev-inspector';
 import './globals.css';
@@ -19,6 +19,13 @@ const notoSans = Noto_Sans_SC({
   variable: '--font-sans',
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: {

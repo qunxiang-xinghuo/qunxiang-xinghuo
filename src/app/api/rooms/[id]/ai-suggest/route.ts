@@ -119,6 +119,13 @@ ${roleBName}: 角色 B
 }`;
 }
 
+// 默认建议（AI 失败时的兜底）
+const DEFAULT_SUGGESTIONS = [
+  { style: '温情', content: '沉默了一会儿，没有说话。' },
+  { style: '冲突', content: '轻声说："我不知道该说什么。"' },
+  { style: '留白', content: '转过头，看向窗外。' },
+];
+
 // AI 续写建议 API
 async function handleAISuggest(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -138,54 +145,87 @@ async function handleAISuggest(request: NextRequest, { params }: { params: Promi
       return NextResponse.json({ error: '房间未激活' }, { status: 400 });
     }
 
-    // 调用豆包大模型生成建议
-    const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.DOUBAO_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: process.env.DOUBAO_MODEL || 'doubao-seed-2-0-mini-260215',
-        messages: [
-          {
-            role: 'user',
-            content: generateSuggestionPrompt(
-              room.scene,
-              room.roleAName,
-              room.roleBName,
-              room.messages
-            ),
-          },
-        ],
-        max_tokens: 500,
-      }),
-    });
+    // 设置 5 秒超时
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    if (!response.ok) {
-      throw new Error(`AI API 调用失败：${response.status}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices[0]?.message?.content;
-
-    // 解析 AI 响应
-    let suggestions = [];
     try {
-      const parsed = JSON.parse(aiResponse);
-      suggestions = parsed.suggestions || [];
-    } catch {
-      // 如果解析失败，返回空数组
-      suggestions = [];
-    }
+      // 调用豆包大模型生成建议
+      const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.DOUBAO_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: process.env.DOUBAO_MODEL || 'doubao-seed-2-0-mini-260215',
+          messages: [
+            {
+              role: 'user',
+              content: generateSuggestionPrompt(
+                room.scene,
+                room.roleAName,
+                room.roleBName,
+                room.messages
+              ),
+            },
+          ],
+          max_tokens: 500,
+        }),
+        signal: controller.signal,
+      });
 
-    return NextResponse.json({
-      success: true,
-      suggestions,
-    });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`AI API 调用失败：${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0]?.message?.content;
+
+      // 解析 AI 响应
+      let suggestions = [];
+      try {
+        const parsed = JSON.parse(aiResponse);
+        suggestions = parsed.suggestions || [];
+      } catch {
+        // 如果解析失败，使用默认建议
+        suggestions = DEFAULT_SUGGESTIONS;
+      }
+
+      // 如果建议为空，使用默认建议
+      if (!suggestions || suggestions.length === 0) {
+        suggestions = DEFAULT_SUGGESTIONS;
+      }
+
+      return NextResponse.json({
+        success: true,
+        suggestions,
+      });
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      
+      // 超时或网络错误，返回默认建议
+      if (fetchError.name === 'AbortError') {
+        console.warn('AI 续写超时，使用默认建议');
+        return NextResponse.json({
+          success: true,
+          suggestions: DEFAULT_SUGGESTIONS,
+          fallback: true,
+        });
+      }
+      
+      throw fetchError;
+    }
   } catch (error) {
     console.error('AI 续写建议错误:', error);
-    return NextResponse.json({ error: 'AI 续写失败' }, { status: 500 });
+    // 所有错误都返回默认建议，而不是 500 错误
+    return NextResponse.json({
+      success: true,
+      suggestions: DEFAULT_SUGGESTIONS,
+      fallback: true,
+    });
   }
 }
 
