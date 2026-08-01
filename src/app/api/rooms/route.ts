@@ -37,6 +37,7 @@ import { prisma } from '@/lib/prisma';
 import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { contentSafetyCheck } from '@/lib/content-filter';
+import { verifySignature } from '@/lib/request-signature';
 
 /**
  * 生成 6 位随机房间号
@@ -81,6 +82,15 @@ const createRoomSchema = z.object({
  */
 async function handleCreateRoom(request: NextRequest) {
   try {
+    // 0. 验证请求签名（防止重放攻击）
+    const signatureValid = await verifySignature(request);
+    if (!signatureValid.valid) {
+      return NextResponse.json(
+        { success: false, error: signatureValid.error || '请求签名验证失败' },
+        { status: 401 }
+      );
+    }
+
     // 1. 解析并验证请求参数
     const body = await request.json();
     const validation = createRoomSchema.safeParse(body);
