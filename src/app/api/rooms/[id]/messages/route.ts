@@ -1,10 +1,43 @@
+/**
+ * ============================================
+ * 消息 API - 发送/获取房间消息
+ * ============================================
+ * 
+ * 功能说明：
+ * - GET /api/rooms/[id]/messages - 获取房间消息列表
+ * - POST /api/rooms/[id]/messages - 发送消息
+ * 
+ * GET 返回数据：
+ * - messages: RoomMessage[] - 按时间升序排列的消息列表
+ * 
+ * POST 请求参数：
+ * - role: 'A' | 'B' - 发言角色
+ * - content: string - 消息内容 (1-100 字)
+ * - isAI?: boolean - 是否 AI 生成 (默认 false)
+ * - aiStyle?: '温情' | '冲突' | '留白' - AI 风格
+ * 
+ * 业务规则：
+ * - 房间状态必须为 'active'
+ * - 必须轮到当前角色发言
+ * - 轮次不能超过 10 轮
+ * - 敏感词过滤
+ * 
+ * 返回数据（POST）：
+ * - message: RoomMessage - 创建的消息
+ * - room: Room - 更新后的房间状态
+ * 
+ * @example
+ * GET /api/rooms/Y0SFWF/messages
+ * POST /api/rooms/Y0SFWF/messages { "role": "A", "content": "好久不见" }
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { contentSafetyCheck } from '@/lib/content-filter';
 
-// 发送消息 Schema
+/** 发送消息请求参数验证 */
 const sendMessageSchema = z.object({
   role: z.enum(['A', 'B'], { message: '请选择角色' }),
   content: z.string().min(1).max(100, '消息内容最多 100 字'),

@@ -1,3 +1,41 @@
+/**
+ * ============================================
+ * AI 续写建议 API - 豆包大模型集成
+ * ============================================
+ * 
+ * 功能说明：
+ * - POST /api/rooms/[id]/ai-suggest - 获取 AI 续写建议
+ * - POST /api/rooms/[id]/ai-analyze - 获取故事分析
+ * 
+ * AI 续写建议（POST /ai-suggest）：
+ * - 基于最近 3 轮对话生成 3 个续写建议
+ * - 风格：温情 / 冲突 / 留白
+ * - 每个建议 50 字以内
+ * 
+ * 故事分析（POST /ai-analyze）：
+ * - 金句：最打动人的一句话
+ * - 余韵：故事结束后的感觉
+ * - 秘密：隐藏的潜台词
+ * - 反转：情节转折
+ * 
+ * 依赖配置：
+ * - DOUBAO_API_KEY: 豆包 API 密钥
+ * - DOUBAO_MODEL: 模型名称 (默认: doubao-seed-2-0-mini-260215)
+ * 
+ * 返回数据（续写）：
+ * - suggestions: Array<{ style: string, content: string }>
+ * 
+ * 返回数据（分析）：
+ * - goldenQuote: string
+ * - lingeringMood: string
+ * - secret: string
+ * - plotTwist: string
+ * 
+ * @example
+ * POST /api/rooms/Y0SFWF/ai-suggest { "role": "B", "style": "温情" }
+ * POST /api/rooms/Y0SFWF/ai-analyze
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getServerSession } from 'next-auth';

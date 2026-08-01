@@ -1,9 +1,41 @@
+/**
+ * ============================================
+ * 房间详情 API - 获取/加入/删除房间
+ * ============================================
+ * 
+ * 功能说明：
+ * - GET /api/rooms/[id] - 获取房间信息和消息列表
+ * - POST /api/rooms/[id] - 加入房间（选择角色）
+ * - DELETE /api/rooms/[id] - 删除/过期房间
+ * 
+ * GET 返回数据：
+ * - id: string - 房间 ID
+ * - scene: string - 场景描述
+ * - roleAName/roleBName: string - 角色名字
+ * - status: 'waiting' | 'active' | 'completed' | 'expired'
+ * - currentRound: number - 当前轮次 (1-10)
+ * - currentRole: 'A' | 'B' - 当前发言角色
+ * - messages: RoomMessage[] - 消息列表
+ * 
+ * POST 请求参数：
+ * - role: 'A' | 'B' - 选择的角色
+ * - guestId: string - 用户 ID
+ * 
+ * 安全措施：
+ * - Rate Limiting: 标准限制
+ * - 状态检查：过期/已满/角色冲突
+ * 
+ * @example
+ * GET /api/rooms/Y0SFWF
+ * POST /api/rooms/Y0SFWF { "role": "B", "guestId": "user2" }
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 import { z } from 'zod';
 
-// 加入房间 Schema
+/** 加入房间请求参数验证 */
 const joinRoomSchema = z.object({
   role: z.enum(['A', 'B'], { message: '请选择角色 A 或 B' }),
   guestId: z.string().min(1),
