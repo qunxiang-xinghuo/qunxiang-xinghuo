@@ -83,10 +83,13 @@ const createRoomSchema = z.object({
 async function handleCreateRoom(request: NextRequest) {
   try {
     // 0. 验证请求签名（防止重放攻击）
-    const signatureValid = await verifySignature(request);
-    if (!signatureValid.valid) {
+    const body0 = await request.clone().text();
+    const timestamp = request.headers.get('x-timestamp') || '';
+    const signature = request.headers.get('x-signature') || '';
+    const signatureValid = verifySignature(body0, Number(timestamp), signature);
+    if (!signatureValid) {
       return NextResponse.json(
-        { success: false, error: signatureValid.error || '请求签名验证失败' },
+        { success: false, error: '请求签名验证失败' },
         { status: 401 }
       );
     }

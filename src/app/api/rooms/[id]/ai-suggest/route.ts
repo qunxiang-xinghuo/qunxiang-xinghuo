@@ -288,17 +288,26 @@ async function handleAnalyze(request: NextRequest, { params }: { params: Promise
       };
     }
 
-    // 保存分析结果
-    await prisma.story.upsert({
-      where: { roomId },
-      update: { analysis: analysis as any },
-      create: {
-        roomId,
-        title: `${room.scene}：${room.roleAName}与${room.roleBName}`,
-        content: room.messages.map((m: any) => `${m.role === 'A' ? room.roleAName : room.roleBName}: ${m.content}`).join('\n'),
-        analysis: analysis as any,
-      },
-    });
+    // 保存分析结果到 Story 表（使用 conversationId 作为关联）
+    try {
+      await prisma.story.upsert({
+        where: { conversationId: roomId },
+        update: {
+          content: room.messages.map((m: { role: string; content: string }) => `${m.role === 'A' ? room.roleAName : room.roleBName}: ${m.content}`).join('\n'),
+          summary: JSON.stringify(analysis).slice(0, 200),
+        },
+        create: {
+          conversationId: roomId,
+          userId: 'system',
+          title: `${room.scene}：${room.roleAName}与${room.roleBName}`,
+          content: room.messages.map((m: { role: string; content: string }) => `${m.role === 'A' ? room.roleAName : room.roleBName}: ${m.content}`).join('\n'),
+          summary: JSON.stringify(analysis).slice(0, 200),
+          status: 'draft',
+        },
+      });
+    } catch {
+      // 保存失败不影响主流程
+    }
 
     return NextResponse.json({
       success: true,

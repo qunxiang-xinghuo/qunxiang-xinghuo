@@ -275,7 +275,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取指定类型的数据
-    let data = [];
+    let data: Array<Record<string, unknown>> = [];
     if (type) {
       data = await prisma.zhihuContent.findMany({
         where: { type: type },

@@ -167,7 +167,8 @@ export function batchContentSafetyCheck(
 export function filterSensitiveWords(content: string): string {
   let filtered = content;
   
-  SENSITIVE_WORDS.forEach(word => {
+  const allSensitiveWords = [...LEVEL_1_SENSITIVE_WORDS, ...LEVEL_2_SENSITIVE_WORDS];
+  allSensitiveWords.forEach((word: string) => {
     const regex = new RegExp(word, 'g');
     filtered = filtered.replace(regex, '*'.repeat(word.length));
   });

@@ -57,6 +57,7 @@ async function handleCreateStory(request: NextRequest) {
       data: {
         title,
         content,
+        summary: content.slice(0, 200),
         userId: user.id,
         conversationId,
         status: 'draft',

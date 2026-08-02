@@ -517,7 +517,7 @@ export const stories: Story[] = [
     endingText:
       '"两个人在机场相遇，说了再见。\n但也许，这才是故事的开始。"',
     endingTag: '— 由 林屿 & 苏远 共创 —',
-    createdAt: '2025-06-15',
+    createdAt: '2025-07-28',
     status: 'finished',
   },
   {
@@ -556,16 +556,46 @@ export const stories: Story[] = [
         character: '宋辞',
         text: '"嗯。你是……知秋？"',
       },
-      { type: 'chapter', chapterTitle: '第三幕 · 言' },
       {
         type: 'thought',
-        text: '他们没有立刻相认。\n\n也许是太突然，也许是太期待这一刻，反而不知道该怎么开口。\n\n他们继续假装陌生人，聊着天气，聊着书店，聊着这场雨。\n\n但每一句话，都是写给对方的信。\n\n只是这一次，不用再寄出去。',
+        text: '他们没有拥抱，没有哭。\n\n只是互相看了一眼，然后同时笑了。\n\n那笑容里有五年的等待，有无数封信的温度，有这场恰到好处的暴雨。',
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 言' },
+      {
+        type: 'dialogue',
+        character: '叶知秋',
+        text: '"你为什么不早点告诉我，你就是宋辞？"',
+      },
+      {
+        type: 'dialogue',
+        character: '宋辞',
+        text: '"因为我想看看，如果你先认出我，会说什么。"',
+        isSpark: true,
+      },
+      {
+        type: 'thought',
+        text: '他没有立刻相认。\n\n也许是太突然，也许是太期待这一刻，反而不知道该怎么开口。\n\n他们继续假装陌生人，聊着天气，聊着书店，聊着这场雨。\n\n但每一句话，都是写给对方的信。\n\n只是这一次，不用再寄出去。',
+      },
+      {
+        type: 'dialogue',
+        character: '叶知秋',
+        text: '"那封信……你还留着吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '宋辞',
+        text: '"每一封。按年份排在那个书架上。"',
+        isSpark: true,
+      },
+      {
+        type: 'thought',
+        text: '她顺着他手指的方向看去——第三层书架，整整齐齐，贴着年份标签。\n\n五年的信，他一本都没丢。',
       },
     ],
     endingText:
       '"五年的通信，从未见面的笔友。\n一场暴雨，把两个人困在同一家旧书店。\n原来，有些相遇，只需要一场雨的时间。"',
     endingTag: '— 由 叶知秋 & 宋辞 共创 —',
-    createdAt: '2025-07-01',
+    createdAt: '2025-07-15',
     status: 'finished',
     tags: ['笔友', '书店', '相遇'],
     sparks: [
@@ -594,11 +624,6 @@ export const stories: Story[] = [
         character: '陆沉',
         text: '"好像……卡住了。你按紧急呼叫了吗？"',
       },
-      { type: 'chapter', chapterTitle: '第二幕 · 认' },
-      {
-        type: 'thought',
-        text: '陆沉认出了她。\n\n一周前，地铁上。一个女孩帮他捡起了散落的文件。\n\n那时候他刚开完一个重要的会议，文件掉了一地。所有人都低着头走过，只有她蹲下来，帮他一张张捡起来。\n\n"没关系，我也经常这样。"她笑着说。\n\n他记得她的笑。\n\n现在，她就在他的电梯里。',
-      },
       {
         type: 'dialogue',
         character: '程晚',
@@ -609,16 +634,61 @@ export const stories: Story[] = [
         character: '陆沉',
         text: '"那……等一会儿吧。"',
       },
+      { type: 'chapter', chapterTitle: '第二幕 · 认' },
+      {
+        type: 'thought',
+        text: '陆沉认出了她。\n\n一周前，地铁上。一个女孩帮他捡起了散落的文件。\n\n那时候他刚开完一个重要的会议，文件掉了一地。所有人都低着头走过，只有她蹲下来，帮他一张张捡起来。\n\n"没关系，我也经常这样。"她笑着说。\n\n他记得她的笑。\n\n现在，她就在他的电梯里。',
+      },
+      {
+        type: 'dialogue',
+        character: '程晚',
+        text: '"你是……哪个部门的？我之前好像没见过你。"',
+      },
+      {
+        type: 'dialogue',
+        character: '陆沉',
+        text: '"你不记得我了？一周前，地铁，散了一地的文件。"',
+        isSpark: true,
+      },
+      {
+        type: 'thought',
+        text: '程晚愣住了。\n\n她当然记得。那天她帮他捡文件的时候，看到了他的工牌——副总裁。\n\n但她没说。她只是笑了笑，说了句"没关系"。\n\n现在他提起来了。在故障的电梯里，在只有一格信号的时刻。',
+      },
       { type: 'chapter', chapterTitle: '第三幕 · 言' },
+      {
+        type: 'dialogue',
+        character: '程晚',
+        text: '"我记得。但我没想到你会记得。"',
+      },
+      {
+        type: 'dialogue',
+        character: '陆沉',
+        text: '"那天所有人都低着头走过。只有你蹲下来了。"',
+        isSpark: true,
+      },
       {
         type: 'thought',
         text: '他们开始聊天。\n\n从电梯故障，聊到加班，聊到工作，聊到生活。\n\n他没有说"我记得你"。\n\n她也没有说"我认出了你"。\n\n但每一句话，都是重逢。\n\n电梯修好的时候，已经是凌晨。\n\n他们一起走出大楼，夜风很凉，但心里很暖。',
+      },
+      {
+        type: 'dialogue',
+        character: '程晚',
+        text: '"电梯修好了。"',
+      },
+      {
+        type: 'dialogue',
+        character: '陆沉',
+        text: '"嗯。明天……中午一起吃饭？"',
+      },
+      {
+        type: 'thought',
+        text: '她笑了。和地铁上那个笑一模一样。\n\n"好。"',
       },
     ],
     endingText:
       '"电梯故障了，但有些东西，开始运转了。"',
     endingTag: '— 由 程晚 & 陆沉 共创 —',
-    createdAt: '2025-07-03',
+    createdAt: '2025-07-20',
     status: 'finished',
     tags: ['电梯', '故障', '信号'],
     sparks: [
@@ -642,16 +712,67 @@ export const stories: Story[] = [
         type: 'thought',
         text: '凌晨三点，城市终于安静了。\n\n周然把车停在酒吧街路口，等最后一个客人。他不想回家——家里太安静了，安静得能听见自己的心跳。\n\n一个女孩拉开车门坐进来。妆花了，高跟鞋拎在手里，赤脚踩在脚垫上。\n\n"去哪？"\n\n"随便开。"',
       },
+      {
+        type: 'dialogue',
+        character: '周然',
+        text: '"随便开？那我可不知道往哪走。"',
+      },
+      {
+        type: 'dialogue',
+        character: '陈默',
+        text: '"那就往没人的方向开。"',
+      },
       { type: 'chapter', chapterTitle: '第二幕 · 聊' },
       {
         type: 'thought',
         text: '他们聊了很多。\n\n她说她刚分手，他说他刚离婚。她说她不知道去哪，他说他不想回家。\n\n他们都没有问对方的名字。\n\n有时候，陌生人比熟人更适合倾听。',
       },
+      {
+        type: 'dialogue',
+        character: '陈默',
+        text: '"你每天凌晨都出来开车吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '周然',
+        text: '"不是每天。只是睡不着的时候。"',
+        isSpark: true,
+      },
+      {
+        type: 'dialogue',
+        character: '陈默',
+        text: '"那今晚谢谢你。我本来不知道去哪，现在觉得……随便开也挺好的。"',
+      },
+      {
+        type: 'thought',
+        text: '车开过了空荡荡的长安街，开过了亮着路灯的护城河。\n\n她没有再说分手的事，他也没有再说离婚的事。\n\n他们聊起了小时候的事，聊起了第一次坐出租车的记忆。\n\n"我小时候以为出租车司机都知道所有路。"\n"现在也差不多。"',
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 天亮' },
+      {
+        type: 'dialogue',
+        character: '周然',
+        text: '"天快亮了。你……还要继续随便开吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '陈默',
+        text: '"不用了。送我回家吧。"',
+        isSpark: true,
+      },
+      {
+        type: 'thought',
+        text: '她把地址告诉了他。\n\n车停在她家楼下。她没有立刻下车。\n\n"谢谢你。"\n"谢什么？"\n"谢谢你没问我名字。"',
+      },
+      {
+        type: 'dialogue',
+        character: '周然',
+        text: '"如果有一天你想告诉我，我在这儿。"',
+      },
     ],
     endingText:
       '"凌晨三点，两个不想回家的人。\n一辆出租车，一段不需要名字的对话。"',
     endingTag: '— 由 周然 & 陈默 共创 —',
-    createdAt: '2025-07-05',
+    createdAt: '2025-07-25',
     status: 'finished',
     tags: ['凌晨', '出租车', '陌生人'],
     sparks: [
@@ -675,16 +796,76 @@ export const stories: Story[] = [
         type: 'thought',
         text: '凌晨两点，沈一又失眠了。\n\n他习惯性地走上天台。这是他的秘密基地——没人知道他会来这里。\n\n但今晚，天台上已经有一个人了。\n\n一个女孩坐在边缘，双腿悬空，看着城市的灯火。',
       },
+      {
+        type: 'dialogue',
+        character: '顾念',
+        text: '"你也睡不着？"',
+      },
+      {
+        type: 'dialogue',
+        character: '沈一',
+        text: '"嗯。你呢？"',
+      },
+      {
+        type: 'dialogue',
+        character: '顾念',
+        text: '"我在写一封信。但不知道该寄给谁。"',
+        isSpark: true,
+      },
       { type: 'chapter', chapterTitle: '第二幕 · 秘密' },
       {
         type: 'thought',
         text: '他们没有问对方为什么来这里。\n\n只是并肩坐着，看星星，看灯火，看这座沉睡的城市。\n\n然后她开口了。\n\n"我有一个秘密，藏了很久。"',
       },
+      {
+        type: 'dialogue',
+        character: '沈一',
+        text: '"我也有一个。"',
+      },
+      {
+        type: 'dialogue',
+        character: '顾念',
+        text: '"那我先说。"',
+      },
+      {
+        type: 'thought',
+        text: '她说她的秘密是——每天凌晨上天台，是因为这里能看到对面楼里一盏永远亮着的灯。那是他的房间。\n\n她写了五年的信，每一封都是写给那盏灯的人。\n\n但从未寄出。',
+      },
+      {
+        type: 'dialogue',
+        character: '顾念',
+        text: '"你的秘密呢？"',
+      },
+      {
+        type: 'dialogue',
+        character: '沈一',
+        text: '"我每天上天台，是因为这里能看到对面楼里一盏永远亮着的灯。"',
+        isSpark: true,
+      },
+      {
+        type: 'thought',
+        text: '沉默。\n\n很长的沉默。\n\n然后她转过头看他。\n\n"你是……对面那户？"',
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 灯' },
+      {
+        type: 'dialogue',
+        character: '沈一',
+        text: '"那封信……你还要寄吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '顾念',
+        text: '"不用了。"',
+      },
+      {
+        type: 'thought',
+        text: '她把手里的信递给他。\n\n信封上没有地址，没有姓名。只有一行字：\n\n"给那盏永远亮着的灯。"\n\n他接过来，笑了。\n\n"灯收到了。"',
+      },
     ],
     endingText:
-      '"深夜的天台，两个失眠的人。\n有些秘密，只能对陌生人说。"',
+      '"深夜的天台，两个失眠的人。\n有些秘密，只能对陌生人说。\n但有时候，陌生人就是你要找的那个人。"',
     endingTag: '— 由 沈一 & 顾念 共创 —',
-    createdAt: '2025-07-06',
+    createdAt: '2025-07-28',
     status: 'finished',
     tags: ['深夜', '失眠', '秘密'],
     sparks: [
@@ -713,7 +894,7 @@ export const storySeeds: StorySeed[] = [
       '通讯录里，两个相同的名字，一旧一新，挨在一起。他没有删旧的，也没有打新的。他只是把它们都存在了那里。',
     type: '金句',
     fromScene: 'airport-reunion',
-    createdAt: '2025-06-15',
+    createdAt: '2025-07-28',
   },
   {
     id: 'seed-2',
@@ -722,7 +903,7 @@ export const storySeeds: StorySeed[] = [
       '不是不想记得，是想装作不记得，但没装成功。',
     type: '金句',
     fromScene: 'airport-reunion',
-    createdAt: '2025-06-15',
+    createdAt: '2025-07-28',
   },
   {
     id: 'seed-3',
@@ -731,7 +912,7 @@ export const storySeeds: StorySeed[] = [
       '"请我喝咖啡"——不是"我们和好吧"，不是"我原谅你了"。那是比原谅更复杂的东西：我想继续了解你，但我还不打算说出口。',
     type: '余韵',
     fromScene: 'airport-reunion',
-    createdAt: '2025-06-15',
+    createdAt: '2025-07-28',
   },
   {
     id: 'seed-4',
@@ -740,7 +921,43 @@ export const storySeeds: StorySeed[] = [
       '轻声的"嗯"，然后是"一直没换"。两句话中间隔了两秒钟——第一秒是嘴硬，第二秒是诚实。',
     type: '秘密',
     fromScene: 'airport-reunion',
-    createdAt: '2025-06-15',
+    createdAt: '2025-07-28',
+  },
+  {
+    id: 'seed-5',
+    title: '不用寄出的信',
+    content:
+      '五年的通信，从未见面的笔友。一场暴雨把两个人困在同一家旧书店。原来有些信，不需要寄出，对方就已经收到了。',
+    type: '余韵',
+    fromScene: 'bookstore-rain',
+    createdAt: '2025-07-28',
+  },
+  {
+    id: 'seed-6',
+    title: '电梯里的一格信号',
+    content:
+      '手机信号只有一格，刚好够发一条消息。但她没有发给妈妈，而是发给了身边这个陌生人——"谢谢你记得我。"',
+    type: '金句',
+    fromScene: 'elevator-stuck',
+    createdAt: '2025-07-28',
+  },
+  {
+    id: 'seed-7',
+    title: '随便开',
+    content:
+      '"去哪？""随便开。"——有时候，最诚实的方向，就是没有方向。',
+    type: '灵感',
+    fromScene: 'midnight-taxi',
+    createdAt: '2025-07-28',
+  },
+  {
+    id: 'seed-8',
+    title: '给那盏灯的信',
+    content:
+      '信封上没有地址，没有姓名。只有一行字："给那盏永远亮着的灯。"他说："灯收到了。"',
+    type: '金句',
+    fromScene: 'rooftop-midnight',
+    createdAt: '2025-07-28',
   },
 ];
 
