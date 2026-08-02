@@ -1,9 +1,10 @@
 # 群像·星火 部署指南
 
 ## 部署包信息
-- 文件名: `qunxiang-xinghuo-deploy.tar.gz`
-- 大小: 2MB
-- 内容: 源代码（不含 node_modules、数据库、构建产物）
+- 最新部署包: `qunxiang-xinghuo-latest.tar.gz`
+- 大小: ~42MB（含水彩风格IP视觉素材）
+- 内容: 完整源代码 + 场景插图（不含 node_modules、数据库、构建产物）
+- 生成时间: 2025-08-02
 
 ---
 
