@@ -9,7 +9,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { scenes, stories, storySeeds } from '@/lib/data';
 import { FeaturedStory } from '@/components/featured-story';
-import { ParticleBackground } from '@/components/particle-background';
+
 
 export default function HomePage() {
   const featuredStory = stories[0];
@@ -19,9 +19,6 @@ export default function HomePage() {
 
   return (
     <div className="site-bg relative">
-      {/* 微光粒子背景 */}
-      <ParticleBackground />
-
       {/* ===== Hero Section — 水彩视觉主屏 ===== */}
       <section className="relative overflow-hidden">
         {/* 背景水彩图 */}
