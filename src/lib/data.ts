@@ -874,6 +874,433 @@ export const stories: Story[] = [
       { label: '不能说的秘密', count: 1, icon: 'fire' },
     ],
   },
+  {
+    id: 'train-late-night',
+    title: '末班地铁',
+    subtitle: '最后一节车厢，两个不想回家的人',
+    description: '末班地铁，最后一节车厢。一个戴着耳机假装睡觉的人，和一个一直在看窗外的人。',
+    sceneId: 'train-late-night',
+    coverColor: '#4A9FD8',
+    participants: ['林深', '苏晚'],
+    duration: '20分钟',
+    excerpt: '末班地铁，最后一节车厢。',
+    blocks: [
+      { type: 'chapter', chapterTitle: '第一幕 · 车厢' },
+      {
+        type: 'thought',
+        text: '末班地铁，23:45。\n\n最后一节车厢，只有两个人。\n\n一个戴着耳机，闭着眼睛，但手指在膝盖上轻轻敲着——他没睡着。\n\n另一个看着窗外，黑色的隧道里什么也看不见，但她一直在看。\n\n他们之间隔了三个座位。',
+      },
+      {
+        type: 'dialogue',
+        character: '林深',
+        text: '"你……是在看什么？"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏晚',
+        text: '"看隧道。假装自己在去某个地方的路上。"',
+        isSpark: true,
+      },
+      { type: 'chapter', chapterTitle: '第二幕 · 假装' },
+      {
+        type: 'thought',
+        text: '他摘下了耳机。\n\n"其实我没睡着。"\n"我知道。你的手一直在动。"\n"你注意到了？"\n"嗯。"',
+      },
+      {
+        type: 'dialogue',
+        character: '林深',
+        text: '"你每天坐末班车吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏晚',
+        text: '"不是每天。只是不想回家的时候。"',
+        isSpark: true,
+      },
+      {
+        type: 'dialogue',
+        character: '林深',
+        text: '"我也是。"',
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 到站' },
+      {
+        type: 'thought',
+        text: '地铁报站的声音响起。\n\n"下一站，终点站。"\n\n她站起来，走到门口。\n\n他没有动。\n\n门开了。她回头看了他一眼。\n\n"明天……还坐末班车吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '林深',
+        text: '"看情况。"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏晚',
+        text: '"那……明天见。"',
+      },
+      {
+        type: 'thought',
+        text: '她走了。\n\n他戴上耳机，但没放音乐。\n\n车厢空了，隧道还在。\n\n他看着窗外，假装自己在去某个地方的路上。',
+      },
+    ],
+    endingText:
+      '"末班地铁，最后一节车厢。\n两个不想回家的人，假装在去某个地方的路上。"',
+    endingTag: '— 由 林深 & 苏晚 共创 —',
+    createdAt: '2025-07-30',
+    status: 'finished',
+    tags: ['末班车', '地铁', '陌生人'],
+    sparks: [
+      { label: '末班地铁', count: 1, icon: 'fire' },
+      { label: '假装睡觉', count: 1, icon: 'fire' },
+      { label: '不想回家', count: 1, icon: 'fire' },
+    ],
+  },
+  {
+    id: 'hospital-waiting',
+    title: '手术室外',
+    subtitle: '医院走廊，两个等待的人',
+    description: '手术室外，两个等待的人。一个在等父亲，一个在等母亲。他们不知道对方在等谁。',
+    sceneId: 'hospital-waiting',
+    coverColor: '#B0E0E6',
+    participants: ['陈默', '林溪'],
+    duration: '40分钟',
+    excerpt: '手术室外，两个等待的人。',
+    blocks: [
+      { type: 'chapter', chapterTitle: '第一幕 · 等待' },
+      {
+        type: 'thought',
+        text: '手术室的灯亮着。\n\n陈默坐在走廊的塑料椅上，手里攥着一张缴费单。\n\n对面坐着一个女孩，也在看手机，但手指一直没动——她在发呆。\n\n他们之间隔了两个空座位。',
+      },
+      {
+        type: 'dialogue',
+        character: '林溪',
+        text: '"你……也是在等人吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '陈默',
+        text: '"嗯。你呢？"',
+      },
+      {
+        type: 'dialogue',
+        character: '林溪',
+        text: '"我也是。"',
+        isSpark: true,
+      },
+      { type: 'chapter', chapterTitle: '第二幕 · 沉默' },
+      {
+        type: 'thought',
+        text: '他们没有再说话。\n\n手术室的灯一直亮着。\n\n走廊里偶尔有护士走过，脚步声很轻。\n\n他看着缴费单上的数字，她看着手机屏幕上的时间。\n\n他们都在等一个结果。',
+      },
+      {
+        type: 'dialogue',
+        character: '陈默',
+        text: '"你等的人……会没事的。"',
+      },
+      {
+        type: 'dialogue',
+        character: '林溪',
+        text: '"你怎么知道？"',
+      },
+      {
+        type: 'dialogue',
+        character: '陈默',
+        text: '"因为我也在等。"',
+        isSpark: true,
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 灯灭' },
+      {
+        type: 'thought',
+        text: '手术室的灯灭了。\n\n医生走出来。\n\n他们同时站起来。\n\n"谁是家属？"\n\n他们同时向前一步。\n\n然后对视了一眼。\n\n"你先。"\n"不，你先。"',
+      },
+      {
+        type: 'dialogue',
+        character: '林溪',
+        text: '"一起吧。"',
+      },
+      {
+        type: 'thought',
+        text: '他们一起走向医生。\n\n不知道是谁的父亲，不知道是谁的母亲。\n\n但在这一刻，他们是彼此的支撑。',
+      },
+    ],
+    endingText:
+      '"手术室的灯灭了。\n两个等待的人，一起走向未知。\n有些陪伴，不需要名字。"',
+    endingTag: '— 由 陈默 & 林溪 共创 —',
+    createdAt: '2025-07-31',
+    status: 'finished',
+    tags: ['医院', '等待', '陌生人'],
+    sparks: [
+      { label: '手术室外', count: 1, icon: 'fire' },
+      { label: '两个等待的人', count: 1, icon: 'fire' },
+    ],
+  },
+  {
+    id: 'cafe-rainy-day',
+    title: '雨天咖啡馆',
+    subtitle: '下雨天，一家快打烊的咖啡馆',
+    description: '下雨天，一家快打烊的咖啡馆。只剩两个客人，一杯没喝完的咖啡，和一个不想走的理由。',
+    sceneId: 'cafe-rainy-day',
+    coverColor: '#7EC8E8',
+    participants: ['顾辰', '苏念'],
+    duration: '25分钟',
+    excerpt: '下雨天，一家快打烊的咖啡馆。',
+    blocks: [
+      { type: 'chapter', chapterTitle: '第一幕 · 打烊' },
+      {
+        type: 'thought',
+        text: '雨下得很大。\n\n咖啡馆的灯已经关了一半，店员在收拾桌子。\n\n只剩两个客人——一个坐在窗边看雨，一个坐在角落看书。\n\n"不好意思，我们要打烊了。"',
+      },
+      {
+        type: 'dialogue',
+        character: '顾辰',
+        text: '"能再等十分钟吗？雨小一点我就走。"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏念',
+        text: '"我也是。"',
+        isSpark: true,
+      },
+      { type: 'chapter', chapterTitle: '第二幕 · 雨声' },
+      {
+        type: 'thought',
+        text: '店员走了，留下两杯免费的热水。\n\n他们开始聊天。\n\n从雨声，聊到天气，聊到为什么下雨天不想回家。\n\n"因为下雨天，可以有一个理由不社交。"\n"嗯。下雨天，世界好像安静了。"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏念',
+        text: '"你经常来这家咖啡馆吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '顾辰',
+        text: '"不常来。只是今天不想回家。"',
+        isSpark: true,
+      },
+      {
+        type: 'dialogue',
+        character: '苏念',
+        text: '"我也是。"',
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 雨停' },
+      {
+        type: 'thought',
+        text: '雨停了。\n\n他们同时看向窗外。\n\n"雨停了。"\n"嗯。"\n"那……走吧。"\n"好。"',
+      },
+      {
+        type: 'dialogue',
+        character: '顾辰',
+        text: '"明天……还下雨吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏念',
+        text: '"看天气预报。"',
+      },
+      {
+        type: 'dialogue',
+        character: '顾辰',
+        text: '"那如果明天下雨，还来这儿？"',
+        isSpark: true,
+      },
+      {
+        type: 'dialogue',
+        character: '苏念',
+        text: '"好。"',
+      },
+    ],
+    endingText:
+      '"下雨天，一家快打烊的咖啡馆。\n两个不想回家的人，约好了明天再来。"',
+    endingTag: '— 由 顾辰 & 苏念 共创 —',
+    createdAt: '2025-08-01',
+    status: 'finished',
+    tags: ['雨天', '咖啡馆', '陌生人'],
+    sparks: [
+      { label: '下雨天', count: 1, icon: 'fire' },
+      { label: '快打烊', count: 1, icon: 'fire' },
+      { label: '不想回家', count: 1, icon: 'fire' },
+    ],
+  },
+  {
+    id: 'library-quiet',
+    title: '图书馆的纸条',
+    subtitle: '图书馆，一本被归还的书里夹着一张纸条',
+    description: '图书馆，你在归还的书里发现了一张纸条。上面写着："如果你也看到这张纸条，请在同一本书里留下一句话。"',
+    sceneId: 'library-quiet',
+    coverColor: '#4A9FD8',
+    participants: ['陆远', '林晚'],
+    duration: '30分钟',
+    excerpt: '图书馆，一张夹在书里的纸条。',
+    blocks: [
+      { type: 'chapter', chapterTitle: '第一幕 · 发现' },
+      {
+        type: 'thought',
+        text: '你在图书馆借了一本《百年孤独》。\n\n翻到第137页，一张纸条掉出来。\n\n上面写着：\n\n"如果你也看到这张纸条，请在同一本书里留下一句话。然后把它放回书架。"\n\n没有署名，没有日期。',
+      },
+      {
+        type: 'dialogue',
+        character: '陆远',
+        text: '"这是……谁留下的？"',
+      },
+      {
+        type: 'thought',
+        text: '你看了看四周。\n\n图书馆很安静，只有翻书的声音。\n\n你拿起笔，在纸条背面写了一句话：\n\n"今天天气很好，但我不想出门。"\n\n然后把纸条夹回书里，放回书架。',
+      },
+      { type: 'chapter', chapterTitle: '第二幕 · 回应' },
+      {
+        type: 'thought',
+        text: '三天后，你又来到图书馆。\n\n那本书还在同一个位置。\n\n你打开第137页，纸条还在。\n\n背面多了一行字：\n\n"我也是。但谢谢你出门了。"',
+      },
+      {
+        type: 'dialogue',
+        character: '林晚',
+        text: '"是你写的吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '陆远',
+        text: '"什么？"',
+      },
+      {
+        type: 'dialogue',
+        character: '林晚',
+        text: '"纸条。是你先写的吗？"',
+        isSpark: true,
+      },
+      {
+        type: 'dialogue',
+        character: '陆远',
+        text: '"……是。你也看到了？"',
+      },
+      {
+        type: 'dialogue',
+        character: '林晚',
+        text: '"嗯。我回了一句。"',
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 对话' },
+      {
+        type: 'thought',
+        text: '他们开始用纸条对话。\n\n每周一本书，一张纸条。\n\n没有见面，没有名字。\n\n只有文字。\n\n三个月后，纸条上写着：\n\n"我们……能见一面吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '陆远',
+        text: '"好。明天，图书馆门口。"',
+      },
+      {
+        type: 'dialogue',
+        character: '林晚',
+        text: '"好。我手里会拿一本《百年孤独》。"',
+        isSpark: true,
+      },
+    ],
+    endingText:
+      '"图书馆的纸条，一本被归还的书。\n有些对话，从文字开始。"',
+    endingTag: '— 由 陆远 & 林晚 共创 —',
+    createdAt: '2025-08-02',
+    status: 'finished',
+    tags: ['图书馆', '纸条', '笔友'],
+    sparks: [
+      { label: '图书馆纸条', count: 1, icon: 'fire' },
+      { label: '文字对话', count: 1, icon: 'fire' },
+      { label: '三个月', count: 1, icon: 'fire' },
+    ],
+  },
+  {
+    id: 'bus-stop-night',
+    title: '深夜公交站',
+    subtitle: '深夜公交站，最后一班车还没来',
+    description: '深夜公交站，最后一班车还没来。只有两个人，一盏路灯，和一只流浪猫。',
+    sceneId: 'bus-stop-night',
+    coverColor: '#B0E0E6',
+    participants: ['周行', '苏叶'],
+    duration: '20分钟',
+    excerpt: '深夜公交站，最后一班车还没来。',
+    blocks: [
+      { type: 'chapter', chapterTitle: '第一幕 · 等车' },
+      {
+        type: 'thought',
+        text: '深夜11:30。\n\n公交站牌上写着：末班车 23:45。\n\n但已经等了20分钟，车还没来。\n\n站台上只有两个人——一个在看手机，一个在喂流浪猫。\n\n还有一盏忽明忽暗的路灯。',
+      },
+      {
+        type: 'dialogue',
+        character: '周行',
+        text: '"这车……会来吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏叶',
+        text: '"应该会吧。"',
+        isSpark: true,
+      },
+      {
+        type: 'dialogue',
+        character: '周行',
+        text: '"你经常坐这班车？"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏叶',
+        text: '"不经常。只是今天加班。"',
+      },
+      { type: 'chapter', chapterTitle: '第二幕 · 猫' },
+      {
+        type: 'thought',
+        text: '流浪猫吃完了，蹭了蹭她的手。\n\n"它每天都在这儿吗？"\n"嗯。我有时候会带猫粮来。"\n"你认识它？"\n"不算认识。只是……它在这儿，我也在这儿。"',
+      },
+      {
+        type: 'dialogue',
+        character: '周行',
+        text: '"有时候觉得，猫比人靠谱。"',
+        isSpark: true,
+      },
+      {
+        type: 'dialogue',
+        character: '苏叶',
+        text: '"为什么？"',
+      },
+      {
+        type: 'dialogue',
+        character: '周行',
+        text: '"因为它不会爽约。说在这儿，就在这儿。"',
+      },
+      { type: 'chapter', chapterTitle: '第三幕 · 车来了' },
+      {
+        type: 'thought',
+        text: '车灯从远处亮起来。\n\n末班车终于来了。\n\n他们同时站起来。\n\n"你坐几路？"\n"302。"\n"我也是。"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏叶',
+        text: '"那……明天还来喂猫吗？"',
+      },
+      {
+        type: 'dialogue',
+        character: '周行',
+        text: '"看情况。"',
+      },
+      {
+        type: 'dialogue',
+        character: '苏叶',
+        text: '"那明天见。"',
+        isSpark: true,
+      },
+      {
+        type: 'thought',
+        text: '车门开了。\n\n他们上了车。\n\n流浪猫看着车开走，然后继续蹲在站台上。\n\n等下一个深夜的人。',
+      },
+    ],
+    endingText:
+      '"深夜公交站，一盏路灯，一只猫。\n有些陪伴，不需要承诺。"',
+    endingTag: '— 由 周行 & 苏叶 共创 —',
+    createdAt: '2025-08-03',
+    status: 'finished',
+    tags: ['深夜', '公交站', '流浪猫'],
+    sparks: [
+      { label: '深夜公交站', count: 1, icon: 'fire' },
+      { label: '流浪猫', count: 1, icon: 'fire' },
+      { label: '末班车', count: 1, icon: 'fire' },
+    ],
+  },
 ];
 
 // 故事种子（未开发的灵感片段）
@@ -958,6 +1385,96 @@ export const storySeeds: StorySeed[] = [
     type: '金句',
     fromScene: 'rooftop-midnight',
     createdAt: '2025-07-28',
+  },
+  {
+    id: 'seed-9',
+    title: '末班车的默契',
+    content:
+      '末班地铁，最后一节车厢。两个不想回家的人，假装在去某个地方的路上。',
+    type: '灵感',
+    fromScene: 'train-late-night',
+    createdAt: '2025-07-30',
+  },
+  {
+    id: 'seed-10',
+    title: '手术室外的一起',
+    content:
+      '"谁是家属？"他们同时向前一步。"你先。""不，你先。""一起吧。"',
+    type: '余韵',
+    fromScene: 'hospital-waiting',
+    createdAt: '2025-07-31',
+  },
+  {
+    id: 'seed-11',
+    title: '雨天的理由',
+    content:
+      '下雨天，可以有一个理由不社交。下雨天，世界好像安静了。',
+    type: '金句',
+    fromScene: 'cafe-rainy-day',
+    createdAt: '2025-08-01',
+  },
+  {
+    id: 'seed-12',
+    title: '纸条上的三个月',
+    content:
+      '一本被归还的书，一张夹在第137页的纸条。三个月的文字对话，从"今天天气很好"到"我们能见一面吗"。',
+    type: '反转',
+    fromScene: 'library-quiet',
+    createdAt: '2025-08-02',
+  },
+  {
+    id: 'seed-13',
+    title: '猫比人靠谱',
+    content:
+      '"有时候觉得，猫比人靠谱。""为什么？""因为它不会爽约。说在这儿，就在这儿。"',
+    type: '金句',
+    fromScene: 'bus-stop-night',
+    createdAt: '2025-08-03',
+  },
+  {
+    id: 'seed-14',
+    title: '不需要名字的陪伴',
+    content:
+      '有些陪伴，不需要名字。凌晨三点，两个不想回家的人，一辆出租车，一段不需要名字的对话。',
+    type: '余韵',
+    fromScene: 'midnight-taxi',
+    createdAt: '2025-08-03',
+  },
+  {
+    id: 'seed-15',
+    title: '假装睡觉的人',
+    content:
+      '他摘下了耳机。"其实我没睡着。""我知道。你的手一直在动。"',
+    type: '秘密',
+    fromScene: 'train-late-night',
+    createdAt: '2025-08-03',
+  },
+  {
+    id: 'seed-16',
+    title: '明天的约定',
+    content:
+      '"那如果明天下雨，还来这儿？""好。"——有些约定，只需要一场雨。',
+    type: '余韵',
+    fromScene: 'cafe-rainy-day',
+    createdAt: '2025-08-03',
+  },
+  {
+    id: 'seed-17',
+    title: '文字比见面更容易',
+    content:
+      '没有见面，没有名字，只有文字。三个月后，纸条上写着："我们……能见一面吗？"',
+    type: '反转',
+    fromScene: 'library-quiet',
+    createdAt: '2025-08-03',
+  },
+  {
+    id: 'seed-18',
+    title: '路灯下的等待',
+    content:
+      '深夜公交站，一盏忽明忽暗的路灯。车还没来，但有人陪你等。',
+    type: '灵感',
+    fromScene: 'bus-stop-night',
+    createdAt: '2025-08-03',
   },
 ];
 
