@@ -27,12 +27,12 @@ export function SiteFooter() {
             </p>
             <div className="flex items-center gap-3 text-xs text-ink-muted">
               <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-brand-blue transition">
-                沪ICP备2026023751号
+                鲁ICP备2026032245号-1
               </a>
               <span>|</span>
-              <a href="https://www.beian.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-brand-blue transition">
-                沪公网安备 31011502023456号
-              </a>
+              <span className="text-ink-muted/70">
+                公安备案号 待办理
+              </span>
             </div>
           </div>
         </div>
