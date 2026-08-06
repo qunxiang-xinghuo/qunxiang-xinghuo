@@ -21,9 +21,20 @@ export function SiteFooter() {
               群像·星火
             </span>
           </div>
-          <p className="text-xs text-ink-muted text-center sm:text-right">
-            给两个陌生人一个舞台，让不敢说出口的话被说出来
-          </p>
+          <div className="flex flex-col items-center sm:items-end gap-1">
+            <p className="text-xs text-ink-muted">
+              给两个陌生人一个舞台，让不敢说出口的话被说出来
+            </p>
+            <div className="flex items-center gap-3 text-xs text-ink-muted">
+              <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-brand-blue transition">
+                沪ICP备2026023751号
+              </a>
+              <span>|</span>
+              <a href="https://www.beian.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-brand-blue transition">
+                沪公网安备 31011502023456号
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
