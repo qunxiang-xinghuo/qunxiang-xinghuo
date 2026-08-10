@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import { ReportButton } from "@/components/report-button";
 
 interface Message {
   id: string;
@@ -193,13 +194,17 @@ export default function RoomPage() {
                 {room.roleAName} × {room.roleBName}
               </p>
             </div>
-            <div className="text-right">
-              <Badge variant="secondary" className="text-lg px-4 py-2">
-                第 {room.currentRound} 轮/共{MAX_ROUNDS}轮
-              </Badge>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isMyTurn ? "轮到你了" : isWaiting ? "等待对方" : ""}
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <Badge variant="secondary" className="text-lg px-4 py-2">
+                  第 {room.currentRound} 轮/共{MAX_ROUNDS}轮
+                </Badge>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isMyTurn ? "轮到你了" : isWaiting ? "等待对方" : ""}
+                </p>
+              </div>
+              {/* 举报按钮 */}
+              <ReportButton targetType="room" targetId={room.id} />
             </div>
           </div>
         </CardContent>

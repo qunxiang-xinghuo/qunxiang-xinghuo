@@ -243,3 +243,29 @@ model RoomMessage {
   @@index([round])                                // 按轮次排序
   @@index([timestamp])                            // 按时间排序
 }
+
+// ============================================
+// 举报模型 - 用户举报违规内容
+// ============================================
+model Report {
+  id              String   @id @default(cuid())   // 举报唯一 ID
+  targetType      String                          // 举报对象类型：story, room, message
+  targetId        String                          // 举报对象 ID（故事 ID、房间 ID 或消息 ID）
+  
+  reason          String                          // 举报原因：porn(色情), violence(暴力), harassment(骚扰), spam(垃圾信息), other(其他)
+  description     String?                         // 举报详细描述（可选）
+  
+  reporterEmail   String?                         // 举报人邮箱（可选，匿名举报可为空）
+  reporterIp      String?                         // 举报人 IP 地址（用于防滥用）
+  
+  status          String   @default("pending")    // 处理状态：pending(待处理), reviewing(审核中), resolved(已处理), dismissed(已驳回)
+  adminNote       String?                         // 管理员处理备注
+  
+  createdAt       DateTime @default(now())        // 举报创建时间
+  updatedAt       DateTime @updatedAt             // 更新时间
+  
+  @@index([targetType])
+  @@index([targetId])
+  @@index([status])
+  @@index([createdAt])
+}

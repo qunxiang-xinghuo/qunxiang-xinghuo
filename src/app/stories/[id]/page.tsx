@@ -7,6 +7,7 @@
 import { notFound } from 'next/navigation';
 import { getStoryById, stories } from '@/lib/data';
 import { StoryReader } from '@/components/story-reader';
+import { ReportButton } from '@/components/report-button';
 
 interface StoryDetailPageProps {
   params: Promise<{ id: string }>;
@@ -37,6 +38,10 @@ export default async function StoryDetailPage({ params }: StoryDetailPageProps) 
   return (
     <div className="site-bg">
       <StoryReader story={story} />
+      {/* 举报按钮 - 故事页面底部 */}
+      <div className="max-w-3xl mx-auto px-6 py-8 text-center">
+        <ReportButton targetType="story" targetId={story.id} />
+      </div>
     </div>
   );
 }

@@ -4,7 +4,6 @@
  */
 
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
-// @ts-expect-error PrismaClient is generated at runtime by prisma generate
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
 

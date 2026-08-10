@@ -70,33 +70,24 @@ export async function POST(request: NextRequest) {
       // 创建房间
       const room = await prisma.room.create({
         data: {
-          code: Math.random().toString(36).substring(2, 8).toUpperCase(),
-          sceneId: sceneId,
-          sceneName: sceneName,
+          id: Math.random().toString(36).substring(2, 8).toUpperCase(),
+          scene: sceneName,
           roleAName: roleA,
           roleBName: roleB,
           status: 'active',
-          maxRounds: 10,
-          roundTimeLimit: 100,
-          players: {
-            create: [
-              { userId: user1.userId, username: user1.username, role: 'A', isReady: true },
-              { userId: user2.userId, username: user2.username, role: 'B', isReady: true }
-            ]
-          }
-        },
-        include: { players: true }
+          hostId: user1.userId,
+          guestId: user2.userId,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        }
       });
 
       return NextResponse.json({
         matched: true,
         room: {
           id: room.id,
-          code: room.code,
-          sceneName: room.sceneName,
+          scene: room.scene,
           roleAName: room.roleAName,
           roleBName: room.roleBName,
-          players: room.players
         }
       });
     }
