@@ -517,7 +517,7 @@ export const stories: Story[] = [
     endingText:
       '"两个人在机场相遇，说了再见。\n但也许，这才是故事的开始。"',
     endingTag: '— 由 林屿 & 苏远 共创 —',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
     status: 'finished',
   },
   {
@@ -595,7 +595,7 @@ export const stories: Story[] = [
     endingText:
       '"五年的通信，从未见面的笔友。\n一场暴雨，把两个人困在同一家旧书店。\n原来，有些相遇，只需要一场雨的时间。"',
     endingTag: '— 由 叶知秋 & 宋辞 共创 —',
-    createdAt: '2025-07-15',
+    createdAt: '2026-07-20',
     status: 'finished',
     tags: ['笔友', '书店', '相遇'],
     sparks: [
@@ -688,7 +688,7 @@ export const stories: Story[] = [
     endingText:
       '"电梯故障了，但有些东西，开始运转了。"',
     endingTag: '— 由 程晚 & 陆沉 共创 —',
-    createdAt: '2025-07-20',
+    createdAt: '2026-07-25',
     status: 'finished',
     tags: ['电梯', '故障', '信号'],
     sparks: [
@@ -772,7 +772,7 @@ export const stories: Story[] = [
     endingText:
       '"凌晨三点，两个不想回家的人。\n一辆出租车，一段不需要名字的对话。"',
     endingTag: '— 由 周然 & 陈默 共创 —',
-    createdAt: '2025-07-25',
+    createdAt: '2026-07-25',
     status: 'finished',
     tags: ['凌晨', '出租车', '陌生人'],
     sparks: [
@@ -865,7 +865,7 @@ export const stories: Story[] = [
     endingText:
       '"深夜的天台，两个失眠的人。\n有些秘密，只能对陌生人说。\n但有时候，陌生人就是你要找的那个人。"',
     endingTag: '— 由 沈一 & 顾念 共创 —',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
     status: 'finished',
     tags: ['深夜', '失眠', '秘密'],
     sparks: [
@@ -945,7 +945,7 @@ export const stories: Story[] = [
     endingText:
       '"末班地铁，最后一节车厢。\n两个不想回家的人，假装在去某个地方的路上。"',
     endingTag: '— 由 林深 & 苏晚 共创 —',
-    createdAt: '2025-07-30',
+    createdAt: '2026-08-01',
     status: 'finished',
     tags: ['末班车', '地铁', '陌生人'],
     sparks: [
@@ -1025,7 +1025,7 @@ export const stories: Story[] = [
     endingText:
       '"手术室的灯灭了。\n两个等待的人，一起走向未知。\n有些陪伴，不需要名字。"',
     endingTag: '— 由 陈默 & 林溪 共创 —',
-    createdAt: '2025-07-31',
+    createdAt: '2026-08-01',
     status: 'finished',
     tags: ['医院', '等待', '陌生人'],
     sparks: [
@@ -1111,7 +1111,7 @@ export const stories: Story[] = [
     endingText:
       '"下雨天，一家快打烊的咖啡馆。\n两个不想回家的人，约好了明天再来。"',
     endingTag: '— 由 顾辰 & 苏念 共创 —',
-    createdAt: '2025-08-01',
+    createdAt: '2026-08-01',
     status: 'finished',
     tags: ['雨天', '咖啡馆', '陌生人'],
     sparks: [
@@ -1196,7 +1196,7 @@ export const stories: Story[] = [
     endingText:
       '"图书馆的纸条，一本被归还的书。\n有些对话，从文字开始。"',
     endingTag: '— 由 陆远 & 林晚 共创 —',
-    createdAt: '2025-08-02',
+    createdAt: '2026-08-01',
     status: 'finished',
     tags: ['图书馆', '纸条', '笔友'],
     sparks: [
@@ -1292,7 +1292,7 @@ export const stories: Story[] = [
     endingText:
       '"深夜公交站，一盏路灯，一只猫。\n有些陪伴，不需要承诺。"',
     endingTag: '— 由 周行 & 苏叶 共创 —',
-    createdAt: '2025-08-03',
+    createdAt: '2026-08-01',
     status: 'finished',
     tags: ['深夜', '公交站', '流浪猫'],
     sparks: [
@@ -1321,7 +1321,7 @@ export const storySeeds: StorySeed[] = [
       '通讯录里，两个相同的名字，一旧一新，挨在一起。他没有删旧的，也没有打新的。他只是把它们都存在了那里。',
     type: '金句',
     fromScene: 'airport-reunion',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-2',
@@ -1330,7 +1330,7 @@ export const storySeeds: StorySeed[] = [
       '不是不想记得，是想装作不记得，但没装成功。',
     type: '金句',
     fromScene: 'airport-reunion',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-3',
@@ -1339,7 +1339,7 @@ export const storySeeds: StorySeed[] = [
       '"请我喝咖啡"——不是"我们和好吧"，不是"我原谅你了"。那是比原谅更复杂的东西：我想继续了解你，但我还不打算说出口。',
     type: '余韵',
     fromScene: 'airport-reunion',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-4',
@@ -1348,7 +1348,7 @@ export const storySeeds: StorySeed[] = [
       '轻声的"嗯"，然后是"一直没换"。两句话中间隔了两秒钟——第一秒是嘴硬，第二秒是诚实。',
     type: '秘密',
     fromScene: 'airport-reunion',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-5',
@@ -1357,7 +1357,7 @@ export const storySeeds: StorySeed[] = [
       '五年的通信，从未见面的笔友。一场暴雨把两个人困在同一家旧书店。原来有些信，不需要寄出，对方就已经收到了。',
     type: '余韵',
     fromScene: 'bookstore-rain',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-6',
@@ -1366,7 +1366,7 @@ export const storySeeds: StorySeed[] = [
       '手机信号只有一格，刚好够发一条消息。但她没有发给妈妈，而是发给了身边这个陌生人——"谢谢你记得我。"',
     type: '金句',
     fromScene: 'elevator-stuck',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-7',
@@ -1375,7 +1375,7 @@ export const storySeeds: StorySeed[] = [
       '"去哪？""随便开。"——有时候，最诚实的方向，就是没有方向。',
     type: '灵感',
     fromScene: 'midnight-taxi',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-8',
@@ -1384,7 +1384,7 @@ export const storySeeds: StorySeed[] = [
       '信封上没有地址，没有姓名。只有一行字："给那盏永远亮着的灯。"他说："灯收到了。"',
     type: '金句',
     fromScene: 'rooftop-midnight',
-    createdAt: '2025-07-28',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-9',
@@ -1393,7 +1393,7 @@ export const storySeeds: StorySeed[] = [
       '末班地铁，最后一节车厢。两个不想回家的人，假装在去某个地方的路上。',
     type: '灵感',
     fromScene: 'train-late-night',
-    createdAt: '2025-07-30',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-10',
@@ -1402,7 +1402,7 @@ export const storySeeds: StorySeed[] = [
       '"谁是家属？"他们同时向前一步。"你先。""不，你先。""一起吧。"',
     type: '余韵',
     fromScene: 'hospital-waiting',
-    createdAt: '2025-07-31',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-11',
@@ -1411,7 +1411,7 @@ export const storySeeds: StorySeed[] = [
       '下雨天，可以有一个理由不社交。下雨天，世界好像安静了。',
     type: '金句',
     fromScene: 'cafe-rainy-day',
-    createdAt: '2025-08-01',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-12',
@@ -1420,7 +1420,7 @@ export const storySeeds: StorySeed[] = [
       '一本被归还的书，一张夹在第137页的纸条。三个月的文字对话，从"今天天气很好"到"我们能见一面吗"。',
     type: '反转',
     fromScene: 'library-quiet',
-    createdAt: '2025-08-02',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-13',
@@ -1429,7 +1429,7 @@ export const storySeeds: StorySeed[] = [
       '"有时候觉得，猫比人靠谱。""为什么？""因为它不会爽约。说在这儿，就在这儿。"',
     type: '金句',
     fromScene: 'bus-stop-night',
-    createdAt: '2025-08-03',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-14',
@@ -1438,7 +1438,7 @@ export const storySeeds: StorySeed[] = [
       '有些陪伴，不需要名字。凌晨三点，两个不想回家的人，一辆出租车，一段不需要名字的对话。',
     type: '余韵',
     fromScene: 'midnight-taxi',
-    createdAt: '2025-08-03',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-15',
@@ -1447,7 +1447,7 @@ export const storySeeds: StorySeed[] = [
       '他摘下了耳机。"其实我没睡着。""我知道。你的手一直在动。"',
     type: '秘密',
     fromScene: 'train-late-night',
-    createdAt: '2025-08-03',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-16',
@@ -1456,7 +1456,7 @@ export const storySeeds: StorySeed[] = [
       '"那如果明天下雨，还来这儿？""好。"——有些约定，只需要一场雨。',
     type: '余韵',
     fromScene: 'cafe-rainy-day',
-    createdAt: '2025-08-03',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-17',
@@ -1465,7 +1465,7 @@ export const storySeeds: StorySeed[] = [
       '没有见面，没有名字，只有文字。三个月后，纸条上写着："我们……能见一面吗？"',
     type: '反转',
     fromScene: 'library-quiet',
-    createdAt: '2025-08-03',
+    createdAt: '2026-08-01',
   },
   {
     id: 'seed-18',
@@ -1474,7 +1474,7 @@ export const storySeeds: StorySeed[] = [
       '深夜公交站，一盏忽明忽暗的路灯。车还没来，但有人陪你等。',
     type: '灵感',
     fromScene: 'bus-stop-night',
-    createdAt: '2025-08-03',
+    createdAt: '2026-08-01',
   },
 ];
 

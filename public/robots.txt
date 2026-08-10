@@ -1,7 +1,8 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /_next/
-Disallow: /static/
+Disallow: /login
+Disallow: /register
+Disallow: /profile
 
-Sitemap: https://qunxiangxinghuo.cn/sitemap.xml
+Sitemap: https://www.qunxiangxinghuo.cn/sitemap.xml
