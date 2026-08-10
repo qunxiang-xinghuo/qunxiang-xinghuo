@@ -200,9 +200,17 @@ export function SceneDetail({ scene }: SceneDetailProps) {
           {/* Multiplayer CTA */}
           <Link
             href={`/scenes/${scene.id}/multiplayer?room=${roomId}`}
-            className="block w-full py-4 bg-gradient-to-r from-[#7EC8E8] to-[#5AB0D8] text-white text-sm font-medium tracking-widest rounded-xl transition-all duration-300 shadow-lg shadow-[#7EC8E8]/20 hover:shadow-xl hover:shadow-[#7EC8E8]/30 hover:-translate-y-0.5 text-center"
+            className="block w-full py-4 bg-gradient-to-r from-[#7EC8E8] to-[#5AB0D8] text-white text-sm font-medium tracking-widest rounded-xl transition-all duration-300 shadow-lg shadow-[#7EC8E8]/20 hover:shadow-xl hover:shadow-[#7EC8E8]/30 hover:-translate-y-0.5 text-center mb-3"
           >
             双人模式 - 邀请好友一起扮演
+          </Link>
+
+          {/* Stranger Match CTA */}
+          <Link
+            href={`/match?scene=${scene.id}`}
+            className="block w-full py-4 bg-gradient-to-r from-[#B0E0E6] to-[#7EC8E8] text-white text-sm font-medium tracking-widest rounded-xl transition-all duration-300 shadow-lg shadow-[#B0E0E6]/20 hover:shadow-xl hover:shadow-[#B0E0E6]/30 hover:-translate-y-0.5 text-center border-2 border-dashed border-[#4a9fd8]/30"
+          >
+            陌生人匹配 - 随机匹配对手
           </Link>
         </div>
       </div>

@@ -120,7 +120,7 @@ export default function HomePage() {
       {/* ===== 参与创作 — 互动入口 ===== */}
       <section className="px-5 py-16 bg-white/40">
         <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* 卡片1：单人扮演 */}
             <Link
               href="/scenes"
@@ -163,7 +163,32 @@ export default function HomePage() {
               </p>
             </Link>
 
-            {/* 卡片3：阅读故事 */}
+            {/* 卡片3：陌生人匹配 */}
+            <Link
+              href="/match"
+              className="group p-6 rounded-2xl bg-card-bg border border-[#B0E0E6]/40 hover:border-[#B0E0E6]/60 card-shadow hover:card-shadow-hover transition-all duration-400 text-center relative overflow-hidden"
+            >
+              <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-[#B0E0E6]/20 text-[#4a9fd8] text-[10px] font-medium">
+                新功能
+              </div>
+              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-[#B0E0E6]/20 flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4a9fd8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  <circle cx="12" cy="12" r="10" strokeDasharray="4 2" />
+                </svg>
+              </div>
+              <h3 className="font-serif text-base text-ink mb-1.5 group-hover:text-brand-blue transition-colors">
+                陌生人匹配
+              </h3>
+              <p className="text-xs text-ink-muted leading-relaxed">
+                随机匹配一个陌生人，一起即兴创作，体验未知的对话
+              </p>
+            </Link>
+
+            {/* 卡片4：阅读故事 */}
             <Link
               href="/stories"
               className="group p-6 rounded-2xl bg-card-bg border border-border/60 hover:border-brand-gold/30 card-shadow hover:card-shadow-hover transition-all duration-400 text-center"
