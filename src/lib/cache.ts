@@ -9,7 +9,7 @@ interface CacheEntry<T> {
 }
 
 class MemoryCache {
-  private cache: Map<string, CacheEntry<any>> = new Map();
+  private cache: Map<string, CacheEntry<unknown>> = new Map();
 
   /**
    * 设置缓存
@@ -90,13 +90,13 @@ export function withCache<T>(
   ttlSeconds: number = 300
 ) {
   return function (
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const key = `${keyPrefix}:${propertyKey}:${JSON.stringify(args)}`;
       
       // 尝试从缓存获取

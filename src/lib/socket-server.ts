@@ -250,14 +250,14 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
     });
 
     // 发送消息
-    socket.on('room:message', (data: { roomId: string; message: any }) => {
+    socket.on('room:message', (data: { roomId: string; message: unknown }) => {
       const { roomId, message } = data;
       socket.to(roomId).emit('room:message-received', message);
       console.log(`[Socket.IO] Message in room ${roomId}`);
     });
 
     // 房间状态更新
-    socket.on('room:status-update', (data: { roomId: string; status: any }) => {
+    socket.on('room:status-update', (data: { roomId: string; status: unknown }) => {
       const { roomId, status } = data;
       socket.to(roomId).emit('room:status-updated', status);
     });

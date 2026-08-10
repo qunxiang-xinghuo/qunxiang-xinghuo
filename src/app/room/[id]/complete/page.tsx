@@ -346,11 +346,11 @@ ${new Date().toLocaleString("zh-CN")}
             <div className="text-center space-y-3">
               <div className="text-sm text-blue-600 font-medium">💬 故事金句</div>
               <p className="text-xl md:text-2xl font-serif italic text-gray-800 leading-relaxed">
-                "{analysis.goldenQuote}"
+                \&quot;{analysis.goldenQuote}\&quot;
               </p>
               <Button
                 onClick={() => {
-                  const quoteText = `"${analysis.goldenQuote}"\n\n—— ${room.scene}\n${room.roleAName} × ${room.roleBName}`;
+                  const quoteText = `\"${analysis.goldenQuote}\"\n\n—— ${room.scene}\n${room.roleAName} × ${room.roleBName}`;
                   navigator.clipboard.writeText(quoteText);
                   toast.success("金句已复制");
                 }}

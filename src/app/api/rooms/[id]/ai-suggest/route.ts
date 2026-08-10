@@ -47,7 +47,7 @@ function generateSuggestionPrompt(
   scene: string,
   roleAName: string,
   roleBName: string,
-  messages: any[]
+  messages: Array<{round: number, role: string, content: string}>
 ): string {
   const recentMessages = messages.slice(-6); // 最近 3 轮
   const conversationHistory = recentMessages
@@ -87,7 +87,7 @@ function generateAnalysisPrompt(
   scene: string,
   roleAName: string,
   roleBName: string,
-  messages: any[]
+  messages: Array<{round: number, role: string, content: string}>
 ): string {
   const fullConversation = messages
     .map(msg => `${msg.round}. ${msg.role === 'A' ? roleAName : roleBName}: "${msg.content}"`)
@@ -203,11 +203,11 @@ async function handleAISuggest(request: NextRequest, { params }: { params: Promi
         success: true,
         suggestions,
       });
-    } catch (fetchError: any) {
+    } catch (fetchError: unknown) {
       clearTimeout(timeoutId);
       
       // 超时或网络错误，返回默认建议
-      if (fetchError.name === 'AbortError') {
+      if ((fetchError instanceof Error && fetchError.name === 'AbortError')) {
         console.warn('AI 续写超时，使用默认建议');
         return NextResponse.json({
           success: true,
