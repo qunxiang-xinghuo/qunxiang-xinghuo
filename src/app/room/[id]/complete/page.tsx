@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { SparkBloomAnimation } from "@/components/spark-bloom-animation";
+import { StoryShareCard } from "@/components/story-share-card";
 
 interface Message {
   id: string;
@@ -48,6 +49,7 @@ export default function CompletePage() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewType, setPreviewType] = useState<"zhihu" | "xiaohongshu">("zhihu");
+  const [showShareCard, setShowShareCard] = useState(false);
 
   useEffect(() => {
     loadCompleteData();
@@ -460,8 +462,23 @@ ${new Date().toLocaleString("zh-CN")}
         <Button onClick={() => previewExport("xiaohongshu")} variant="secondary">
           📱 导出为小红书图文
         </Button>
+        <Button onClick={() => setShowShareCard(true)} variant="secondary">
+          🎨 生成分享卡片
+        </Button>
       </div>
       </div>
+
+      {/* 分享卡片模态框 */}
+      {showShareCard && room && analysis && (
+        <StoryShareCard
+          scene={room.scene}
+          roleAName={room.roleAName}
+          roleBName={room.roleBName}
+          goldenQuote={analysis.goldenQuote}
+          lingeringMood={analysis.lingeringMood}
+          onClose={() => setShowShareCard(false)}
+        />
+      )}
 
       {/* 导出预览模态框 */}
       {showPreview && (
