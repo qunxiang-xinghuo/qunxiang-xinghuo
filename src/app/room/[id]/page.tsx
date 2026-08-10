@@ -97,7 +97,7 @@ export default function RoomPage() {
         toast.error(data.error || "房间不存在");
         router.push("/");
       }
-    } catch (error) {
+    } catch {
       toast.error("加载失败");
     }
   };
@@ -116,7 +116,7 @@ export default function RoomPage() {
           router.push(`/room/${params.id}/complete`);
         }
       }
-    } catch (error) {
+    } catch {
       console.error("加载消息失败", error);
     }
   };
@@ -158,7 +158,7 @@ export default function RoomPage() {
       } else {
         toast.error(data.error || "发送失败");
       }
-    } catch (error) {
+    } catch {
       toast.error("网络错误");
     } finally {
       setLoading(false);

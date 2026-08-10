@@ -31,29 +31,31 @@ export const dynamic = 'force-dynamic';
 const ZHIHU_API_BASE = 'https://developer.zhihu.com/api/v1/content';
 const ZHIHU_API_KEY = process.env.ZHIHU_API_KEY || '';
 
-interface ZhihuSearchResult {
-  id: string;
-  type: string;
-  title: string;
-  excerpt: string;
-  url: string;
-  author?: {
-    name: string;
-    avatar: string;
-  };
-  created_time?: number;
-  answer_count?: number;
-  follower_count?: number;
-}
+// 知乎搜索结果类型（保留供后续使用）
+// interface ZhihuSearchResult {
+//   id: string;
+//   type: string;
+//   title: string;
+//   excerpt: string;
+//   url: string;
+//   author?: {
+//     name: string;
+//     avatar: string;
+//   };
+//   created_time?: number;
+//   answer_count?: number;
+//   follower_count?: number;
+// }
 
-interface ZhihuHotItem {
-  id: string;
-  title: string;
-  excerpt: string;
-  url: string;
-  hot_score: number;
-  image_url?: string;
-}
+// 知乎热门类型（保留供后续使用）
+// interface ZhihuHotItem {
+//   id: string;
+//   title: string;
+//   excerpt: string;
+//   url: string;
+//   hot_score: number;
+//   image_url?: string;
+// }
 
 // Helper function to generate Zhihu API headers
 function getZhihuHeaders() {

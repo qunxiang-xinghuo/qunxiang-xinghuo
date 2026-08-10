@@ -48,16 +48,7 @@ const LEVEL_2_SENSITIVE_WORDS = [
   '去死', '恨你', '讨厌',
 ];
 
-// 白名单：创作场景下的正常情绪表达（不拦截）
-const WHITELIST_WORDS = [
-  '想你', '爱你', '吻', '拥抱',
-  '哭泣', '伤心', '难过', '痛苦',
-  '死亡', '离开', '分手', '再见',
-];
 
-/**
- * 内容安全检查结果接口
- */
 export interface SafetyCheckResult {
   passed: boolean;      // 是否通过检查
   level?: 'safe' | 'warning' | 'blocked'; // 安全级别
@@ -105,9 +96,9 @@ export function contentSafetyCheck(
   // 一级词库：绝对禁止（政治、色情、暴力、歧视）
   const LEVEL1_WORDS = ['法轮功', '台独', '藏独', '色情', '卖淫', '嫖娼'];
   // 二级词库：警告但允许（脏话、粗口）- 在创作场景下放宽
-  const LEVEL2_WORDS = ['他妈', '操你', '傻逼', '妈的'];
+  // const LEVEL2_WORDS = ['他妈', '操你', '傻逼', '妈的'];
   // 三级词库：忽略（正常情绪表达）- 创作场景允许
-  const LEVEL3_WORDS = ['恨', '死', '杀', '滚', '去你的'];
+  // const LEVEL3_WORDS = ['恨', '死', '杀', '滚', '去你的'];
 
   // 检查一级词库（绝对禁止）
   const containsLevel1 = LEVEL1_WORDS.some(word => 

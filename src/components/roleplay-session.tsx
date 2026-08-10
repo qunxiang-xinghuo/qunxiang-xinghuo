@@ -113,7 +113,7 @@ export function RolePlaySession({ scene, initialRoleIndex = 0 }: RolePlaySession
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const myRole: Role = scene.roles[myRoleIndex];
-  const otherRole: Role | undefined = scene.roles[1 - myRoleIndex];
+  // const _otherRole: Role | undefined = scene.roles[1 - myRoleIndex];
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

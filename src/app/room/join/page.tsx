@@ -53,7 +53,7 @@ export default function JoinRoomPage() {
       } else {
         toast.error(data.error || "加入失败");
       }
-    } catch (error) {
+    } catch {
       toast.error("网络错误，请重试");
     } finally {
       setLoading(false);

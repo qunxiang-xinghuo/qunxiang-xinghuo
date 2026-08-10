@@ -159,7 +159,7 @@ async function saveToDatabase(type: string, query: string, items: unknown[]) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, query, count = 10, forceRefresh = true } = body;
+    const { type, query, count = 10 } = body;
 
     if (!ZHIHU_API_KEY) {
       return NextResponse.json(

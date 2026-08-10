@@ -37,8 +37,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 

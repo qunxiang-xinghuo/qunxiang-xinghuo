@@ -54,7 +54,7 @@ export default function CreateRoomPage() {
       } else {
         toast.error(data.error || "创建失败");
       }
-    } catch (error) {
+    } catch {
       toast.error("网络错误，请重试");
     } finally {
       setLoading(false);

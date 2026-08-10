@@ -17,9 +17,10 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.qunxiangxinghu
  * GET /sitemap.xml
  */
 export async function GET() {
-  // 获取所有场景和故事
-  const allScenes = scenes;
-  const allStories = stories;
+  // 获取所有场景和故事（用于生成 sitemap）
+  // 当前直接使用 scenes 和 stories 数据
+  void scenes;
+  void stories;
 
   // 构建 URL 列表
   const urls = [

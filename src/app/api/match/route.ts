@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查用户是否已在队列中
-    for (const [_, users] of matchQueue.entries()) {
+    for (const [, users] of matchQueue.entries()) {
       const existing = users.find(u => u.userId === userId);
       if (existing) {
         return NextResponse.json({ 

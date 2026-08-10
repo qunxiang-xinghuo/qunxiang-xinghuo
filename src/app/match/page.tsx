@@ -6,7 +6,7 @@
  * 匹配成功后进入对戏房间
  */
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { scenes } from "@/lib/data";

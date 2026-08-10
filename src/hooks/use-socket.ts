@@ -48,7 +48,7 @@ interface UseSocketOptions {
 }
 
 export function useSocket(options: UseSocketOptions) {
-  const { roomId, userInfo, onMessage, onUserJoined, onUserLeft, onSessionStarted, onInnerThoughtSent, onInnerThoughtReceived, onCatalystReceived, onSparkMarked, onError } = options;
+  const { roomId, userInfo } = options;
   
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);

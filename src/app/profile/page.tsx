@@ -87,7 +87,7 @@ export default function ProfilePage() {
       } else {
         setMessage({ type: 'error', text: data.error || '密码修改失败' });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: '网络错误，请重试' });
     }
   };

@@ -76,7 +76,7 @@ export default function CompletePage() {
       } else {
         toast.error("房间不存在");
       }
-    } catch (error) {
+    } catch {
       toast.error("加载失败");
     } finally {
       setLoading(false);
@@ -164,7 +164,7 @@ ${analysis.plotTwist}
 
 ✨ 10轮对话，两个灵魂的真实碰撞
 
-${room.messages.slice(0, 3).map((msg, i) => 
+${room.messages.slice(0, 3).map((msg) => 
   `${msg.role === "A" ? "🅰️" : "🅱️"} ${msg.content}`
 ).join("\n")}
 
@@ -182,77 +182,6 @@ ${room.messages.slice(0, 3).map((msg, i) =>
     navigator.clipboard.writeText(previewContent);
     toast.success(`${previewType === "zhihu" ? "知乎" : "小红书"}格式已复制`);
     setShowPreview(false);
-  };
-
-  const exportToZhihu = () => {
-    if (!room || !analysis) return;
-
-    const content = `
-# ${room.scene}：${room.roleAName}与${room.roleBName}的 10 轮对话
-
-## 故事背景
-${room.scene}
-
-角色 A：${room.roleAName}
-角色 B：${room.roleBName}
-
----
-
-## 完整对话
-
-${room.messages
-  .map(
-    (msg) =>
-      `**第${msg.round}轮** ${msg.role === "A" ? room.roleAName : room.roleBName}：${msg.content}`
-  )
-  .join("\n\n")}
-
----
-
-## 故事分析
-
-### 💬 金句
-> ${analysis.goldenQuote}
-
-### 🌅 余韵
-${analysis.lingeringMood}
-
-### 🔒 秘密
-${analysis.secret}
-
-### 🔄 反转
-${analysis.plotTwist}
-
----
-
-*由群像·星火创作*
-*https://qunxiangxinghuo.cn*
-`.trim();
-
-    navigator.clipboard.writeText(content);
-    toast.success("知乎格式已复制");
-  };
-
-  const exportToXiaohongshu = () => {
-    if (!room || !analysis) return;
-
-    const caption = `
-${analysis.goldenQuote}
-
-在${room.scene}，${room.roleAName}和${room.roleBName}的 10 轮对话，
-留下了${analysis.lingeringMood}的余韵。
-
- 秘密：${analysis.secret}
-🔄 反转：${analysis.plotTwist}
-
-来群像·星火，和陌生人一起创作故事✨
-链接：${window.location.origin}/room/${params.id}
-
-#群像星火 #对话体小说 #故事创作 #陌生人社交 #文学创作
-`.trim();
-
-    navigator.clipboard.writeText(caption);
-    toast.success("小红书文案已复制");
   };
 
   const saveToLocal = () => {
