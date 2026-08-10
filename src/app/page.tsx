@@ -14,9 +14,19 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#f0f8ff]">
-      {/* ===== Hero Section — 极简主屏 ===== */}
-      <section className="px-5 pt-20 pb-16 sm:pt-28 sm:pb-24">
-        <div className="max-w-3xl mx-auto text-center">
+      {/* ===== Hero Section — 水彩主视觉 ===== */}
+      <section className="relative px-5 pt-20 pb-16 sm:pt-28 sm:pb-24">
+        {/* 背景水彩插画 */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <img
+            src="/hero-airport.jpeg"
+            alt=""
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-auto opacity-15 blur-[2px]"
+            fetchPriority="high"
+          />
+        </div>
+
+        <div className="relative max-w-3xl mx-auto text-center">
           {/* 品牌标识 */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#4a9fd8]/5 border border-[#4a9fd8]/10 mb-8">
             <div className="w-1.5 h-1.5 rounded-full bg-[#4a9fd8] animate-pulse" />
@@ -173,23 +183,50 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeScenes.slice(0, 6).map((scene) => (
-              <Link
-                key={scene.id}
-                href={`/scenes/${scene.id}`}
-                className="group p-5 rounded-xl bg-white border border-[#e0e8f0]/60 hover:border-[#4a9fd8]/30 hover:shadow-md transition-all duration-300"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[11px] text-[#8a9db0]">{scene.location}</span>
-                </div>
-                <h3 className="font-serif text-base text-[#1a2e4a] group-hover:text-[#4a9fd8] transition-colors mb-2">
-                  {scene.title}
-                </h3>
-                <p className="text-sm text-[#4a6888] leading-relaxed line-clamp-2">
-                  {scene.description}
-                </p>
-              </Link>
-            ))}
+            {activeScenes.slice(0, 6).map((scene, index) => {
+              // 场景插画映射
+              const sceneImages: Record<string, string> = {
+                'airport': '/scene-airport.jpeg',
+                'bookstore': '/scene-bookstore.jpeg',
+                'elevator': '/scene-elevator.jpeg',
+                'rooftop': '/scene-rooftop.jpeg',
+                'train': '/scene-train.jpeg',
+                'hospital': '/scene-hospital.jpeg',
+              };
+              const imageSrc = sceneImages[scene.id] || `/scene-${index + 1}.jpeg`;
+
+              return (
+                <Link
+                  key={scene.id}
+                  href={`/scenes/${scene.id}`}
+                  className="group relative overflow-hidden rounded-xl bg-white border border-[#e0e8f0]/60 hover:border-[#4a9fd8]/30 hover:shadow-lg transition-all duration-300"
+                >
+                  {/* 水彩插画 */}
+                  <div className="relative h-32 overflow-hidden">
+                    <img
+                      src={imageSrc}
+                      alt={scene.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent" />
+                  </div>
+
+                  {/* 内容 */}
+                  <div className="relative p-5 -mt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-[11px] text-[#8a9db0]">{scene.location}</span>
+                    </div>
+                    <h3 className="font-serif text-base text-[#1a2e4a] group-hover:text-[#4a9fd8] transition-colors mb-2">
+                      {scene.title}
+                    </h3>
+                    <p className="text-sm text-[#4a6888] leading-relaxed line-clamp-2">
+                      {scene.description}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>

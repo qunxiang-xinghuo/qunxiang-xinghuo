@@ -6,6 +6,12 @@
 
 import Link from 'next/link';
 import { stories } from '@/lib/data';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '故事集',
+  description: '阅读其他创作者完成的故事，感受不同的情感与人生',
+};
 
 export default function StoriesPage() {
   const finishedStories = stories.filter((s) => s.status === 'finished');

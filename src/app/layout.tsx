@@ -34,6 +34,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.qunxiangxinghuo.cn'),
   title: {
     default: '群像·星火 — 创作工坊',
     template: '%s | 群像·星火',
@@ -42,6 +43,9 @@ export const metadata: Metadata = {
     '给两个陌生人一个场景，让他们在对话中，把彼此变成故事里的角色。群像·星火创作工坊。',
   keywords: ['群像星火', '角色扮演', '创作工坊', '心理剧', '即兴对话', '故事创作'],
   authors: [{ name: '群像·星火', url: 'https://www.qunxiangxinghuo.cn' }],
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     title: '群像·星火 — 创作工坊',
     description:
@@ -52,7 +56,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/og-image.jpeg',
+        url: 'https://www.qunxiangxinghuo.cn/og-image.jpeg',
         width: 1200,
         height: 630,
         alt: '群像·星火 — 每个人都是别人故事里的角色',
@@ -63,7 +67,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '群像·星火 — 创作工坊',
     description: '给两个陌生人一个场景，让他们在对话中，把彼此变成故事里的角色。',
-    images: ['/og-image.jpeg'],
+    images: ['https://www.qunxiangxinghuo.cn/og-image.jpeg'],
   },
   robots: {
     index: true,

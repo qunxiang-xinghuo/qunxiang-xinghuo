@@ -6,6 +6,12 @@
 
 import Link from 'next/link';
 import { scenes } from '@/lib/data';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '场景库',
+  description: '浏览所有可用的创作场景，选择一个舞台开始你的故事',
+};
 
 export default function ScenesPage() {
   const activeScenes = scenes.filter((s) => s.status === 'ready');

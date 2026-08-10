@@ -6,10 +6,11 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // 启用 HTTPS 重定向（生产环境）
+  // 启用 HTTPS 重定向 + www 域名统一（生产环境）
   async redirects() {
     if (process.env.NODE_ENV === 'production') {
       return [
+        // HTTP → HTTPS
         {
           source: '/:path*',
           has: [
@@ -19,7 +20,20 @@ const nextConfig: NextConfig = {
               value: 'http',
             },
           ],
-          destination: 'https://qunxiangxinghuo.cn/:path*',
+          destination: 'https://www.qunxiangxinghuo.cn/:path*',
+          permanent: true,
+        },
+        // 裸域 → www
+        {
+          source: '/:path*',
+          has: [
+            {
+              type: 'header',
+              key: 'host',
+              value: 'qunxiangxinghuo.cn',
+            },
+          ],
+          destination: 'https://www.qunxiangxinghuo.cn/:path*',
           permanent: true,
         },
       ];
