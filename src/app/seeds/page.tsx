@@ -2,12 +2,30 @@
  * @file 故事种子页面
  * @description 展示创作灵感和故事种子
  * 提供金句、反转、秘密、余韵等类型的创作素材
+ * 支持"浇水"（点赞）功能，满100赞显示"即将被培育成完整故事"
  */
 
+'use client';
+
+import { useState } from 'react';
 import { storySeeds } from '@/lib/data';
 
 export default function SeedsPage() {
-  const types = ['金句', '反转', '秘密', '余韵'];
+  const types = ['全部', '金句', '反转', '秘密', '余韵', '灵感'];
+  const [activeType, setActiveType] = useState('全部');
+  const [likes, setLikes] = useState<Record<string, number>>({});
+
+  const filteredSeeds =
+    activeType === '全部'
+      ? storySeeds
+      : storySeeds.filter((seed) => seed.type === activeType);
+
+  const handleLike = (seedId: string) => {
+    setLikes((prev) => ({
+      ...prev,
+      [seedId]: (prev[seedId] || 0) + 1,
+    }));
+  };
 
   return (
     <div className="site-bg px-5 py-14">
@@ -25,14 +43,16 @@ export default function SeedsPage() {
         </div>
 
         {/* Type Filter Tags */}
-        <div className="flex justify-center gap-2 mb-10">
-          <span className="text-[11px] px-3 py-1.5 rounded-md bg-brand-blue/10 text-brand-blue font-medium cursor-pointer">
-            全部
-          </span>
+        <div className="flex flex-wrap justify-center gap-2 mb-10">
           {types.map((type) => (
             <span
               key={type}
-              className="text-[11px] px-3 py-1.5 rounded-md bg-gray-50 text-ink-muted hover:bg-brand-gold/10 hover:text-brand-gold transition-colors duration-200 cursor-pointer"
+              onClick={() => setActiveType(type)}
+              className={`text-[11px] px-3 py-1.5 rounded-md font-medium cursor-pointer transition-colors duration-200 ${
+                activeType === type
+                  ? 'bg-brand-blue/10 text-brand-blue'
+                  : 'bg-gray-50 text-ink-muted hover:bg-brand-gold/10 hover:text-brand-gold'
+              }`}
             >
               {type}
             </span>
@@ -40,39 +60,58 @@ export default function SeedsPage() {
         </div>
 
         {/* Seeds Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {storySeeds.map((seed, i) => (
-            <div
-              key={seed.id}
-              className="seed-card p-6 pl-7 rounded-xl bg-card-bg card-shadow opacity-0 animate-fade-in-up"
-              style={{ animationDelay: `${i * 0.08}s` }}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <span
-                  className={`text-[10px] px-2.5 py-1 rounded-md font-medium ${
-                    seed.type === '金句'
-                      ? 'bg-brand-gold/10 text-brand-gold'
-                      : seed.type === '秘密'
-                        ? 'bg-brand-blue/10 text-brand-blue'
-                        : seed.type === '反转'
-                          ? 'bg-purple-50 text-purple-600'
-                          : 'bg-gray-50 text-ink-muted'
-                  }`}
-                >
-                  {seed.type}
-                </span>
-                <span className="text-[10px] text-ink-muted/60">
-                  {seed.createdAt}
-                </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredSeeds.map((seed, i) => {
+            const likeCount = likes[seed.id] || 0;
+            const isCultivating = likeCount >= 100;
+            return (
+              <div
+                key={seed.id}
+                className="seed-card p-6 pl-7 rounded-xl bg-card-bg card-shadow opacity-0 animate-fade-in-up relative"
+                style={{ animationDelay: `${i * 0.08}s` }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <span
+                    className={`text-[10px] px-2.5 py-1 rounded-md font-medium ${
+                      seed.type === '金句'
+                        ? 'bg-brand-gold/10 text-brand-gold'
+                        : seed.type === '秘密'
+                          ? 'bg-brand-blue/10 text-brand-blue'
+                          : seed.type === '反转'
+                            ? 'bg-purple-50 text-purple-600'
+                            : seed.type === '余韵'
+                              ? 'bg-green-50 text-green-600'
+                              : 'bg-gray-50 text-ink-muted'
+                    }`}
+                  >
+                    {seed.type}
+                  </span>
+                  <span className="text-[10px] text-ink-muted/60">
+                    {seed.createdAt}
+                  </span>
+                </div>
+                <h3 className="font-serif text-base text-ink mb-3">
+                  {seed.title}
+                </h3>
+                <p className="text-sm text-ink-secondary leading-relaxed line-clamp-3 mb-4">
+                  {seed.content}
+                </p>
+                <div className="flex items-center justify-between pt-3 border-t border-border/40">
+                  <button
+                    onClick={() => handleLike(seed.id)}
+                    className="text-xs text-ink-muted hover:text-brand-gold transition-colors flex items-center gap-1"
+                  >
+                    🌱 浇水 {likeCount > 0 && `(${likeCount})`}
+                  </button>
+                  {isCultivating && (
+                    <span className="text-[10px] text-brand-gold font-medium">
+                       即将被培育成完整故事
+                    </span>
+                  )}
+                </div>
               </div>
-              <h3 className="font-serif text-base text-ink mb-3">
-                {seed.title}
-              </h3>
-              <p className="text-sm text-ink-secondary leading-relaxed line-clamp-3">
-                {seed.content}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Coming Soon */}

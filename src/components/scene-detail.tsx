@@ -16,12 +16,18 @@ interface SceneDetailProps {
 
 export function SceneDetail({ scene }: SceneDetailProps) {
   const [activeRole, setActiveRole] = useState(0);
+  const [showSecret, setShowSecret] = useState(false);
   const [roomId, setRoomId] = useState('');
   
   // Generate room ID after mount using useEffect
   useEffect(() => {
     setRoomId(`room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   }, []);
+
+  // Reset secret visibility when role changes
+  useEffect(() => {
+    setShowSecret(false);
+  }, [activeRole]);
 
   return (
     <div className="opacity-0 animate-ticket-in">
@@ -164,7 +170,7 @@ export function SceneDetail({ scene }: SceneDetailProps) {
             </div>
           </div>
 
-          {/* Secret Hint */}
+          {/* Secret Hint - 模糊处理，点击偷看 */}
           <div className="bg-brand-blue/5 rounded-xl p-5 mb-8 border border-brand-blue/10">
             <div className="flex items-center gap-2 mb-3">
               <svg
@@ -184,9 +190,23 @@ export function SceneDetail({ scene }: SceneDetailProps) {
                 秘密提示
               </span>
             </div>
-            <p className="text-sm text-ink-secondary italic leading-relaxed">
-              {scene.roles[activeRole].secret}
-            </p>
+            <div className="relative">
+              <p className={`text-sm text-ink-secondary italic leading-relaxed transition-all duration-300 ${
+                showSecret ? '' : 'blur-md select-none'
+              }`}>
+                {scene.roles[activeRole].secret}
+              </p>
+              {!showSecret && (
+                <button
+                  onClick={() => setShowSecret(true)}
+                  className="absolute inset-0 flex items-center justify-center bg-brand-blue/5 rounded-lg hover:bg-brand-blue/10 transition-colors"
+                >
+                  <span className="text-xs text-brand-blue tracking-wider">
+                    👁 点击偷看秘密提示
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* CTA */}

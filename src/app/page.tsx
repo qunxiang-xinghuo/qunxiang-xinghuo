@@ -49,20 +49,22 @@ export default function HomePage() {
                 </div>
 
                 <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-ink tracking-tight leading-[1.2] mb-5">
-                  每个人都是
+                  把不敢说出口的话，
                   <br />
-                  <span className="text-gold-shimmer">别人故事里的角色</span>
+                  <span className="text-gold-shimmer">交给一个角色</span>
                 </h1>
                 <p className="text-base text-ink-secondary max-w-md leading-relaxed mb-8">
-                  给两个陌生人一个场景，让他们在对话中，
+                  选一个场景，领一个秘密，
                   <br className="hidden sm:block" />
-                  把不敢说出口的话，变成故事。
+                  和另一个陌生人对戏 15 分钟。
+                  <br className="hidden sm:block" />
+                  你们说的话，会变成一篇故事。
                 </p>
 
                 {/* CTA Buttons */}
                 <div className="flex flex-wrap items-center gap-3 opacity-0 animate-fade-in-up delay-300">
                   <Link
-                    href="/room/create"
+                    href="/match"
                     className="group px-7 py-3 bg-gradient-to-r from-[#4A9FD8] to-[#7EC8E8] text-white text-sm font-medium tracking-wide rounded-xl transition-all duration-300 shadow-lg shadow-[#4A9FD8]/25 hover:shadow-xl hover:shadow-[#4A9FD8]/35 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -71,7 +73,7 @@ export default function HomePage() {
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
-                    开始双人创作
+                    今晚，演一场久别重逢 →
                   </Link>
                   <Link
                     href="/scenes"
@@ -112,6 +114,32 @@ export default function HomePage() {
                 <div className="absolute -top-3 -right-3 w-16 h-16 rounded-full bg-brand-gold/10 blur-xl" />
                 <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-brand-blue/10 blur-xl" />
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== 三步玩法说明 ===== */}
+      <section className="px-5 py-12 bg-white/60">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-center gap-4 sm:gap-8 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-full bg-brand-blue/10 text-brand-blue text-sm font-medium flex items-center justify-center">01</span>
+              <span className="text-sm text-ink-secondary">选一个场景</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a9db0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-full bg-brand-blue/10 text-brand-blue text-sm font-medium flex items-center justify-center">02</span>
+              <span className="text-sm text-ink-secondary">领一个秘密</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a9db0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-full bg-brand-blue/10 text-brand-blue text-sm font-medium flex items-center justify-center">03</span>
+              <span className="text-sm text-ink-secondary">对戏成稿</span>
             </div>
           </div>
         </div>
@@ -481,7 +509,7 @@ export default function HomePage() {
           </blockquote>
           <div className="w-8 h-0.5 bg-brand-gold/40 mx-auto mt-8 mb-4 rounded-full" />
           <p className="text-sm text-ink-muted tracking-wide">
-            不敢说出口的话，在角色扮演中被说出来
+            把不敢说出口的话，交给一个角色
           </p>
         </div>
       </section>

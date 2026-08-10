@@ -123,7 +123,7 @@ export function StoryReader({ story }: StoryReaderProps) {
                         : 'bg-gradient-to-br from-[#4a9fd8] to-[#3a8fc8] p-4 rounded-[16px_4px_16px_16px] text-white/90'
                     }`}
                   >
-                    {block.text ?? ''}
+                    &ldquo;{block.text ?? ''}&rdquo;
                   </div>
                   {hasSpark && (
                     <div className="mt-1.5 text-[10px] text-brand-gold flex items-center gap-1">
