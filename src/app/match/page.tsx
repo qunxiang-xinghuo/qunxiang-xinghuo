@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -8,7 +8,7 @@ import Link from 'next/link';
  * 陌生人匹配页面
  * 用户选择场景后进入排队，系统自动匹配两个等待中的用户
  */
-export default function MatchPage() {
+function MatchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -230,5 +230,20 @@ export default function MatchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * 匹配页面主组件（带 Suspense 边界）
+ */
+export default function MatchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-[#4a6888]">加载中...</div>
+      </div>
+    }>
+      <MatchContent />
+    </Suspense>
   );
 }
