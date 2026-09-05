@@ -18,6 +18,7 @@
 ## 目录结构
 ```
 src/
+├── proxy.ts                    # Next.js 16 全局安全代理（限流/可疑请求拦截/登录态校验）
 ├── app/
 │   ├── layout.tsx              # 全局布局（Header + Footer + Providers）
 │   ├── page.tsx                # 首页（剧场感门面 + 精选故事）
@@ -65,7 +66,7 @@ src/
     └── utils.ts                # 工具函数
 prisma/
 ├── schema.prisma               # 数据库 Schema
-└── dev.db                      # SQLite 数据库文件
+└── dev.db                      # SQLite 数据库文件（不入库，本地/服务器自行维护）
 ```
 
 ## 数据库模型

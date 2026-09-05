@@ -19,11 +19,12 @@
 import { NextRequest } from 'next/server';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import { scenes } from '@/lib/data';
+import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 // POST /api/ai/catalyst - Get AI catalyst prompt using real LLM
-export async function POST(request: NextRequest) {
+async function handleCatalyst(request: NextRequest) {
   try {
     const body = await request.json();
     const { sceneId, messageCount, lastMessage, conversationHistory } = body;
@@ -91,8 +92,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// AI 接口限流：1 分钟 10 次（成本控制）
+export const POST = withRateLimit(
+  handleCatalyst,
+  RATE_LIMITS.ai,
+  (req) => getClientIP(req.headers)
+);
+
 // POST /api/ai/catalyst/non-stream - Non-streaming version for simple use cases
-export async function PUT(request: NextRequest) {
+async function handleCatalystNonStream(request: NextRequest) {
   try {
     const body = await request.json();
     const { sceneId, messageCount, lastMessage, conversationHistory } = body;
@@ -129,6 +137,12 @@ export async function PUT(request: NextRequest) {
     return Response.json({ error: 'Failed to generate catalyst' }, { status: 500 });
   }
 }
+
+export const PUT = withRateLimit(
+  handleCatalystNonStream,
+  RATE_LIMITS.ai,
+  (req) => getClientIP(req.headers)
+);
 
 function buildSystemPrompt(scene: typeof scenes[0]) {
   return `你是一个角色扮演对话的"催化师"。你的任务是帮助两个正在角色扮演的用户更深入地进入角色，推动对话向更有情感深度的方向发展。

@@ -40,7 +40,12 @@ import { contentSafetyCheck } from '@/lib/content-filter';
 /** 发送消息请求参数验证 */
 const sendMessageSchema = z.object({
   role: z.enum(['A', 'B'], { message: '请选择角色' }),
-  content: z.string().min(1).max(100, '消息内容最多 100 字'),
+  // 清理 null 字节等危险字符，限制 100 字
+  content: z
+    .string()
+    .min(1, '消息内容不能为空')
+    .max(100, '消息内容最多 100 字')
+    .transform((val) => val.replace(/\0/g, '').trim()),
   isAI: z.boolean().optional().default(false),
   aiStyle: z.enum(['温情', '冲突', '留白']).optional(),
 });

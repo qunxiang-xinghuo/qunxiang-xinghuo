@@ -116,7 +116,7 @@ export default function RoomPage() {
           router.push(`/room/${params.id}/complete`);
         }
       }
-    } catch {
+    } catch (error) {
       console.error("加载消息失败", error);
     }
   };

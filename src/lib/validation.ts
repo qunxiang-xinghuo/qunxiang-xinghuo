@@ -206,3 +206,102 @@ export const paginationSchema = z.object({
     .max(100, '每页数量不能超过 100')
     .default(20),
 });
+
+// ============================================
+// 安全增强验证
+// ============================================
+
+/**
+ * 常见弱密码列表（防止用户使用过于简单的密码）
+ */
+const COMMON_PASSWORDS = [
+  'password', '12345678', '123456789', '1234567890',
+  'qwerty123', 'abc12345', 'abcd1234', '11111111',
+  '00000000', 'iloveyou', 'admin123', 'welcome1',
+  'password1', 'changeme', 'letmein1',
+];
+
+/**
+ * 强化密码验证
+ * 要求：
+ * - 至少 8 位
+ * - 包含字母和数字
+ * - 不能是常见弱密码
+ * - 不能包含连续重复字符超过 4 次
+ */
+export const strongPasswordSchema = z
+  .string()
+  .min(8, '密码至少 8 个字符')
+  .max(128, '密码不能超过 128 个字符')
+  .regex(/[A-Za-z]/, '密码必须包含字母')
+  .regex(/[0-9]/, '密码必须包含数字')
+  .refine((val) => !COMMON_PASSWORDS.includes(val.toLowerCase()), {
+    message: '密码过于简单，请使用更复杂的密码',
+  })
+  .refine((val) => !/(.)\1{4,}/.test(val), {
+    message: '密码不能包含连续重复的字符（如 aaaaa）',
+  });
+
+/**
+ * 举报原因枚举
+ */
+export const reportReasonSchema = z.enum([
+  'porn',          // 色情低俗
+  'violence',      // 暴力血腥
+  'harassment',    // 骚扰攻击
+  'spam',          // 垃圾广告
+  'infringement',  // 侵权抄袭
+  'other',         // 其他
+]);
+
+/**
+ * 举报目标类型枚举
+ */
+export const reportTargetTypeSchema = z.enum(['story', 'room', 'message']);
+
+/**
+ * XSS 输入检测
+ * 检测输入中是否包含潜在的 XSS 攻击载荷
+ */
+export function containsXSS(input: string): boolean {
+  const xssPatterns = [
+    /<script[\s>]/i,
+    /<\/script>/i,
+    /javascript:/i,
+    /on\w+\s*=/i, // onload=, onclick= 等事件处理器
+    /<iframe[\s>]/i,
+    /<object[\s>]/i,
+    /<embed[\s>]/i,
+    /data:text\/html/i,
+    /vbscript:/i,
+  ];
+  return xssPatterns.some((pattern) => pattern.test(input));
+}
+
+/**
+ * SQL 注入检测
+ * 检测输入中是否包含 SQL 注入特征
+ */
+export function containsSQLInjection(input: string): boolean {
+  const sqlPatterns = [
+    /(\b(union|select|insert|update|delete|drop|alter|create|exec)\b.*\b(from|into|table|database)\b)/i,
+    /(--|#|\/\*|\*\/)/, // SQL 注释
+    /;\s*(drop|delete|update|insert)/i,
+    /'\s*or\s*'?\d*'?\s*=\s*'?\d*/i, // ' OR '1'='1
+    /'\s*or\s+1\s*=\s*1/i,
+  ];
+  return sqlPatterns.some((pattern) => pattern.test(input));
+}
+
+/**
+ * 综合安全检查
+ * 返回 true 表示输入安全
+ */
+export function isSafeInput(input: string): boolean {
+  if (!input) return true;
+  if (containsXSS(input)) return false;
+  // 注意：Prisma 使用参数化查询，SQL 注入风险低
+  // 这里仅作为额外的日志记录，不直接拦截
+  return true;
+}
+

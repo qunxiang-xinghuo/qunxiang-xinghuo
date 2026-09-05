@@ -321,6 +321,6 @@ export const GET = withRateLimit(handleAnalyze, RATE_LIMITS.standard, (req) =>
   getClientIP(req.headers)
 );
 
-export const POST = withRateLimit(handleAISuggest, RATE_LIMITS.standard, (req) =>
+export const POST = withRateLimit(handleAISuggest, RATE_LIMITS.ai, (req) =>
   getClientIP(req.headers)
 );

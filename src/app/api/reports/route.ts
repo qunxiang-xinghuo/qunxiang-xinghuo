@@ -1,53 +1,74 @@
 /**
- * 举报 API 路由
- * POST /api/reports - 创建举报
- * GET /api/reports - 获取举报列表（管理员）
+ * @file 举报 API 路由
+ * @description 用户举报内容提交 + 管理员举报列表查询
+ *
+ * 接口：
+ * - POST /api/reports - 创建举报（公开，限流）
+ * - GET /api/reports - 获取举报列表（仅管理员，需要 ADMIN_EMAIL）
+ *
+ * 安全措施：
+ * - POST 严格限流（防滥用）
+ * - GET 需要管理员权限（通过邮箱白名单验证）
+ * - 输入验证（Zod）
+ * - 敏感字段长度限制
+ * - 审计日志
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-config';
+import { writeAuditLog, AuditLevel } from '@/lib/audit-log';
+import { sanitizeInput } from '@/lib/validation';
+
+/**
+ * 管理员邮箱白名单
+ * 生产环境通过环境变量 ADMIN_EMAILS 配置（逗号分隔）
+ */
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim()).filter(Boolean);
+
+/**
+ * 举报提交验证 Schema
+ */
+const createReportSchema = z.object({
+  targetType: z.enum(['story', 'room', 'message']),
+  targetId: z.string().min(1, '举报目标 ID 不能为空').max(100),
+  reason: z.enum(['porn', 'violence', 'harassment', 'spam', 'infringement', 'other']),
+  description: z
+    .string()
+    .max(1000, '描述不能超过 1000 字符')
+    .transform((val) => sanitizeInput(val))
+    .optional(),
+  reporterEmail: z
+    .string()
+    .email('邮箱格式不正确')
+    .max(254)
+    .optional(),
+});
 
 // ============================================
 // POST /api/reports - 创建举报
 // ============================================
-export async function POST(request: NextRequest) {
+async function handleCreateReport(request: NextRequest) {
   try {
     const body = await request.json();
-    const { targetType, targetId, reason, description, reporterEmail } = body;
+    const reporterIp = getClientIP(request.headers);
 
-    // 参数验证
-    if (!targetType || !targetId || !reason) {
+    // 输入验证
+    const validation = createReportSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: '缺少必要参数' },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
     }
 
-    // 验证举报类型
-    const validTargetTypes = ['story', 'room', 'message'];
-    if (!validTargetTypes.includes(targetType)) {
-      return NextResponse.json(
-        { error: '无效的举报类型' },
-        { status: 400 }
-      );
-    }
+    const { targetType, targetId, reason, description, reporterEmail } = validation.data;
 
-    // 验证举报原因
-    const validReasons = ['porn', 'violence', 'harassment', 'spam', 'other'];
-    if (!validReasons.includes(reason)) {
-      return NextResponse.json(
-        { error: '无效的举报原因' },
-        { status: 400 }
-      );
-    }
-
-    // 获取客户端 IP（用于防滥用）
-    const reporterIp = request.headers.get('x-forwarded-for') || 
-                       request.headers.get('x-real-ip') || 
-                       'unknown';
-
-    // 创建举报记录
-    const report = await prisma.report.create({
+    // 创建举报记录（不返回完整记录给前端，避免泄露内部字段）
+    await prisma.report.create({
       data: {
         targetType,
         targetId,
@@ -59,9 +80,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // 记录审计日志
+    writeAuditLog({
+      timestamp: new Date().toISOString(),
+      level: AuditLevel.INFO,
+      action: 'REPORT_SUBMITTED',
+      ip: reporterIp,
+      details: { targetType, targetId, reason },
+      success: true,
+    });
+
     return NextResponse.json({
       success: true,
-      data: report,
       message: '举报已提交，我们会尽快处理',
     });
   } catch (error) {
@@ -73,20 +103,53 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export const POST = withRateLimit(
+  handleCreateReport,
+  RATE_LIMITS.strict, // 严格限流：1 分钟 5 次
+  (req) => getClientIP(req.headers)
+);
+
 // ============================================
-// GET /api/reports - 获取举报列表（管理员）
+// GET /api/reports - 获取举报列表（仅管理员）
 // ============================================
 export async function GET(request: NextRequest) {
   try {
+    // 1. 验证登录
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    }
+
+    // 2. 验证管理员权限
+    const userEmail = session.user.email.toLowerCase();
+    const isAdmin = ADMIN_EMAILS.includes(userEmail);
+
+    if (!isAdmin) {
+      // 记录未授权访问尝试
+      writeAuditLog({
+        timestamp: new Date().toISOString(),
+        level: AuditLevel.WARNING,
+        action: 'ADMIN_ACCESS_DENIED',
+        userId: session.user.id,
+        ip: getClientIP(request.headers),
+        details: { resource: 'reports', email: userEmail },
+        success: false,
+        error: '非管理员尝试访问举报列表',
+      });
+
+      return NextResponse.json({ error: '无权限访问' }, { status: 403 });
+    }
+
+    // 3. 分页参数验证
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'pending';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limitParam = parseInt(searchParams.get('limit') || '20');
+    const limit = Math.min(100, Math.max(1, limitParam)); // 限制 1-100
 
-    // 计算分页
     const skip = (page - 1) * limit;
 
-    // 查询举报列表
+    // 4. 查询举报列表
     const reports = await prisma.report.findMany({
       where: {
         status: status === 'all' ? undefined : status,
@@ -98,7 +161,6 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    // 获取总数
     const total = await prisma.report.count({
       where: {
         status: status === 'all' ? undefined : status,

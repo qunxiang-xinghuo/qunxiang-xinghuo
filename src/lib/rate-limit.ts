@@ -33,7 +33,99 @@ export const RATE_LIMITS = {
     maxRequests: 100,
     windowMs: 60 * 1000, // 1 分钟 100 次
   },
+  // AI 接口限制（成本控制）
+  ai: {
+    maxRequests: 10,
+    windowMs: 60 * 1000, // 1 分钟 10 次
+  },
 } as const;
+
+/**
+ * 登录失败锁定存储
+ * 连续登录失败会递增锁定时间
+ */
+const loginAttemptStore = new Map<
+  string,
+  { failures: number; lockedUntil: number }
+>();
+
+/**
+ * 记录登录失败
+ * 锁定策略：
+ * - 第 1-4 次失败：不锁定
+ * - 第 5 次失败：锁定 5 分钟
+ * - 第 6-9 次失败：锁定 15 分钟
+ * - 第 10 次及以上：锁定 1 小时
+ */
+export function recordLoginFailure(identifier: string): {
+  locked: boolean;
+  retryAfter: number;
+  attemptsRemaining: number;
+} {
+  const now = Date.now();
+  const record = loginAttemptStore.get(identifier) || {
+    failures: 0,
+    lockedUntil: 0,
+  };
+
+  record.failures += 1;
+
+  if (record.failures >= 10) {
+    record.lockedUntil = now + 60 * 60 * 1000; // 1 小时
+  } else if (record.failures >= 5) {
+    record.lockedUntil = now + 15 * 60 * 1000; // 15 分钟
+  } else if (record.failures >= 3) {
+    record.lockedUntil = now + 5 * 60 * 1000; // 5 分钟
+  }
+
+  loginAttemptStore.set(identifier, record);
+
+  const retryAfter = Math.ceil((record.lockedUntil - now) / 1000);
+  const attemptsRemaining = Math.max(0, 3 - (record.failures % 5));
+
+  return {
+    locked: record.lockedUntil > now,
+    retryAfter: retryAfter > 0 ? retryAfter : 0,
+    attemptsRemaining,
+  };
+}
+
+/**
+ * 检查是否被锁定
+ */
+export function isLockedOut(identifier: string): {
+  locked: boolean;
+  retryAfter: number;
+} {
+  const now = Date.now();
+  const record = loginAttemptStore.get(identifier);
+
+  if (!record || record.lockedUntil <= now) {
+    return { locked: false, retryAfter: 0 };
+  }
+
+  return {
+    locked: true,
+    retryAfter: Math.ceil((record.lockedUntil - now) / 1000),
+  };
+}
+
+/**
+ * 登录成功后重置失败计数
+ */
+export function resetLoginAttempts(identifier: string): void {
+  loginAttemptStore.delete(identifier);
+}
+
+// 定期清理过期的登录锁定记录
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of loginAttemptStore.entries()) {
+    if (record.lockedUntil < now && record.failures < 3) {
+      loginAttemptStore.delete(key);
+    }
+  }
+}, 10 * 60 * 1000); // 每 10 分钟清理
 
 /**
  * 检查是否超过速率限制
