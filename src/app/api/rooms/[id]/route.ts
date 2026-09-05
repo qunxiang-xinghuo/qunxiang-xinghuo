@@ -169,28 +169,9 @@ async function handleJoinRoom(request: NextRequest, { params }: { params: Promis
   }
 }
 
-// DELETE /api/rooms/[id] - 删除房间（24 小时自动清理）
-async function handleDeleteRoom(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await params;
-    
-    await prisma.room.update({
-      where: { id },
-      data: { status: 'expired' },
-    });
-
-    return NextResponse.json({
-      success: true,
-    });
-  } catch (error) {
-    console.error('删除房间失败:', error);
-    return NextResponse.json(
-      { success: false, error: '删除房间失败' },
-      { status: 500 }
-    );
-  }
-}
-
 export const GET = withRateLimit(handleGetRoom, RATE_LIMITS.standard, (req) => getClientIP(req.headers));
 export const POST = withRateLimit(handleJoinRoom, RATE_LIMITS.standard, (req) => getClientIP(req.headers));
-export const DELETE = withRateLimit(handleDeleteRoom, RATE_LIMITS.standard, (req) => getClientIP(req.headers));
+
+// 安全说明：房间有 24 小时自动过期机制（expiresAt），无需手动删除。
+// 原公开的 DELETE 方法无任何鉴权，任意人都能把他人房间标记为 expired
+// （越权破坏），且前端从未调用，属于冗余攻击面，已移除。

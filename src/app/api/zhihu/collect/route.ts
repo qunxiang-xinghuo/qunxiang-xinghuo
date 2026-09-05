@@ -21,6 +21,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -156,7 +157,7 @@ async function saveToDatabase(type: string, query: string, items: unknown[]) {
 }
 
 // POST /api/zhihu/collect - 批量采集知乎数据
-export async function POST(request: NextRequest) {
+async function handleCollect(request: NextRequest) {
   try {
     const body = await request.json();
     const { type, query, count = 10 } = body;
@@ -219,7 +220,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/zhihu/collect - 获取采集状态和数据
-export async function GET(request: NextRequest) {
+async function handleGetStats(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
@@ -299,3 +300,17 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// POST（调用知乎开放 API 采集）：严格限流 1 分钟 10 次/IP（外部配额成本控制）
+export const POST = withRateLimit(
+  handleCollect,
+  RATE_LIMITS.ai,
+  (req: NextRequest) => getClientIP(req.headers)
+);
+
+// GET（查询采集统计）：标准限流
+export const GET = withRateLimit(
+  handleGetStats,
+  RATE_LIMITS.standard,
+  (req: NextRequest) => getClientIP(req.headers)
+);

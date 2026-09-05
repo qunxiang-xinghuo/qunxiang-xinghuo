@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
+import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 
 // AI 生成 API - 自动调用知乎获取素材
 // POST /api/ai/generate - 生成场景/角色/秘密/故事润色
@@ -259,7 +260,7 @@ function buildPrompt(type: string, userPrompt: string, zhihuContext: string): st
   return prompt;
 }
 
-export async function POST(request: NextRequest) {
+async function handleGenerate(request: NextRequest) {
   try {
     const body: GenerateRequest = await request.json();
     const { type, prompt, useZhihuContext = true, zhihuQuery, autoCollect = true } = body;
@@ -358,7 +359,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/ai/generate - 获取生成历史
-export async function GET(request: NextRequest) {
+async function handleGetGenerations(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
@@ -386,3 +387,17 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// POST（生成内容，调用 LLM）：严格限流 1 分钟 10 次/IP（成本控制）
+export const POST = withRateLimit(
+  handleGenerate,
+  RATE_LIMITS.ai,
+  (req: NextRequest) => getClientIP(req.headers)
+);
+
+// GET（查询历史）：标准限流
+export const GET = withRateLimit(
+  handleGetGenerations,
+  RATE_LIMITS.standard,
+  (req: NextRequest) => getClientIP(req.headers)
+);
