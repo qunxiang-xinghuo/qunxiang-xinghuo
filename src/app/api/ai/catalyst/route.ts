@@ -29,8 +29,16 @@ async function handleCatalyst(request: NextRequest) {
     const body = await request.json();
     const { sceneId, messageCount, lastMessage, conversationHistory } = body;
 
-    if (!sceneId) {
+    if (!sceneId || typeof sceneId !== 'string') {
       return Response.json({ error: 'Missing sceneId' }, { status: 400 });
+    }
+
+    // 输入长度校验（防止超长内容滥用 LLM 成本）
+    if (typeof lastMessage === 'string' && lastMessage.length > 500) {
+      return Response.json({ error: '消息内容过长' }, { status: 400 });
+    }
+    if (Array.isArray(conversationHistory) && conversationHistory.length > 50) {
+      return Response.json({ error: '对话历史过长' }, { status: 400 });
     }
 
     const scene = scenes.find(s => s.id === sceneId);

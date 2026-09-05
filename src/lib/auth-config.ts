@@ -14,6 +14,7 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { isLockedOut, recordLoginFailure, resetLoginAttempts } from '@/lib/rate-limit';
 
 /**
  * bcrypt 哈希轮数
@@ -43,6 +44,13 @@ export const authOptions: NextAuthOptions = {
         // 规范化邮箱（小写 + 去空格）
         const email = credentials.email.toLowerCase().trim();
 
+        // ===== 登录失败锁定（防暴力破解）=====
+        // 同一邮箱连续失败 3/5/10 次分别锁定 5/15/60 分钟
+        const lockStatus = isLockedOut(email);
+        if (lockStatus.locked) {
+          throw new Error(`尝试次数过多，账号已临时锁定，请 ${Math.ceil(lockStatus.retryAfter / 60)} 分钟后再试`);
+        }
+
         const user = await prisma.user.findUnique({
           where: { email },
         });
@@ -56,8 +64,13 @@ export const authOptions: NextAuthOptions = {
 
         // 用户不存在或密码错误都返回 null（不区分原因，防用户枚举）
         if (!user || !isValid) {
+          // 记录一次失败，触发锁定计数
+          recordLoginFailure(email);
           return null;
         }
+
+        // 登录成功：清除失败计数
+        resetLoginAttempts(email);
 
         return {
           id: user.id,

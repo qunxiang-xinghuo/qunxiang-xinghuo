@@ -33,23 +33,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { randomInt } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { withRateLimit, RATE_LIMITS, getClientIP } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { contentSafetyCheck } from '@/lib/content-filter';
-import { verifySignature } from '@/lib/request-signature';
 
 /**
  * 生成 6 位随机房间号
  * 格式：大写字母 + 数字组合 (如：ABC123)
- * 
+ * 使用 crypto.randomInt 加密级随机数（防预测），共约 21 亿种组合
+ *
  * @returns {string} 6 位房间号
  */
 function generateRoomId(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去除易混淆字符 I/O/0/1
   let result = '';
   for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(randomInt(chars.length));
   }
   return result;
 }
@@ -82,17 +83,9 @@ const createRoomSchema = z.object({
  */
 async function handleCreateRoom(request: NextRequest) {
   try {
-    // 0. 验证请求签名（防止重放攻击）
-    const body0 = await request.clone().text();
-    const timestamp = request.headers.get('x-timestamp') || '';
-    const signature = request.headers.get('x-signature') || '';
-    const signatureValid = verifySignature(body0, Number(timestamp), signature);
-    if (!signatureValid) {
-      return NextResponse.json(
-        { success: false, error: '请求签名验证失败' },
-        { status: 401 }
-      );
-    }
+    // 安全说明：本接口为匿名公开接口，防滥用依赖「IP 限流（1 分钟 5 次）
+    // + Zod 输入校验 + 敏感词过滤」。此前的 HMAC 请求签名校验使用的是仅存在于
+    // 服务端的密钥，浏览器端无法合法生成签名，会导致正常创建房间被拒绝，已移除。
 
     // 1. 解析并验证请求参数
     const body = await request.json();

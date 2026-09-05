@@ -36,15 +36,21 @@ const SENSITIVE_API_PATHS = [
 
 /**
  * 危险路径模式（路径遍历、注入攻击特征）
+ * 同时检测路径和查询字符串
  */
 const SUSPICIOUS_PATTERNS = [
   /\.\.\//, // 路径遍历 ../
   /\.\.\\/, // Windows 路径遍历 ..\
   /%2e%2e/i, // 编码的路径遍历
   /<script/i, // XSS 脚本注入
+  /javascript:/i, // javascript: 协议注入
+  /on(error|load|click)\s*=/i, // 事件处理器注入
   /union\s+select/i, // SQL 注入
   /;\s*drop\s+table/i, // SQL 删除表
+  /'\s*or\s*'?\d+'?\s*=\s*'?\d+/i, // SQL 万能密码
   /\x00/, // null 字节
+  /\$\{.*\}/, // 模板注入 ${...}
+  /\.\.\//, // 重复防御
 ];
 
 /**
@@ -98,18 +104,32 @@ function getClientIP(request: NextRequest): string {
  * 代理主函数（Next.js 16 proxy 约定）
  */
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
   const ip = getClientIP(request);
+
+  // 检测目标包含完整路径 + 查询字符串（注入常藏在 query 中）
+  const fullPath = pathname + search;
 
   // ===== 1. 阻止可疑请求 =====
   for (const pattern of SUSPICIOUS_PATTERNS) {
-    if (pattern.test(pathname)) {
-      console.warn(`[安全拦截] 可疑路径: ${pathname} from ${ip}`);
+    if (pattern.test(fullPath)) {
+      console.warn(`[安全拦截] 可疑请求: ${fullPath} from ${ip}`);
       return NextResponse.json(
         { error: '请求被拒绝' },
         { status: 403 }
       );
     }
+  }
+
+  // ===== 1.1 限制请求体大小（防巨型 payload 攻击）=====
+  const contentLength = Number(request.headers.get('content-length') || 0);
+  if (contentLength > 200 * 1024) {
+    // 超过 200KB 的请求体直接拒绝（正常业务最大为故事内容）
+    console.warn(`[安全拦截] 请求体过大: ${contentLength} bytes from ${ip}`);
+    return NextResponse.json(
+      { error: '请求内容过大' },
+      { status: 413 }
+    );
   }
 
   // ===== 2. API 速率限制 =====
@@ -169,10 +189,6 @@ export function proxy(request: NextRequest) {
   // 请求 ID（用于日志追踪）
   const requestId = crypto.randomUUID();
   response.headers.set('X-Request-ID', requestId);
-
-  // 隐藏服务器信息
-  response.headers.set('X-Powered-By', '');
-  response.headers.delete('X-Powered-By');
 
   return response;
 }

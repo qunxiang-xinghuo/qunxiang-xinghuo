@@ -33,19 +33,29 @@ export function verifySignature(
   timestamp: number,
   signature: string
 ): boolean {
-  // 检查时间戳是否在5分钟内（防止重放攻击）
+  // 1. 基础校验：签名/时间戳必须是非空字符串/数字
+  if (!signature || typeof signature !== 'string' || !Number.isFinite(timestamp)) {
+    return false;
+  }
+
+  // 2. 检查时间戳是否在5分钟内（防止重放攻击）
   const now = Date.now();
   const diff = Math.abs(now - timestamp);
   if (diff > 5 * 60 * 1000) {
     return false;
   }
 
-  // 验证签名
+  // 3. 验证签名
   const expectedSignature = generateSignature(payload, timestamp);
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+  const providedBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+
+  // 长度不一致直接拒绝（timingSafeEqual 要求等长，否则会抛异常导致 500）
+  if (providedBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(providedBuffer, expectedBuffer);
 }
 
 /**

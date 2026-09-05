@@ -33,9 +33,13 @@ export interface AuditLogEntry {
 }
 
 /**
- * 日志文件路径
+ * 日志目录
+ * 优先级：环境变量 AUDIT_LOG_DIR > 本地开发沙箱路径 > 系统临时目录
+ * 注意：生产服务器通常用 PM2，可通过环境变量指定持久化目录
  */
-const LOG_DIR = '/app/work/logs/bypass';
+const LOG_DIR =
+  process.env.AUDIT_LOG_DIR ||
+  (fs.existsSync('/app/work/logs/bypass') ? '/app/work/logs/bypass' : '/tmp/qunxiangxinghuo-logs');
 const AUDIT_LOG_FILE = path.join(LOG_DIR, 'audit.log');
 
 /**
